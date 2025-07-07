@@ -13,13 +13,6 @@ settings_bp = Blueprint('settings', __name__, template_folder='../templates/sett
 def view_settings():
     """Updated settings page with statistics"""
     try:
-        # Handle theme change
-        if request.method == 'POST' and request.form.get('form_name') == 'change_theme':
-            theme = request.form.get('theme')
-            if theme in ['light', 'dark']:
-                session['theme'] = theme
-                flash(f'Theme changed to {theme}!', 'success')
-                return redirect(url_for('settings.view_settings'))
 
         # Get tag statistics
         total_available_tags = Tag.query.filter(

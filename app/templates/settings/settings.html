@@ -20,32 +20,6 @@
         <div class="col-md-8">
             <h4>Personal Settings:</h4>
             <div class="list-group mb-4">
-                <div class="list-group-item">
-                    <div class="d-flex w-100 justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-palette me-2"></i>
-                            <strong>Theme Preference</strong>
-                            <p class="mb-1 text-muted">Switch between light and dark themes</p>
-                            <div class="mt-2">
-                                <form method="POST" action="{{ url_for('settings.view_settings') }}" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <input type="hidden" name="form_name" value="change_theme">
-
-                                    <button type="submit" name="theme" value="light"
-                                            class="btn btn-sm {% if session.get('theme', 'dark') == 'light' %}btn-primary{% else %}btn-outline-secondary{% endif %} me-2">
-                                        <i class="fas fa-sun me-1"></i> Light
-                                    </button>
-                                    <button type="submit" name="theme" value="dark"
-                                            class="btn btn-sm {% if session.get('theme', 'dark') == 'dark' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
-                                        <i class="fas fa-moon me-1"></i> Dark
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        <span class="badge bg-secondary">{{ session.get('theme', 'dark')|title }}</span>
-                    </div>
-                </div>
-
                 <a href="{{ url_for('settings.manage_personal_tags') }}" class="list-group-item list-group-item-action">
                     <div class="d-flex w-100 justify-content-between align-items-center">
                         <div>
