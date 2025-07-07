@@ -1,0 +1,28 @@
+{# Basic stat card macros for trading journal #}
+
+{% macro stat_card(title, value, icon=None, color="primary") %}
+<div class="card metric-card">
+    <div class="card-body text-center">
+        {% if icon %}
+        <i class="fas fa-{{ icon }} mb-2"></i>
+        {% endif %}
+        <p class="metric-value">{{ value }}</p>
+        <p class="metric-label">{{ title }}</p>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro stat_card_with_trend(title, value, trend=None, icon=None) %}
+<div class="card metric-card">
+    <div class="card-body text-center">
+        {% if icon %}
+        <i class="fas fa-{{ icon }} mb-2"></i>
+        {% endif %}
+        <p class="metric-value">{{ value }}</p>
+        <p class="metric-label">{{ title }}</p>
+        {% if trend %}
+        <small class="text-muted">{{ trend }}</small>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}

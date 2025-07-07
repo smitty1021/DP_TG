@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ title or "My Files" }} - Trading Journal
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <div class="row mb-3 align-items-center">
+        <div class="col">
+            <h2 class="text-primary mb-1"><i class="fas fa-folder-open me-2"></i>My Files</h2>
+            <p class="text-muted mb-0">Manage your uploaded documents, images, and other files.</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('files.user_upload_file') }}" class="btn btn-primary">
+                <i class="fas fa-upload me-1"></i> Upload New File
+            </a>
+        </div>
+    </div>
+
+    {% if files and files|length > 0 %}
+    <div class="row g-4">
+        {% for file_item in files %}
+        <div class="col-xxl-3 col-lg-4 col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="file-preview-container">
+                    {% if file_item.mime_type and file_item.mime_type.startswith('image/') %}
+                        <a href="{{ url_for('files.view_file', file_id=file_item.id) }}" target="_blank" title="View full size: {{ file_item.filename }}">
+                            <img src="{{ url_for('files.view_file', file_id=file_item.id) }}" alt="{{ file_item.filename }}" class="card-img-top file-preview-image">
+                        </a>
+                    {% else %}
+                        {% set icon_class = 'fa-file-alt' %}
+                        {% if file_item.file_type == 'pdf' %}{% set icon_class = 'fa-file-pdf' %}{% endif %}
+                        {% if file_item.file_type in ['doc', 'docx'] %}{% set icon_class = 'fa-file-word' %}{% endif %}
+                        {% if file_item.file_type in ['xls', 'xlsx', 'csv'] %}{% set icon_class = 'fa-file-excel' %}{% endif %}
+                        {% if file_item.file_type in ['zip', 'rar', '7z'] %}{% set icon_class = 'fa-file-archive' %}{% endif %}
+                        {% if file_item.file_type == 'txt' %}{% set icon_class = 'fa-file-lines' %}{% endif %}
+                        <div class="file-preview-icon text-center text-muted">
+                            <i class="fas {{ icon_class }} fa-5x"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title text-truncate" title="{{ file_item.filename }}">{{ file_item.filename }}</h6>
+                    <p class="card-text small text-muted">
+                        {{ file_item.filesize|file_size }} | {{ file_item.file_type|upper if file_item.file_type else 'File' }}
+                    </p>
+                    <small class="text-muted">Uploaded: {{ file_item.upload_date.strftime('%Y-%m-%d') }}</small>
+                </div>
+                <div class="card-footer bg-transparent border-top-0 pt-0">
+                    <div class="d-grid gap-2 d-flex justify-content-end">
+                         <a href="{{ url_for('files.view_file', file_id=file_item.id) }}" class="btn btn-sm btn-outline-secondary" title="View/Open File" target="_blank"><i class="fas fa-eye"></i></a>
+                         <a href="{{ url_for('files.download_file', file_id=file_item.id) }}" class="btn btn-sm btn-outline-primary" title="Download"><i class="fas fa-download"></i></a>
+                         <form method="POST" class="d-inline-block delete-file-form" action="{{ url_for('files.delete_file', file_id=file_item.id) }}">
+                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete" data-filename="{{ file_item.filename }}">
+                                 <i class="fas fa-trash-alt"></i>
+                             </button>
+                         </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+        <div class="text-center py-5">
+            <div class="display-1 text-muted"><i class="fas fa-folder-plus"></i></div>
+            <h4 class="mt-3">No files found.</h4>
+            <p class="text-muted">Upload your first file to get started.</p>
+            <a href="{{ url_for('files.user_upload_file') }}" class="btn btn-primary mt-2">
+                <i class="fas fa-upload me-1"></i> Upload File
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .file-preview-container {
+        height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--bs-light);
+        overflow: hidden;
+    }
+    [data-bs-theme="dark"] .file-preview-container {
+        background-color: var(--bs-gray-800);
+    }
+    .file-preview-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .file-preview-icon {
+        opacity: 0.3;
+    }
+</style>
+{% endblock %}
+
+
+{% block scripts_extra %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Attach event listener to all delete forms
+    document.querySelectorAll('.delete-file-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Stop the form from submitting immediately
+
+            const button = form.querySelector('button[type="submit"]');
+            const filename = button.dataset.filename;
+
+            // Use the global confirmation modal
+            showCustomConfirmation({
+                title: 'Confirm Deletion',
+                message: `Are you sure you want to permanently delete the file: <strong>${filename}</strong>? This action cannot be undone.`,
+                confirmText: 'Delete File',
+                confirmClass: 'btn-danger',
+                icon: 'exclamation-triangle',
+                onConfirm: () => {
+                    // If the user confirms, submit the form
+                    form.submit();
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,37 @@
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+# Replace .venv with the name of your virtual environment folder if it's different
+.venv/
+venv/
+env/
+
+# Instance Folder
+# Contains sensitive configuration, session files, and uploads
+/instance/
+
+# Environment Variables
+# Contains secret keys and other sensitive data
+.env
+*.env
+
+# IDE and Editor Directories
+.idea/
+.vscode/
+
+# Build and distribution artifacts
+build/
+dist/
+*.egg-info/
+*.so
+
+# Log files
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db

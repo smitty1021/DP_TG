@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% import "macros/_form_helpers.html" as forms %}
+
+{% block title %}{{ title or "Create Instrument" }} - Trading Journal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="text-primary mb-1"><i class="fas fa-plus-circle me-2"></i>Create New Instrument</h2>
+            <p class="text-muted mb-0">Add a new trading instrument and its contract specifications to the system.</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('admin.instruments_list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to List
+            </a>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin.create_instrument') }}" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="card">
+            <div class="card-body p-4">
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2"></i>Basic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ forms.render_field(form.symbol, input_class="form-control") }}
+                                <div class="form-text">Trading symbol (e.g., NQ, MES, YM).</div>
+                            </div>
+                            <div class="col-md-6">
+                                {{ forms.render_field(form.name, input_class="form-control") }}
+                                <div class="form-text">Full descriptive name of the instrument.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0"><i class="fas fa-tags me-2"></i>Classification</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                {{ forms.render_field(form.exchange, input_class="form-select") }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ forms.render_field(form.asset_class, input_class="form-select") }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ forms.render_field(form.product_group, input_class="form-select") }}
+                            </div>
+                        </div>
+                         <div class="form-text mt-3">These classifications help organize and filter instruments in the system.</div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0"><i class="fas fa-calculator me-2"></i>Trading Specifications</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                {{ forms.render_field(form.point_value, input_class="form-control") }}
+                                <div class="form-text">
+                                    <span class="text-danger">*</span> Dollar value per point (e.g., 20.0 for NQ, 5.0 for MES).
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                {{ forms.render_field(form.tick_size, input_class="form-control") }}
+                                <div class="form-text">Minimum price movement (e.g., 0.25 for E-minis).</div>
+                            </div>
+                             <div class="col-md-4">
+                                {{ forms.render_field(form.currency, input_class="form-select") }}
+                                 <div class="form-text">Base currency for the instrument.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0"><i class="fas fa-toggle-on me-2"></i>Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check fs-5">
+                            {{ form.is_active(class="form-check-input") }}
+                            {{ form.is_active.label(class="form-check-label") }}
+                        </div>
+                        <div class="form-text mt-2">
+                            Only active instruments will appear in trading forms and dropdowns.
+                        </div>
+                    </div>
+                </div>
+
+            </div> <div class="card-footer text-end">
+                <a href="{{ url_for('admin.instruments_list') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary ms-2">
+                    <i class="fas fa-save me-2"></i>Create Instrument
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

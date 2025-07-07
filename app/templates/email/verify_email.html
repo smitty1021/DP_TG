@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Verify Your Email</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f0f0f0; color: #333333; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        .email-container { background-color: #ffffff !important; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: 20px auto; border: 1px solid #dddddd;}
+        .button { 
+            display: inline-block; 
+            padding: 12px 25px; 
+            margin-top: 20px; 
+            margin-bottom: 20px;
+            background-color: #28a745 !important; /* A strong green, good contrast */
+            color: #ffffff !important; /* White text, forced */
+            text-decoration: none !important; 
+            border-radius: 5px; 
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+        }
+        .button:hover { background-color: #218838 !important; color: #ffffff !important; } /* Darker green on hover */
+        p { line-height: 1.7; margin-bottom: 15px; color: #555555; }
+        h2 { color: #333333; margin-top: 0; }
+        hr { border: none; border-top: 1px solid #dddddd; margin: 25px 0; }
+        .footer-text { font-size: 0.9em; color: #777777; }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <h2>Hello {{ username or 'User' }},</h2>
+        <p>Thank you for registering for the Trading Journal! Please click the button below to verify your email address and activate your account:</p>
+        <p style="text-align: center;">
+            <a href="{{ verification_url }}" class="button">Verify Email Address</a>
+        </p>
+        <p>If you did not create an account, please ignore this email.</p>
+        <p>This verification link will expire in 24 hours.</p>
+        <hr>
+        <p class="footer-text">If you're having trouble clicking the button, copy and paste the following URL into your web browser:<br>{{ verification_url }}</p>
+    </div>
+</body>
+</html>

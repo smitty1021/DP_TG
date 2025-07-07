@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% from "macros/_form_helpers.html" import render_field, render_checkbox %}
+
+{% block title %}{{ title or "Edit Trading Model" }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <h1>{{ title or "Edit Trading Model" }}: {{ model.name }}</h1> {# Displays the current model's name being edited #}
+    <hr>
+    <form method="POST" action="{{ url_for('trading_models.edit_trading_model', model_id=model.id) }}" novalidate>
+        {{ form.hidden_tag() }} {# CSRF token and other hidden fields #}
+
+        {# All these fields will be pre-populated by WTForms because 'form' was initialized with obj=model in the route #}
+        <div class="row mb-3">
+            <div class="col-md-7">
+                {{ render_field(form.name, label_visible=true, input_class="form-control form-control-lg", placeholder="e.g., 0930 Open ES Strategy") }}
+            </div>
+            <div class="col-md-3">
+                {{ render_field(form.version, label_visible=true, input_class="form-control", placeholder="e.g., 1.1") }}
+            </div>
+            <div class="col-md-2 d-flex align-items-end pb-2">
+                {# Ensure form.is_active is a BooleanField for render_checkbox #}
+                {{ render_checkbox(form.is_active, label_visible=true, input_class="form-check-input-lg") }}
+            </div>
+        </div>
+
+        {{ render_field(form.overview_logic, label_visible=true, input_class="form-control", rows="3", placeholder="Brief description of the model's core logic and purpose.") }}
+
+        <h5 class="mt-4">Timeframes</h5>
+        <div class="row">
+            <div class="col-md-4">
+                {{ render_field(form.primary_chart_tf, label_visible=true, input_class="form-control", placeholder="e.g., 15-Minute (Analysis/Setup)") }}
+            </div>
+            <div class="col-md-4">
+                {{ render_field(form.execution_chart_tf, label_visible=true, input_class="form-control", placeholder="e.g., 1-Minute (Entry/Fine-tuning)") }}
+            </div>
+            <div class="col-md-4">
+                {{ render_field(form.context_chart_tf, label_visible=true, input_class="form-control", placeholder="e.g., 1-Hour (Context/Trend)") }}
+            </div>
+        </div>
+
+        <h5 class="mt-4">Analytical Approach</h5>
+        {{ render_field(form.technical_indicators_used, label_visible=true, input_class="form-control", rows="3", placeholder="List indicators and their settings, e.g., EMA (9), RSI (14)") }}
+        {{ render_field(form.chart_patterns_used, label_visible=true, input_class="form-control", rows="2", placeholder="e.g., Head and Shoulders, Triangles, Flags") }}
+        {{ render_field(form.price_action_signals, label_visible=true, input_class="form-control", rows="2", placeholder="e.g., Engulfing Candles, Pin Bars at Key Levels") }}
+        {{ render_field(form.key_levels_identification, label_visible=true, input_class="form-control", rows="2", placeholder="How are S/R, pivot points, Fibonacci levels identified?") }}
+        {{ render_field(form.volume_analysis_notes, label_visible=true, input_class="form-control", rows="2", placeholder="How is volume used (if applicable)?") }}
+        {{ render_field(form.fundamental_analysis_notes, label_visible=true, input_class="form-control", rows="2", placeholder="Any fundamental considerations (e.g., news events to avoid)?") }}
+
+        <h5 class="mt-4">Applicability & Conditions</h5>
+        {{ render_field(form.instrument_applicability, label_visible=true, input_class="form-control", rows="2", placeholder="e.g., NQ, ES, specific stocks") }}
+        {{ render_field(form.session_applicability, label_visible=true, input_class="form-control", rows="2", placeholder="e.g., London Open, NY Open, specific hours") }}
+        {{ render_field(form.optimal_market_conditions, label_visible=true, input_class="form-control", rows="3", placeholder="Describe ideal market conditions (e.g., trending, ranging, high volatility)") }}
+        {{ render_field(form.sub_optimal_market_conditions, label_visible=true, input_class="form-control", rows="3", placeholder="Describe conditions where this model should be avoided") }}
+
+        <h5 class="mt-4">Strategy Details</h5>
+        {{ render_field(form.entry_trigger_description, label_visible=true, input_class="form-control", rows="4", placeholder="Specific, objective conditions for entering a trade") }}
+        {{ render_field(form.stop_loss_strategy, label_visible=true, input_class="form-control", rows="3", placeholder="e.g., ATR-based, fixed points, structure-based") }}
+        {{ render_field(form.take_profit_strategy, label_visible=true, input_class="form-control", rows="3", placeholder="e.g., Fixed R:R, key levels, trailing stop") }}
+        {{ render_field(form.min_risk_reward_ratio, label_visible=true, input_class="form-control", type="number", placeholder="e.g., 1.5 for 1.5:1") }}
+
+        <h5 class="mt-4">Risk & Trade Management</h5>
+        {{ render_field(form.position_sizing_rules, label_visible=true, input_class="form-control", rows="3", placeholder="e.g., Max 1% of account per trade, fixed contract size") }}
+        {{ render_field(form.scaling_in_out_rules, label_visible=true, input_class="form-control", rows="2", placeholder="Rules for adding to or reducing position size (if applicable)") }}
+        {{ render_field(form.trade_management_breakeven_rules, label_visible=true, input_class="form-control", rows="2", placeholder="e.g., Move SL to breakeven when trade is +1R") }}
+        {{ render_field(form.trade_management_trailing_stop_rules, label_visible=true, input_class="form-control", rows="2", placeholder="Rules for trailing stop-loss (if applicable)") }}
+        {{ render_field(form.trade_management_partial_profit_rules, label_visible=true, input_class="form-control", rows="2", placeholder="Rules for taking partial profits (if applicable)") }}
+        {{ render_field(form.trade_management_adverse_price_action, label_visible=true, input_class="form-control", rows="2", placeholder="How to react to unexpected adverse price moves") }}
+
+        <h5 class="mt-4">Model Risk Parameters</h5>
+        {{ render_field(form.model_max_loss_per_trade, label_visible=true, input_class="form-control", placeholder="e.g., 1% or $X") }}
+        {{ render_field(form.model_max_daily_loss, label_visible=true, input_class="form-control", placeholder="e.g., 3% or $Y") }}
+        {{ render_field(form.model_max_weekly_loss, label_visible=true, input_class="form-control", placeholder="e.g., 5%") }}
+        {{ render_field(form.model_consecutive_loss_limit, label_visible=true, input_class="form-control", placeholder="e.g., 3 trades") }}
+        {{ render_field(form.model_action_on_max_drawdown, label_visible=true, input_class="form-control", rows="3", placeholder="Action if max drawdown for this model is hit") }}
+
+        <h5 class="mt-4">Execution & Routines</h5>
+        {{ render_field(form.pre_trade_checklist, label_visible=true, input_class="form-control", rows="5", placeholder="One item per line for pre-trade checks specific to this model") }}
+        {{ render_field(form.order_types_used, label_visible=true, input_class="form-control", rows="2", placeholder="e.g., Market, Limit, Stop Limit") }}
+        {{ render_field(form.broker_platform_notes, label_visible=true, input_class="form-control", rows="2", placeholder="Any broker or platform specific considerations") }}
+        {{ render_field(form.execution_confirmation_notes, label_visible=true, input_class="form-control", rows="2", placeholder="Steps to confirm after execution (e.g., SL/TP placed)") }}
+        {{ render_field(form.post_trade_routine_model, label_visible=true, input_class="form-control", rows="3", placeholder="Model-specific steps for post-trade analysis") }}
+
+        <h5 class="mt-4">Review & Refinement</h5>
+        {{ render_field(form.strengths, label_visible=true, input_class="form-control", rows="3", placeholder="Perceived strengths of this model") }}
+        {{ render_field(form.weaknesses, label_visible=true, input_class="form-control", rows="3", placeholder="Perceived weaknesses or areas for improvement") }}
+        {{ render_field(form.backtesting_forwardtesting_notes, label_visible=true, input_class="form-control", rows="4", placeholder="Notes on backtesting or forward-testing results") }}
+        {{ render_field(form.refinements_learnings, label_visible=true, input_class="form-control", rows="4", placeholder="Changes and learnings over time") }}
+
+        <div class="form-group mt-4">
+            {{ form.submit(class="btn btn-primary btn-lg") }}
+            <a href="{{ url_for('trading_models.models_list') }}" class="btn btn-outline-secondary btn-lg ms-2">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

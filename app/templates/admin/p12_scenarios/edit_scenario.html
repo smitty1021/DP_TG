@@ -1,0 +1,425 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-{% if scenario %}edit{% else %}plus{% endif %} me-2"></i>
+                        {{ title }}
+                    </h2>
+                    <p class="text-muted mb-0">
+                        {% if scenario %}
+                            Modify scenario definition and trading criteria
+                        {% else %}
+                            Create a new P12 scenario based on Random's methodology
+                        {% endif %}
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('p12_scenarios.list_scenarios') }}" 
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" novalidate>
+        {{ form.hidden_tag() }}
+        
+        <div class="row">
+            <!-- Left Column - Main Content -->
+            <div class="col-lg-8">
+                <!-- Basic Information Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Basic Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- Scenario Number -->
+                                <div class="mb-3">
+                                    {{ form.scenario_number.label(class="form-label fw-semibold") }}
+                                    {{ form.scenario_number(class="form-control" + (" is-invalid" if form.scenario_number.errors else "")) }}
+                                    {% if form.scenario_number.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.scenario_number.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if form.scenario_number.description %}
+                                        <div class="form-text">{{ form.scenario_number.description }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Scenario Name -->
+                                <div class="mb-3">
+                                    {{ form.scenario_name.label(class="form-label fw-semibold") }}
+                                    {{ form.scenario_name(class="form-control" + (" is-invalid" if form.scenario_name.errors else "")) }}
+                                    {% if form.scenario_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.scenario_name.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if form.scenario_name.description %}
+                                        <div class="form-text">{{ form.scenario_name.description }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Short Description -->
+                        <div class="mb-3">
+                            {{ form.short_description.label(class="form-label fw-semibold") }}
+                            {{ form.short_description(class="form-control" + (" is-invalid" if form.short_description.errors else "")) }}
+                            {% if form.short_description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.short_description.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.short_description.description %}
+                                <div class="form-text">{{ form.short_description.description }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Detailed Description -->
+                        <div class="mb-3">
+                            {{ form.detailed_description.label(class="form-label fw-semibold") }}
+                            {{ form.detailed_description(class="form-control" + (" is-invalid" if form.detailed_description.errors else ""), rows="4") }}
+                            {% if form.detailed_description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.detailed_description.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.detailed_description.description %}
+                                <div class="form-text">{{ form.detailed_description.description }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trading Model Recommendations Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-cogs me-2"></i>Trading Model Recommendations
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- Models to Activate -->
+                                <div class="mb-3">
+                                    {{ form.models_to_activate.label(class="form-label fw-semibold") }}
+                                    {{ form.models_to_activate(class="form-select" + (" is-invalid" if form.models_to_activate.errors else ""), multiple=true, size="6") }}
+                                    {% if form.models_to_activate.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.models_to_activate.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Select trading models that should be activated for this scenario</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Models to Avoid -->
+                                <div class="mb-3">
+                                    {{ form.models_to_avoid.label(class="form-label fw-semibold") }}
+                                    {{ form.models_to_avoid(class="form-select" + (" is-invalid" if form.models_to_avoid.errors else ""), multiple=true, size="6") }}
+                                    {% if form.models_to_avoid.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.models_to_avoid.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Select trading models that should be avoided for this scenario</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Risk Guidance -->
+                        <div class="mb-3">
+                            {{ form.risk_guidance.label(class="form-label fw-semibold") }}
+                            {{ form.risk_guidance(class="form-control" + (" is-invalid" if form.risk_guidance.errors else ""), rows="3") }}
+                            {% if form.risk_guidance.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.risk_guidance.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.risk_guidance.description %}
+                                <div class="form-text">{{ form.risk_guidance.description }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- Preferred Timeframes -->
+                                <div class="mb-3">
+                                    {{ form.preferred_timeframes.label(class="form-label fw-semibold") }}
+                                    {{ form.preferred_timeframes(class="form-select" + (" is-invalid" if form.preferred_timeframes.errors else ""), multiple=True, size="4") }}
+                                    {% if form.preferred_timeframes.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.preferred_timeframes.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if form.preferred_timeframes.description %}
+                                        <div class="form-text">{{ form.preferred_timeframes.description }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Key Considerations -->
+                                <div class="mb-3">
+                                    {{ form.key_considerations.label(class="form-label fw-semibold") }}
+                                    {{ form.key_considerations(class="form-control" + (" is-invalid" if form.key_considerations.errors else ""), rows="4") }}
+                                    {% if form.key_considerations.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.key_considerations.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if form.key_considerations.description %}
+                                        <div class="form-text">{{ form.key_considerations.description }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trading Criteria Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-line me-2"></i>Trading Criteria
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- HOD/LOD Implication -->
+                        <div class="mb-3">
+                            {{ form.hod_lod_implication.label(class="form-label fw-semibold") }}
+                            {{ form.hod_lod_implication(class="form-control" + (" is-invalid" if form.hod_lod_implication.errors else ""), rows="3") }}
+                            {% if form.hod_lod_implication.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.hod_lod_implication.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.hod_lod_implication.description %}
+                                <div class="form-text">{{ form.hod_lod_implication.description }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Directional Bias -->
+                        <div class="mb-3">
+                            {{ form.directional_bias.label(class="form-label fw-semibold") }}
+                            {{ form.directional_bias(class="form-select" + (" is-invalid" if form.directional_bias.errors else "")) }}
+                            {% if form.directional_bias.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.directional_bias.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.directional_bias.description %}
+                                <div class="form-text">{{ form.directional_bias.description }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Alert Criteria -->
+                        <div class="mb-3">
+                            {{ form.alert_criteria.label(class="form-label fw-semibold") }}
+                            {{ form.alert_criteria(class="form-control" + (" is-invalid" if form.alert_criteria.errors else ""), rows="3") }}
+                            {% if form.alert_criteria.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.alert_criteria.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.alert_criteria.description %}
+                                <div class="form-text">{{ form.alert_criteria.description }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Confirmation Criteria -->
+                        <div class="mb-3">
+                            {{ form.confirmation_criteria.label(class="form-label fw-semibold") }}
+                            {{ form.confirmation_criteria(class="form-control" + (" is-invalid" if form.confirmation_criteria.errors else ""), rows="3") }}
+                            {% if form.confirmation_criteria.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.confirmation_criteria.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.confirmation_criteria.description %}
+                                <div class="form-text">{{ form.confirmation_criteria.description }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trading Strategy Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-bullseye me-2"></i>Trading Strategy
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Entry Strategy -->
+                        <div class="mb-3">
+                            {{ form.entry_strategy.label(class="form-label fw-semibold") }}
+                            {{ form.entry_strategy(class="form-control" + (" is-invalid" if form.entry_strategy.errors else ""), rows="3") }}
+                            {% if form.entry_strategy.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.entry_strategy.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.entry_strategy.description %}
+                                <div class="form-text">{{ form.entry_strategy.description }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Typical Targets -->
+                        <div class="mb-3">
+                            {{ form.typical_targets.label(class="form-label fw-semibold") }}
+                            {{ form.typical_targets(class="form-control" + (" is-invalid" if form.typical_targets.errors else ""), rows="2") }}
+                            {% if form.typical_targets.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.typical_targets.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.typical_targets.description %}
+                                <div class="form-text">{{ form.typical_targets.description }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Stop Loss Guidance -->
+                        <div class="mb-3">
+                            {{ form.stop_loss_guidance.label(class="form-label fw-semibold") }}
+                            {{ form.stop_loss_guidance(class="form-control" + (" is-invalid" if form.stop_loss_guidance.errors else ""), rows="2") }}
+                            {% if form.stop_loss_guidance.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.stop_loss_guidance.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.stop_loss_guidance.description %}
+                                <div class="form-text">{{ form.stop_loss_guidance.description }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Risk Percentage -->
+                        <div class="mb-3">
+                            {{ form.risk_percentage.label(class="form-label fw-semibold") }}
+                            {{ form.risk_percentage(class="form-control" + (" is-invalid" if form.risk_percentage.errors else ""), step="0.01", min="0", max="5") }}
+                            {% if form.risk_percentage.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.risk_percentage.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.risk_percentage.description %}
+                                <div class="form-text">{{ form.risk_percentage.description }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Image & Status -->
+            <div class="col-lg-4">
+                <!-- Image Upload Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-image me-2"></i>Scenario Image
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if scenario and scenario.image_path %}
+                        <div class="mb-3">
+                            <p class="text-muted mb-2">Current image:</p>
+                            <img src="{{ url_for('p12_scenarios.serve_image', scenario_id=scenario.id) }}"
+                                 alt="Scenario {{ scenario.scenario_number }} Image"
+                                 class="img-fluid rounded border">
+                        </div>
+                        {% endif %}
+
+                        <!-- Image Upload -->
+                        <div class="mb-3">
+                            {{ form.scenario_image.label(class="form-label fw-semibold") }}
+                            {{ form.scenario_image(class="form-control" + (" is-invalid" if form.scenario_image.errors else "")) }}
+                            {% if form.scenario_image.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.scenario_image.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.scenario_image.description %}
+                                <div class="form-text">{{ form.scenario_image.description }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-toggle-on me-2"></i>Status
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Active Status -->
+                        <div class="form-check">
+                            {{ form.is_active(class="form-check-input" + (" is-invalid" if form.is_active.errors else "")) }}
+                            {{ form.is_active.label(class="form-check-label") }}
+                            {% if form.is_active.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.is_active.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.is_active.description %}
+                                <div class="form-text">{{ form.is_active.description }}</div>
+                            {% endif %}
+                        </div>
+
+                        {% if scenario %}
+                        <hr>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="text-muted small">Times Selected</div>
+                                <div class="h4 text-primary">{{ scenario.times_selected }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small">Last Updated</div>
+                                <div class="small">{{ scenario.updated_date.strftime('%Y-%m-%d') }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>
+                        {% if scenario %}Update Scenario{% else %}Create Scenario{% endif %}
+                    </button>
+
+                    {% if scenario %}
+                    <a href="{{ url_for('p12_scenarios.view_scenario', scenario_id=scenario.id) }}"
+                       class="btn btn-outline-info">
+                        <i class="fas fa-eye me-2"></i>View Details
+                    </a>
+                    {% endif %}
+
+                    <a href="{{ url_for('p12_scenarios.list_scenarios') }}"
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

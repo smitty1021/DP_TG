@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="text-primary mb-1"><i class="fas fa-chart-pie me-2"></i>Analytics Dashboard</h2>
+            <p class="text-muted mb-0">Overview of user engagement and application statistics.</p>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="stat-icon bg-primary text-white">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="stat-value text-primary">{{ total_users }}</div>
+                        <div class="stat-label text-muted">Total Users</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card h-100">
+                <div class="card-body d-flex align-items-center">
+                     <div class="flex-shrink-0 me-3">
+                        <div class="stat-icon bg-success text-white">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="stat-value text-success">{{ active_users }}</div>
+                        <div class="stat-label text-muted">Active Users</div>
+                        {% if total_users > 0 %}
+                        <span class="badge bg-success-soft text-success rounded-pill">{{ (active_users / total_users * 100)|round|int }}%</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="stat-icon bg-info text-white">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="stat-value text-info">{{ verified_users }}</div>
+                        <div class="stat-label text-muted">Verified Users</div>
+                         {% if total_users > 0 %}
+                        <span class="badge bg-info-soft text-info rounded-pill">{{ (verified_users / total_users * 100)|round|int }}%</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card h-100">
+                <div class="card-body d-flex align-items-center">
+                     <div class="flex-shrink-0 me-3">
+                        <div class="stat-icon {% if user_growth_rate >= 0 %}bg-warning{% else %}bg-danger{% endif %} text-white">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="stat-value {% if user_growth_rate >= 0 %}text-warning{% else %}text-danger{% endif %}">{{ user_growth_rate }}%</div>
+                        <div class="stat-label text-muted">Monthly Growth</div>
+                        <span class="stat-trend {% if user_growth_rate >= 0 %}text-warning{% else %}text-danger{% endif %}">
+                            <i class="fas fa-arrow-{% if user_growth_rate >= 0 %}up{% else %}down{% endif %}"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>User Registrations (Last 12 Months)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:350px;">
+                        <canvas id="registrationTrendChart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                     <div class="d-flex justify-content-end text-center">
+                        <div class="px-3">
+                            <p class="text-muted mb-0 small">Total Registrations</p>
+                            <h4 class="mb-0">{{ user_registration_trend.total }}</h4>
+                        </div>
+                        <div class="px-3 border-start">
+                             <p class="text-muted mb-0 small">Average/Month</p>
+                            <h4 class="mb-0">{{ user_registration_trend.average }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stat-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        font-size: 20px;
+    }
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .stat-label {
+        font-size: 0.9rem;
+    }
+</style>
+
+{% endblock %}
+
+{% block additional_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Helper function to convert HEX to RGBA for chart backgrounds
+    const hexToRgba = (hex, alpha = 1) => {
+        // Remove '#' if present
+        hex = hex.replace('#', '');
+
+        // Handle shorthand hex
+        if (hex.length === 3) {
+            hex = hex.split('').map(char => char + char).join('');
+        }
+
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    };
+
+    // Dynamically get theme colors from CSS variables
+    const style = getComputedStyle(document.documentElement);
+
+    const primaryColor = style.getPropertyValue('--bs-primary').trim();
+    const textColor = style.getPropertyValue('--text-color').trim();
+    const gridColor = style.getPropertyValue('--border-color').trim();
+
+    // Create chart-specific colors from the theme
+    const chartBackgroundColor = hexToRgba(primaryColor, 0.2);
+    const chartBorderColor = primaryColor;
+
+    // --- User Registration Trend Chart ---
+    const registrationTrendCtx = document.getElementById('registrationTrendChart')?.getContext('2d');
+    if (registrationTrendCtx) {
+        new Chart(registrationTrendCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ user_registration_trend.labels|tojson }},
+                datasets: [{
+                    label: 'New Users',
+                    data: {{ user_registration_trend.values|tojson }},
+                    backgroundColor: chartBackgroundColor,
+                    borderColor: chartBorderColor,
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    hoverBackgroundColor: hexToRgba(primaryColor, 0.4)
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: gridColor,
+                            borderColor: gridColor,
+                            drawBorder: true,
+                            borderDash: [2, 3]
+                        },
+                        ticks: {
+                            color: textColor,
+                            padding: 10
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: textColor
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false // Set to true if you want a legend
+                    },
+                    tooltip: {
+                        backgroundColor: 'var(--card-bg)',
+                        titleColor: 'var(--text-color)',
+                        bodyColor: 'var(--text-color)',
+                        borderColor: 'var(--border-color)',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

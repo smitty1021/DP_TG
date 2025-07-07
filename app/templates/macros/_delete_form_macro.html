@@ -1,0 +1,12 @@
+{% macro render_delete_form(action_url, item_name="item", csrf_token_value=None) %}
+<form action="{{ action_url }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this {{ item_name }}? This cannot be undone.');">
+    {% if csrf_token_value %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
+    {% elif csrf_token %} {# Fallback if global csrf_token is available from Flask-WTF #}
+         {{ csrf_token() }}
+    {% endif %}
+    <button type="submit" class="btn btn-sm btn-danger" title="Delete {{ item_name }}">
+        <i class="fas fa-trash"></i>
+    </button>
+</form>
+{% endmacro %}

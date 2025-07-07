@@ -1,0 +1,34 @@
+# Set default behavior, in case people don't have core.autocrlf set.
+# This will handle line endings automatically for files identified as text.
+* text=auto
+
+#
+# The following are explicit overrides for file types.
+#
+
+# These files should always be normalized to LF in the repository.
+*.py text
+*.html text
+*.css text
+*.js text
+*.json text
+*.md text
+*.txt text
+*.ini text
+*.mako text
+.gitignore text
+.gitattributes text
+requirements.txt text
+
+# These files should always have LF line endings, even on Windows checkout.
+*.sh text eol=lf
+
+# These files are binary and should not be touched.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.db binary
+*.sqlite3 binary
+*.pdf binary

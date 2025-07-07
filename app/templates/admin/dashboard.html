@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ title or "Admin Dashboard" }} - Trading Journal
+{% endblock %}
+
+{# This block populates the <h1 class="page-title"> in base.html if that structure is used #}
+{% block header %} 
+    {{ title or "Admin Dashboard" }}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row mb-3">
+        <div class="col">
+            {# If your base.html header block isn't used for the main H1, you can have it here directly #}
+            {# Or ensure the block header in base.html is an H1 if you prefer that structure #}
+            <h1 class="display-5"><i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard</h1>
+            <p class="lead">Welcome, Admin {{ current_user.username }}! Application overview and management tools.</p>
+        </div>
+    </div>
+    <hr class="mb-4">
+
+    {# Statistics Cards #}
+    <div class="row gy-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="card text-white bg-primary shadow-sm h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fas fa-users fa-3x"></i>
+                        </div>
+                        <div class="col-9 text-end">
+                            <div class="fs-1 fw-bold">{{ total_users if total_users is not none and total_users != "Error" else 'N/A' }}</div>
+                            <div class="fs-6">Total Users</div>
+                        </div>
+                    </div>
+                </div>
+                {# Corrected link to user management page #}
+                <a href="{{ url_for('admin.admin_users_list') }}" class="card-footer text-white clearfix small z-1 text-decoration-none">
+                    <span class="float-start">Manage Users</span>
+                    <span class="float-end"><i class="fas fa-arrow-circle-right"></i></span>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="card text-white bg-info shadow-sm h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fas fa-folder-open fa-3x"></i>
+                        </div>
+                        <div class="col-9 text-end">
+                            <div class="fs-1 fw-bold">...</div> {# Placeholder for total files count #}
+                            <div class="fs-6">File Management</div>
+                        </div>
+                    </div>
+                </div>
+                {# This route doesn't exist yet #}
+                <a href="#" class="card-footer text-white clearfix small z-1 text-decoration-none disabled" aria-disabled="true">
+                    <span class="float-start">Manage Files (Soon)</span>
+                    <span class="float-end"><i class="fas fa-arrow-circle-right"></i></span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-4">
+            <div class="card text-white bg-secondary shadow-sm h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-3 text-center">
+                            <i class="fas fa-cogs fa-3x"></i>
+                        </div>
+                        <div class="col-9 text-end">
+                            <div class="fs-1 fw-bold">...</div> {# Placeholder for other stats #}
+                            <div class="fs-6">App Settings/Logs</div>
+                        </div>
+                    </div>
+                </div>
+                {# This route doesn't exist yet #}
+                 <a href="#" class="card-footer text-white clearfix small z-1 text-decoration-none disabled" aria-disabled="true">
+                    <span class="float-start">View Details (Soon)</span>
+                    <span class="float-end"><i class="fas fa-arrow-circle-right"></i></span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {# Quick Actions Section #}
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <h4>Quick Actions:</h4>
+            <div class="list-group">
+                <a href="{{ url_for('admin.admin_users_list') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-users-cog me-2"></i>Manage Users
+                </a>
+                <a href="{{ url_for('admin.admin_create_user') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-plus me-2"></i>Create New User
+                </a>
+                {# Add links to other primary admin functions as they are built #}
+                <a href="#" class="list-group-item list-group-item-action disabled" aria-disabled="true">
+                    <i class="fas fa-chart-bar me-2"></i>View Site Analytics (Soon)
+                </a>
+                <a href="{{ url_for('admin.system_config') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tools me-2"></i>System Configuration
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

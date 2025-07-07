@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Trading Journal{% endblock %}
+{# Remove block header if not used, or define it as needed #}
+{# {% block header %}Dashboard{% endblock %} #}
+
+{% block content %}
+
+<div class="container mt-4">
+    <div class="card shadow-sm mb-4 welcome-section"> {# Added 'card', removed 'p-3 bg-light rounded' #}
+        <div class="card-body"> {# Added card-body for padding #}
+            <h2 class="card-title">Welcome back, {{ current_user.username }}!</h2> {# Optionally make h2 a card-title #}
+            <p class="card-text text-muted last-login"> {# Optionally make p a card-text #}
+                Last login:
+                {% if current_user.last_login %}
+                    {{ current_user.last_login.strftime('%B %d, %Y at %H:%M') }}
+                {% else %}
+                    This is your first login.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="row gy-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="card-icon display-4 text-primary mb-2">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <h5 class="card-title">My Files</h5>
+                    <p class="card-text stat fs-3">{{ current_user.files.count() }}</p>
+                    <a href="{{ url_for('files.user_my_files') }}" class="btn btn-outline-primary mt-2">View My Files</a>
+                    <a href="{{ url_for('files.user_upload_file') }}" class="btn btn-primary mt-2 ms-2">
+                        <i class="fas fa-upload me-1"></i> Upload New File
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="card-icon display-4 text-success mb-2">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h5 class="card-title">Trading Models</h5>
+                    <p class="card-text stat fs-3">{{ current_user.trading_models.count() }}</p>
+                    <a href="{{ url_for('trading_models.view_trading_models_list') }}" class="btn btn-outline-success mt-2">Manage Models</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="card-icon display-4 text-info mb-2">
+                        <i class="fas fa-user-cog"></i>
+                    </div>
+                    <h5 class="card-title">Account</h5>
+                    <p class="card-text stat fs-3">&nbsp;</p> {# Placeholder for a stat if you add one #}
+                    <a href="{{ url_for('auth.user_profile') }}" class="btn btn-outline-info mt-2">View Profile</a>
+                    {# We'll add settings later, for now it's a placeholder #}
+                    <a href="#" class="btn btn-info mt-2 ms-2 disabled" aria-disabled="true">Account Settings (soon)</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+{% endblock %}

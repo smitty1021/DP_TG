@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Tag Usage Analytics{% endblock %}
+
+{% block head_extra %}
+{{ super() }}
+<style>
+/* Custom, non-conflicting styles for this page's unique functionality */
+.tag-row {
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+.tag-row:hover {
+    background-color: var(--bs-secondary-bg);
+}
+.tag-row.expanded {
+    background-color: var(--bs-primary-bg-subtle);
+}
+.trade-details-dropdown {
+    display: none;
+    padding: 1rem;
+    background-color: var(--bs-light);
+    border-left: 3px solid var(--bs-primary);
+}
+[data-bs-theme="dark"] .trade-details-dropdown {
+    background-color: var(--bs-dark);
+}
+.trade-item {
+    padding: 0.5rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.25rem;
+    margin-bottom: 0.5rem;
+    background-color: var(--bs-body-bg);
+    transition: transform 0.2s ease;
+}
+.trade-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.loading-spinner {
+    display: none;
+    text-align: center;
+    padding: 1rem;
+}
+.chevron-icon {
+    transition: transform 0.3s ease;
+}
+.chevron-icon.expanded {
+    transform: rotate(90deg);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-chart-bar me-2"></i>Tag Usage Analytics</h2>
+            <p class="text-muted">Insights into your tag usage patterns. Click on any tag to view associated trades.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-fire me-2"></i>Most Used Tags</h5>
+                </div>
+                <div class="card-body">
+                    {% if most_used %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Tag</th>
+                                        <th>Category</th>
+                                        <th>Usage Count</th>
+                                        <th>Last Used</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for stat_data in most_used %}
+                                    {% set stat = stat_data[0] %}
+                                    {% set trade_count = stat_data[1] %}
+                                    <tr class="tag-row" data-tag-id="{{ stat.tag.id }}" data-table="most-used">
+                                        <td><span class="badge {{ stat.tag|tag_color }}">{{ stat.tag.name }}</span></td>
+                                        <td><small class="text-muted">{{ stat.tag.category.value }}</small></td>
+                                        <td><strong>{{ stat.usage_count }}</strong> <small class="text-muted">({{ trade_count }} trade{{ 's' if trade_count != 1 }})</small></td>
+                                        <td><small>{{ stat.last_used.strftime('%Y-%m-%d') if stat.last_used else 'Never' }}</small></td>
+                                        <td><i class="fas fa-chevron-right chevron-icon"></i></td>
+                                    </tr>
+                                    <tr id="trades-{{ stat.tag.id }}-most-used" class="trade-details-row" style="display: none;">
+                                        <td colspan="5">
+                                            <div class="trade-details-dropdown">
+                                                <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                                                <div class="trades-container"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No tag usage data yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-clock me-2"></i>Recently Used Tags</h5>
+                </div>
+                <div class="card-body">
+                     {% if recently_used %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Tag</th>
+                                        <th>Last Used</th>
+                                        <th>Total Usage</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for stat_data in recently_used %}
+                                    {% set stat = stat_data[0] %}
+                                    {% set trade_count = stat_data[1] %}
+                                    <tr class="tag-row" data-tag-id="{{ stat.tag.id }}" data-table="recent">
+                                        <td><span class="badge {{ stat.tag|tag_color }}">{{ stat.tag.name }}</span></td>
+                                        <td><small>{{ stat.last_used.strftime('%Y-%m-%d %H:%M') if stat.last_used }}</small></td>
+                                        <td><strong>{{ stat.usage_count }}</strong> <small class="text-muted">({{ trade_count }} trade{{ 's' if trade_count != 1 }})</small></td>
+                                        <td><i class="fas fa-chevron-right chevron-icon"></i></td>
+                                    </tr>
+                                    <tr id="trades-{{ stat.tag.id }}-recent" class="trade-details-row" style="display: none;">
+                                        <td colspan="4">
+                                            <div class="trade-details-dropdown">
+                                                <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                                                <div class="trades-container"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No recent tag usage.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts_extra %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tradesCache = {};
+
+    document.querySelectorAll('.tag-row').forEach(row => {
+        row.addEventListener('click', function() {
+            const tagId = this.dataset.tagId;
+            const tableId = this.dataset.table;
+            const tradesRow = document.getElementById(`trades-${tagId}-${tableId}`);
+            const chevron = this.querySelector('.chevron-icon');
+
+            const isExpanded = this.classList.toggle('expanded');
+            chevron.classList.toggle('expanded', isExpanded);
+            tradesRow.style.display = isExpanded ? 'table-row' : 'none';
+            tradesRow.querySelector('.trade-details-dropdown').style.display = isExpanded ? 'block' : 'none';
+
+            if (isExpanded && !tradesCache[tagId]) {
+                loadTradesForTag(tagId, tradesRow);
+            }
+        });
+    });
+
+    function loadTradesForTag(tagId, tradesRow) {
+        const loadingSpinner = tradesRow.querySelector('.loading-spinner');
+        const tradesContainer = tradesRow.querySelector('.trades-container');
+        loadingSpinner.style.display = 'block';
+
+        fetch(`{{ url_for('analytics.tag_trades_data') }}?tag_id=${tagId}`)
+            .then(response => response.ok ? response.json() : Promise.reject('Network error'))
+            .then(data => {
+                loadingSpinner.style.display = 'none';
+                tradesCache[tagId] = data.trades;
+                displayTrades(data.trades, tradesContainer);
+            })
+            .catch(error => {
+                console.error('Error loading trades:', error);
+                loadingSpinner.style.display = 'none';
+                tradesContainer.innerHTML = `<div class="alert alert-danger">Error loading trades.</div>`;
+            });
+    }
+
+    function displayTrades(trades, container) {
+        if (!trades || trades.length === 0) {
+            container.innerHTML = `<div class="alert alert-info">No trades found with this tag.</div>`;
+            return;
+        }
+
+        let tradesHtml = `<h6 class="mb-2">Associated Trades (${trades.length})</h6>`;
+        trades.forEach(trade => {
+            // --- MODIFICATION HERE ---
+            // Use standard Bootstrap text color classes instead of custom ones
+            const pnlClass = trade.gross_pnl > 0 ? 'text-success' : (trade.gross_pnl < 0 ? 'text-danger' : 'text-secondary');
+            const pnlText = trade.gross_pnl !== null ? `$${trade.gross_pnl.toFixed(2)}` : 'Open';
+
+            tradesHtml += `
+                <a href="{{ url_for('trades.view_trade_detail', trade_id=0) }}".replace('0', '${trade.id}') class="text-decoration-none">
+                    <div class="trade-item">
+                        <div class="row align-items-center g-2">
+                            <div class="col-4"><strong>#${trade.id}</strong> <small class="text-muted">${trade.trade_date}</small></div>
+                            <div class="col-4"><span class="badge ${trade.direction === 'Long' ? 'bg-success-subtle text-success-emphasis' : 'bg-danger-subtle text-danger-emphasis'}">${trade.direction}</span> <strong>${trade.instrument}</strong></div>
+                            <div class="col-3 fw-bold ${pnlClass}">${pnlText}</div>
+                            <div class="col-1 text-end"><i class="fas fa-external-link-alt text-muted fa-sm"></i></div>
+                        </div>
+                    </div>
+                </a>
+            `;
+        });
+        container.innerHTML = tradesHtml;
+    }
+});
+</script>
+{% endblock %}

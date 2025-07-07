@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Error - {{ error_code }}{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-code">{{ error_code }}</div>
+    <h1 class="error-title">{{ error_title }}</h1>
+    <p class="error-description">{{ error_description }}</p>
+
+    {% if error_details %}
+    <div class="error-details">
+        <div class="error-details-header">Error Details</div>
+        <div class="error-details-content">
+            {% if error_type %}
+            <div class="error-detail-row">
+                <span class="error-detail-label">Type:</span>
+                <span class="error-detail-value">{{ error_type }}</span>
+            </div>
+            {% endif %}
+
+            {% if error_message %}
+            <div class="error-detail-row">
+                <span class="error-detail-label">Message:</span>
+                <span class="error-detail-value">{{ error_message }}</span>
+            </div>
+            {% endif %}
+
+            {% if request_path %}
+            <div class="error-detail-row">
+                <span class="error-detail-label">Path:</span>
+                <span class="error-detail-value">{{ request_path }}</span>
+            </div>
+            {% endif %}
+
+            {% if request_method %}
+            <div class="error-detail-row">
+                <span class="error-detail-label">Method:</span>
+                <span class="error-detail-value">{{ request_method }}</span>
+            </div>
+            {% endif %}
+
+            {% if timestamp %}
+            <div class="error-detail-row">
+                <span class="error-detail-label">Time:</span>
+                <span class="error-detail-value">{{ timestamp }}</span>
+            </div>
+            {% endif %}
+
+            {% if error_id %}
+            <div class="error-detail-row">
+                <span class="error-detail-label">Error ID:</span>
+                <span class="error-detail-value">{{ error_id }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="error-actions">
+        <a href="{{ url_for('main.index') }}" class="btn">
+            <span class="icon">🏠</span> Go to Homepage
+        </a>
+
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('main.index') }}" class="btn">
+            <span class="icon">📊</span> Go to Dashboard
+        </a>
+        {% endif %}
+
+        <button class="btn" onclick="window.history.back()">
+            <span class="icon">↩️</span> Go Back
+        </button>
+    </div>
+
+    {% if support_info %}
+    <div class="support-info">
+        <p>If you need assistance, please contact our support team:</p>
+        <p>
+            <strong>Email:</strong> <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+            {% if support_phone %}
+            <br><strong>Phone:</strong> {{ support_phone }}
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+
+{% endblock %}

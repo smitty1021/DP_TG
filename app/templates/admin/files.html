@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}File Management - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="text-primary mb-1"><i class="fas fa-folder-open me-2"></i>File Management</h2>
+            <p class="text-muted mb-0">Manage all uploaded files across the application.</p>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon-lg text-primary mb-2"><i class="fas fa-file-alt"></i></div>
+                    <h3 class="card-title mb-1">{{ total_files }}</h3>
+                    <p class="card-text text-muted">Total Files</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon-lg text-info mb-2"><i class="fas fa-database"></i></div>
+                    <h3 class="card-title mb-1">{{ total_size_display }}</h3>
+                    <p class="card-text text-muted">Total Storage Used</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon-lg text-success mb-2"><i class="fas fa-users"></i></div>
+                    <h3 class="card-title mb-1">{{ unique_users }}</h3>
+                    <p class="card-text text-muted">Users with Files</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon-lg text-danger mb-2"><i class="fas fa-exclamation-triangle"></i></div>
+                    <h3 class="card-title mb-1">{{ flagged_files }}</h3>
+                    <p class="card-text text-muted">Flagged Files</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0"><i class="fas fa-list-ul me-2"></i>File Explorer</h5>
+            <div class="d-flex align-items-center">
+                <input type="text" class="form-control form-control-sm me-2" id="fileSearch" placeholder="Search files or users...">
+                <div class="btn-group btn-group-sm">
+                    <button id="bulkDeleteBtn" type="button" class="btn btn-outline-danger"><i class="fas fa-trash me-1"></i>Delete Selected</button>
+                    <button id="bulkDownloadBtn" type="button" class="btn btn-outline-info"><i class="fas fa-download me-1"></i>Download Selected</button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0" id="filesTable">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 50px;"><input class="form-check-input" type="checkbox" id="selectAllFiles"></th>
+                            <th>Filename</th>
+                            <th>Type</th>
+                            <th>Size</th>
+                            <th>Uploaded By</th>
+                            <th>Upload Date</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in files %}
+                        <tr id="file-row-{{ file.id }}">
+                            <td class="text-center"><input class="form-check-input file-select" type="checkbox" value="{{ file.id }}"></td>
+                            <td><strong>{{ file.filename }}</strong></td>
+                            <td><span class="badge rounded-pill {{ file.type_class|default('bg-secondary') }}">{{ file.type }}</span></td>
+                            <td>{{ file.size_display }}</td>
+                            <td>
+                                <a href="{{ url_for('admin.admin_edit_user', user_id=file.user.id) }}" class="text-decoration-none">{{ file.user.username }}</a>
+                            </td>
+                            <td>{{ file.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td class="text-center">
+                                <a href="{{ url_for('files.download_file', file_id=file.id) }}" class="btn btn-xs btn-outline-primary" title="Download"><i class="fas fa-download"></i></a>
+                                <a href="#" class="btn btn-xs btn-outline-info" title="Preview (Soon)" disabled><i class="fas fa-eye"></i></a>
+                                <button class="btn btn-xs btn-outline-danger delete-file-btn" data-id="{{ file.id }}" data-filename="{{ file.filename }}" title="Delete"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-center">
+             {% if pagination %}
+                <nav aria-label="File navigation">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('admin.manage_files', page=pagination.prev_num) if pagination.has_prev else '#' }}">Previous</a>
+                        </li>
+                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('admin.manage_files', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('admin.manage_files', page=pagination.next_num) if pagination.has_next else '#' }}">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* Small helper style for icons in stat cards */
+.stat-icon-lg {
+    font-size: 2.5rem;
+    opacity: 0.7;
+}
+.btn-xs {
+    --bs-btn-padding-y: .1rem;
+    --bs-btn-padding-x: .4rem;
+    --bs-btn-font-size: .75rem;
+}
+</style>
+{% endblock %}
+
+
+{% block scripts_extra %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Table Checkbox Logic ---
+    const selectAllCheckbox = document.getElementById('selectAllFiles');
+    const fileCheckboxes = document.querySelectorAll('.file-select');
+
+    selectAllCheckbox?.addEventListener('change', function() {
+        fileCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+    });
+
+    // --- Single File Deletion Logic ---
+    document.querySelectorAll('.delete-file-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const fileId = this.dataset.id;
+            const filename = this.dataset.filename;
+
+            showCustomConfirmation({ // GLOBAL MODAL
+                title: 'Confirm Deletion',
+                message: `Are you sure you want to permanently delete the file: <strong>${filename}</strong>? This action cannot be undone.`,
+                confirmText: 'Delete File',
+                confirmClass: 'btn-danger',
+                icon: 'exclamation-triangle',
+                onConfirm: () => {
+                    performDelete(fileId);
+                }
+            });
+        });
+    });
+
+    function performDelete(fileId) {
+        // This assumes your delete route is set up for POST requests.
+        // It's better to use POST for deletion to prevent accidental deletion via URL.
+        fetch(`/admin/files/${fileId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const row = document.getElementById(`file-row-${fileId}`);
+                row?.remove();
+                showSuccess(data.message || 'File deleted successfully.'); // GLOBAL NOTIFICATION
+            } else {
+                showError(data.message || 'An error occurred.'); // GLOBAL NOTIFICATION
+            }
+        })
+        .catch(error => {
+            console.error('Deletion Error:', error);
+            showError('An unexpected network error occurred.'); // GLOBAL NOTIFICATION
+        });
+    }
+
+    // --- Live Search Logic ---
+    const searchInput = document.getElementById('fileSearch');
+    searchInput?.addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#filesTable tbody tr');
+        rows.forEach(row => {
+            const textContent = row.textContent.toLowerCase();
+            row.style.display = textContent.includes(searchTerm) ? '' : 'none';
+        });
+    });
+});
+</script>
+{% endblock %}

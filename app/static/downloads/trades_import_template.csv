@@ -1,0 +1,2 @@
+Date (Req: YYYY-MM-DD),Instrument (Req),Direction (Req),Entry Time 1 (Req: HH:MM),Entry Contracts 1 (Req),Entry Price 1 (Req),Exit Time 1 (Req: HH:MM),Exit Contracts 1 (Req),Exit Price 1 (Req),Trading Model,Tags,How Closed,Initial SL,Terminus Target,MAE,MFE,Trade Notes,Entry Time 2 (HH:MM),Entry Contracts 2,Entry Price 2,Exit Time 2 (HH:MM),Exit Contracts 2,Exit Price 2
+2025-06-09,NQ,Long,09:45,2,18500.25,10:30,2,18550.75,My Breakout Model,P12-1A,TP,18485.00,18550.00,5.25,50.5,Breakout of morning high with good volume confirmation.,,,,

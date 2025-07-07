@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ title }} - Admin - Trading Journal
+{% endblock %}
+
+{% block head_extra %}
+<style>
+    .tag-category-section {
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .tag-category-header {
+        background-color: var(--bs-secondary-bg);
+        color: var(--bs-body-color);
+        border-bottom: 1px solid var(--bs-border-color);
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .tag-category-body {
+        padding: 1rem;
+    }
+
+    .tag-item {
+        display: inline-flex;
+        align-items: center;
+        background-color: var(--bs-primary-bg-subtle);
+        border: 1px solid var(--bs-primary-border-subtle);
+        border-radius: 1rem;
+        padding: 0.25rem 0.75rem;
+        margin: 0.25rem;
+        font-size: 0.875rem;
+        position: relative;
+        color: var(--bs-primary-text-emphasis);
+        transition: all 0.2s ease;
+    }
+
+    .tag-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .tag-item.inactive {
+        background-color: var(--bs-secondary-bg);
+        border-color: var(--bs-secondary-border-subtle);
+        color: var(--bs-secondary-text-emphasis);
+        opacity: 0.6;
+        display: none; /* Hidden by default */
+    }
+
+    .tag-item.inactive.show-inactive {
+        display: inline-flex; /* Show when toggle is active */
+    }
+
+    .tag-actions {
+        margin-left: 0.5rem;
+        display: none;
+    }
+
+    .tag-item:hover .tag-actions {
+        display: inline-flex;
+    }
+
+    /* Updated action button styling - using the same classes as trades list */
+    .tag-actions .action-btn {
+        background: none !important;
+        border: none !important;
+        padding: 0.125rem !important;
+        margin: 0 0.125rem !important;
+        cursor: pointer !important;
+        opacity: 0.7 !important;
+        font-size: 0.75rem !important;
+        transition: all 0.15s ease-in-out !important;
+        background-color: transparent !important;
+        border-radius: 0.25rem !important;
+        min-height: auto !important;
+        width: auto !important;
+        height: auto !important;
+    }
+
+    .tag-actions .action-btn:hover {
+        opacity: 1 !important;
+        transform: translateY(-1px) !important;
+        background-color: var(--bs-secondary-bg-subtle) !important;
+    }
+
+    .tag-actions .action-btn.btn-outline-warning {
+        color: #ffc107 !important;
+    }
+
+    .tag-actions .action-btn.btn-outline-warning:hover {
+        color: #000 !important;
+        background-color: #ffc107 !important;
+    }
+
+    .tag-actions .action-btn.btn-outline-danger {
+        color: #dc3545 !important;
+    }
+
+    .tag-actions .action-btn.btn-outline-danger:hover {
+        color: #fff !important;
+        background-color: #dc3545 !important;
+    }
+
+    /* Dark theme adjustments */
+    html[data-bs-theme="dark"] .tag-actions .action-btn.btn-outline-warning {
+        color: #ffda6a !important;
+    }
+    html[data-bs-theme="dark"] .tag-actions .action-btn.btn-outline-warning:hover {
+        color: #000 !important;
+        background-color: #ffda6a !important;
+    }
+
+    html[data-bs-theme="dark"] .tag-actions .action-btn.btn-outline-danger {
+        color: #ea868f !important;
+    }
+    html[data-bs-theme="dark"] .tag-actions .action-btn.btn-outline-danger:hover {
+        color: #000 !important;
+        background-color: #ea868f !important;
+    }
+
+    .add-tag-form {
+        background: linear-gradient(135deg, var(--bs-light-bg-subtle), var(--bs-secondary-bg-subtle));
+        border: 2px dashed var(--bs-border-color);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-top: 1rem;
+        display: none;
+    }
+
+    .add-tag-form.show {
+        display: block;
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bulk-actions-toolbar {
+        background-color: var(--bs-tertiary-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: none;
+    }
+
+    .bulk-actions-toolbar.show {
+        display: block;
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row mb-3 align-items-center">
+        <div class="col">
+            <h1 class="display-6"><i class="fas fa-tags me-2"></i>Manage Default Trade Tags</h1>
+            <p class="lead">Configure system-wide default tags available to all users.</p>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-outline-primary" onclick="showAddTagForm()">
+                <i class="fas fa-plus me-1"></i> Add New Tag
+            </button>
+            <button type="button" class="btn btn-outline-warning" onclick="toggleBulkActions()">
+                <i class="fas fa-check-square me-1"></i> Bulk Actions
+            </button>
+
+            <a href="{{ url_for('admin.system_config') }}" class="btn btn-outline-success">
+                <i class="fas fa-arrow-left me-1"></i> Back to Config
+            </a>
+        </div>
+    </div>
+
+    {# Bulk Actions Toolbar #}
+    <div id="bulk-actions-toolbar" class="bulk-actions-toolbar">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span class="fw-bold">Bulk Actions:</span>
+                <span id="selected-count" class="text-muted ms-2">0 tags selected</span>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-warning btn-sm" onclick="bulkToggleStatus()">
+                    <i class="fas fa-toggle-on me-1"></i> Toggle Status
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="bulkDeleteTags()">
+                    <i class="fas fa-trash me-1"></i> Delete Selected
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleBulkActions()">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {# Add Tag Form #}
+    <form id="add-tag-form" class="add-tag-form" method="POST" action="{{ url_for('admin.create_default_tag') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <h5><i class="fas fa-plus me-2"></i>Add New Default Tag</h5>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label for="new-tag-name" class="form-label">Tag Name</label>
+                <input type="text" class="form-control" id="new-tag-name" name="name" placeholder="Enter tag name...">
+            </div>
+            <div class="col-md-3">
+                <label for="new-tag-category" class="form-label">Category</label>
+                <select class="form-select" id="new-tag-category" name="category">
+                    {% for category in TagCategory %}
+                    <option value="{{ category.name }}">{{ category.value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="new-tag-color" class="form-label">Color Category</label>
+                <select class="form-select" id="new-tag-color" name="color_category">
+                    <option value="neutral">Neutral (Blue)</option>
+                    <option value="good">Positive (Green)</option>
+                    <option value="bad">Negative (Red)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="new-tag-active" class="form-label">Status</label>
+                <select class="form-select" id="new-tag-active" name="is_active">
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-success me-2">
+                    <i class="fas fa-save me-1"></i> Create
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="hideAddTagForm()">Cancel</button>
+            </div>
+        </div>
+    </form>
+
+    {# Tags organized by category #}
+    {% for category_display, tags in tags_by_category.items() %}
+    <div class="tag-category-section">
+        <div class="tag-category-header">
+            <span><i class="fas fa-folder me-2"></i>{{ category_display }}</span>
+            <span class="badge bg-secondary">{{ tags|length }} tags</span>
+        </div>
+        {% set category_id = {
+            'Setup & Strategy': 'SETUP_STRATEGY',
+            'Market Conditions': 'MARKET_CONDITIONS',
+            'Execution & Management': 'EXECUTION_MANAGEMENT',
+            'Psychological & Emotional Factors': 'PSYCHOLOGICAL_EMOTIONAL'
+        }[category_display] %}
+        <div class="tag-category-body" id="category-{{ category_id }}">
+            {% if tags %}
+                {% for tag in tags %}
+                <div class="tag-item {% if not tag.is_active %}inactive{% endif %} {{ tag|tag_color }}" data-tag-id="{{ tag.id }}">
+                    <input type="checkbox" class="form-check-input me-2 tag-checkbox" style="display: none;" data-tag-id="{{ tag.id }}">
+                    <span class="tag-name">{{ tag.name }}</span>
+                    {% if not tag.is_active %}
+                    <span class="badge bg-secondary ms-2" style="font-size: 0.6rem;">INACTIVE</span>
+                    {% endif %}
+                    <div class="tag-actions">
+                        <button type="button" class="action-btn btn-outline-warning"
+                                onclick="editTag({{ tag.id }}, '{{ tag.name }}', '{{ tag.category.name }}', {{ 'true' if tag.is_active else 'false' }}, '{{ tag.color_category or 'neutral' }}')"
+                                title="Edit Tag">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="action-btn btn-outline-danger"
+                                onclick="deleteTag({{ tag.id }}, '{{ tag.name }}')"
+                                title="Delete Tag">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted fst-italic">No tags in this category yet.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    {# Quick Actions #}
+    <div class="row mt-4">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin.seed_default_tags') }}" id="seed-default-tags-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="button" class="btn btn-outline-primary" onclick="confirmSeedDefaultTags()">
+                    <i class="fas fa-seedling me-1"></i> Recreate Default Tags
+                </button>
+            </form>
+            <small class="text-muted d-block mt-2">
+                This will add any missing default tags to the system.
+            </small>
+        </div>
+    </div>
+</div>
+
+{# Edit Tag Modal #}
+<div class="modal fade" id="editTagModal" tabindex="-1" aria-labelledby="editTagModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTagModalLabel">Edit Default Tag</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-tag-form">
+                    <input type="hidden" id="edit-tag-id">
+                    <div class="mb-3">
+                        <label for="edit-tag-name" class="form-label">Tag Name</label>
+                        <input type="text" class="form-control" id="edit-tag-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-tag-category" class="form-label">Category</label>
+                        <select class="form-select" id="edit-tag-category" required>
+                            {% for category in TagCategory %}
+                            <option value="{{ category.name }}">{{ category.value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-tag-active" class="form-label">Status</label>
+                        <select class="form-select" id="edit-tag-active">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-tag-color" class="form-label">Color Category</label>
+                        <select class="form-select" id="edit-tag-color">
+                            <option value="neutral">Neutral (Blue) - Informational</option>
+                            <option value="good">Positive (Green) - Positive Performance</option>
+                            <option value="bad">Negative (Red) - Negative Performance</option>
+                        </select>
+                        <small class="form-text text-muted">Set the color based on performance impact</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateTag()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+{# These two lines assume your base template loads global JS. If not, ensure they are loaded. #}
+{# <script src="{{ url_for('static', filename='js/notifications.js') }}"></script> #}
+{# <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script> #}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let bulkActionsMode = false;
+
+    // --- UI Toggling Functions ---
+    const addTagForm = document.getElementById('add-tag-form');
+    const bulkActionsToolbar = document.getElementById('bulk-actions-toolbar');
+    const tagCheckboxes = document.querySelectorAll('.tag-checkbox');
+    const selectedCountSpan = document.getElementById('selected-count');
+
+    window.showAddTagForm = () => {
+        addTagForm.classList.add('show');
+        document.getElementById('new-tag-name').focus();
+    };
+
+    window.hideAddTagForm = () => {
+        addTagForm.classList.remove('show');
+        addTagForm.querySelector('form')?.reset(); // Assuming the form is inside
+    };
+
+    window.toggleBulkActions = () => {
+        bulkActionsMode = !bulkActionsMode;
+        bulkActionsToolbar.classList.toggle('show', bulkActionsMode);
+        tagCheckboxes.forEach(cb => {
+            cb.style.display = bulkActionsMode ? 'inline-block' : 'none';
+            if (!bulkActionsMode) {
+                cb.checked = false;
+            }
+        });
+        updateSelectedCount();
+    };
+
+    function updateSelectedCount() {
+        const selectedCount = document.querySelectorAll('.tag-checkbox:checked').length;
+        if (selectedCountSpan) {
+            selectedCountSpan.textContent = `${selectedCount} tags selected`;
+        }
+    }
+
+    document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('tag-checkbox')) {
+            updateSelectedCount();
+        }
+    });
+
+    // --- Main CRUD and Action Functions ---
+
+    // EDIT Tag (Launches Modal)
+    window.editTag = (tagId, tagName, categoryName, isActive, colorCategory) => {
+        document.getElementById('edit-tag-id').value = tagId;
+        document.getElementById('edit-tag-name').value = tagName;
+        document.getElementById('edit-tag-category').value = categoryName;
+        document.getElementById('edit-tag-active').value = String(isActive);
+        document.getElementById('edit-tag-color').value = colorCategory || 'neutral';
+        const modal = new bootstrap.Modal(document.getElementById('editTagModal'));
+        modal.show();
+    };
+
+    // UPDATE Tag (From Modal)
+    window.updateTag = () => {
+        const tagId = document.getElementById('edit-tag-id').value;
+        const nameInput = document.getElementById('edit-tag-name');
+        const name = nameInput.value.trim();
+        if (!name) {
+            showError('Tag name cannot be empty.'); // GLOBAL NOTIFICATION
+            return;
+        }
+
+        const payload = {
+            name: name,
+            category: document.getElementById('edit-tag-category').value,
+            is_active: document.getElementById('edit-tag-active').value === 'true',
+            color_category: document.getElementById('edit-tag-color').value
+        };
+
+        const url = `{{ url_for("admin.edit_default_tag", tag_id=0) }}`.replace('0', tagId);
+        fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('editTagModal'));
+                modalInstance.hide();
+                showSuccess(`Tag "${data.tag.name}" updated.`); // GLOBAL NOTIFICATION
+                setTimeout(() => location.reload(), 500); // Reload to reflect changes
+            } else {
+                showError(data.message || 'Failed to update tag.'); // GLOBAL NOTIFICATION
+            }
+        })
+        .catch(err => {
+            console.error('Update Tag Error:', err);
+            showError('An unexpected error occurred.'); // GLOBAL NOTIFICATION
+        });
+    };
+
+    // DELETE Tag
+    window.deleteTag = (tagId, tagName) => {
+        showCustomConfirmation({ // GLOBAL MODAL
+            title: 'Confirm Deletion',
+            message: `Are you sure you want to permanently delete the tag "<strong>${tagName}</strong>"? This action cannot be undone.`,
+            confirmText: 'Delete Tag',
+            confirmClass: 'btn-danger',
+            icon: 'exclamation-triangle',
+            onConfirm: () => {
+                const url = `{{ url_for("admin.delete_default_tag", tag_id=0) }}`.replace('0', tagId);
+                fetch(url, {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': '{{ csrf_token() }}'}
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess(`Tag "${tagName}" was deleted.`); // GLOBAL NOTIFICATION
+                        const tagElement = document.querySelector(`.tag-item[data-tag-id='${tagId}']`);
+                        tagElement?.remove();
+                    } else {
+                        showError(data.message || 'Failed to delete tag.'); // GLOBAL NOTIFICATION
+                    }
+                })
+                .catch(err => {
+                    console.error('Delete Tag Error:', err);
+                    showError('An unexpected error occurred.'); // GLOBAL NOTIFICATION
+                });
+            }
+        });
+    };
+
+    // --- Bulk Actions ---
+    function performBulkAction(action, title, message, confirmClass, icon) {
+        const selectedIds = Array.from(document.querySelectorAll('.tag-checkbox:checked')).map(cb => cb.dataset.tagId);
+        if (selectedIds.length === 0) {
+            showError('Please select at least one tag to perform this action.');
+            return;
+        }
+
+        // Use your global confirmation modal
+        showCustomConfirmation({
+            title: title,
+            message: `${message} for <strong>${selectedIds.length}</strong> selected tags?`,
+            confirmText: `Confirm (${selectedIds.length})`,
+            confirmClass: confirmClass,
+            icon: icon,
+            onConfirm: () => {
+                // Create a new form element in memory
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ url_for("admin.bulk_default_tags_actions") }}';
+
+                // Add the CSRF token
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                // Note: This assumes csrf_token() is available in the template's context.
+                // If not, you may need to fetch it from a meta tag.
+                csrfInput.value = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+                form.appendChild(csrfInput);
+
+                // Add the action type
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = action;
+                form.appendChild(actionInput);
+
+                // Add each selected tag ID as a hidden input
+                selectedIds.forEach(id => {
+                    const idInput = document.createElement('input');
+                    idInput.type = 'hidden';
+                    idInput.name = 'tag_ids'; // Use the same name for all IDs
+                    idInput.value = id;
+                    form.appendChild(idInput);
+                });
+
+                // Append the form to the body, submit it, then remove it
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+            }
+        });
+    }
+
+    window.bulkToggleStatus = () => performBulkAction(
+        'toggle_status', 'Toggle Status', 'Are you sure you want to toggle the status', 'btn-warning', 'toggle-on'
+    );
+
+    window.bulkDeleteTags = () => performBulkAction(
+        'delete_selected', 'Bulk Delete Tags', 'Are you sure you want to permanently delete', 'btn-danger', 'trash'
+    );
+
+    // --- Seed Default Tags ---
+    window.confirmSeedDefaultTags = () => {
+        showCustomConfirmation({ // GLOBAL MODAL
+            title: 'Recreate Default Tags',
+            message: 'This will add any missing default tags based on the system configuration. This action cannot be undone.',
+            confirmText: 'Recreate Tags',
+            confirmClass: 'btn-primary',
+            icon: 'seedling',
+            onConfirm: () => {
+                document.getElementById('seed-default-tags-form').submit();
+            }
+        });
+    };
+});
+</script>
+{% endblock %}

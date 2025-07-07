@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% import "macros/_form_helpers.html" as forms %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ title }}</h1>
+    <!-- FIX: Change the form action to edit_tag and button text to "Update Tag" -->
+    <form method="POST" action="{{ url_for('tags.edit_tag', tag_id=tag.id) }}" novalidate>
+        {{ form.hidden_tag() }}
+        {{ forms.render_field(form.name) }}
+        <button type="submit" class="btn btn-primary">Update Tag</button>
+        <a href="{{ url_for('tags.tags_list') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,709 @@
+{% extends "base.html" %}
+{% import "macros/_form_helpers.html" as forms %}
+{% import "macros/_pagination_helpers.html" as pagi %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block head_extra %}
+{{ super() }}
+<style>
+    .journal-section {
+        border: 1px solid var(--bs-border-color);
+        padding: 20px;
+        margin-bottom: 25px;
+        border-radius: 0.375rem;
+        background-color: var(--bs-body-bg);
+    }
+    .journal-section h3 {
+        color: var(--bs-body-color);
+        margin-top: 0;
+        border-bottom: 1px solid var(--bs-border-color);
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        font-size: 1.5em;
+    }
+    .journal-section h4 {
+        font-size: 1.2em;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: var(--bs-body-color);
+    }
+    .grid-layout-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+    .grid-layout-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+
+    .quill-editor-container {
+        height: 200px;
+        background-color: var(--bs-body-bg);
+        color: var(--bs-body-color);
+        border: 1px solid var(--bs-border-color);
+        border-radius: .25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    [data-bs-theme="dark"] .ql-snow .ql-stroke { stroke: #adb5bd !important; }
+    [data-bs-theme="dark"] .ql-snow .ql-fill,
+    [data-bs-theme="dark"] .ql-snow .ql-picker-label::before { fill: #adb5bd !important; }
+    [data-bs-theme="dark"] .ql-snow .ql-picker-label { color: #adb5bd !important; }
+    [data-bs-theme="dark"] .ql-snow .ql-toolbar button:hover .ql-stroke,
+    [data-bs-theme="dark"] .ql-snow .ql-toolbar button:hover .ql-fill { stroke: #e9ecef !important; fill: #e9ecef !important; }
+    [data-bs-theme="dark"] .ql-snow .ql-toolbar button.ql-active .ql-stroke,
+    [data-bs-theme="dark"] .ql-snow .ql-toolbar button.ql-active .ql-fill { stroke: var(--bs-primary) !important; fill: var(--bs-primary) !important; }
+    [data-bs-theme="dark"] .ql-snow .ql-picker-options {
+        background-color: var(--bs-dark-bg-subtle, #343a40) !important;
+        color: var(--bs-body-color) !important;
+        border-color: var(--bs-border-color) !important;
+    }
+    [data-bs-theme="dark"] .ql-snow .ql-picker-options .ql-picker-item:hover {
+        background-color: var(--bs-primary-bg-subtle, #3b3f44) !important;
+        color: var(--bs-primary) !important;
+    }
+    [data-bs-theme="dark"] .ql-editor.ql-blank::before {
+        color: rgba(255, 255, 255, 0.4) !important;
+    }
+
+    .existing-image-preview { max-width: 100px; max-height: 100px; margin-right: 10px; object-fit: cover; }
+    .image-delete-item { display: flex; align-items: center; margin-bottom: 0.5rem; }
+    .trades-for-day-table th, .trades-for-day-table td { font-size: 0.9rem; padding: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block page_header %}
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <h1 class="mb-0">{{ title }}</h1>
+        <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+            <a href="{{ url_for('journal.manage_daily_journal', date_str=prev_day_str) }}" class="btn btn-outline-secondary btn-sm" title="Previous Day"><i class="fas fa-chevron-left"></i></a>
+            <form method="GET" action="#" id="datePickerForm" class="d-inline-block mb-0">
+                 <input type="date" name="date_str_picker" id="date_str_picker" value="{{ journal_date.strftime('%Y-%m-%d') }}" class="form-control form-control-sm" style="width: auto; display: inline-block;">
+            </form>
+            <a href="{{ url_for('journal.manage_daily_journal', date_str=next_day_str) }}" class="btn btn-outline-secondary btn-sm" title="Next Day"><i class="fas fa-chevron-right"></i></a>
+            {% if journal_date.strftime('%Y-%m-%d') != today_str %}
+                <a href="{{ url_for('journal.manage_daily_journal') }}" class="btn btn-outline-primary btn-sm ms-2">Go to Today</a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+<form method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    {{ form.journal_date(class="d-none", value=journal_date.strftime('%Y-%m-%d')) }}
+
+    {# Part 1: Pre-market Preparation #}
+    <div class="journal-section">
+        <h3><i class="fas fa-clipboard-check me-2"></i>1. Pre-Market Preparation</h3> {# ADDED icon #}
+        <div class="grid-layout-2">
+            {{ forms.render_field(form.key_events_today, input_class="form-control", rows="3") }}
+            {{ forms.render_field(form.key_tasks_today, input_class="form-control", rows="3") }}
+        </div>
+        {# MODIFIED: Changed back to standard textareas #}
+        {{ forms.render_field(form.on_my_mind, input_class="form-control", rows="4") }}
+        {{ forms.render_field(form.important_focus_today, input_class="form-control", rows="4") }}
+
+        <h4>Mental State Ratings (1-5)</h4>
+        <div class="grid-layout-4">
+            {{ forms.render_field(form.mental_feeling_rating, input_class="form-select") }}
+            {{ forms.render_field(form.mental_mind_rating, input_class="form-select") }}
+            {{ forms.render_field(form.mental_energy_rating, input_class="form-select") }}
+            {{ forms.render_field(form.mental_motivation_rating, input_class="form-select") }}
+        </div>
+    </div>
+
+    {# Part 2: Pre-market Analysis (P12, 4-Steps, Sessions, HOD/LOD, ADR) #}
+    <div class="journal-section">
+        <h3><i class="fas fa-chart-line me-2"></i>2. Pre-Market Analysis</h3>
+
+        {# P12 Scenario Selection #}
+        <div class="mb-4">
+            <div class="row">
+                <div class="col-md-8">
+                    {{ form.p12_scenario_id.label(class="form-label fw-semibold") }}
+                    {{ form.p12_scenario_id(class="form-select", id="p12_scenario_select") }}
+                    {% if form.p12_scenario_id.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.p12_scenario_id.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="form-text">{{ form.p12_scenario_id.description }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Quick Actions</label>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-info btn-sm" id="refreshP12Scenarios">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="clearP12Selection">
+                            <i class="fas fa-times me-1"></i>Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# P12 Scenario Details Display - Populated via JavaScript #}
+        <div id="p12ScenarioDetails" class="card mb-4" style="display: none;">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <span id="scenarioTitle">Scenario Details</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {# Left Column - Scenario Information #}
+                    <div class="col-md-8">
+                        <div id="scenarioDescription" class="mb-3"></div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-2">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>Alert Criteria
+                                </h6>
+                                <div id="scenarioAlertCriteria" class="mb-3"></div>
+
+                                <h6 class="text-success mb-2">
+                                    <i class="fas fa-check-circle me-1"></i>Confirmation Criteria
+                                </h6>
+                                <div id="scenarioConfirmationCriteria" class="mb-3"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-info mb-2">
+                                    <i class="fas fa-crosshairs me-1"></i>Entry Strategy
+                                </h6>
+                                <div id="scenarioEntryStrategy" class="mb-3"></div>
+
+                                <h6 class="text-warning mb-2">
+                                    <i class="fas fa-bullseye me-1"></i>Typical Targets
+                                </h6>
+                                <div id="scenarioTypicalTargets" class="mb-3"></div>
+                            </div>
+                        </div>
+
+                        {# HOD/LOD Implication #}
+                        <div class="alert alert-secondary mb-3">
+                            <h6 class="alert-heading mb-2">
+                                <i class="fas fa-chart-bar me-1"></i>HOD/LOD Implication
+                            </h6>
+                            <div id="scenarioHodLodImplication"></div>
+                        </div>
+
+                        {# Trading Model Recommendations #}
+                        <div id="modelRecommendations" class="row">
+                            <div class="col-md-6">
+                                <div class="card border-success">
+                                    <div class="card-header bg-light-success">
+                                        <h6 class="card-title mb-0 text-success">
+                                            <i class="fas fa-play me-1"></i>Activate These Models
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="modelsToActivate" class="list-group list-group-flush"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-danger">
+                                    <div class="card-header bg-light-danger">
+                                        <h6 class="card-title mb-0 text-danger">
+                                            <i class="fas fa-stop me-1"></i>Avoid These Models
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="modelsToAvoid" class="list-group list-group-flush"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# Risk Guidance & Additional Info #}
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div id="riskGuidanceSection" style="display: none;">
+                                    <h6 class="text-danger mb-2">
+                                        <i class="fas fa-shield-alt me-1"></i>Risk Guidance
+                                    </h6>
+                                    <div id="riskGuidance" class="alert alert-warning"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="preferredTimeframesSection" style="display: none;">
+                                    <h6 class="text-info mb-2">
+                                        <i class="fas fa-clock me-1"></i>Preferred Timeframes
+                                    </h6>
+                                    <div id="preferredTimeframes"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="keyConsiderationsSection" class="mt-3" style="display: none;">
+                            <h6 class="text-secondary mb-2">
+                                <i class="fas fa-lightbulb me-1"></i>Key Considerations
+                            </h6>
+                            <div id="keyConsiderations" class="alert alert-info"></div>
+                        </div>
+                    </div>
+
+                    {# Right Column - Scenario Image #}
+                    <div class="col-md-4">
+                        <div id="scenarioImageContainer" style="display: none;">
+                            <h6 class="text-secondary mb-2">
+                                <i class="fas fa-image me-1"></i>Scenario Visual
+                            </h6>
+                            <img id="scenarioImage" class="img-fluid rounded border" alt="Scenario Visual" />
+                        </div>
+
+                        {# Scenario Stats #}
+                        <div class="card border-info mt-3">
+                            <div class="card-header bg-light">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-chart-pie me-1"></i>Usage Stats
+                                </h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="text-muted small">Times Selected</div>
+                                        <div id="scenarioUsageCount" class="h5 text-primary">-</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-muted small">Directional Bias</div>
+                                        <div id="scenarioDirectionalBias" class="h6">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# P12 Levels Input #}
+        <div class="row">
+            <div class="col-md-4">
+                <div class="mb-3">
+                    {{ form.p12_high.label(class="form-label") }}
+                    {{ form.p12_high(class="form-control") }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    {{ form.p12_mid.label(class="form-label") }}
+                    {{ form.p12_mid(class="form-control") }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    {{ form.p12_low.label(class="form-label") }}
+                    {{ form.p12_low(class="form-control") }}
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            {{ form.p12_notes.label(class="form-label") }}
+            {{ form.p12_notes(class="form-control", rows="3") }}
+            <div class="form-text">{{ form.p12_notes.description }}</div>
+        </div>
+        <hr class="my-4">
+        <h4>4-Step Process & Variables</h4>
+        <p class="text-muted">Enter data from your Daily Profiler tool here.</p>
+
+        <h5>Step 1 & 2: HOD/LOD & Session Variables</h5>
+        <div class="row">
+            <div class="col-md-3"><h6>Asia</h6>
+                {{ forms.render_field(form.asia_direction, input_class="form-select form-select-sm") }}
+                {{ forms.render_field(form.asia_session_status, input_class="form-select form-select-sm") }}
+            </div>
+            <div class="col-md-3"><h6>London</h6>
+                {{ forms.render_field(form.london_direction, input_class="form-select form-select-sm") }}
+                {{ forms.render_field(form.london_session_status, input_class="form-select form-select-sm") }}
+            </div>
+            <div class="col-md-3"><h6>NY1</h6>
+                {{ forms.render_field(form.ny1_direction, input_class="form-select form-select-sm") }}
+                {{ forms.render_field(form.ny1_session_status, input_class="form-select form-select-sm") }}
+            </div>
+            <div class="col-md-3"><h6>NY2</h6>
+                {{ forms.render_field(form.ny2_direction, input_class="form-select form-select-sm") }}
+                {{ forms.render_field(form.ny2_session_status, input_class="form-select form-select-sm") }}
+            </div>
+        </div>
+        <h6 class="mt-3">NY1 HOD/LOD Projections (Example)</h6>
+        {{ forms.render_field(form.wg_ny1_lt_notes, input_class="form-control", rows="2") }}
+        <div class="row">
+            <div class="col-md-3">{{ forms.render_field(form.wg_ny1_lt_hod_pct_l, input_class="form-control form-control-sm") }}</div>
+            <div class="col-md-3">{{ forms.render_field(form.wg_ny1_lt_hod_pct_h, input_class="form-control form-control-sm") }}</div>
+            <div class="col-md-3">{{ forms.render_field(form.wg_ny1_lt_hod_ts, input_class="form-control form-control-sm", type="time") }}</div>
+            <div class="col-md-3">{{ forms.render_field(form.wg_ny1_lt_hod_te, input_class="form-control form-control-sm", type="time") }}</div>
+        </div>
+
+        <h5 class="mt-4">Step 3: Realistic Expectance</h5>
+        {{ forms.render_field(form.adr_10_day_median_range_value, input_class="form-control") }}
+        {{ forms.render_field(form.realistic_expectance_notes, input_class="quill-target", rows="4") }} {# Kept as RTE #}
+
+        <h5 class="mt-4">Step 4: Engagement Structure</h5>
+        {{ forms.render_field(form.engagement_structure_notes, input_class="quill-target", rows="4") }} {# Kept as RTE #}
+
+        <hr class="my-4">
+        <h4>Key Levels & News Analysis</h4>
+        {{ forms.render_field(form.key_levels_notes, input_class="quill-target", rows="3") }}
+        {{ forms.render_field(form.pre_market_news_notes, input_class="quill-target", rows="3") }}
+
+        <h4>Pre-Market Screenshots</h4>
+        {{ forms.render_field(form.pre_market_screenshots, input_class="form-control") }}
+        {# Logic to display existing pre-market images #}
+    </div>
+
+    {# Part 3: Daily Trading Log #}
+    <div class="journal-section">
+        <h3><i class="fas fa-clipboard-list me-2"></i>3. Daily Trading Log</h3>
+        {% if trades_for_day %}
+        <p><strong>Cumulative PNL for {{ journal_date|format_date('%d-%b-%Y') }}:
+            <span class="{{ 'text-success' if cumulative_daily_pnl >= 0 else 'text-danger' }}">
+                ${{ "%.2f"|format(cumulative_daily_pnl) }}
+            </span>
+        </strong></p>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover trades-for-day-table">
+                <thead>
+                    <tr><th>Time</th><th>Instrument</th><th>Direction</th><th>Contracts</th><th>Avg Entry</th><th>Avg Exit</th><th>P&L</th><th>R</th></tr>
+                </thead>
+                <tbody>
+                    {% for trade in trades_for_day %}
+                    <tr>
+                        <td>{{ trade.entries.first().entry_time.strftime('%H:%M') if trade.entries.first() and trade.entries.first().entry_time else 'N/A' }}</td>
+                        <td>{{ trade.instrument }}</td>
+                        <td><span class="badge {% if trade.direction == 'Long' %}bg-success{% elif trade.direction == 'Short' %}bg-danger{% endif %}">{{ trade.direction }}</span></td>
+                        <td>{{ trade.total_contracts_entered }}</td>
+                        <td>{{ "%.2f"|format(trade.average_entry_price) if trade.average_entry_price is not none else '' }}</td>
+                        <td>{{ "%.2f"|format(trade.average_exit_price) if trade.average_exit_price is not none else '' }}</td>
+                        <td class="{{ 'text-success' if trade.pnl > 0 else ('text-danger' if trade.pnl < 0 else '') }}">{{ "$%.2f"|format(trade.pnl) }}</td>
+                        <td>{% if trade.pnl_in_r is not none %}{{ "%.2f"|format(trade.pnl_in_r) }}R{% else %}N/A{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No trades logged for this day.</p>
+        {% endif %}
+    </div>
+
+    {# Part 4: Post Market Analysis #}
+    <div class="journal-section">
+        <h3><i class="fas fa-chart-area me-2"></i>4. Post-Market Analysis</h3>
+        {{ forms.render_field(form.market_observations, input_class="quill-target", rows="5") }}
+        {{ forms.render_field(form.self_observations, input_class="quill-target", rows="5") }}
+        <h4>End-of-Day Chart Screenshots</h4>
+        {{ forms.render_field(form.eod_chart_screenshots, input_class="form-control") }}
+        {# Logic to display existing EOD images #}
+    </div>
+
+    {# Part 5: Daily Review and Reflection #}
+    <div class="journal-section">
+        <h3><i class="fas fa-book-reader me-2"></i>5. Daily Review & Reflection</h3>
+        {# MODIFIED: Changed back to standard textareas #}
+        {{ forms.render_field(form.did_well_today, input_class="form-control", rows="3") }}
+        {{ forms.render_field(form.did_not_go_well_today, input_class="form-control", rows="3") }}
+        {{ forms.render_field(form.learned_today, input_class="form-control", rows="3") }}
+        {{ forms.render_field(form.improve_action_next_day, input_class="form-control", rows="3") }}
+
+        <h4 class="mt-4">Daily Psychological Scorecard Review (1-5)</h4>
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="grid-layout-4">
+                    {{ forms.render_field(form.review_psych_discipline_rating, input_class="form-select") }}
+                    {{ forms.render_field(form.review_psych_motivation_rating, input_class="form-select") }}
+                    {{ forms.render_field(form.review_psych_focus_rating, input_class="form-select") }}
+                    {{ forms.render_field(form.review_psych_mastery_rating, input_class="form-select") }}
+                    {{ forms.render_field(form.review_psych_composure_rating, input_class="form-select") }}
+                    {{ forms.render_field(form.review_psych_resilience_rating, input_class="form-select") }}
+                    {{ forms.render_field(form.review_psych_mind_rating, input_class="form-select") }}
+                    {{ forms.render_field(form.review_psych_energy_rating, input_class="form-select") }}
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="mt-3" style="max-width: 400px; margin: auto;">
+                    <canvas id="psychRadarChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 mb-4 text-center">
+        {{ form.submit(class="btn btn-primary btn-lg") }}
+         <a href="{{ url_for('journal.manage_daily_journal', date_str=journal_date.strftime('%Y-%m-%d')) }}" class="btn btn-outline-secondary btn-lg">Cancel Changes</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts_extra %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Quill Editor Initialization ---
+    // ... (rest of the script is the same, but we will modify the init calls)
+    const quillToolbarOptions = [
+        [{ 'header': [1, 2, false] }], ['bold', 'italic', 'underline'],
+        [{'list': 'ordered'}, {'list': 'bullet'}], ['link', 'image']
+    ];
+    let quillInstances = {};
+    function initializeQuillForField(formFieldId, placeholderText) {
+        // This function now replaces a textarea with a Quill editor
+        const formField = document.getElementById(formFieldId);
+        if (formField) {
+            formField.style.display = 'none'; // Hide the original textarea
+            const wrapper = formField.parentElement;
+            const editorDivId = formFieldId + '_editor';
+            const editorDiv = document.createElement('div');
+            editorDiv.id = editorDivId;
+            editorDiv.classList.add('quill-editor-container');
+            wrapper.insertBefore(editorDiv, formField);
+
+            quillInstances[formFieldId] = new Quill('#' + editorDivId, {
+                theme: 'snow', modules: { toolbar: quillToolbarOptions }, placeholder: placeholderText || 'Enter notes...'
+            });
+            const existingContent = formField.value;
+            if (existingContent) {
+                try { quillInstances[formFieldId].clipboard.dangerouslyPasteHTML(existingContent); }
+                catch (e) { quillInstances[formFieldId].setText(existingContent); }
+            }
+        }
+    }
+
+    // MODIFIED: Only initialize Quill on the fields that need it
+    // The fields you wanted as simple text inputs are no longer initialized here.
+    initializeQuillForField('p12_notes', '{{ form.p12_notes.render_kw.get("placeholder", "") if form.p12_notes.render_kw else "" }}');
+    initializeQuillForField('realistic_expectance_notes', '{{ form.realistic_expectance_notes.render_kw.get("placeholder", "") if form.realistic_expectance_notes.render_kw else "" }}');
+    initializeQuillForField('engagement_structure_notes', '{{ form.engagement_structure_notes.render_kw.get("placeholder", "") if form.engagement_structure_notes.render_kw else "" }}');
+    initializeQuillForField('key_levels_notes', '{{ form.key_levels_notes.render_kw.get("placeholder", "") if form.key_levels_notes.render_kw else "" }}');
+    initializeQuillForField('pre_market_news_notes', '{{ form.pre_market_news_notes.render_kw.get("placeholder", "") if form.pre_market_news_notes.render_kw else "" }}');
+    initializeQuillForField('market_observations', '{{ form.market_observations.render_kw.get("placeholder", "") if form.market_observations.render_kw else "" }}');
+    initializeQuillForField('self_observations', '{{ form.self_observations.render_kw.get("placeholder", "") if form.self_observations.render_kw else "" }}');
+
+    // --- Sync Quill content on form submit ---
+    const journalForm = document.querySelector('form');
+    if (journalForm) {
+        journalForm.addEventListener('submit', function() {
+            for (const fieldId in quillInstances) {
+                if (quillInstances.hasOwnProperty(fieldId) && document.getElementById(fieldId)) {
+                    document.getElementById(fieldId).value = quillInstances[fieldId].root.innerHTML;
+                }
+            }
+        });
+    }
+
+    // --- Radar Chart Initialization ---
+    // ... (This section remains exactly the same as before) ...
+    const psychLabels = {{ psych_labels|tojson|safe }};
+    const psychValues = {{ psych_values|tojson|safe }};
+    const psychRadarCtx = document.getElementById('psychRadarChart');
+    if (psychRadarCtx && psychValues.some(v => v !== null && v > 0)) {
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        const gridColor = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)';
+        const textColor = currentTheme === 'dark' ? '#ced4da' : '#666';
+        const pointLabelColor = currentTheme === 'dark' ? '#e9ecef' : '#333';
+        new Chart(psychRadarCtx, {
+            type: 'radar',
+            data: { labels: psychLabels, datasets: [{
+                    label: 'Daily Psych Score', data: psychValues, fill: true,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)', borderColor: 'rgb(54, 162, 235)',
+                    pointBackgroundColor: 'rgb(54, 162, 235)', pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgb(54, 162, 235)'
+                }]},
+            options: {
+                scales: { r: {
+                    angleLines: { color: gridColor }, grid: { color: gridColor },
+                    suggestedMin: 0, suggestedMax: 5,
+                    pointLabels: { color: pointLabelColor, font: { size: 14 } },
+                    ticks: { stepSize: 1, color: textColor, backdropColor: 'rgba(0, 0, 0, 0)' }
+                }},
+                plugins: { legend: { display: false } }
+            }
+        });
+    } else if (psychRadarCtx) {
+        psychRadarCtx.getContext('2d').fillText("No psych ratings entered for this day.", 10, 50);
+    }
+
+    // --- Date Picker Navigation ---
+    const datePickerInput = document.getElementById('date_str_picker');
+    if(datePickerInput) {
+        datePickerInput.addEventListener('change', function() {
+            const selectedDate = this.value;
+            if(selectedDate) {
+                const baseUrl = "{{ url_for('journal.manage_daily_journal', date_str='DATE_PLACEHOLDER') }}";
+                window.location.href = baseUrl.replace('DATE_PLACEHOLDER', selectedDate);
+            }
+        });
+    }
+});
+
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const scenarioSelect = document.getElementById('p12_scenario_select');
+    const scenarioDetails = document.getElementById('p12ScenarioDetails');
+    const refreshBtn = document.getElementById('refreshP12Scenarios');
+    const clearBtn = document.getElementById('clearP12Selection');
+
+    let scenariosData = [];
+
+    // Load P12 scenarios data
+    function loadP12Scenarios() {
+        fetch('/admin/p12-scenarios/api/scenarios')
+            .then(response => response.json())
+            .then(data => {
+                scenariosData = data;
+                console.log('P12 scenarios loaded:', data.length);
+            })
+            .catch(error => {
+                console.error('Error loading P12 scenarios:', error);
+                showNotification('Error loading P12 scenarios', 'error');
+            });
+    }
+
+    // Display scenario details
+    function displayScenarioDetails(scenarioId) {
+        const scenario = scenariosData.find(s => s.id == scenarioId);
+        if (!scenario) {
+            scenarioDetails.style.display = 'none';
+            return;
+        }
+
+        // Update basic info
+        document.getElementById('scenarioTitle').textContent =
+            `Scenario ${scenario.scenario_number}: ${scenario.scenario_name}`;
+        document.getElementById('scenarioDescription').innerHTML =
+            `<p class="lead">${scenario.short_description}</p><p>${scenario.detailed_description}</p>`;
+
+        // Update criteria sections
+        document.getElementById('scenarioAlertCriteria').textContent = scenario.alert_criteria;
+        document.getElementById('scenarioConfirmationCriteria').textContent = scenario.confirmation_criteria;
+        document.getElementById('scenarioEntryStrategy').textContent = scenario.entry_strategy;
+        document.getElementById('scenarioTypicalTargets').textContent = scenario.typical_targets || 'Not specified';
+        document.getElementById('scenarioHodLodImplication').textContent = scenario.hod_lod_implication;
+
+        // Update model recommendations
+        const activateContainer = document.getElementById('modelsToActivate');
+        const avoidContainer = document.getElementById('modelsToAvoid');
+
+        activateContainer.innerHTML = '';
+        avoidContainer.innerHTML = '';
+
+        if (scenario.models_to_activate && scenario.models_to_activate.length > 0) {
+            scenario.models_to_activate.forEach(model => {
+                const item = document.createElement('div');
+                item.className = 'list-group-item list-group-item-success border-0 py-1 px-2';
+                item.innerHTML = `<i class="fas fa-check me-2"></i>${model}`;
+                activateContainer.appendChild(item);
+            });
+        } else {
+            activateContainer.innerHTML = '<div class="text-muted small">No specific recommendations</div>';
+        }
+
+        if (scenario.models_to_avoid && scenario.models_to_avoid.length > 0) {
+            scenario.models_to_avoid.forEach(model => {
+                const item = document.createElement('div');
+                item.className = 'list-group-item list-group-item-danger border-0 py-1 px-2';
+                item.innerHTML = `<i class="fas fa-times me-2"></i>${model}`;
+                avoidContainer.appendChild(item);
+            });
+        } else {
+            avoidContainer.innerHTML = '<div class="text-muted small">No specific restrictions</div>';
+        }
+
+        // Update additional sections
+        const riskGuidanceSection = document.getElementById('riskGuidanceSection');
+        const riskGuidance = document.getElementById('riskGuidance');
+        if (scenario.risk_guidance) {
+            riskGuidance.textContent = scenario.risk_guidance;
+            riskGuidanceSection.style.display = 'block';
+        } else {
+            riskGuidanceSection.style.display = 'none';
+        }
+
+        const timeframesSection = document.getElementById('preferredTimeframesSection');
+        const timeframes = document.getElementById('preferredTimeframes');
+        if (scenario.preferred_timeframes && scenario.preferred_timeframes.length > 0) {
+            timeframes.innerHTML = scenario.preferred_timeframes.map(tf =>
+                `<span class="badge bg-info me-1">${tf}</span>`
+            ).join('');
+            timeframesSection.style.display = 'block';
+        } else {
+            timeframesSection.style.display = 'none';
+        }
+
+        const considerationsSection = document.getElementById('keyConsiderationsSection');
+        const considerations = document.getElementById('keyConsiderations');
+        if (scenario.key_considerations) {
+            considerations.textContent = scenario.key_considerations;
+            considerationsSection.style.display = 'block';
+        } else {
+            considerationsSection.style.display = 'none';
+        }
+
+        // Update image
+        const imageContainer = document.getElementById('scenarioImageContainer');
+        const image = document.getElementById('scenarioImage');
+        if (scenario.image_url) {
+            image.src = scenario.image_url;
+            image.alt = `Scenario ${scenario.scenario_number} Visual`;
+            imageContainer.style.display = 'block';
+        } else {
+            imageContainer.style.display = 'none';
+        }
+
+        // Update stats
+        document.getElementById('scenarioUsageCount').textContent = scenario.times_selected || 0;
+        document.getElementById('scenarioDirectionalBias').textContent =
+            scenario.directional_bias || 'Neutral';
+
+        // Show the details card
+        scenarioDetails.style.display = 'block';
+
+        // Track usage (if scenario is selected)
+        if (scenarioId > 0) {
+            trackScenarioUsage(scenarioId);
+        }
+    }
+
+    // Track scenario usage
+    function trackScenarioUsage(scenarioId) {
+        fetch(`/admin/p12-scenarios/api/scenarios/${scenarioId}/increment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.getAttribute('content')
+            }
+        }).catch(error => {
+            console.error('Error tracking scenario usage:', error);
+        });
+    }
+
+    // Event listeners
+    scenarioSelect.addEventListener('change', function() {
+        const selectedId = this.value;
+        if (selectedId && selectedId !== '0') {
+            displayScenarioDetails(selectedId);
+        } else {
+            scenarioDetails.style.display = 'none';
+        }
+    });
+
+    refreshBtn.addEventListener('click', loadP12Scenarios);
+
+    clearBtn.addEventListener('click', function() {
+        scenarioSelect.value = '0';
+        scenarioDetails.style.display = 'none';
+    });
+
+    // Initialize
+    loadP12Scenarios();
+
+    // If scenario is pre-selected, display its details
+    if (scenarioSelect.value && scenarioSelect.value !== '0') {
+        setTimeout(() => displayScenarioDetails(scenarioSelect.value), 500);
+    }
+});
+</script>
+
+{% endblock %}

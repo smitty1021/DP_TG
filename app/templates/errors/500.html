@@ -1,0 +1,13 @@
+{% extends "errors/error.html" %}
+
+{% set error_code = 500 %}
+{% set error_title = "Server Error" %}
+{% set error_description = "Something went wrong on our end. We're working to fix the issue." %}
+{% set support_info = true %}
+{% set support_email = "support@example.com" %}
+
+{% block extra_content %}
+<div class="suggestions">
+    <p>Please try again later. If the problem persists, please contact our support team.</p>
+</div>
+{% endblock %}

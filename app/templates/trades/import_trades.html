@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% import "macros/_form_helpers.html" as forms %}
+
+{% block title %}
+    Import Trades
+{% endblock %}
+
+{% block page_header %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Import Trades from CSV</h1>
+        <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Trades List
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Upload Your CSV File</h5>
+                <p class="card-text">
+                    Download the template, which includes an example row. Fill it out with your own data, then upload it here.
+                </p>
+                <a href="{{ url_for('static', filename='downloads/trades_import_template.csv') }}" class="btn btn-success mb-3" download>
+                    <i class="fas fa-download me-1"></i> Download CSV Template
+                </a>
+                <hr>
+                <form method="POST" action="{{ url_for('trades.import_trades') }}" id="importForm" novalidate enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    {{ forms.render_field(form.csv_file, input_class="form-control") }}
+                    <div class="mt-3">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                <h5>CSV Format Instructions</h5>
+            </div>
+            <div class="card-body">
+                {# MODIFIED: Added note about deleting the example row #}
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle me-2"></i><strong>Important:</strong> Please delete the example data row from the template before uploading your file.
+                </div>
+                <p><strong>Required Columns (must be filled):</strong></p>
+                <ul>
+                    <li>All columns marked with `(Req)` in the template header.</li>
+                </ul>
+                <p><strong>Optional Columns:</strong></p>
+                <ul>
+                    <li>All other columns can be left blank if not applicable.</li>
+                </ul>
+                <hr>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

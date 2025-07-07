@@ -1,0 +1,650 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ title }} - Trading Journal
+{% endblock %}
+
+{% block head_extra %}
+<style>
+    .tag-category-section {
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .tag-category-header {
+        background-color: var(--bs-secondary-bg);
+        color: var(--bs-body-color);
+        border-bottom: 1px solid var(--bs-border-color);
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .tag-category-body {
+        padding: 1rem;
+    }
+
+    .tag-item {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 1rem;
+        padding: 0.25rem 0.75rem;
+        margin: 0.25rem;
+        font-size: 0.875rem;
+        position: relative;
+        transition: all 0.2s ease;
+    }
+
+    .tag-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .tag-item.default-tag {
+        opacity: 0.8;
+    }
+
+    /* Inactive tags styling */
+    .tag-item.inactive {
+        opacity: 0.5;
+        filter: grayscale(50%);
+    }
+
+    .tag-actions {
+        margin-left: 0.5rem;
+        display: none;
+    }
+
+    .tag-item:hover .tag-actions {
+        display: inline-flex;
+    }
+
+    .tag-actions .action-btn {
+        background: none !important;
+        border: none !important;
+        padding: 0.125rem !important;
+        margin: 0 0.125rem !important;
+        cursor: pointer !important;
+        opacity: 0.7 !important;
+        font-size: 0.75rem !important;
+        transition: all 0.15s ease-in-out !important;
+        background-color: transparent !important;
+        border-radius: 0.25rem !important;
+        min-height: auto !important;
+        width: auto !important;
+        height: auto !important;
+    }
+
+    .tag-actions .action-btn:hover {
+        opacity: 1 !important;
+        transform: translateY(-1px) !important;
+        background-color: var(--bs-secondary-bg-subtle) !important;
+    }
+
+    .tag-actions .action-btn.btn-outline-warning {
+        color: #ffc107 !important;
+    }
+
+    .tag-actions .action-btn.btn-outline-warning:hover {
+        color: #000 !important;
+        background-color: #ffc107 !important;
+    }
+
+    .tag-actions .action-btn.btn-outline-danger {
+        color: #dc3545 !important;
+    }
+
+    .tag-actions .action-btn.btn-outline-danger:hover {
+        color: #fff !important;
+        background-color: #dc3545 !important;
+    }
+
+    html[data-bs-theme="dark"] .tag-actions .action-btn.btn-outline-warning {
+        color: #ffda6a !important;
+    }
+    html[data-bs-theme="dark"] .tag-actions .action-btn.btn-outline-warning:hover {
+        color: #000 !important;
+        background-color: #ffda6a !important;
+    }
+
+    html[data-bs-theme="dark"] .tag-actions .action-btn.btn-outline-danger {
+        color: #ea868f !important;
+    }
+    html[data-bs-theme="dark"] .tag-actions .action-btn.btn-outline-danger:hover {
+        color: #000 !important;
+        background-color: #ea868f !important;
+    }
+
+    .add-tag-form {
+        background: linear-gradient(135deg, var(--bs-light-bg-subtle), var(--bs-secondary-bg-subtle));
+        border: 2px dashed var(--bs-border-color);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-top: 1rem;
+        display: none;
+    }
+
+    .add-tag-form.show {
+        display: block;
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-10px); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row mb-3 align-items-center">
+        <div class="col">
+            <h1 class="display-6"><i class="fas fa-user-tag me-2"></i>Manage Personal Trade Tags</h1>
+            <p class="lead">Create and manage your custom trading tags alongside system defaults.</p>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-outline-primary" onclick="showAddTagForm()">
+                <i class="fas fa-plus me-1"></i> Add Custom Tag
+            </button>
+            <a href="{{ url_for('settings.view_settings') }}" class="btn btn-outline-success">
+                <i class="fas fa-arrow-left me-1"></i> Back to Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Add Tag Form -->
+    <div id="add-tag-form" class="add-tag-form">
+        <h5><i class="fas fa-plus me-2"></i>Add New Custom Tag</h5>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label for="new-tag-name" class="form-label">Tag Name</label>
+                <input type="text" class="form-control" id="new-tag-name" placeholder="Enter tag name..." maxlength="50">
+            </div>
+            <div class="col-md-3">
+                <label for="new-tag-category" class="form-label">Category</label>
+                <select class="form-select" id="new-tag-category">
+                    {% for category in TagCategory %}
+                    <option value="{{ category.name }}">{{ category.value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="new-tag-color" class="form-label">Color Category</label>
+                <select class="form-select" id="new-tag-color">
+                    <option value="neutral">Neutral (Blue)</option>
+                    <option value="good">Positive (Green)</option>
+                    <option value="bad">Negative (Red)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="new-tag-active" class="form-label">Status</label>
+                <select class="form-select" id="new-tag-active">
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-success me-2" onclick="createTag()">
+                    <i class="fas fa-save me-1"></i> Create
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="hideAddTagForm()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tags organized by category -->
+    {% for category_display, tags in tags_by_category.items() %}
+    <div class="tag-category-section">
+        <div class="tag-category-header">
+            <span><i class="fas fa-folder me-2"></i>{{ category_display }}</span>
+            <span class="badge bg-secondary">{{ tags|length }} tags</span>
+        </div>
+        {% set category_id = {
+            'Setup & Strategy': 'SETUP_STRATEGY',
+            'Market Conditions': 'MARKET_CONDITIONS',
+            'Execution & Management': 'EXECUTION_MANAGEMENT',
+            'Psychological & Emotional Factors': 'PSYCHOLOGICAL_EMOTIONAL'
+        }[category_display] %}
+        <div class="tag-category-body" id="category-{{ category_id }}">
+            {% if tags %}
+                {% for tag in tags %}
+                <div class="tag-item {{ tag|tag_color }} {{ 'default-tag' if tag.is_default else 'user-tag' }} {{ 'inactive' if not tag.is_active else '' }}" data-tag-id="{{ tag.id }}">
+                    <span class="tag-name">{{ tag.name }}</span>
+                    {% if tag.is_default %}
+                    <span class="badge bg-secondary ms-2" style="font-size: 0.6rem;">DEFAULT</span>
+                    {% endif %}
+                    {% if not tag.is_active %}
+                    <span class="badge bg-secondary ms-2" style="font-size: 0.6rem;">INACTIVE</span>
+                    {% endif %}
+                    {% if not tag.is_default %}
+                    <div class="tag-actions">
+                        <button type="button" class="action-btn btn-outline-warning"
+                                onclick="editTag({{ tag.id }}, '{{ tag.name }}', '{{ tag.category.name }}', {{ tag.is_active|lower }}, '{{ tag.color_category or 'neutral' }}')"
+                                title="Edit Tag">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="action-btn btn-outline-danger"
+                                onclick="deleteTag({{ tag.id }}, '{{ tag.name }}')"
+                                title="Delete Tag">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted fst-italic">No tags in this category yet.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Reset to Defaults Section -->
+    <div class="row mt-4">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('settings.reset_default_tags') }}" id="reset-default-tags-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="button" class="btn btn-outline-danger" onclick="confirmResetTags()">
+                    <i class="fas fa-undo me-1"></i> Reset to Default Tags
+                </button>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<!-- Edit Tag Modal -->
+<div class="modal fade" id="editTagModal" tabindex="-1" aria-labelledby="editTagModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTagModalLabel">Edit Personal Tag</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-tag-form">
+                    <input type="hidden" id="edit-tag-id">
+                    <div class="mb-3">
+                        <label for="edit-tag-name" class="form-label">Tag Name</label>
+                        <input type="text" class="form-control" id="edit-tag-name" required maxlength="50">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-tag-category" class="form-label">Category</label>
+                        <select class="form-select" id="edit-tag-category" required>
+                            {% for category in TagCategory %}
+                            <option value="{{ category.name }}">{{ category.value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-tag-color" class="form-label">Color Category</label>
+                        <select class="form-select" id="edit-tag-color">
+                            <option value="neutral">Neutral (Blue) - Informational</option>
+                            <option value="good">Positive (Green) - Positive Performance</option>
+                            <option value="bad">Negative (Red) - Negative Performance</option>
+                        </select>
+                        <small class="form-text text-muted">Set the color based on performance impact</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-tag-active" class="form-label">Status</label>
+                        <select class="form-select" id="edit-tag-active">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                        <small class="form-text text-muted">Inactive tags won't appear in trade entry forms</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateTag()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+<script>
+function showAddTagForm() {
+    document.getElementById('add-tag-form').classList.add('show');
+    document.getElementById('new-tag-name').focus();
+}
+
+function hideAddTagForm() {
+    document.getElementById('add-tag-form').classList.remove('show');
+    document.getElementById('new-tag-name').value = '';
+    document.getElementById('new-tag-category').selectedIndex = 0;
+    document.getElementById('new-tag-color').selectedIndex = 0;
+    document.getElementById('new-tag-active').selectedIndex = 0; // Reset to "Active"
+}
+
+function confirmResetTags() {
+    showCustomConfirmation({
+        title: 'Reset to Default Tags',
+        message: 'This will delete all your custom tags and restore only the system defaults. This action cannot be undone. Continue?',
+        confirmText: 'Reset to Defaults',
+        confirmClass: 'btn-danger',
+        icon: 'exclamation-triangle',
+        iconClass: 'text-danger',
+        onConfirm: () => {
+            document.getElementById('reset-default-tags-form').submit();
+        }
+    });
+}
+
+function createTag() {
+    const name = document.getElementById('new-tag-name').value.trim();
+    const category = document.getElementById('new-tag-category').value;
+    const colorCategory = document.getElementById('new-tag-color').value;
+    const isActive = document.getElementById('new-tag-active').value === 'true'; // Convert to boolean
+
+    if (!name) {
+        showError('Please enter a tag name');
+        return;
+    }
+
+    fetch('{{ url_for("settings.create_tag") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            name: name,
+            category: category,
+            color_category: colorCategory,
+            is_active: isActive // Include the active status
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess(`Tag "${name}" created successfully!`);
+            addNewTagToDOM(data.tag);
+            hideAddTagForm();
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('An error occurred while creating the tag');
+    });
+}
+
+function addNewTagToDOM(tag) {
+    const categoryMapping = {
+        'SETUP_STRATEGY': 'category-SETUP_STRATEGY',
+        'MARKET_CONDITIONS': 'category-MARKET_CONDITIONS',
+        'EXECUTION_MANAGEMENT': 'category-EXECUTION_MANAGEMENT',
+        'PSYCHOLOGICAL_EMOTIONAL': 'category-PSYCHOLOGICAL_EMOTIONAL'
+    };
+
+    const targetContainerId = categoryMapping[tag.category];
+    const targetContainer = document.getElementById(targetContainerId);
+
+    if (targetContainer) {
+        const noTagsMessage = targetContainer.querySelector('.text-muted.fst-italic');
+        if (noTagsMessage) {
+            noTagsMessage.remove();
+        }
+
+        const tagElement = document.createElement('div');
+        tagElement.className = `tag-item tag-${tag.color_category || 'neutral'} ${tag.is_default ? 'default-tag' : 'user-tag'} ${tag.is_active ? '' : 'inactive'}`;
+        tagElement.setAttribute('data-tag-id', tag.id);
+
+        tagElement.innerHTML = `
+            <span class="tag-name">${tag.name}</span>
+            ${tag.is_default ? '<span class="badge bg-secondary ms-2" style="font-size: 0.6rem;">DEFAULT</span>' : ''}
+            ${!tag.is_active ? '<span class="badge bg-secondary ms-2" style="font-size: 0.6rem;">INACTIVE</span>' : ''}
+            ${!tag.is_default ? `
+            <div class="tag-actions">
+                <button type="button" class="action-btn btn-outline-warning"
+                        onclick="editTag(${tag.id}, '${tag.name}', '${tag.category}', ${tag.is_active}, '${tag.color_category || 'neutral'}')"
+                        title="Edit Tag">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button type="button" class="action-btn btn-outline-danger"
+                        onclick="deleteTag(${tag.id}, '${tag.name}')"
+                        title="Delete Tag">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            ` : ''}
+        `;
+
+        targetContainer.appendChild(tagElement);
+        tagElement.style.animation = 'fadeIn 0.3s ease-in';
+        setTimeout(() => {
+            tagElement.style.animation = '';
+        }, 300);
+
+        updateCategoryBadgeCounts();
+    }
+}
+
+function editTag(tagId, tagName, categoryName, isActive, colorCategory = 'neutral') {
+    document.getElementById('edit-tag-id').value = tagId;
+    document.getElementById('edit-tag-name').value = tagName;
+    document.getElementById('edit-tag-category').value = categoryName;
+    document.getElementById('edit-tag-color').value = colorCategory;
+    document.getElementById('edit-tag-active').value = isActive.toString(); // Convert boolean to string
+
+    const modal = new bootstrap.Modal(document.getElementById('editTagModal'));
+    modal.show();
+}
+
+function updateTag() {
+    const tagId = document.getElementById('edit-tag-id').value;
+    const name = document.getElementById('edit-tag-name').value.trim();
+    const category = document.getElementById('edit-tag-category').value;
+    const colorCategory = document.getElementById('edit-tag-color').value;
+    const isActive = document.getElementById('edit-tag-active').value === 'true'; // Convert to boolean
+
+    if (!name) {
+        showError('Please enter a tag name');
+        return;
+    }
+
+    fetch(`{{ url_for("settings.edit_tag", tag_id=0) }}`.replace('0', tagId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            name: name,
+            category: category,
+            color_category: colorCategory,
+            is_active: isActive // Include the active status
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateTagInDOM(data.tag);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editTagModal'));
+            modal.hide();
+            showSuccess(`Tag "${name}" updated successfully!`);
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('An error occurred while updating the tag');
+    });
+}
+
+function updateTagInDOM(tag) {
+    const tagElement = document.querySelector(`[data-tag-id="${tag.id}"]`);
+    if (tagElement) {
+        const currentContainer = tagElement.closest('.tag-category-body');
+        const categoryMapping = {
+            'SETUP_STRATEGY': 'category-SETUP_STRATEGY',
+            'MARKET_CONDITIONS': 'category-MARKET_CONDITIONS',
+            'EXECUTION_MANAGEMENT': 'category-EXECUTION_MANAGEMENT',
+            'PSYCHOLOGICAL_EMOTIONAL': 'category-PSYCHOLOGICAL_EMOTIONAL'
+        };
+
+        const targetContainerId = categoryMapping[tag.category];
+        const targetContainer = document.getElementById(targetContainerId);
+
+        // Update tag properties
+        tagElement.querySelector('.tag-name').textContent = tag.name;
+
+        // Update color classes
+        tagElement.classList.remove('tag-good', 'tag-bad', 'tag-neutral');
+        tagElement.classList.add(`tag-${tag.color_category || 'neutral'}`);
+
+        // Update active/inactive status
+        if (tag.is_active) {
+            tagElement.classList.remove('inactive');
+            // Remove inactive badge if present - fixed selector
+            const badges = tagElement.querySelectorAll('.badge');
+            badges.forEach(badge => {
+                if (badge.textContent.includes('INACTIVE')) {
+                    badge.remove();
+                }
+            });
+        } else {
+            tagElement.classList.add('inactive');
+            // Add inactive badge if not present
+            const existingBadges = tagElement.querySelectorAll('.badge');
+            const hasInactiveBadge = Array.from(existingBadges).some(badge => badge.textContent.includes('INACTIVE'));
+            if (!hasInactiveBadge) {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-secondary ms-2';
+                badge.style.fontSize = '0.6rem';
+                badge.textContent = 'INACTIVE';
+                tagElement.querySelector('.tag-name').after(badge);
+            }
+        }
+
+        // Update edit button onclick with new values
+        const editButton = tagElement.querySelector('.action-btn.btn-outline-warning');
+        if (editButton) {
+            editButton.setAttribute('onclick',
+                `editTag(${tag.id}, '${tag.name}', '${tag.category}', ${tag.is_active}, '${tag.color_category || 'neutral'}')`
+            );
+        }
+
+        // Move tag to correct category if it changed
+        if (targetContainer && currentContainer !== targetContainer) {
+            const noTagsMessage = targetContainer.querySelector('.text-muted.fst-italic');
+            if (noTagsMessage) {
+                noTagsMessage.remove();
+            }
+
+            targetContainer.appendChild(tagElement);
+            tagElement.style.animation = 'fadeIn 0.3s ease-in';
+            setTimeout(() => {
+                tagElement.style.animation = '';
+            }, 300);
+
+            const remainingTags = currentContainer.querySelectorAll('.tag-item');
+            if (remainingTags.length === 0) {
+                const emptyMessage = document.createElement('p');
+                emptyMessage.className = 'text-muted fst-italic';
+                emptyMessage.textContent = 'No tags in this category yet.';
+                currentContainer.appendChild(emptyMessage);
+            }
+
+            updateCategoryBadgeCounts();
+        }
+    }
+}
+
+function updateCategoryBadgeCounts() {
+    const categories = ['SETUP_STRATEGY', 'MARKET_CONDITIONS', 'EXECUTION_MANAGEMENT', 'PSYCHOLOGICAL_EMOTIONAL'];
+
+    categories.forEach(category => {
+        const container = document.getElementById(`category-${category}`);
+        if (container) {
+            const tagCount = container.querySelectorAll('.tag-item').length;
+            const header = container.closest('.tag-category-section').querySelector('.tag-category-header .badge');
+            if (header) {
+                header.textContent = `${tagCount} tags`;
+            }
+        }
+    });
+}
+
+function deleteTag(tagId, tagName) {
+    showCustomConfirmation({
+        title: 'Confirm Deletion',
+        message: `Are you sure you want to permanently delete the tag "${tagName}"? This action cannot be undone.`,
+        confirmText: 'Delete Tag',
+        confirmClass: 'btn-danger',
+        icon: 'exclamation-triangle',
+        iconClass: 'text-danger',
+        onConfirm: () => {
+            fetch(`{{ url_for("settings.delete_tag", tag_id=0) }}`.replace('0', tagId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    removeTagFromDOM(tagId);
+                    showSuccess(`Tag "${tagName}" deleted successfully!`);
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('An error occurred while deleting the tag');
+            });
+        }
+    });
+}
+
+function removeTagFromDOM(tagId) {
+    const tagElement = document.querySelector(`[data-tag-id="${tagId}"]`);
+    if (tagElement) {
+        const container = tagElement.closest('.tag-category-body');
+
+        tagElement.style.animation = 'fadeOut 0.3s ease-out';
+
+        setTimeout(() => {
+            tagElement.remove();
+
+            const remainingTags = container.querySelectorAll('.tag-item');
+            if (remainingTags.length === 0) {
+                const emptyMessage = document.createElement('p');
+                emptyMessage.className = 'text-muted fst-italic';
+                emptyMessage.textContent = 'No tags in this category yet.';
+                container.appendChild(emptyMessage);
+            }
+
+            updateCategoryBadgeCounts();
+        }, 300);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const newTagName = document.getElementById('new-tag-name');
+    if (newTagName) {
+        newTagName.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                createTag();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

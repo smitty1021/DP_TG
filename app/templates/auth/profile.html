@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "macros/_form_helpers.html" import render_field, render_checkbox %}
+
+{% block title %}
+    {{ title or "Your Profile" }} - Trading Journal
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    {# If you had a row here, adjust column classes for the profile form section #}
+    <div class="row justify-content-center"> {# Centering the remaining content #}
+        <div class="col-lg-8 col-md-10"> {# Expanded to take more width, or adjust as desired #}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-edit me-2"></i>Edit Profile Information</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('auth.user_profile') }}" enctype="multipart/form-data" novalidate>
+                        {{ profile_form.hidden_tag() }}
+
+                        <div class="text-center mb-3">
+                            {% if current_user.profile_picture and current_user.profile_picture != 'default.jpg' %}
+                                <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/' + current_user.profile_picture) }}?v={{ range(1,100000)|random }}"
+                                     alt="Current Profile Picture" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+                            {% else %}
+                                <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/default.jpg') }}"
+                                     alt="Default Profile Picture" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+                            {% endif %}
+                        </div>
+
+                        {{ render_field(profile_form.name, input_class="form-control") }}
+                        {{ render_field(profile_form.email, input_class="form-control", type="email") }}
+                        {{ render_field(profile_form.bio, input_class="form-control", rows="3") }}
+                        {{ render_field(profile_form.profile_picture, input_class="form-control") }}
+
+                        <div class="d-grid mt-3">
+                            <button type="submit" name="submit_profile" class="btn btn-primary"><i class="fas fa-save me-2"></i>Save Profile Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0"><i class="fas fa-key me-2"></i>Change Password</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('auth.user_profile') }}" novalidate>
+                        {{ password_form.hidden_tag() }}
+                        {{ render_field(password_form.current_password, input_class="form-control", type="password") }}
+                        {{ render_field(password_form.new_password, input_class="form-control", type="password") }}
+                        {{ render_field(password_form.confirm_password, input_class="form-control", type="password") }}
+                        <div class="d-grid mt-3">
+                            <button type="submit" name="submit_password" class="btn btn-secondary"><i class="fas fa-lock me-2"></i>Update Password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {# The Activity Log Column that was here has been removed #}
+    </div>
+</div>
+{% endblock %}

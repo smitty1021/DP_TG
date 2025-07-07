@@ -1,0 +1,441 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block head_extra %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+<style>
+    .stats-card {
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        background-color: var(--bs-body-bg);
+    }
+    .scenario-item {
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        background-color: var(--bs-body-bg);
+    }
+    .success-rate-bar {
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: var(--bs-gray-200);
+    }
+    .success-rate-fill {
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">
+        <i class="fas fa-chart-pie me-2"></i>{{ title }}
+    </h1>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('journal.manage_daily_journal') }}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-journal-whills me-1"></i>Back to Journal
+        </a>
+        <a href="{{ url_for('p12_scenarios.list_scenarios') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-cog me-1"></i>Manage Scenarios
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Summary Statistics Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <div class="h3 text-primary mb-1">{{ recent_usage|length }}</div>
+                <div class="text-muted">Total P12 Uses</div>
+                <small class="text-muted">Last 6 months</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <div class="h3 text-success mb-1">{{ popular_scenarios_30d|length }}</div>
+                <div class="text-muted">Scenarios Used</div>
+                <small class="text-muted">Last 30 days</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                {% set avg_success = scenario_success_rates|selectattr('success_rate', 'ne', none)|map(attribute='success_rate')|list %}
+                <div class="h3 text-info mb-1">
+                    {% if avg_success %}
+                        {{ "%.1f"|format(avg_success|sum / avg_success|length) }}%
+                    {% else %}
+                        -
+                    {% endif %}
+                </div>
+                <div class="text-muted">Avg Success Rate</div>
+                <small class="text-muted">Last 90 days</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                {% set most_used = popular_scenarios_30d[0] if popular_scenarios_30d else none %}
+                <div class="h3 text-warning mb-1">
+                    {% if most_used %}
+                        {{ most_used.scenario_number }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </div>
+                <div class="text-muted">Most Used</div>
+                <small class="text-muted">Scenario #</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Monthly Usage Trend -->
+        <div class="col-md-6">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-line me-2"></i>Monthly Usage Trend
+                </h5>
+                <div class="chart-container">
+                    <canvas id="monthlyUsageChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scenario Distribution -->
+        <div class="col-md-6">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-pie me-2"></i>Scenario Distribution (30 days)
+                </h5>
+                <div class="chart-container">
+                    <canvas id="scenarioDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Statistics Row -->
+    <div class="row">
+        <!-- Your Most Used Scenarios -->
+        <div class="col-md-6">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-trophy me-2"></i>Your Most Used Scenarios (30 days)
+                </h5>
+                
+                {% if popular_scenarios_30d %}
+                    {% for item in popular_scenarios_30d %}
+                    <div class="scenario-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <span class="badge bg-primary me-2">{{ item.scenario_number }}</span>
+                                    {{ item.scenario_name }}
+                                </h6>
+                                <div class="text-muted small">Used {{ item.usage_count }} time{{ 's' if item.usage_count != 1 else '' }}</div>
+                                
+                                <!-- Success rate for this scenario -->
+                                {% for sr in scenario_success_rates %}
+                                    {% if sr.scenario.id == item.p12_scenario_id and sr.success_rate is not none %}
+                                        <div class="mt-2">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <small class="text-muted">Success Rate</small>
+                                                <small class="text-success fw-bold">{{ "%.1f"|format(sr.success_rate) }}%</small>
+                                            </div>
+                                            <div class="success-rate-bar">
+                                                <div class="success-rate-fill bg-success" 
+                                                     style="width: {{ sr.success_rate }}%"></div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="text-end">
+                                <div class="h5 text-primary mb-0">{{ item.usage_count }}</div>
+                                <small class="text-muted">uses</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-chart-bar fa-2x mb-3"></i>
+                        <p>No P12 scenario usage in the last 30 days.</p>
+                        <a href="{{ url_for('journal.manage_daily_journal') }}" class="btn btn-outline-primary btn-sm">
+                            Start Using P12 Scenarios
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Usage History -->
+        <div class="col-md-6">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-history me-2"></i>Recent Usage History
+                </h5>
+                
+                {% if recent_usage %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Scenario</th>
+                                    <th>Outcome</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usage in recent_usage %}
+                                <tr>
+                                    <td>
+                                        <small>{{ usage.journal_date.strftime('%m/%d') }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary me-1">{{ usage.scenario.scenario_number }}</span>
+                                        <small>{{ usage.scenario.scenario_name[:20] }}...</small>
+                                    </td>
+                                    <td>
+                                        {% if usage.outcome_successful is none %}
+                                            <span class="badge bg-light text-dark">Pending</span>
+                                        {% elif usage.outcome_successful %}
+                                            <span class="badge bg-success">Success</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Failed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if usage.outcome_successful is none %}
+                                            <button class="btn btn-outline-primary btn-xs" 
+                                                    onclick="updateOutcome({{ usage.id }}, true)">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-xs" 
+                                                    onclick="updateOutcome({{ usage.id }}, false)">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        {% else %}
+                                            <button class="btn btn-outline-secondary btn-xs" 
+                                                    onclick="editOutcome({{ usage.id }}, {{ usage.outcome_successful|lower }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-clock fa-2x mb-3"></i>
+                        <p>No recent P12 scenario usage found.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Community Comparison -->
+    {% if popular_scenarios_overall %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="stats-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-users me-2"></i>Community Most Popular (30 days)
+                </h5>
+                <div class="row">
+                    {% for item in popular_scenarios_overall[:6] %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-light">
+                            <div class="card-body text-center">
+                                <div class="h4 text-primary mb-1">{{ item.scenario_number }}</div>
+                                <div class="small text-muted mb-2">{{ item.scenario_name }}</div>
+                                <div class="text-success fw-bold">{{ item.usage_count }} uses</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Outcome Update Modal -->
+<div class="modal fade" id="outcomeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Scenario Outcome</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Outcome</label>
+                    <select class="form-select" id="outcomeSelect">
+                        <option value="">Select outcome...</option>
+                        <option value="true">Successful</option>
+                        <option value="false">Failed</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notes (optional)</label>
+                    <textarea class="form-control" id="outcomeNotes" rows="3" 
+                              placeholder="Add notes about how the scenario played out..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveOutcome()">Save Outcome</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Chart.js configuration
+const chartConfig = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            display: true,
+            position: 'bottom'
+        }
+    }
+};
+
+// Monthly Usage Chart
+const monthlyData = {{ monthly_usage|tojson }};
+const monthlyLabels = monthlyData.map(item => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[item.month - 1] + ' ' + item.year;
+});
+const monthlyValues = monthlyData.map(item => item.usage_count);
+
+new Chart(document.getElementById('monthlyUsageChart'), {
+    type: 'line',
+    data: {
+        labels: monthlyLabels,
+        datasets: [{
+            label: 'P12 Uses',
+            data: monthlyValues,
+            borderColor: 'rgb(54, 162, 235)',
+            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        ...chartConfig,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// Scenario Distribution Chart
+const scenarioData = {{ popular_scenarios_30d|tojson }};
+const scenarioLabels = scenarioData.map(item => `Scenario ${item.scenario_number}`);
+const scenarioValues = scenarioData.map(item => item.usage_count);
+
+if (scenarioData.length > 0) {
+    new Chart(document.getElementById('scenarioDistributionChart'), {
+        type: 'doughnut',
+        data: {
+            labels: scenarioLabels,
+            datasets: [{
+                data: scenarioValues,
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                    '#9966FF', '#FF9F40', '#FF6384', '#36A2EB'
+                ]
+            }]
+        },
+        options: {
+            ...chartConfig,
+            cutout: '50%'
+        }
+    });
+} else {
+    document.getElementById('scenarioDistributionChart').parentElement.innerHTML = 
+        '<div class="text-center text-muted py-4"><p>No data to display</p></div>';
+}
+
+// Outcome management
+let currentUsageId = null;
+
+function updateOutcome(usageId, successful) {
+    currentUsageId = usageId;
+    document.getElementById('outcomeSelect').value = successful.toString();
+    document.getElementById('outcomeNotes').value = '';
+    new bootstrap.Modal(document.getElementById('outcomeModal')).show();
+}
+
+function editOutcome(usageId, currentValue) {
+    currentUsageId = usageId;
+    document.getElementById('outcomeSelect').value = currentValue.toString();
+    document.getElementById('outcomeNotes').value = '';
+    new bootstrap.Modal(document.getElementById('outcomeModal')).show();
+}
+
+function saveOutcome() {
+    const successful = document.getElementById('outcomeSelect').value;
+    const notes = document.getElementById('outcomeNotes').value;
+    
+    if (!successful) {
+        alert('Please select an outcome');
+        return;
+    }
+    
+    fetch(`/journal/p12-outcome/${currentUsageId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.getAttribute('content')
+        },
+        body: JSON.stringify({
+            successful: successful === 'true',
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('outcomeModal')).hide();
+            location.reload(); // Refresh to show updated data
+        } else {
+            alert('Error updating outcome: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating outcome');
+    });
+}
+</script>
+{% endblock %}

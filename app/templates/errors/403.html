@@ -1,0 +1,13 @@
+{% extends "errors/error.html" %}
+
+{% set error_code = 403 %}
+{% set error_title = "Access Denied" %}
+{% set error_description = "You don't have permission to access this resource." %}
+{% set support_info = true %}
+{% set support_email = "support@example.com" %}
+
+{% block extra_content %}
+<div class="suggestions">
+    <p>If you believe this is an error, please contact your administrator or support.</p>
+</div>
+{% endblock %}

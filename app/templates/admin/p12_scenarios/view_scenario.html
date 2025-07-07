@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <span class="badge bg-primary me-3">{{ scenario.scenario_number }}</span>
+                        {{ scenario.scenario_name }}
+                    </h2>
+                    <p class="text-muted mb-0">{{ scenario.short_description }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('p12_scenarios.edit_scenario', scenario_id=scenario.id) }}" 
+                       class="btn btn-warning me-2">
+                        <i class="fas fa-edit me-2"></i>Edit
+                    </a>
+                    <a href="{{ url_for('p12_scenarios.list_scenarios') }}" 
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - Details -->
+        <div class="col-lg-8">
+            <!-- Overview Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Scenario Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="fw-semibold text-primary">Directional Bias</h6>
+                            {% if scenario.directional_bias %}
+                                {% if scenario.directional_bias == 'bullish' %}
+                                    <span class="badge bg-success fs-6">
+                                        <i class="fas fa-arrow-up me-1"></i>Bullish
+                                    </span>
+                                {% elif scenario.directional_bias == 'bearish' %}
+                                    <span class="badge bg-danger fs-6">
+                                        <i class="fas fa-arrow-down me-1"></i>Bearish
+                                    </span>
+                                {% elif scenario.directional_bias == 'choppy' %}
+                                    <span class="badge bg-warning fs-6">
+                                        <i class="fas fa-random me-1"></i>Choppy
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary fs-6">
+                                        <i class="fas fa-minus me-1"></i>Neutral
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">Not specified</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-semibold text-primary">Risk Percentage</h6>
+                            {% if scenario.risk_percentage %}
+                                <span class="badge bg-info fs-6">{{ scenario.risk_percentage }}%</span>
+                            {% else %}
+                                <span class="text-muted">Not specified</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="fw-semibold text-primary">Detailed Description</h6>
+                        <p class="mb-0">{{ scenario.detailed_description }}</p>
+                    </div>
+
+                    <div class="mb-0">
+                        <h6 class="fw-semibold text-primary">HOD/LOD Implication</h6>
+                        <p class="mb-0">{{ scenario.hod_lod_implication }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Criteria Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-crosshairs me-2"></i>Trading Criteria
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="fw-semibold text-success">Alert Criteria</h6>
+                                <p class="mb-0 small">{{ scenario.alert_criteria }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="fw-semibold text-warning">Confirmation Criteria</h6>
+                                <p class="mb-0 small">{{ scenario.confirmation_criteria }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <h6 class="fw-semibold text-primary">Entry Strategy</h6>
+                        <p class="mb-0">{{ scenario.entry_strategy }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Management Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>Risk Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if scenario.typical_targets %}
+                    <div class="mb-3">
+                        <h6 class="fw-semibold text-success">Typical Targets</h6>
+                        <p class="mb-0">{{ scenario.typical_targets }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if scenario.stop_loss_guidance %}
+                    <div class="mb-0">
+                        <h6 class="fw-semibold text-danger">Stop Loss Guidance</h6>
+                        <p class="mb-0">{{ scenario.stop_loss_guidance }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Image and Stats -->
+        <div class="col-lg-4">
+            <!-- Scenario Image -->
+            {% if scenario.image_path %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-image me-2"></i>Scenario Chart
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <img src="{{ url_for('p12_scenarios.serve_image', scenario_id=scenario.id) }}"
+                         class="img-fluid w-100"
+                         alt="Scenario {{ scenario.scenario_number }} chart"
+                         style="height: 300px; object-fit: cover;">
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Statistics Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary mb-1">{{ scenario.times_selected }}</h4>
+                                <p class="small text-muted mb-0">Times Selected</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="{% if scenario.is_active %}text-success{% else %}text-secondary{% endif %} mb-1">
+                                {% if scenario.is_active %}Active{% else %}Inactive{% endif %}
+                            </h4>
+                            <p class="small text-muted mb-0">Status</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metadata Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i>Metadata
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <small class="text-muted">Created:</small><br>
+                        <span class="small">{{ scenario.created_date.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                    </div>
+                    <div class="mb-0">
+                        <small class="text-muted">Last Updated:</small><br>
+                        <span class="small">{{ scenario.updated_date.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+                    
+

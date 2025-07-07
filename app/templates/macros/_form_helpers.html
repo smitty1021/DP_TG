@@ -1,0 +1,68 @@
+{% macro render_field(field, label_visible=true, input_class="", placeholder=None, rows=None, cols=None, type=None, step=None, id=None, multiple=False) %} {# MODIFIED: Added multiple=False #}
+{# This macro explicitly defines common parameters.
+   Arbitrary HTML attributes not listed here (e.g. 'data-*') should ideally be set
+   via field.render_kw in your Python forms.py if needed by WTForms,
+   or handled differently if they are purely for JS and not standard HTML attributes for the input type.
+#}
+<div class="form-group mb-3">
+    {% if label_visible and field.label %}
+        {# If an explicit id is provided to the macro, use it for the label's 'for' attribute #}
+        {{ field.label(class="form-label", for=(id if id else field.id)) }}
+    {% endif %}
+
+    {# Construct the class string for the input field #}
+    {% set field_classes = [input_class] %}
+    {% if field.errors %}
+        {% set temp = field_classes.append('is-invalid') %}
+    {% endif %}
+
+    {# Prepare attributes for the field rendering #}
+    {% set field_attrs = {} %}
+    {% if placeholder is not none %}{% set temp = field_attrs.update({'placeholder': placeholder}) %}{% endif %}
+    {% if rows is not none and field.type == 'TextAreaField' %}{% set temp = field_attrs.update({'rows': rows}) %}{% endif %}
+    {% if cols is not none and field.type == 'TextAreaField' %}{% set temp = field_attrs.update({'cols': cols}) %}{% endif %}
+    {% if type is not none %}{% set temp = field_attrs.update({'type': type}) %}{% endif %}
+    {% if step is not none %}{% set temp = field_attrs.update({'step': step}) %}{% endif %}
+    {% if id is not none %}{% set temp = field_attrs.update({'id': id}) %}{% endif %}
+    {% if multiple %}{% set temp = field_attrs.update({'multiple': 'multiple'}) %}{% endif %} {# MODIFIED: Added this line to include multiple attribute #}
+
+    {{ field(class=" ".join(field_classes)|trim, **field_attrs) }}
+
+    {% if field.errors %}
+        <div class="invalid-feedback">
+            {% for error in field.errors %}
+                <span>{{ error }}</span><br>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% if field.description %}
+        <small class="form-text text-muted">{{ field.description }}</small>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{# render_checkbox macro remains the same #}
+{% macro render_checkbox(field, label_visible=true, input_class="") %}
+<div class="form-check mb-3">
+    {% set field_classes = ["form-check-input", input_class] %}
+    {% if field.errors %}
+        {% set temp = field_classes.append('is-invalid') %}
+    {% endif %}
+
+    {{ field(class=" ".join(field_classes)|trim) }}
+
+    {% if label_visible and field.label %}
+        {{ field.label(class="form-check-label") }}
+    {% endif %}
+    {% if field.errors %}
+        <div class="invalid-feedback d-block">
+            {% for error in field.errors %}
+                <span>{{ error }}</span><br>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% if field.description %}
+        <small class="form-text text-muted">{{ field.description }}</small>
+    {% endif %}
+</div>
+{% endmacro %}

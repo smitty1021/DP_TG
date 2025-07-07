@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="{{ theme if theme else 'dark' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token.current_token }}">
+    <title>{% block title %}Trading Journal{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
+
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+
+
+
+
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+    <nav class="navbar navbar-expand navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
+                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Journal Icon" class="navbar-brand-icon me-2">
+
+            </a>
+            {% if current_user.is_authenticated %}
+            <button class="btn btn-link text-white d-lg-none" id="menuToggle" type="button"><i class="fas fa-bars"></i></button>
+            {% endif %}
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.is_admin() %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-shield"></i> <span class="d-none d-md-inline">Admin</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('admin.show_admin_dashboard') }}">Admin Dashboard</a></li>
+                                <li><a class="dropdown-item" href="/admin/users">Manage Users</a></li>
+                                <li><a class="dropdown-item" href="/admin/files">View All Files</a></li>
+                                <li><a class="dropdown-item" href="/admin/analytics">Analytics</a></li>
+
+                            </ul>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" id="navbarUserDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                {% if current_user.profile_picture and current_user.profile_picture != 'default.jpg' %}
+                                    <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/' + current_user.profile_picture) }}?v={{ range(1,100000)|random }}" alt="User Avatar" class="rounded-circle me-1" style="width: 24px; height: 24px; object-fit: cover;">
+                                {% else %}
+                                     <i class="fas fa-user fa-fw"></i>
+                                {% endif %}
+                                <span class="d-none d-md-inline">{{ current_user.username }}</span>
+                            </a>
+
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarUserDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('auth.user_profile') }}">Profile</a></li>
+                                <a class="dropdown-item" href="{{ url_for('settings.view_settings') }}">Settings</a>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                         <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Login</a></li>
+                         <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}">Register</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Message Container for Bottom-Right Notifications -->
+    <div id="flask-flash-data" style="display: none;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div data-category="{{ category }}" data-message="{{ message|safe }}"></div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div id="dynamic-notification-container" class="flash-popup-container"></div>
+
+    {% include 'partials/_confirmation_modal.html' %}
+
+    <div class="app-body-container" style="padding-top: 56px;">
+        {% if current_user.is_authenticated %}
+        <aside class="sidebar desktop-icon-only">
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a class="nav-link {{ 'active' if request.endpoint == 'main.index' else '' }}" href="{{ url_for('main.index') }}"><span class="icon"><i class="fas fa-tachometer-alt"></i></span><span class="label">Dashboard</span></a></li>
+                    <li class="has-submenu">
+                        <a href="#" class="nav-link {{ 'active' if request.blueprint == 'journal' else '' }}"><span class="icon"><i class="fas fa-book-open"></i></span><span class="label">Journal</span><span class="arrow"><i class="fas fa-chevron-right"></i></span></a>
+                        <ul class="submenu {{ 'open' if request.blueprint == 'journal' else '' }}">
+                            <li><a href="{{ url_for('journal.manage_daily_journal') }}" class="{{ 'active' if request.endpoint and 'daily' in request.endpoint else '' }}">Daily Journal</a></li>
+                            <li><a href="{{ url_for('journal.p12_statistics') }}" class="{{ 'active' if request.endpoint == 'journal.p12_statistics' else '' }}">P12 Statistics</a></li>
+                            <li><a href="#">Weekly (Soon)</a></li>
+                            <li><a href="#">Monthly (Soon)</a></li>
+                            <li><a href="#">Quarterly (Soon)</a></li>
+                            <li><a href="#">Yearly (Soon)</a></li>
+                        </ul>
+                    </li>
+                    <li><a class="nav-link {{ 'active' if request.blueprint == 'trades' else '' }}" href="{{ url_for('trades.view_trades_list') }}"><span class="icon"><i class="fas fa-exchange-alt"></i></span><span class="label">Trades</span></a></li>
+                    <li><a class="nav-link {{ 'active' if request.blueprint == 'trading_models' else '' }}" href="{{ url_for('trading_models.models_list') }}"><span class="icon"><i class="fas fa-sitemap"></i></span><span class="label">Trade Models</span></a></li>
+
+                    <li class="has-submenu">
+                        <a href="#"><i class="fas fa-calendar-alt icon"></i><span class="label">Calendar Tools</span><span class="arrow"><i class="fas fa-chevron-right"></i></span></a>
+                        <ul class="submenu">
+                            <li><a href="#">Day View (Soon)</a></li>
+                            <li><a href="#">Week View (Soon)</a></li>
+                            <li><a href="#">Year View (Soon)</a></li>
+                        </ul>
+                    </li>
+                    <li><a class="nav-link {{ 'active' if request.blueprint == 'files' else '' }}" href="{{ url_for('files.user_my_files') }}"><span class="icon"><i class="fas fa-folder"></i></span><span class="label">My Files</span></a></li>
+                    <li class="has-submenu">
+                        <a href="#" class="nav-link"><span class="icon"><i class="fas fa-chart-pie"></i></span><span class="label">Tools &amp; Analytics</span><span class="arrow"><i class="fas fa-chevron-right"></i></span></a>
+                         <ul class="submenu">
+                            <li><a href="{{ url_for('analytics.tag_usage_analytics') }}"><i class="fas fa-chart-bar me-2"></i>Tag Analytics</a></li>
+                            <li><a href="#">Statistics (Soon)</a></li>
+                            <li><a href="#">Backtesting (Soon)</a></li>
+                        </ul>
+                    </li>
+                    <li class="has-submenu">
+                        <a href="#"><i class="fas fa-briefcase icon"></i><span class="label">Business Plan</span><span class="arrow"><i class="fas fa-chevron-right"></i></span></a>
+                        <ul class="submenu">
+                            <li><a href="#">My Why (Soon)</a></li>
+                            <li><a href="#">Recovery Plan (Soon)</a></li>
+                            <li><a href="#">Implementation Plan (Soon)</a></li>
+                            <li><a href="#">Exit Plan (Soon)</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#"><i class="fas fa-sticky-note icon"></i><span class="label">Notes (Soon)</span></a></li>
+                    <li><a href="#"><i class="fas fa-graduation-cap icon"></i><span class="label">Continuing Ed (Soon)</span></a></li>
+                    <li><a href="{{ url_for('settings.view_settings') }}" class="{{ 'active' if request.blueprint == 'settings' else '' }}"><i class="fas fa-cog icon"></i><span class="label">Settings</span></a></li>
+
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="small">Logged in as:</div>
+                {{ current_user.username }}
+            </div>
+        </aside>
+        {% endif %}
+
+        <div class="content-wrapper">
+            <main class="main-content">
+                <div class="container-fluid py-4">
+                    {% block page_header %}{% endblock %}
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+            <footer class="footer mt-auto py-3">
+                <div class="container-fluid">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">&copy; {{ current_year }} Trading Journal</div>
+                        <div>
+                            <a href="#">Privacy Policy</a>
+                            &middot;
+                            <a href="#">Terms &amp; Conditions</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Convert Flask flash messages to bottom-right notifications
+        const hiddenFlashMessages = document.querySelectorAll('.hidden-flask-message');
+
+        hiddenFlashMessages.forEach(function(alert) {
+            const category = alert.getAttribute('data-category');
+            const message = alert.getAttribute('data-message');
+
+            // Convert Flask categories to notification system categories
+            let notificationCategory = category;
+            if (category === 'error') notificationCategory = 'danger';
+
+            // Show as bottom-right notification
+            showNotification(message, notificationCategory, null, 5000);
+        });
+    });
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // This simple script finds any hidden Flask messages and tells the
+        // global notifications.js script to display them. This ensures only
+        // ONE system manages the pop-ups, which resolves the conflict.
+        const flaskMessages = document.querySelectorAll('#flask-flash-data > div');
+        flaskMessages.forEach(msg => {
+            let category = msg.dataset.category;
+            const message = msg.dataset.message;
+
+            // Standardize Flask's 'error' category to 'danger' for Bootstrap
+            if (category === 'error') {
+                category = 'danger';
+            }
+
+            if (message) {
+                // Use your global function to show the notification
+                showNotification(message, category);
+            }
+        });
+    });
+    </script>
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script> {# <-- ADD THIS LINE #}
+
+
+    {# This block allows individual templates to add their own page-specific scripts #}
+    {% block scripts_extra %}{% endblock %}
+    {% block extra_js %}{% endblock %}
+
+</body>
+</html>

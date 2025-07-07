@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}View File - {{ file.filename }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex flex-wrap align-items-center">
+                <div class="file-icon-large me-3">
+                    {% set icon_class = 'fa-file-alt' %}
+                    {% if file.file_type == 'pdf' %}{% set icon_class = 'fa-file-pdf' %}{% endif %}
+                    {% if file.mime_type and file.mime_type.startswith('image/') %}{% set icon_class = 'fa-file-image' %}{% endif %}
+                    {% if file.file_type in ['doc', 'docx'] %}{% set icon_class = 'fa-file-word' %}{% endif %}
+                    {% if file.file_type in ['xls', 'xlsx', 'csv'] %}{% set icon_class = 'fa-file-excel' %}{% endif %}
+                    <i class="fas {{ icon_class }} fa-2x"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h4 class="mb-0 text-break">{{ file.filename }}</h4>
+                    <small class="text-muted">
+                        {{ file.filesize|file_size }} | {{ file.file_type|upper if file.file_type else 'File' }} | Uploaded: {{ file.upload_date.strftime('%Y-%m-%d') }}
+                    </small>
+                </div>
+                <div class="ms-auto mt-2 mt-md-0">
+                    <a href="{{ url_for('files.download_file', file_id=file.id) }}" class="btn btn-primary"><i class="fas fa-download me-2"></i>Download</a>
+                    {% if file.user_id == current_user.id or current_user.is_admin() %}
+                    <form method="POST" action="{{ url_for('files.delete_file', file_id=file.id) }}" class="d-inline-block delete-file-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger" data-filename="{{ file.filename }}">
+                            <i class="fas fa-trash me-2"></i>Delete
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            {% if file.description %}
+            <div class="mb-4">
+                <h5><i class="fas fa-info-circle me-2"></i>Description</h5>
+                <p class="text-muted bg-light p-3 rounded">
+                    {{ file.description }}
+                </p>
+            </div>
+            {% endif %}
+
+            <div class="mb-4">
+                <h5><i class="fas fa-eye me-2"></i>Preview</h5>
+                <div class="file-preview-area p-3 border rounded">
+                    {% if file.mime_type and file.mime_type.startswith('image/') %}
+                        <img src="{{ url_for('files.view_file', file_id=file.id) }}" alt="Preview of {{ file.filename }}" class="img-fluid rounded">
+                    {% elif file.file_type == 'pdf' %}
+                        <iframe src="{{ url_for('files.view_file', file_id=file.id) }}#toolbar=0" width="100%" height="600px" style="border: none;">
+                            <p>Your browser does not support embedded PDFs. <a href="{{ url_for('files.download_file', file_id=file.id) }}">Download the PDF</a>.</p>
+                        </iframe>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-eye-slash fa-3x text-muted"></i>
+                            <p class="mt-3">Preview is not available for this file type.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Minimal, non-conflicting helper styles for this specific layout */
+.file-icon-large {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bs-light);
+    border-radius: var(--bs-border-radius);
+}
+[data-bs-theme="dark"] .file-icon-large {
+    background-color: var(--bs-gray-700);
+}
+.file-preview-area {
+    background-color: var(--bs-light);
+}
+[data-bs-theme="dark"] .file-preview-area {
+    background-color: var(--bs-dark);
+}
+</style>
+{% endblock %}
+
+
+{% block scripts_extra %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Attach event listener to all delete forms on this page
+    document.querySelectorAll('.delete-file-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Stop the form from submitting immediately
+
+            const button = form.querySelector('button[type="submit"]');
+            const filename = button.dataset.filename;
+
+            // Use the global confirmation modal
+            showCustomConfirmation({
+                title: 'Confirm Deletion',
+                message: `Are you sure you want to permanently delete the file: <strong>${filename}</strong>? This action cannot be undone.`,
+                confirmText: 'Delete File',
+                confirmClass: 'btn-danger',
+                icon: 'exclamation-triangle',
+                onConfirm: () => {
+                    // If the user confirms, submit the form
+                    form.submit();
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

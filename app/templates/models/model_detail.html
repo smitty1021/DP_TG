@@ -1,0 +1,829 @@
+{% extends "base.html" %}
+
+{% macro safe_format(value, format_str=':.2f', default=0, prefix='', suffix='') -%}
+    {% if value is not none and value != '' %}
+        {{ prefix }}{{ format_str.format(value) }}{{ suffix }}
+    {% else %}
+        {{ prefix }}{{ format_str.format(default) }}{{ suffix }}
+    {% endif %}
+{%- endmacro %}
+
+{% macro safe_currency(value, default=0) -%}
+    {% if value is not none and value != '' %}
+        ${{ '{:,.0f}'.format(value) }}
+    {% else %}
+        ${{ '{:,.0f}'.format(default) }}
+    {% endif %}
+{%- endmacro %}
+
+{% macro safe_percent(value, default=0) -%}
+    {% if value is not none and value != '' %}
+        {{ '{:.1f}'.format(value) }}%
+    {% else %}
+        {{ '{:.1f}'.format(default) }}%
+    {% endif %}
+{%- endmacro %}
+
+{% macro safe_number(value, decimals=2, default=0) -%}
+    {% if value is not none and value != '' %}
+        {{ ('{:.' + decimals|string + 'f}').format(value) }}
+    {% else %}
+        {{ ('{:.' + decimals|string + 'f}').format(default) }}
+    {% endif %}
+{%- endmacro %}
+
+{% macro metric_card(value, label, type='neutral', format='number', decimals=2) -%}
+    {% if type == 'strike_rate' %}
+        {% set color_class = 'positive' if value > 50 else 'negative' if value < 40 else 'neutral' %}
+    {% elif type == 'profit_factor' %}
+        {% set color_class = 'positive' if value > 1.5 else 'negative' if value < 1.2 else 'neutral' %}
+    {% elif type == 'kelly' %}
+        {% set color_class = 'positive' if value > 0 and value < 25 else 'negative' if value < 0 or value > 30 else 'neutral' %}
+    {% elif type == 'sqn' %}
+        {% set color_class = 'positive' if value > 1.6 else 'negative' if value < 1.0 else 'neutral' %}
+    {% elif type == 'expectancy' %}
+        {% set color_class = 'positive' if value > 0 else 'negative' if value < 0 else 'neutral' %}
+    {% elif type == 'r_multiple' %}
+        {% set color_class = 'positive' if value > 0 else 'negative' if value < 0 else 'neutral' %}
+    {% elif type == 'pnl' %}
+        {% set color_class = 'positive' if value > 0 else 'negative' if value < 0 else 'neutral' %}
+    {% else %}
+        {% set color_class = 'neutral' %}
+    {% endif %}
+
+    <div class="metric-card {{ color_class }}">
+        <div class="metric-value">
+            {% if format == 'currency' %}
+                {{ safe_currency(value) }}
+            {% elif format == 'percent' %}
+                {{ safe_percent(value) }}
+            {% else %}
+                {{ safe_number(value, decimals) }}
+            {% endif %}
+        </div>
+        <div class="metric-label">{{ label }}</div>
+    </div>
+{%- endmacro %}
+
+{% block title %}{{ model.name }} - Model Analytics{% endblock %}
+
+{% block page_header %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1>{{ model.name }}</h1>
+            <p class="text-muted mb-0">
+                Version {{ model.version or '1.0' }} |
+                {{ 'Active' if model.is_active else 'Inactive' }} Model
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('trading_models.edit_trading_model', model_id=model.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-edit me-1"></i> Edit Model
+            </a>
+            <a href="{{ url_for('trading_models.models_list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Models
+            </a>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    {% if not has_trades %}
+    <!-- Empty State -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h3>No Trading Data Yet</h3>
+                    <p class="text-muted">Start trading with this model to see comprehensive performance analytics based on Random's methodology.</p>
+                    <p class="text-muted">Analytics will include: SQN, Kelly Fraction, R-Multiples, Drawdown Analysis, and more.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Model Configuration - Moved to Top -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Model Details, Configuration & Strategy</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4 model-analytics-dashboard">
+                        <!-- Model Overview & Logic -->
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-bullseye me-1"></i>Model Overview & Logic</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <p class="indented-item">{{ model.overview_logic or 'No overview logic provided.' }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Risk Management -->
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-shield-alt me-1"></i>Risk Management</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <p class="indented-item"><strong>Stop Loss Strategy:</strong> {{ model.stop_loss_strategy or 'Not set' }}</p>
+                                    <p class="indented-item"><strong>Take Profit Strategy:</strong> {{ model.take_profit_strategy or 'Not set' }}</p>
+                                    <p class="indented-item"><strong>Position Sizing:</strong> {{ model.position_sizing_rules or 'Not set' }}</p>
+                                    <p class="indented-item"><strong>Max Loss per Trade:</strong> {{ model.model_max_loss_per_trade or 'Not set' }}</p>
+                                    <p class="indented-item"><strong>Max Daily Loss:</strong> {{ model.model_max_daily_loss or 'Not set' }}</p>
+                                    <p class="indented-item"><strong>Min R:R Ratio:</strong> {{ model.min_risk_reward_ratio or 'Not set' }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Execution Strategy -->
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-play me-1"></i>Execution Strategy</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <p class="indented-item"><strong>Entry Trigger:</strong> {{ model.entry_trigger_description or 'Not specified' }}</p>
+                                    <p class="indented-item"><strong>Key Levels ID:</strong> {{ model.key_levels_identification or 'Not specified' }}</p>
+                                    <p class="indented-item"><strong>Volume Analysis:</strong> {{ model.volume_analysis_notes or 'Not specified' }}</p>
+                                    <hr class="indented-hr">
+                                    <p class="indented-item"><strong>Breakeven Rules:</strong> {{ model.trade_management_breakeven_rules or 'Not specified' }}</p>
+                                    <p class="indented-item"><strong>Scaling Rules:</strong> {{ model.scaling_in_out_rules or 'Not specified' }}</p>
+                                    <p class="indented-item"><strong>Trailing Stop:</strong> {{ model.trade_management_trailing_stop_rules or 'Not specified' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Second Row - Additional Details -->
+                    <div class="row model-analytics-dashboard">
+                        <!-- Timeframe Alignment -->
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-clock me-1"></i>Timeframe Alignment</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <p class="indented-item"><strong>Primary Chart:</strong> {{ model.primary_chart_tf or 'Not set' }}</p>
+                                    <p class="indented-item"><strong>Execution Chart:</strong> {{ model.execution_chart_tf or 'Not set' }}</p>
+                                    <p class="indented-item"><strong>Higher Timeframe Context:</strong> {{ model.context_chart_tf or 'Not set' }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Analysis -->
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-chart-line me-1"></i>Technical Analysis</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <p class="indented-item"><strong>Indicators:</strong> {{ model.technical_indicators_used or 'Not specified' }}</p>
+                                    <p class="indented-item"><strong>Chart Patterns:</strong> {{ model.chart_patterns_used or 'Not specified' }}</p>
+                                    <p class="indented-item"><strong>Price Action:</strong> {{ model.price_action_signals or 'Not specified' }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Assessment -->
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-balance-scale me-1"></i>Assessment</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <p class="indented-item"><strong>Strengths:</strong> {{ model.strengths or 'Not specified' }}</p>
+                                    <p class="indented-item"><strong>Weaknesses:</strong> {{ model.weaknesses or 'Not specified' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if has_trades %}
+    <!-- Replace your Performance Analytics Dashboard section with this wrapped version -->
+
+    <!-- Analytics Card - Same Layout as Current -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-chart-bar me-1"></i>Analytics</h6>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#metricsExplanationModal">
+                        <i class="fas fa-question-circle me-1"></i> Explain Metrics
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- First Row - 4 Analytics Cards -->
+                    <div class="row mb-4 model-analytics-dashboard">
+                        <!-- Key Performance Metrics -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-trophy me-1"></i>Key Performance</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div class="row g-2 text-center">
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('net_pnl'), 'Net P&L', 'pnl', 'currency') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('strike_rate'), 'Strike Rate', 'strike_rate', 'percent') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('profit_factor'), 'Profit Factor', 'profit_factor') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('expected_value'), 'Expected Value', 'expectancy', 'currency') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('median_profit'), 'Median Profit', 'pnl', 'currency') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('average_profit'), 'Average Profit', 'pnl', 'currency') }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Risk & Drawdown Metrics -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-shield-alt me-1"></i>Risk & Drawdown</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div class="row g-2 text-center">
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('kelly_fraction'), 'Kelly Fraction', 'kelly', 'percent') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('max_drawdown'), 'Max Drawdown', 'negative', 'currency') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('max_consecutive_wins'), 'Max Win Streak', 'positive', 'number', 0) }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('max_consecutive_losses'), 'Max Loss Streak', 'negative', 'number', 0) }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('skewness'), 'Skewness', 'neutral') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('kurtosis'), 'Kurtosis', 'neutral') }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Trading Activity -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-chart-bar me-1"></i>Trading Activity</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div class="row g-2 text-center">
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('total_trades'), 'Total Trades', 'neutral', 'number', 0) }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('total_profit_moves'), 'Profit Moves', 'positive', 'number', 0) }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('total_expense_moves'), 'Expense Moves', 'negative', 'number', 0) }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('breakevens'), 'Breakevens', 'neutral', 'number', 0) }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('avg_win_r'), 'Avg Win R', 'r_multiple') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('avg_loss_r'), 'Avg Loss R', 'r_multiple') }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Analytics -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-calculator me-1"></i>Advanced Analytics</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div class="row g-2 text-center">
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('sqn'), 'SQN', 'sqn') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('sqn_100'), 'SQN(100)', 'sqn') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('expectancy'), 'Expectancy', 'expectancy') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('total_r'), 'Total R', 'r_multiple') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('median_profit_streak'), 'Med Profit Streak', 'positive', 'number', 0) }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('median_expense_streak'), 'Med Expense Streak', 'negative', 'number', 0) }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Second Row - Time-Based Performance, System Quality Insights, and Equity Curve -->
+                    <div class="row mb-4 model-analytics-dashboard">
+                        <!-- Time-Based Performance -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-calendar me-1"></i>Time-Based Performance</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div class="row g-2 text-center">
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('daily_ev'), 'Daily EV', 'expectancy', 'currency') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('avg_r_per_month'), 'Avg R/Month', 'r_multiple') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('avg_annual_r'), 'Avg Annual R', 'r_multiple') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('median_ev'), 'Median EV', 'expectancy', 'currency') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('trades_per_day'), 'Trades/Day', 'neutral') }}
+                                        </div>
+                                        <div class="col-6">
+                                            {{ metric_card(analytics.get('trading_period_days', 0), 'Trading Days', 'neutral', 'number', 0) }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- System Quality Insights -->
+                        {% if model_insights %}
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-lightbulb me-1"></i>System Quality Insights</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div class="text-center">
+                                        {% for insight in model_insights %}
+                                        <div class="insight-item mb-2">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            <small>{{ insight }}</small>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Equity Curve -->
+                        <div class="col-lg-{% if model_insights %}6{% else %}9{% endif %} mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-chart-line me-1"></i>Equity Curve</h6>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div style="position: relative; height: 250px; width: 100%;">
+                                        <canvas
+                                            id="equityChart"
+                                            style="display: block; box-sizing: border-box; height: 400px; width: 100%;"
+                                        ></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backtesting Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-flask me-2"></i>Backtesting & Analysis</h5>
+                </div>
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-chart-area fa-4x text-muted mb-3"></i>
+                    <h4>Backtesting Module</h4>
+                    <p class="text-muted lead">Advanced backtesting capabilities coming soon.</p>
+                    <p class="text-muted">Features will include:</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled text-muted">
+                                <li><i class="fas fa-arrow-right me-2"></i>Historical performance validation</li>
+                                <li><i class="fas fa-arrow-right me-2"></i>Walk-forward analysis</li>
+                                <li><i class="fas fa-arrow-right me-2"></i>Monte Carlo simulations</li>
+                                <li><i class="fas fa-arrow-right me-2"></i>Parameter optimization</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled text-muted">
+                                <li><i class="fas fa-arrow-right me-2"></i>Random's Four Steps validation</li>
+                                <li><i class="fas fa-arrow-right me-2"></i>P12 scenario testing</li>
+                                <li><i class="fas fa-arrow-right me-2"></i>Session behavior analysis</li>
+                                <li><i class="fas fa-arrow-right me-2"></i>Captain Backtest integration</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <a href="#" class="btn btn-primary mt-3 disabled">
+                        <i class="fas fa-play me-2"></i>Coming Soon
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metrics Explanation Modal -->
+    <div class="modal fade" id="metricsExplanationModal" tabindex="-1" aria-labelledby="metricsExplanationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="metricsExplanationModalLabel">Trading Metrics Explained</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="accordion" id="metricsAccordion">
+                        <!-- Key Performance Metrics -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingPerformance">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePerformance" aria-expanded="true" aria-controls="collapsePerformance">
+                                    Key Performance Metrics
+                                </button>
+                            </h2>
+                            <div id="collapsePerformance" class="accordion-collapse collapse show" aria-labelledby="headingPerformance" data-bs-parent="#metricsAccordion">
+                                <div class="accordion-body">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Net P&L</dt>
+                                        <dd class="col-sm-8">Total profit or loss from all trades</dd>
+                                        <dt class="col-sm-4">Strike Rate</dt>
+                                        <dd class="col-sm-8">Percentage of winning trades (>50% is good)</dd>
+                                        <dt class="col-sm-4">Profit Factor</dt>
+                                        <dd class="col-sm-8">Gross profit divided by gross loss (>1.5 is good)</dd>
+                                        <dt class="col-sm-4">Expected Value</dt>
+                                        <dd class="col-sm-8">Average profit per trade</dd>
+                                        <dt class="col-sm-4">Median Profit</dt>
+                                        <dd class="col-sm-8">Middle value of all trade P&Ls (less affected by outliers)</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Risk & Drawdown -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingRisk">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRisk" aria-expanded="false" aria-controls="collapseRisk">
+                                    Risk & Drawdown Metrics
+                                </button>
+                            </h2>
+                            <div id="collapseRisk" class="accordion-collapse collapse" aria-labelledby="headingRisk" data-bs-parent="#metricsAccordion">
+                                <div class="accordion-body">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Kelly Fraction</dt>
+                                        <dd class="col-sm-8">Optimal position size percentage (10-25% is typically good)</dd>
+                                        <dt class="col-sm-4">Max Drawdown</dt>
+                                        <dd class="col-sm-8">Largest peak-to-trough decline in account value</dd>
+                                        <dt class="col-sm-4">Skewness</dt>
+                                        <dd class="col-sm-8">Asymmetry of returns (positive = more big wins than big losses)</dd>
+                                        <dt class="col-sm-4">Kurtosis</dt>
+                                        <dd class="col-sm-8">Tail risk measure (higher = more extreme moves)</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Analytics -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingAdvanced">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdvanced" aria-expanded="false" aria-controls="collapseAdvanced">
+                                    Advanced Analytics
+                                </button>
+                            </h2>
+                            <div id="collapseAdvanced" class="accordion-collapse collapse" aria-labelledby="headingAdvanced" data-bs-parent="#metricsAccordion">
+                                <div class="accordion-body">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">SQN</dt>
+                                        <dd class="col-sm-8">System Quality Number (>1.6 is good, >2.5 is excellent)</dd>
+                                        <dt class="col-sm-4">SQN(100)</dt>
+                                        <dd class="col-sm-8">SQN normalized to 100 trades for comparison</dd>
+                                        <dt class="col-sm-4">Expectancy</dt>
+                                        <dd class="col-sm-8">Expected profit per dollar risked</dd>
+                                        <dt class="col-sm-4">R-Multiple</dt>
+                                        <dd class="col-sm-8">Profit/loss expressed as multiples of initial risk</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    {% if has_trades %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        // Fixed equity curve chart
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM loaded, initializing enhanced equity chart...');
+
+            // Update chart status
+            const statusElement = document.getElementById('chartStatus');
+            if (statusElement) statusElement.textContent = 'Loading chart...';
+
+            // Get the actual data from server
+            let equityData;
+            try {
+                equityData = {{ equity_data_json|safe }};
+                console.log('✅ Successfully parsed equity data:', equityData);
+            } catch (e) {
+                console.error('❌ Failed to parse equity data:', e);
+                equityData = { labels: [], data: [] };
+            }
+
+            const equityLabels = equityData.labels || [];
+            const equityValues = equityData.data || [];
+
+            console.log('📊 Chart data:');
+            console.log('- Labels count:', equityLabels.length);
+            console.log('- Values count:', equityValues.length);
+            console.log('- Sample labels:', equityLabels.slice(0, 3));
+            console.log('- Sample values:', equityValues.slice(0, 3));
+
+            const ctx = document.getElementById('equityChart');
+            console.log('🎯 Canvas element found:', !!ctx);
+
+            if (ctx && equityLabels.length > 0 && equityValues.length > 0) {
+                console.log('🎨 Creating enhanced chart with', equityLabels.length, 'data points');
+
+                // Update status
+                if (statusElement) statusElement.textContent = 'Rendering chart...';
+
+                // Create segments for dynamic coloring
+                function createColorSegments(data) {
+                    const segments = [];
+                    let currentSegment = {
+                        start: 0,
+                        end: 0,
+                        color: data[0] >= 0 ? '#28a745' : '#dc3545', // Green for positive, red for negative
+                        backgroundColor: data[0] >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)'
+                    };
+
+                    for (let i = 1; i < data.length; i++) {
+                        const currentValue = data[i];
+                        const previousValue = data[i - 1];
+                        const currentColor = currentValue >= 0 ? '#28a745' : '#dc3545';
+
+                        // If color should change (crossing zero line)
+                        if ((currentValue >= 0 && previousValue < 0) || (currentValue < 0 && previousValue >= 0)) {
+                            // End current segment
+                            currentSegment.end = i - 1;
+                            segments.push(currentSegment);
+
+                            // Start new segment
+                            currentSegment = {
+                                start: i - 1,
+                                end: i,
+                                color: currentColor,
+                                backgroundColor: currentColor === '#28a745' ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)'
+                            };
+                        }
+
+                        // Update segment end
+                        currentSegment.end = i;
+                        currentSegment.color = currentColor;
+                        currentSegment.backgroundColor = currentColor === '#28a745' ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)';
+                    }
+
+                    // Add final segment
+                    if (currentSegment.start <= currentSegment.end) {
+                        segments.push(currentSegment);
+                    }
+
+                    return segments;
+                }
+
+                // Create datasets for each color segment
+                const colorSegments = createColorSegments(equityValues);
+                console.log('🎨 Created', colorSegments.length, 'color segments');
+
+                const datasets = colorSegments.map((segment, index) => {
+                    const segmentData = new Array(equityValues.length).fill(null);
+
+                    // Fill only the segment range with data
+                    for (let i = segment.start; i <= segment.end; i++) {
+                        segmentData[i] = equityValues[i];
+                    }
+
+                    return {
+                        label: `Segment ${index + 1}`,
+                        data: segmentData,
+                        borderColor: segment.color,
+                        backgroundColor: segment.backgroundColor,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        pointBackgroundColor: segment.color,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 1
+                    };
+                });
+
+                console.log('🎨 Chart styling - Using', datasets.length, 'datasets for dynamic coloring');
+
+                try {
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: equityLabels,
+                            datasets: datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false // Hide legend since we have multiple datasets
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                    callbacks: {
+                                        label: function(context) {
+                                            // Only show tooltip for non-null values
+                                            if (context.raw !== null) {
+                                                return 'P&L: $' + context.raw.toLocaleString(undefined, {
+                                                    minimumFractionDigits: 2,
+                                                    maximumFractionDigits: 2
+                                                });
+                                            }
+                                            return '';
+                                        },
+                                        // Remove the dataset label from tooltip
+                                        labelColor: function(context) {
+                                            return {
+                                                borderColor: context.dataset.borderColor,
+                                                backgroundColor: context.dataset.borderColor,
+                                                borderWidth: 2,
+                                                borderDash: [],
+                                                borderRadius: 2,
+                                            };
+                                        }
+                                    },
+                                    // Filter out null values from tooltip
+                                    filter: function(tooltipItem) {
+                                        return tooltipItem.raw !== null;
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    display: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Trade Date',
+                                        color: '#fff',
+                                        font: {
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    grid: {
+                                        display: true,
+                                        color: 'rgba(255,255,255,0.1)'
+                                    },
+                                    ticks: {
+                                        color: '#fff',
+                                        maxTicksLimit: 8
+                                    }
+                                },
+                                y: {
+                                    display: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Cumulative P&L ($)',
+                                        color: '#fff',
+                                        font: {
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    grid: {
+                                        display: true,
+                                        color: function(context) {
+                                            // Highlight the zero line
+                                            return context.tick.value === 0 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.1)';
+                                        },
+                                        lineWidth: function(context) {
+                                            return context.tick.value === 0 ? 2 : 1;
+                                        }
+                                    },
+                                    ticks: {
+                                        color: '#fff',
+                                        callback: function(value) {
+                                            return '$' + value.toLocaleString();
+                                        }
+                                    }
+                                }
+                            },
+                            interaction: {
+                                mode: 'nearest',
+                                axis: 'x',
+                                intersect: false
+                            }
+                        }
+                    });
+
+                    console.log('🎉 Enhanced chart created successfully!', chart);
+
+                    // Update status to success
+                    if (statusElement) {
+                        statusElement.innerHTML = '<span class="text-success">Enhanced chart loaded successfully!</span>';
+                    }
+
+                } catch (error) {
+                    console.error('💥 Error creating enhanced chart:', error);
+
+                    // Update status to error
+                    if (statusElement) {
+                        statusElement.innerHTML = '<span class="text-danger">Chart error: ' + error.message + '</span>';
+                    }
+
+                    // Show error message in chart area
+                    const container = ctx.parentElement;
+                    container.innerHTML = '<div class="text-center text-danger p-4"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Error loading chart: ' + error.message + '</div>';
+                }
+            } else {
+                console.warn('⚠️ Chart not created - missing data or canvas');
+                console.log('Canvas exists:', !!ctx);
+                console.log('Labels length:', equityLabels.length);
+                console.log('Values length:', equityValues.length);
+
+                // Update status
+                if (statusElement) {
+                    if (equityLabels.length === 0) {
+                        statusElement.innerHTML = '<span class="text-warning">No data available</span>';
+                    } else {
+                        statusElement.innerHTML = '<span class="text-warning">Canvas or data missing</span>';
+                    }
+                }
+
+                // Show appropriate message
+                if (ctx) {
+                    const container = ctx.parentElement;
+                    if (equityLabels.length === 0) {
+                        container.innerHTML = '<div class="text-center text-muted p-4"><i class="fas fa-chart-line fa-2x mb-2"></i><br>No equity data available</div>';
+                    } else {
+                        container.innerHTML = '<div class="text-center text-warning p-4"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Canvas element missing</div>';
+                    }
+                }
+            }
+
+            console.log('📝 Enhanced chart initialization complete');
+        });
+    chart.resize()
+    </script>
+    {% else %}
+    <script>
+        console.log('ℹ️ No trades available for equity chart');
+    </script>
+    {% endif %}
+{% endblock %}
+

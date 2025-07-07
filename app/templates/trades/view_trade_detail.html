@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - {{ trade.instrument }} on {{ trade.trade_date|format_date('%d-%b-%Y') }}{% endblock %}
+
+{% block page_header %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>{{ title }}</h1>
+        <div>
+            <a href="{{ url_for('trades.edit_trade', trade_id=trade.id) }}" class="btn btn-warning"><i class="fas fa-edit me-1"></i> Edit Trade</a>
+            <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-secondary"><i class="fas fa-list me-1"></i> Back to List</a>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h4>Trade ID: {{ trade.id }} - {{ trade.instrument }} ({{ trade.direction }}) on {{ trade.trade_date|format_date('%d-%b-%Y') }}</h4>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h5>Key Details</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><strong>Instrument:</strong> {{ trade.instrument }}</li>
+                    <li class="list-group-item"><strong>Date:</strong> {{ trade.trade_date|format_date('%d-%b-%Y') }}</li>
+                    <li class="list-group-item"><strong>Direction:</strong> <span class="badge {% if trade.direction == 'Long' %}bg-success{% elif trade.direction == 'Short' %}bg-danger{% else %}bg-secondary{% endif %}">{{ trade.direction }}</span></li>
+                    <li class="list-group-item"><strong>Trading Model:</strong> {{ trade.trading_model.name if trade.trading_model else 'N/A' }}</li>
+                    <li class="list-group-item">
+                        <strong>Tags:</strong>
+                        {% if trade.tags %}
+                            {% for tag in trade.tags %}
+                                <span class="badge me-1 mb-1 {{ tag|tag_color }}">
+                                    {{ tag.name }}
+                                </span>
+                            {% endfor %}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </li>
+                    <li class="list-group-item"><strong>News Event:</strong> {{ trade.news_event if trade.news_event else 'N/A' }}</li>
+                    <li class="list-group-item"><strong>How Closed:</strong> {{ trade.how_closed if trade.how_closed else 'N/A' }}</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h5>Performance</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><strong>Gross P&L:</strong> <span class="{{ 'text-success' if trade.pnl > 0 else ('text-danger' if trade.pnl < 0 else '') }}">{{ "$%.2f"|format(trade.pnl) if trade.pnl is not none else '$0.00' }}</span></li>
+                    <li class="list-group-item"><strong>R-Value:</strong> 
+                        {% if trade.pnl_in_r is not none %}<span class="{{ 'text-success' if trade.pnl_in_r > 0 else ('text-danger' if trade.pnl_in_r < 0 else '') }}">{{ "%.2f"|format(trade.pnl_in_r) }}R</span>
+                        {% else %}N/A{% endif %}
+                    </li>
+                    <li class="list-group-item"><strong>Initial SL:</strong> {{ trade.initial_stop_loss if trade.initial_stop_loss is not none else 'N/A' }}</li>
+                    <li class="list-group-item"><strong>Terminus Target:</strong> {{ trade.terminus_target if trade.terminus_target is not none else 'N/A' }}</li>
+                    <li class="list-group-item"><strong>MAE (Points):</strong> {{ trade.mae if trade.mae is not none else 'N/A' }}</li>
+                    <li class="list-group-item"><strong>MFE (Points):</strong> {{ trade.mfe if trade.mfe is not none else 'N/A' }}</li>
+                    <li class="list-group-item"><strong>Time in Trade:</strong> {{ trade.time_in_trade }}</li>
+                </ul>
+            </div>
+        </div>
+
+        <hr>
+        <h5>Entries & Exits</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Entry Points ({{ trade.total_contracts_entered }} total contracts @ avg {{ "%.2f"|format(trade.average_entry_price) if trade.average_entry_price is not none else 'N/A' }})</h6>
+                {% if trade.entries.count() > 0 %}
+                    <ul class="list-group">
+                    {% for entry in trade.entries %}
+                        <li class="list-group-item">#{{ loop.index }}: {{ entry.contracts }} contracts @ {{ "%.2f"|format(entry.entry_price) }} (Time: {{ entry.entry_time.strftime('%H:%M') if entry.entry_time else 'N/A' }})</li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No entry points logged.</p>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <h6>Exit Points ({{ trade.total_contracts_exited }} total contracts @ avg {{ "%.2f"|format(trade.average_exit_price) if trade.average_exit_price is not none else 'N/A' }})</h6>
+                 {% if trade.exits.count() > 0 %}
+                    <ul class="list-group">
+                    {% for exit_item in trade.exits %}
+                        <li class="list-group-item">#{{ loop.index }}: {{ exit_item.contracts }} contracts @ {{ "%.2f"|format(exit_item.exit_price) }} (Time: {{ exit_item.exit_time.strftime('%H:%M') if exit_item.exit_time else 'N/A' }})</li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No exit points logged or trade still open.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr>
+        <h5>Ratings (1-5)</h5>
+        <div class="row">
+            <div class="col"><strong>Rules:</strong> {{ trade.rules_rating if trade.rules_rating is not none else 'N/A' }}</div>
+            <div class="col"><strong>Management:</strong> {{ trade.management_rating if trade.management_rating is not none else 'N/A' }}</div>
+            <div class="col"><strong>Target:</strong> {{ trade.target_rating if trade.target_rating is not none else 'N/A' }}</div>
+            <div class="col"><strong>Entry:</strong> {{ trade.entry_rating if trade.entry_rating is not none else 'N/A' }}</div>
+            <div class="col"><strong>Preparation:</strong> {{ trade.preparation_rating if trade.preparation_rating is not none else 'N/A' }}</div>
+        </div>
+        
+        <hr>
+        <h5>Notes & Analysis</h5>
+        <div class="mb-3"><strong>Trade Setup & Execution Notes:</strong><div class="p-2 border rounded bg-light">{{ trade.trade_notes|safe if trade.trade_notes else 'N/A' }}</div></div>
+        <div class="mb-3"><strong>Overall Trade Analysis:</strong><div class="p-2 border rounded bg-light">{{ trade.overall_analysis_notes|safe if trade.overall_analysis_notes else 'N/A' }}</div></div>
+        <div class="mb-3"><strong>Trade Management Notes:</strong><div class="p-2 border rounded bg-light">{{ trade.trade_management_notes|safe if trade.trade_management_notes else 'N/A' }}</div></div>
+        <div class="mb-3"><strong>Psych - Scored Highest / Sustain:</strong><div class="p-2 border rounded bg-light">{{ trade.psych_scored_highest if trade.psych_scored_highest else 'N/A' }}</div></div>
+        <div class="mb-3"><strong>Psych - Scored Lowest / Improve:</strong><div class="p-2 border rounded bg-light">{{ trade.psych_scored_lowest if trade.psych_scored_lowest else 'N/A' }}</div></div>
+        <div class="mb-3"><strong>Errors Noted:</strong><div class="p-2 border rounded bg-light">{{ trade.errors_notes if trade.errors_notes else 'N/A' }}</div></div>
+        <div class="mb-3"><strong>Improvements Noted:</strong><div class="p-2 border rounded bg-light">{{ trade.improvements_notes if trade.improvements_notes else 'N/A' }}</div></div>
+        
+        {% if trade.screenshot_link %}
+        <hr>
+        <h5>External Screenshot Link</h5>
+        <p><a href="{{ trade.screenshot_link }}" target="_blank">{{ trade.screenshot_link }}</a></p>
+        {% endif %}
+
+        {% if trade.images.count() > 0 %}
+        <hr>
+        <h5>Associated Images/Screenshots</h5>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+            {% for image in trade.images %}
+            <div class="col">
+                <div class="card h-100">
+                    <img src="{{ url_for('static', filename=current_app.config['UPLOAD_FOLDER'].split('/')[-1] + '/' + image.filepath if '/' in current_app.config['UPLOAD_FOLDER'] else current_app.config['UPLOAD_FOLDER'] + '/' + image.filepath) }}" class="card-img-top" alt="{{ image.filename }}" style="max-height: 200px; object-fit: contain;">
+                    <div class="card-body">
+                        <p class="card-text small">{{ image.filename }}</p>
+                        {% if image.caption %}<p class="card-text"><small class="text-muted">{{ image.caption }}</small></p>{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
