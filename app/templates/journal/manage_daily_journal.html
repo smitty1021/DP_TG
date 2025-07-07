@@ -85,6 +85,7 @@
 {% endblock %}
 
 {% block content %}
+
 <form method="POST" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
     {{ form.journal_date(class="d-none", value=journal_date.strftime('%Y-%m-%d')) }}
@@ -439,10 +440,11 @@
 {% block scripts_extra %}
 {{ super() }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // --- Quill Editor Initialization ---
-    // ... (rest of the script is the same, but we will modify the init calls)
     const quillToolbarOptions = [
         [{ 'header': [1, 2, false] }], ['bold', 'italic', 'underline'],
         [{'list': 'ordered'}, {'list': 'bullet'}], ['link', 'image']
@@ -480,6 +482,10 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeQuillForField('pre_market_news_notes', '{{ form.pre_market_news_notes.render_kw.get("placeholder", "") if form.pre_market_news_notes.render_kw else "" }}');
     initializeQuillForField('market_observations', '{{ form.market_observations.render_kw.get("placeholder", "") if form.market_observations.render_kw else "" }}');
     initializeQuillForField('self_observations', '{{ form.self_observations.render_kw.get("placeholder", "") if form.self_observations.render_kw else "" }}');
+
+    setTimeout(() => {
+        window.scrollTo(0, 0);
+    }, 0);
 
     // --- Sync Quill content on form submit ---
     const journalForm = document.querySelector('form');
