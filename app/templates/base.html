@@ -14,11 +14,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
-
-
-
-
     {% block head_extra %}{% endblock %}
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -71,11 +66,12 @@
                          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Login</a></li>
                          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}">Register</a></li>
                     {% endif %}
-                    <div class="theme-toggle">
-                        <button id="themeToggle" class="btn btn-outline-secondary btn-sm">
+                    <!-- Theme Toggle Button - Icon Only -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="themeToggle" role="button">
                             <i class="fas fa-moon"></i>
-                        </button>
-                    </div>
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>

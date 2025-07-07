@@ -31,10 +31,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateThemeIcon(theme) {
         if (theme === 'dark') {
             icon.className = 'fas fa-sun';
-            themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
         } else {
             icon.className = 'fas fa-moon';
-            themeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
         }
     }
 });
