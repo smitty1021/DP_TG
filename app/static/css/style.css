@@ -849,6 +849,9 @@ html[data-bs-theme="light"] .btn.btn-outline-danger:hover {
     border-color: #dc3545 !important;
 }
 
+
+
+
 /*
 ============================================
 OUTLINE BUTTON VARIANTS - DARK THEME
@@ -974,6 +977,356 @@ SOLID BUTTON VARIANTS - BOTH THEMES
     background-color: var(--border-color) !important;
     border-color: var(--border-color) !important;
 }
+
+/* ACTION BUTTONS =======================================================================================
+
+/*
+============================================
+1. ADD ACTIONS - Success/Green Theme
+============================================
+*/
+
+/* Add buttons - for creating new items */
+.action-btn.btn-add,
+.btn.btn-add {
+    /* Use success color scheme */
+}
+
+/* Light theme add buttons */
+html[data-bs-theme="light"] .action-btn.btn-add,
+html[data-bs-theme="light"] .btn.btn-add {
+    color: #198754 !important;
+    border-color: #198754 !important;
+    background-color: transparent !important;
+}
+
+html[data-bs-theme="light"] .action-btn.btn-add:hover,
+html[data-bs-theme="light"] .btn.btn-add:hover {
+    color: #fff !important;
+    background-color: #198754 !important;
+    border-color: #198754 !important;
+}
+
+/* Dark theme add buttons */
+html[data-bs-theme="dark"] .action-btn.btn-add,
+html[data-bs-theme="dark"] .btn.btn-add {
+    color: #75b798 !important;
+    border-color: #75b798 !important;
+    background-color: transparent !important;
+}
+
+html[data-bs-theme="dark"] .action-btn.btn-add:hover,
+html[data-bs-theme="dark"] .btn.btn-add:hover {
+    color: #000 !important;
+    background-color: #75b798 !important;
+    border-color: #75b798 !important;
+}
+
+/*
+============================================
+2. EDIT ACTIONS - Warning/Orange Theme
+============================================
+*/
+
+/* Edit buttons - for modifying existing items */
+.action-btn.btn-edit,
+.btn.btn-edit {
+    /* Use warning color scheme */
+}
+
+/* Light theme edit buttons */
+html[data-bs-theme="light"] .action-btn.btn-edit,
+html[data-bs-theme="light"] .btn.btn-edit {
+    color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    background-color: transparent !important;
+}
+
+html[data-bs-theme="light"] .action-btn.btn-edit:hover,
+html[data-bs-theme="light"] .btn.btn-edit:hover {
+    color: #000 !important;
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+}
+
+/* Dark theme edit buttons */
+html[data-bs-theme="dark"] .action-btn.btn-edit,
+html[data-bs-theme="dark"] .btn.btn-edit {
+    color: #ffda6a !important;
+    border-color: #ffda6a !important;
+    background-color: transparent !important;
+}
+
+html[data-bs-theme="dark"] .action-btn.btn-edit:hover,
+html[data-bs-theme="dark"] .btn.btn-edit:hover {
+    color: #000 !important;
+    background-color: #ffda6a !important;
+    border-color: #ffda6a !important;
+}
+
+/*
+============================================
+3. DELETE ACTIONS - Danger/Red Theme
+============================================
+*/
+
+/* Delete buttons - for removing items */
+.action-btn.btn-delete,
+.btn.btn-delete {
+    /* Use danger color scheme */
+}
+
+/* Light theme delete buttons */
+html[data-bs-theme="light"] .action-btn.btn-delete,
+html[data-bs-theme="light"] .btn.btn-delete {
+    color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    background-color: transparent !important;
+}
+
+html[data-bs-theme="light"] .action-btn.btn-delete:hover,
+html[data-bs-theme="light"] .btn.btn-delete:hover {
+    color: #fff !important;
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
+
+/* Dark theme delete buttons */
+html[data-bs-theme="dark"] .action-btn.btn-delete,
+html[data-bs-theme="dark"] .btn.btn-delete {
+    color: #ea868f !important;
+    border-color: #ea868f !important;
+    background-color: transparent !important;
+}
+
+html[data-bs-theme="dark"] .action-btn.btn-delete:hover,
+html[data-bs-theme="dark"] .btn.btn-delete:hover {
+    color: #000 !important;
+    background-color: #ea868f !important;
+    border-color: #ea868f !important;
+}
+
+/*
+============================================
+4. VIEW ACTIONS - Info/Blue Theme
+============================================
+*/
+
+/* View buttons - for viewing/displaying items */
+.action-btn.btn-view,
+.btn.btn-view {
+    /* Use info color scheme */
+}
+
+/* Light theme view buttons */
+html[data-bs-theme="light"] .action-btn.btn-view,
+html[data-bs-theme="light"] .btn.btn-view {
+    color: #0dcaf0 !important;
+    border-color: #0dcaf0 !important;
+    background-color: transparent !important;
+}
+
+html[data-bs-theme="light"] .action-btn.btn-view:hover,
+html[data-bs-theme="light"] .btn.btn-view:hover {
+    color: #000 !important;
+    background-color: #0dcaf0 !important;
+    border-color: #0dcaf0 !important;
+}
+
+/* Dark theme view buttons */
+html[data-bs-theme="dark"] .action-btn.btn-view,
+html[data-bs-theme="dark"] .btn.btn-view {
+    color: #6edff6 !important;
+    border-color: #6edff6 !important;
+    background-color: transparent !important;
+}
+
+html[data-bs-theme="dark"] .action-btn.btn-view:hover,
+html[data-bs-theme="dark"] .btn.btn-view:hover {
+    color: #000 !important;
+    background-color: #6edff6 !important;
+    border-color: #6edff6 !important;
+}
+
+/*
+============================================
+5. NAVIGATE ACTIONS - Primary/Purple Theme
+============================================
+*/
+
+/* Navigate buttons - for moving between pages/sections */
+.action-btn.btn-navigate,
+.btn.btn-navigate {
+    /* Use primary color scheme */
+}
+
+/* Light theme navigate buttons */
+html[data-bs-theme="light"] .action-btn.btn-navigate,
+html[data-bs-theme="light"] .btn.btn-navigate {
+    color: #6200ea !important;
+    border-color: #6200ea !important;
+    background-color: transparent !important;
+}
+
+html[data-bs-theme="light"] .action-btn.btn-navigate:hover,
+html[data-bs-theme="light"] .btn.btn-navigate:hover {
+    color: #fff !important;
+    background-color: #6200ea !important;
+    border-color: #6200ea !important;
+}
+
+/* Dark theme navigate buttons */
+html[data-bs-theme="dark"] .action-btn.btn-navigate,
+html[data-bs-theme="dark"] .btn.btn-navigate {
+    color: #9d8bf5 !important;
+    border-color: #9d8bf5 !important;
+    background-color: transparent !important;
+}
+
+html[data-bs-theme="dark"] .action-btn.btn-navigate:hover,
+html[data-bs-theme="dark"] .btn.btn-navigate:hover {
+    color: #000 !important;
+    background-color: #9d8bf5 !important;
+    border-color: #9d8bf5 !important;
+}
+
+/*
+============================================
+6. UTILITY ACTIONS - Secondary/Gray Theme
+============================================
+*/
+
+/* Utility buttons - for secondary actions, cancel, reset, etc. */
+.action-btn.btn-utility,
+.btn.btn-utility {
+    /* Use secondary color scheme */
+}
+
+/* Both themes utility buttons */
+.action-btn.btn-utility,
+.btn.btn-utility {
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+    background-color: transparent !important;
+}
+
+.action-btn.btn-utility:hover,
+.btn.btn-utility:hover {
+    color: var(--text-color) !important;
+    background-color: rgba(108, 117, 125, 0.15) !important;
+    border-color: var(--text-secondary) !important;
+}
+
+/*
+============================================
+ICON COMBINATIONS FOR SEMANTIC BUTTONS
+============================================
+*/
+
+/* Common icon + text combinations for each action type */
+.btn-add i.fas.fa-plus,
+.btn-add i.fas.fa-plus-circle {
+    margin-right: 0.5rem;
+}
+
+.btn-edit i.fas.fa-edit,
+.btn-edit i.fas.fa-pencil-alt {
+    margin-right: 0.5rem;
+}
+
+.btn-delete i.fas.fa-trash,
+.btn-delete i.fas.fa-trash-alt {
+    margin-right: 0.5rem;
+}
+
+.btn-view i.fas.fa-eye,
+.btn-view i.fas.fa-search {
+    margin-right: 0.5rem;
+}
+
+.btn-navigate i.fas.fa-arrow-right,
+.btn-navigate i.fas.fa-external-link-alt {
+    margin-right: 0.5rem;
+}
+
+.btn-utility i.fas.fa-cog,
+.btn-utility i.fas.fa-times,
+.btn-utility i.fas.fa-undo {
+    margin-right: 0.5rem;
+}
+
+/*
+============================================
+SIZE VARIANTS FOR SEMANTIC BUTTONS
+============================================
+*/
+
+/* Small semantic buttons */
+.btn-sm.btn-add,
+.btn-sm.btn-edit,
+.btn-sm.btn-delete,
+.btn-sm.btn-view,
+.btn-sm.btn-navigate,
+.btn-sm.btn-utility {
+    min-width: 80px !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.875rem !important;
+}
+
+/* Large semantic buttons */
+.btn-lg.btn-add,
+.btn-lg.btn-edit,
+.btn-lg.btn-delete,
+.btn-lg.btn-view,
+.btn-lg.btn-navigate,
+.btn-lg.btn-utility {
+    min-width: 140px !important;
+    padding: 0.75rem 1.5rem !important;
+    font-size: 1.125rem !important;
+}
+
+/*
+============================================
+BUTTON GROUPS WITH SEMANTIC ACTIONS
+============================================
+*/
+
+/* Button groups maintain semantic colors */
+.btn-group .btn-add,
+.btn-group .btn-edit,
+.btn-group .btn-delete,
+.btn-group .btn-view,
+.btn-group .btn-navigate,
+.btn-group .btn-utility {
+    border-radius: 0 !important;
+}
+
+.btn-group .btn-add:first-child,
+.btn-group .btn-edit:first-child,
+.btn-group .btn-delete:first-child,
+.btn-group .btn-view:first-child,
+.btn-group .btn-navigate:first-child,
+.btn-group .btn-utility:first-child {
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+}
+
+.btn-group .btn-add:last-child,
+.btn-group .btn-edit:last-child,
+.btn-group .btn-delete:last-child,
+.btn-group .btn-view:last-child,
+.btn-group .btn-navigate:last-child,
+.btn-group .btn-utility:last-child {
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+}
+
+/* ACTION BUTTONS =======================================================================================
+
+
+
+
+
 
 /*
 ============================================

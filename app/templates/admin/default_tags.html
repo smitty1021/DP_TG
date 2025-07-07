@@ -175,14 +175,14 @@
             <p class="lead">Configure system-wide default tags available to all users.</p>
         </div>
         <div class="col-auto">
-            <button type="button" class="btn btn-outline-primary" onclick="showAddTagForm()">
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="showAddTagForm()">
                 <i class="fas fa-plus me-1"></i> Add New Tag
             </button>
-            <button type="button" class="btn btn-outline-warning" onclick="toggleBulkActions()">
+            <button type="button" class="btn btn-outline-info btn-sm" onclick="toggleBulkActions()">
                 <i class="fas fa-check-square me-1"></i> Bulk Actions
             </button>
 
-            <a href="{{ url_for('admin.system_config') }}" class="btn btn-outline-success">
+            <a href="{{ url_for('admin.system_config') }}" class="btn btn-outline-success btn-sm">
                 <i class="fas fa-arrow-left me-1"></i> Back to Config
             </a>
         </div>
@@ -298,7 +298,7 @@
         <div class="card-body">
             <form method="POST" action="{{ url_for('admin.seed_default_tags') }}" id="seed-default-tags-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <button type="button" class="btn btn-outline-primary" onclick="confirmSeedDefaultTags()">
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="confirmSeedDefaultTags()">
                     <i class="fas fa-seedling me-1"></i> Recreate Default Tags
                 </button>
             </form>
@@ -351,8 +351,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="updateTag()">Save Changes</button>
+                <button type="button" class="action-btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="action-btn btn-primary" onclick="updateTag()">Save Changes</button>
             </div>
         </div>
     </div>
