@@ -1,4 +1,3 @@
-<!-- Section 1: HTML Head Section and CSRF Setup -->
 {% extends "base.html" %}
 {% import "macros/_pagination_helpers.html" as pagi %}
 {% import "macros/_form_helpers.html" as forms %}
@@ -8,257 +7,39 @@
 {% endblock %}
 
 {% block head_extra %}
-<!-- CSRF Token for JavaScript - ENHANCED VERSION -->
+
 <meta name="csrf-token" content="{{ csrf_token }}">
 
-<!-- Enhanced CSRF token management -->
 <script>
-    // Get CSRF token from multiple sources with fallback
     window.csrf_token = "{{ csrf_token }}";
 
-    // Alternative method to get CSRF token
     window.getCsrfToken = function() {
-        // Method 1: From meta tag
         const metaToken = document.querySelector('meta[name="csrf-token"]');
         if (metaToken && metaToken.content) {
             return metaToken.content;
         }
 
-        // Method 2: From window object
         if (window.csrf_token) {
             return window.csrf_token;
         }
 
-        // Method 3: From any form on the page
         const formWithToken = document.querySelector('input[name="csrf_token"]');
         if (formWithToken && formWithToken.value) {
             return formWithToken.value;
         }
 
-        console.error('No CSRF token found anywhere on the page');
         return null;
     };
 
-    // Debug: Log token availability
-    console.log('CSRF token available:', window.getCsrfToken() ? 'YES' : 'NO');
-    if (window.getCsrfToken()) {
-        console.log('Token preview:', window.getCsrfToken().substring(0, 20) + '...');
-    }
+
 </script>
 
-<!-- TomSelect CSS and JS for enhanced select styling -->
-<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+
 
 <!-- Section 2: -- Base CSS Styles -->
 <style>
-/* Enhanced base styles with better performance */
-/* Enhanced table performance with GPU acceleration */
-.table-fixed {
-    table-layout: fixed;
-    width: 100%;
-    margin-bottom: 0;
-    transform: translateZ(0);
-    will-change: scroll-position;
-}
 
-/* Consistent font sizes and centering with better contrast - MADE MORE COMPACT */
-.table-fixed th,
-.table-fixed td {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding: 2px 2px !important;
-    font-size: 0.875rem !important;
-    font-weight: normal !important;
-    line-height: 1 !important;
-    vertical-align: middle !important;
-    text-align: center !important;
-    color: var(--bs-body-color) !important;
-}
-
-/* Make table container more compact and centered */
-.table-container {
-    position: relative;
-    max-height: 720px !important;
-    overflow-y: auto;
-    overflow-x: hidden;
-    border: 1px solid var(--bs-border-color);
-    border-radius: 0.375rem;
-    scroll-behavior: smooth;
-}
-
-.btn-outline-primary,
-.btn-outline-warning,
-.btn-outline-danger,
-.btn-outline-info {
-    border: none !important;
-}
-
-/* Loading states for better UX */
-.loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.loading-overlay.show {
-    opacity: 1;
-}
-
-.loading-spinner {
-    width: 2rem;
-    height: 2rem;
-    border: 0.25em solid currentColor;
-    border-right-color: transparent;
-    border-radius: 50%;
-    animation: spinner-border 0.75s linear infinite;
-}
-
-/* Enhanced sticky header with Random's branding colors */
-.sticky-header {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%) !important;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-    border-bottom: 2px solid #6366f1;
-}
-
-.sticky-header th {
-    font-size: 0.875rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: #f8fafc !important;
-    padding: 1rem 0.75rem !important;
-    border-color: #6366f1 !important;
-}
-
-/* Enhanced sortable columns with better feedback */
-.sortable {
-    cursor: pointer;
-    user-select: none;
-    position: relative;
-    transition: all 0.2s ease;
-}
-
-.sortable:hover {
-    background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%) !important;
-    transform: translateY(-1px);
-}
-
-.sortable.sorting {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.sort-icon {
-    position: absolute;
-    right: 6px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.8em;
-    opacity: 0.7;
-    transition: all 0.2s ease;
-}
-
-/* Enhanced trade row styles */
-.trade-row {
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-}
-
-.trade-row:hover {
-    background-color: var(--bs-secondary-bg-subtle);
-    transform: translateX(2px);
-}
-
-.trade-row.expanded {
-    background-color: var(--bs-primary-bg-subtle);
-}
-
-/* Enhanced chevron with smaller, narrower size */
-.chevron-icon {
-    transition: transform 0.3s ease;
-    color: var(--bs-secondary);
-    font-size: 0.75rem;
-    width: 8px;
-}
-
-.chevron-icon.rotated {
-    transform: rotate(90deg);
-}
-
-/* Trade details row background */
-.trade-details-row {
-    background: var(--bs-body-bg);
-    border-left: 4px solid var(--bs-primary);
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-}
-
-
-<!-- Section 3: -- Trade Details Container CSS -->
-/* ========== CARD-BASED TRADE DETAILS LAYOUT ========== */
-
-/* Main container for trade details */
-.trade-details-container {
-    background: #2b2d31;
-    color: #ffffff;
-    padding: 1rem;
-    border-top: 1px solid #40444b;
-    display: flex;
-    justify-content: center; /* Add this */
-}
-
-/* Cards row layout */
-.details-cards-row {
-    display: flex;
-    gap: 1rem;
-    align-items: flex-start;
-    overflow-x: auto;
-    padding-bottom: 1rem;
-    padding-top: 1rem;
-    max-width: 100%; /* Add this to prevent overflow */
-    justify-content: center; /* Add this */
-}
-
-/* Individual cards */
-.details-card {
-    background: #36393f;
-    border-radius: 8px;
-    border: 1px solid #40444b;
-    overflow: hidden;
-    flex: 1;
-}
-
-/* Specific card sizing */
-.entries-exits-card {
-    flex: 0 0 320px;
-}
-
-.key-details-card {
-    flex: 0 0 340px;
-}
-
-.performance-card {
-    flex: 0 0 340px;
-}
-
-.ratings-card {
-    flex: 0 0 600px;
-    margin-right: 2rem;
-}
 
 /* Card headers */
 .card-header {
@@ -451,11 +232,7 @@
 
 /* ========== LIGHT THEME SUPPORT ========== */
 
-[data-bs-theme="light"] .trade-details-container {
-    background: #f8f9fa;
-    color: #212529;
-    border-top-color: #dee2e6;
-}
+
 
 [data-bs-theme="light"] .details-card {
     background: #ffffff;
@@ -542,67 +319,6 @@
     }
 }
 
-/* ========== PAGINATION & BUTTONS ========== */
-
-.pagination-arrow-borderless {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none !important;
-    border-radius: 0.375rem;
-    background: transparent;
-    color: var(--bs-body-color);
-    text-decoration: none;
-    transition: all 0.2s ease;
-    min-width: 44px;
-    min-height: 44px;
-}
-
-.pagination-arrow-borderless:hover {
-    color: white;
-    transform: translateY(-1px);
-}
-
-.pagination-arrow-borderless.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-
-.btn-success-borderonly {
-    background: transparent !important;
-    border: 1px solid var(--bs-success) !important;
-    color: var(--bs-success) !important;
-}
-
-.btn-success-borderonly:hover {
-    background: var(--bs-success) !important;
-    color: white !important;
-}
-
-.btn-primary-borderonly {
-    background: transparent !important;
-    border: 1px solid var(--bs-primary) !important;
-    color: var(--bs-primary) !important;
-}
-
-.btn-primary-borderonly:hover {
-    background: var(--bs-primary) !important;
-    color: white !important;
-}
-
-/* Fix action button spacing */
-
-.btn-group .btn {
-    margin-right: 0.5rem !important;
-}
-
-.btn-group .btn:last-child {
-    margin-right: 0 !important;
-}
-
 /* ========== RESPONSIVE DESIGN ========== */
 
 @media (max-width: 1400px) {
@@ -672,24 +388,6 @@
         display: none !important;
     }
 }
-
-
-
-
-
-/* Quick filters uniform spacing */
-.quick-filter-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-}
-
-.quick-filter-container .btn-group {
-    margin-bottom: 0;
-}
-
-
 
 /* Clear button styling */
 .tomselect-enhanced .clear-button {
@@ -1719,22 +1417,22 @@ console.log('✅ Enhanced trade list template loaded with accessibility and perf
                 <div class="d-flex align-items-center gap-2">
                         <!-- Clear Filters Button - Only show when filters are active -->
                         {% if active_filters %}
-                        <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-warning btn-sm" title="Clear all active filters">
+                        <a href="{{ url_for('trades.view_trades_list') }}" class="action-btn btn-warning btn-sm">
                             <i class="fas fa-times-circle me-1"></i> Clear Filters
                         </a>
                         {% endif %}
 
-                        <a href="{{ url_for('trades.add_trade') }}" class="btn btn-success-borderonly btn-sm" title="Log New Trade (Ctrl+N)">
+                        <a href="{{ url_for('trades.add_trade') }}" class="action-btn btn-success-borderonly btn-sm" title="Log New Trade (Ctrl+N)">
                             <i class="fas fa-plus me-1"></i> Log New Trade
                         </a>
-                        <button class="btn btn-primary-borderonly btn-sm" type="button" data-bs-toggle="modal"
+                        <button class="action-btn btn-primary-borderonly btn-sm" type="button" data-bs-toggle="modal"
                                 data-bs-target="#filterModal" title="Filter Trades (Ctrl+F)">
                             <i class="fas fa-filter me-1"></i> Filter Trades
                         </button>
-                        <a href="{{ url_for('trades.import_trades') }}" class="btn btn-outline-secondary btn-sm" title="Import Trades">
+                        <a href="{{ url_for('trades.import_trades') }}" class="action-btn btn-outline-secondary btn-sm" title="Import Trades">
                             <i class="fas fa-upload me-1"></i> Import
                         </a>
-                        <a href="{{ url_for('trades.export_trades_csv') }}" class="btn btn-outline-secondary btn-sm" title="Export Trades">
+                        <a href="{{ url_for('trades.export_trades_csv') }}" class="action-btn btn-outline-secondary btn-sm" title="Export Trades">
                             <i class="fas fa-download me-1"></i> Export
                         </a>
                     </div>
@@ -1777,7 +1475,7 @@ console.log('✅ Enhanced trade list template loaded with accessibility and perf
                         {% endif %}
                     {% endfor %}
                 </div>
-                <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-outline-info btn-sm py-1 px-2" title="Clear all filters" style="font-size: 0.75rem;">
+                <a href="{{ url_for('trades.view_trades_list') }}" class="action-btn btn-outline-info btn-sm py-1 px-2" title="Clear all filters" style="font-size: 0.75rem;">
                     <i class="fas fa-times me-1"></i>Clear
                 </a>
             </div>
@@ -1992,21 +1690,21 @@ console.log('✅ Enhanced trade list template loaded with accessibility and perf
                     <td class="text-end" onclick="event.stopPropagation();" role="gridcell">
                         <div class="btn-group btn-group-sm" role="group" aria-label="Trade actions">
                             <a href="{{ url_for('journal.manage_daily_journal', date_str=trade.trade_date.strftime('%Y-%m-%d')) }}"
-                               class="btn btn-outline-info btn-sm" title="Daily Journal for {{ trade.trade_date.strftime('%m/%d/%Y') }}"
+                               class="action-btn btn-outline-info btn-sm" title="Daily Journal for {{ trade.trade_date.strftime('%m/%d/%Y') }}"
                                aria-label="View daily journal">
                                 <i class="fas fa-journal-whills" aria-hidden="true"></i>
                             </a>
                             <a href="{{ url_for('trades.view_trade_detail', trade_id=trade.id) }}"
-                               class="btn btn-outline-primary btn-sm" title="View trade details"
+                               class="action-btn btn-outline-primary btn-sm" title="View trade details"
                                aria-label="View details">
                                 <i class="fas fa-eye" aria-hidden="true"></i>
                             </a>
                             <a href="{{ url_for('trades.edit_trade', trade_id=trade.id) }}"
-                               class="btn btn-outline-warning btn-sm" title="Edit trade"
+                               class="action-btn btn-outline-warning btn-sm" title="Edit trade"
                                aria-label="Edit trade">
                                 <i class="fas fa-edit" aria-hidden="true"></i>
                             </a>
-                            <button type="button" class="btn btn-outline-danger btn-sm"
+                            <button type="button" class="action-btn btn-outline-danger btn-sm"
                                     title="Delete trade"
                                     aria-label="Delete trade"
                                     onclick="confirmSingleDelete({{ trade.id }}, '{{ trade.trade_date.strftime('%m/%d/%Y') }}', '{{ trade.instrument }}', '{{ trade.direction }}')">
@@ -2444,9 +2142,9 @@ console.log('✅ Enhanced trade list template loaded with accessibility and perf
                     {% endif %}
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-outline-warning">Clear All</a>
-                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <button type="button" class="action-btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <a href="{{ url_for('trades.view_trades_list') }}" class="action-btn btn-outline-warning">Clear All</a>
+                    <button type="submit" class="action-btn btn-primary">Apply Filters</button>
                 </div>
             </form>
         </div>
@@ -2465,15 +2163,14 @@ console.log('✅ Enhanced trade list template loaded with accessibility and perf
                 Are you sure you want to continue?
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="customConfirmButton">Confirm</button>
+                <button type="button" class="action-btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="action-btn btn-danger" id="customConfirmButton">Confirm</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Load notifications.js for custom notifications -->
-<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+
 
 <!-- Initialize TomSelect for Tags Filter -->
 <script>
