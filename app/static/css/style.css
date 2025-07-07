@@ -2433,6 +2433,18 @@ html[data-bs-theme="dark"] .feature-preview:hover {
 */
 
 /* Custom button variants for trades page */
+.btn-primary-borderonly {
+    background: transparent !important;
+    border: 1px solid var(--bs-primary) !important;
+    color: var(--bs-primary) !important;
+}
+
+.btn-success-borderonly:hover {
+    background: var(--bs-success) !important;
+    color: white !important;
+}
+
+
 .btn-success-borderonly {
     background: transparent !important;
     border: 1px solid var(--bs-success) !important;
