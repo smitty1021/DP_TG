@@ -5,7 +5,7 @@ TRADING JOURNAL STYLESHEET
 Random's (Matt Mickey) Trading Methodology Implementation
 Comprehensive styling for trade journal application
 Author: Generated for Random's Trading System
-Version: 2.0 - Reorganized & Enhanced
+Version: 2.1 - Bumblebee Theme Update
 ================================================
 */
 
@@ -22,29 +22,30 @@ Version: 2.0 - Reorganized & Enhanced
     object-fit: contain;
 }
 
+/* Light Theme (Bumblebee Complementary) */
 :root {
     /* Core Colors */
-    --primary-color: #FFFF00;
-    --primary-light: #8c8579;
-    --secondary-color: #1a1d23;
-    --success-color: #198754;
-    --success-light: #75b798;
-    --warning-color: #ffc107;
-    --warning-light: #ffda6a;
-    --danger-color: #dc3545;
-    --danger-light: #ea868f;
-    --info-color: #0dcaf0;
-    --info-light: #6edff6;
-    --yellow-color: #FFFF00
+    --primary-color: #FFD300; /* Strong Yellow */
+    --primary-light: #FFE366;
+    --secondary-color: #4A4A4A; /* Dark Gray */
+    --success-color: #2E8B57; /* Sea Green */
+    --success-light: #3CB371;
+    --warning-color: #FFA500; /* Orange for warnings */
+    --warning-light: #FFC133;
+    --danger-color: #C70039;  /* Strong Red */
+    --danger-light: #E06666;
+    --info-color: #4169E1;   /* Royal Blue */
+    --info-light: #6495ED;
+    --yellow-color: #FFD300;
 
     /* Layout Colors */
-    --main-bg: #f8f9fa;
-    --content-bg: #ffffff;
-    --sidebar-bg: #f8f9fa;
-    --border-color: #dee2e6;
+    --main-bg: #F5F5F5;
+    --content-bg: #FFFFFF;
+    --sidebar-bg: #F5F5F5;
+    --border-color: #DDDDDD;
     --text-color: #212529;
     --text-secondary: #6c757d;
-    --text-muted: #adb5bd;
+    --text-muted: #888888;
 
     /* Trading Colors */
     --profit-color: var(--success-color);
@@ -57,16 +58,32 @@ Version: 2.0 - Reorganized & Enhanced
     --box-shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
 }
 
-/* Dark Theme Variables */
+/* Dark Theme (Classic Bumblebee) */
 html[data-bs-theme="dark"] {
-    --main-bg: #1a1d23;
-    --content-bg: #2b2d31;
-    --sidebar-bg: #1f2029;
-    --border-color: #40444b;
-    --text-color: #dcddde;
-    --text-secondary: #b9bbbe;
-    --text-muted: #72767d;
+    /* Core Colors */
+    --primary-color: #FFD300; /* Strong Yellow */
+    --primary-light: #FFE366;
+    --secondary-color: #AAAAAA;
+    --success-color: #2E8B57; /* Sea Green */
+    --success-light: #3CB371;
+    --warning-color: #FFD300; /* Using primary yellow for warnings */
+    --warning-light: #FFE366;
+    --danger-color: #C70039;  /* Strong Red */
+    --danger-light: #E06666;
+    --info-color: #4169E1;   /* Royal Blue */
+    --info-light: #6495ED;
+    --yellow-color: #FFD300;
+
+    /* Layout Colors */
+    --main-bg: #101010;
+    --content-bg: #181818;
+    --sidebar-bg: #101010;
+    --border-color: #333333;
+    --text-color: #EAEAEA;
+    --text-secondary: #A0A0A0;
+    --text-muted: #606060;
 }
+
 
 /*
 ================================================
@@ -202,30 +219,30 @@ body {
 /* Sidebar link hover states */
 html[data-bs-theme="dark"] .sidebar-nav li a:hover,
 html[data-bs-theme="dark"] .sidebar-nav li a.active {
-    color: #fff;
-    background-color: rgba(255, 255, 255, 0.05);
-    border-left-color: #FFFF00;
+    color: var(--primary-color);
+    background-color: rgba(255, 211, 0, 0.08);
+    border-left-color: var(--primary-color);
 }
 
 html[data-bs-theme="dark"] .sidebar-nav .submenu li a:hover,
 html[data-bs-theme="dark"] .sidebar-nav .submenu li a.active {
-    color: #fff;
-    background-color: rgba(0,0,0,0.3);
-    border-left-color: #FFFF00;
+    color: var(--primary-light);
+    background-color: rgba(255, 211, 0, 0.1);
+    border-left-color: var(--primary-color);
 }
 
 html[data-bs-theme="light"] .sidebar-nav li a:hover,
 html[data-bs-theme="light"] .sidebar-nav li a.active {
-    color: #212529;
+    color: #000;
     background-color: rgba(0, 0, 0, 0.05);
-    border-left-color: #ffc107;
+    border-left-color: var(--primary-color);
 }
 
 html[data-bs-theme="light"] .sidebar-nav .submenu li a:hover,
 html[data-bs-theme="light"] .sidebar-nav .submenu li a.active {
-    color: #212529;
+    color: #000;
     background-color: rgba(0,0,0,0.1);
-    border-left-color: #ffc107;
+    border-left-color: var(--primary-color);
 }
 
 /* Sidebar icons and labels */
@@ -261,6 +278,10 @@ html[data-bs-theme="light"] .sidebar-nav .submenu li a.active {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease-in-out;
+    background-color: rgba(0,0,0,0.05);
+}
+
+html[data-bs-theme="dark"] .sidebar-nav .submenu {
     background-color: rgba(0,0,0,0.2);
 }
 
@@ -272,13 +293,6 @@ html[data-bs-theme="light"] .sidebar-nav .submenu li a.active {
     padding-left: 25px;
     font-size: 0.9em;
     border-left: 4px solid transparent;
-}
-
-.sidebar-nav .submenu li a:hover,
-.sidebar-nav .submenu li a.active {
-    color: #fff;
-    background-color: rgba(0,0,0,0.3);
-    border-left-color: #FFFF00;
 }
 
 /* Hide submenu when sidebar is collapsed */
@@ -344,7 +358,7 @@ html[data-bs-theme="light"] .sidebar-nav .submenu li a.active {
 .btn:focus {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
-    box-shadow: 0 0 0 0.2rem rgba(98, 0, 234, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(255, 211, 0, 0.25);
 }
 
 .action-btn.disabled,
@@ -442,20 +456,8 @@ html[data-bs-theme="dark"] .btn-ghost:hover {
 
 .btn-add-solid:hover {
     color: white;
-    background-color: #157347;
-    border-color: #146c43;
-}
-
-html[data-bs-theme="dark"] .btn-add-solid {
-    background-color: var(--success-light);
-    border-color: var(--success-light);
-    color: #000;
-}
-
-html[data-bs-theme="dark"] .btn-add-solid:hover {
-    background-color: #5a9779;
-    border-color: #5a9779;
-    color: #000;
+    background-color: #25754a; /* Darker green */
+    border-color: #226a43;
 }
 
 /* Outlined Add Buttons */
@@ -473,19 +475,6 @@ html[data-bs-theme="dark"] .btn-add-solid:hover {
     border-color: var(--success-color);
 }
 
-html[data-bs-theme="dark"] .btn-add,
-html[data-bs-theme="dark"] .btn-add-outline {
-    color: var(--success-light);
-    border-color: var(--success-light);
-}
-
-html[data-bs-theme="dark"] .btn-add:hover,
-html[data-bs-theme="dark"] .btn-add-outline:hover {
-    color: #000;
-    background-color: var(--success-light);
-    border-color: var(--success-light);
-}
-
 /* Ghost Add Buttons */
 .btn-add-ghost {
     color: var(--success-color);
@@ -495,19 +484,11 @@ html[data-bs-theme="dark"] .btn-add-outline:hover {
 
 .btn-add-ghost:hover {
     color: var(--success-color);
-    background-color: rgba(25, 135, 84, 0.1);
-}
-
-html[data-bs-theme="dark"] .btn-add-ghost {
-    color: var(--success-light);
-}
-
-html[data-bs-theme="dark"] .btn-add-ghost:hover {
-    background-color: rgba(117, 183, 152, 0.1);
+    background-color: rgba(46, 139, 87, 0.1);
 }
 
 /*
-=== EDIT ACTIONS (WARNING/ORANGE THEME) ===
+=== EDIT ACTIONS (WARNING/ORANGE-YELLOW THEME) ===
 */
 
 /* Solid Edit Buttons */
@@ -519,20 +500,13 @@ html[data-bs-theme="dark"] .btn-add-ghost:hover {
 
 .btn-edit-solid:hover {
     color: #000;
-    background-color: #e0a800;
-    border-color: #d39e00;
-}
-
-html[data-bs-theme="dark"] .btn-edit-solid {
-    background-color: var(--warning-light);
-    border-color: var(--warning-light);
-    color: #000;
+    background-color: #E69500; /* Darker orange */
+    border-color: #CC8400;
 }
 
 html[data-bs-theme="dark"] .btn-edit-solid:hover {
-    background-color: #ffd43b;
-    border-color: #ffd43b;
-    color: #000;
+    background-color: #e0a800;
+    border-color: #d39e00;
 }
 
 /* Outlined Edit Buttons */
@@ -550,19 +524,6 @@ html[data-bs-theme="dark"] .btn-edit-solid:hover {
     border-color: var(--warning-color);
 }
 
-html[data-bs-theme="dark"] .btn-edit,
-html[data-bs-theme="dark"] .btn-edit-outline {
-    color: var(--warning-light);
-    border-color: var(--warning-light);
-}
-
-html[data-bs-theme="dark"] .btn-edit:hover,
-html[data-bs-theme="dark"] .btn-edit-outline:hover {
-    color: #000;
-    background-color: var(--warning-light);
-    border-color: var(--warning-light);
-}
-
 /* Ghost Edit Buttons */
 .btn-edit-ghost {
     color: var(--warning-color);
@@ -572,15 +533,11 @@ html[data-bs-theme="dark"] .btn-edit-outline:hover {
 
 .btn-edit-ghost:hover {
     color: var(--warning-color);
-    background-color: rgba(255, 193, 7, 0.1);
-}
-
-html[data-bs-theme="dark"] .btn-edit-ghost {
-    color: var(--warning-light);
+    background-color: rgba(255, 165, 0, 0.1);
 }
 
 html[data-bs-theme="dark"] .btn-edit-ghost:hover {
-    background-color: rgba(255, 218, 106, 0.1);
+    background-color: rgba(255, 211, 0, 0.1);
 }
 
 /*
@@ -596,20 +553,8 @@ html[data-bs-theme="dark"] .btn-edit-ghost:hover {
 
 .btn-delete-solid:hover {
     color: white;
-    background-color: #bb2d3b;
-    border-color: #b02a37;
-}
-
-html[data-bs-theme="dark"] .btn-delete-solid {
-    background-color: var(--danger-light);
-    border-color: var(--danger-light);
-    color: #000;
-}
-
-html[data-bs-theme="dark"] .btn-delete-solid:hover {
-    background-color: #f1919c;
-    border-color: #f1919c;
-    color: #000;
+    background-color: #B30034; /* Darker red */
+    border-color: #A0002E;
 }
 
 /* Outlined Delete Buttons */
@@ -627,19 +572,6 @@ html[data-bs-theme="dark"] .btn-delete-solid:hover {
     border-color: var(--danger-color);
 }
 
-html[data-bs-theme="dark"] .btn-delete,
-html[data-bs-theme="dark"] .btn-delete-outline {
-    color: var(--danger-light);
-    border-color: var(--danger-light);
-}
-
-html[data-bs-theme="dark"] .btn-delete:hover,
-html[data-bs-theme="dark"] .btn-delete-outline:hover {
-    color: #000;
-    background-color: var(--danger-light);
-    border-color: var(--danger-light);
-}
-
 /* Ghost Delete Buttons */
 .btn-delete-ghost {
     color: var(--danger-color);
@@ -649,15 +581,7 @@ html[data-bs-theme="dark"] .btn-delete-outline:hover {
 
 .btn-delete-ghost:hover {
     color: var(--danger-color);
-    background-color: rgba(220, 53, 69, 0.1);
-}
-
-html[data-bs-theme="dark"] .btn-delete-ghost {
-    color: var(--danger-light);
-}
-
-html[data-bs-theme="dark"] .btn-delete-ghost:hover {
-    background-color: rgba(234, 134, 143, 0.1);
+    background-color: rgba(199, 0, 57, 0.1);
 }
 
 /*
@@ -666,27 +590,15 @@ html[data-bs-theme="dark"] .btn-delete-ghost:hover {
 
 /* Solid View Buttons */
 .btn-view-solid {
-    color: #000;
+    color: white;
     background-color: var(--info-color);
     border-color: var(--info-color);
 }
 
 .btn-view-solid:hover {
-    color: #000;
-    background-color: #3dd5f3;
-    border-color: #25cff2;
-}
-
-html[data-bs-theme="dark"] .btn-view-solid {
-    background-color: var(--info-light);
-    border-color: var(--info-light);
-    color: #000;
-}
-
-html[data-bs-theme="dark"] .btn-view-solid:hover {
-    background-color: #54e5ff;
-    border-color: #54e5ff;
-    color: #000;
+    color: white;
+    background-color: #3A5FCD; /* Darker blue */
+    border-color: #3556B9;
 }
 
 /* Outlined View Buttons */
@@ -699,22 +611,9 @@ html[data-bs-theme="dark"] .btn-view-solid:hover {
 
 .btn-view:hover,
 .btn-view-outline:hover {
-    color: #000;
+    color: white;
     background-color: var(--info-color);
     border-color: var(--info-color);
-}
-
-html[data-bs-theme="dark"] .btn-view,
-html[data-bs-theme="dark"] .btn-view-outline {
-    color: var(--info-light);
-    border-color: var(--info-light);
-}
-
-html[data-bs-theme="dark"] .btn-view:hover,
-html[data-bs-theme="dark"] .btn-view-outline:hover {
-    color: #000;
-    background-color: var(--info-light);
-    border-color: var(--info-light);
 }
 
 /* Ghost View Buttons */
@@ -726,44 +625,24 @@ html[data-bs-theme="dark"] .btn-view-outline:hover {
 
 .btn-view-ghost:hover {
     color: var(--info-color);
-    background-color: rgba(13, 202, 240, 0.1);
-}
-
-html[data-bs-theme="dark"] .btn-view-ghost {
-    color: var(--info-light);
-}
-
-html[data-bs-theme="dark"] .btn-view-ghost:hover {
-    background-color: rgba(110, 223, 246, 0.1);
+    background-color: rgba(65, 105, 225, 0.1);
 }
 
 /*
-=== NAVIGATE ACTIONS (PRIMARY/PURPLE THEME) ===
+=== NAVIGATE ACTIONS (PRIMARY/YELLOW THEME) ===
 */
 
 /* Solid Navigate Buttons */
 .btn-navigate-solid {
-    color: white;
+    color: #000;
     background-color: var(--primary-color);
     border-color: var(--primary-color);
 }
 
 .btn-navigate-solid:hover {
-    color: white;
-    background-color: #5200c6;
-    border-color: #4a00b4;
-}
-
-html[data-bs-theme="dark"] .btn-navigate-solid {
-    background-color: var(--primary-light);
-    border-color: var(--primary-light);
     color: #000;
-}
-
-html[data-bs-theme="dark"] .btn-navigate-solid:hover {
-    background-color: #7c6bf7;
-    border-color: #7c6bf7;
-    color: #000;
+    background-color: #E6BE00;
+    border-color: #CCAA00;
 }
 
 /* Outlined Navigate Buttons */
@@ -776,7 +655,7 @@ html[data-bs-theme="dark"] .btn-navigate-solid:hover {
 
 .btn-navigate:hover,
 .btn-navigate-outline:hover {
-    color: white;
+    color: #000;
     background-color: var(--primary-color);
     border-color: var(--primary-color);
 }
@@ -803,7 +682,7 @@ html[data-bs-theme="dark"] .btn-navigate-outline:hover {
 
 .btn-navigate-ghost:hover {
     color: var(--primary-color);
-    background-color: rgba(98, 0, 234, 0.1);
+    background-color: rgba(255, 211, 0, 0.1);
 }
 
 html[data-bs-theme="dark"] .btn-navigate-ghost {
@@ -811,7 +690,7 @@ html[data-bs-theme="dark"] .btn-navigate-ghost {
 }
 
 html[data-bs-theme="dark"] .btn-navigate-ghost:hover {
-    background-color: rgba(157, 139, 245, 0.1);
+    background-color: rgba(255, 227, 102, 0.1);
 }
 
 /*
@@ -827,8 +706,8 @@ html[data-bs-theme="dark"] .btn-navigate-ghost:hover {
 
 .btn-utility-solid:hover {
     color: white;
-    background-color: #5c636a;
-    border-color: #565e64;
+    background-color: #383838;
+    border-color: #2E2E2E;
 }
 
 /* Outlined Utility Buttons */
@@ -855,7 +734,7 @@ html[data-bs-theme="dark"] .btn-utility-outline {
 html[data-bs-theme="dark"] .btn-utility:hover,
 html[data-bs-theme="dark"] .btn-utility-outline:hover {
     color: var(--text-color);
-    background-color: rgba(185, 187, 190, 0.2);
+    background-color: rgba(160, 160, 160, 0.2);
     border-color: var(--text-secondary);
 }
 
@@ -868,7 +747,7 @@ html[data-bs-theme="dark"] .btn-utility-outline:hover {
 
 .btn-utility-ghost:hover {
     color: var(--secondary-color);
-    background-color: rgba(108, 117, 125, 0.1);
+    background-color: rgba(74, 74, 74, 0.1);
 }
 
 html[data-bs-theme="dark"] .btn-utility-ghost {
@@ -876,15 +755,15 @@ html[data-bs-theme="dark"] .btn-utility-ghost {
 }
 
 html[data-bs-theme="dark"] .btn-utility-ghost:hover {
-    background-color: rgba(185, 187, 190, 0.1);
+    background-color: rgba(160, 160, 160, 0.1);
 }
 /*
 === ICON SPACING ===
 */
 
-
-
-
+.btn i + span, .action-btn i + span {
+    margin-left: 0.5rem;
+}
 
 /*
 === BUTTON GROUPS ===
@@ -915,29 +794,29 @@ html[data-bs-theme="dark"] .btn-utility-ghost:hover {
     border-bottom-right-radius: 8px;
 }
 
-/* NEW: Spaced button groups - buttons have gaps between them */
+/* Spaced button groups */
 .btn-group.btn-group-spaced .btn,
 .btn-group.btn-group-spaced .action-btn {
-    border-radius: 8px !important; /* Restore individual border radius */
-    margin-right: .5rem; /* Add spacing between buttons */
+    border-radius: 8px !important;
+    margin-right: .5rem;
 }
 
 .btn-group.btn-group-spaced .btn:last-child,
 .btn-group.btn-group-spaced .action-btn:last-child {
-    margin-right: 0; /* Remove margin from last button */
+    margin-right: 0;
 }
 
 .btn-group.btn-group-spaced .btn:hover,
 .btn-group.btn-group-spaced .action-btn:hover {
-    transform: translateY(-1px); /* Restore hover effects */
+    transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-/* NEW: Tight spacing option */
+/* Tight spacing option */
 .btn-group.btn-group-tight .btn,
 .btn-group.btn-group-tight .action-btn {
     border-radius: 8px !important;
-    margin-right: 0.25rem; /* Smaller spacing */
+    margin-right: 0.25rem;
 }
 
 .btn-group.btn-group-tight .btn:last-child,
@@ -999,7 +878,7 @@ html[data-bs-theme="dark"] .btn-utility-ghost:hover {
     will-change: scroll-position;
 }
 
-/* Consistent font sizes and centering with better contrast - MADE MORE COMPACT */
+/* Consistent font sizes and centering */
 .table-fixed th,
 .table-fixed td {
     overflow: hidden;
@@ -1011,16 +890,16 @@ html[data-bs-theme="dark"] .btn-utility-ghost:hover {
     line-height: 1 !important;
     vertical-align: middle !important;
     text-align: center !important;
-    color: var(--bs-body-color) !important;
+    color: var(--text-color) !important;
 }
 
-/* Make table container more compact and centered */
+/* Table container */
 .table-container {
     position: relative;
     max-height: 700px !important;
     overflow-y: auto;
     overflow-x: hidden;
-    border: 1px solid var(--bs-border-color);
+    border: 1px solid var(--border-color);
     border-radius: 0.375rem;
     scroll-behavior: smooth;
 }
@@ -1053,14 +932,18 @@ html[data-bs-theme="dark"] .btn-utility-ghost:hover {
     animation: spinner-border 0.75s linear infinite;
 }
 
-/* Enhanced sticky header with Random's branding colors */
+/* Enhanced sticky header with Bumblebee branding */
 .sticky-header {
     position: sticky;
     top: 0;
     z-index: 10;
-    background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%) !important;
+    background: var(--main-bg);
     box-shadow: 0 4px 6px rgba(0,0,0,0.15);
     border-bottom: 2px solid var(--primary-color);
+}
+
+html[data-bs-theme="dark"] .sticky-header {
+    background: #181818;
 }
 
 .sticky-header th {
@@ -1068,7 +951,7 @@ html[data-bs-theme="dark"] .btn-utility-ghost:hover {
     font-weight: 700 !important;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    color: #f8fafc !important;
+    color: var(--text-color) !important;
     padding: 1rem 0.75rem !important;
     border-color: var(--primary-color);
 }
@@ -1082,19 +965,9 @@ html[data-bs-theme="dark"] .btn-utility-ghost:hover {
 }
 
 .sortable:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 211, 0, 0.1);
     transform: translateY(-1px);
 }
-
-/*.sort-icon {
-    position: absolute;
-    right: 6px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.8em;
-    opacity: 0.7;
-    transition: all 0.2s ease;
-}*/
 
 /* Trade row styling */
 .trade-row {
@@ -1104,7 +977,7 @@ html[data-bs-theme="dark"] .btn-utility-ghost:hover {
 }
 
 .trade-row:hover {
-    background-color: rgba(var(--primary-color), 0.05);
+    background-color: rgba(255, 211, 0, 0.08);
     transform: translateX(2px);
 }
 
@@ -1113,49 +986,18 @@ html[data-bs-theme="dark"] .btn-utility-ghost:hover {
     border-left: 4px solid var(--primary-color);
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
 }
-/* Loading states */
-.loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.loading-overlay.show {
-    opacity: 1;
-}
-
-.loading-spinner {
-    width: 2rem;
-    height: 2rem;
-    border: 0.25em solid currentColor;
-    border-right-color: transparent;
-    border-radius: 50%;
-    animation: spinner-border 0.75s linear infinite;
-}
-/* Fixed: Customize Bootstrap's striped table */
-
-
-/* Alternative: More visible striping */
+/* Striped table */
 .table-fixed tbody tr:nth-child(even) {
     background-color: rgba(108, 117, 125, 0.05) !important;
 }
 
 html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
-    background-color: rgba(255, 255, 255, 0.25) !important;
+    background-color: rgba(255, 255, 255, 0.04) !important;
 }
 
 /* Preserve hover effects */
 .table-fixed tbody tr:hover {
-    background-color: rgba(var(--primary-color), 0.08) !important;
+    background-color: rgba(255, 211, 0, 0.1) !important;
 }
 /*
 ================================================
@@ -1214,7 +1056,7 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
     background-color: var(--content-bg);
     border-color: var(--primary-color);
     color: var(--text-color);
-    box-shadow: 0 0 0 0.2rem rgba(98, 0, 234, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(255, 211, 0, 0.25);
 }
 
 .form-label {
@@ -1252,36 +1094,36 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
 
 /* Background utilities */
 .bg-subtle-success {
-    background-color: rgba(25, 135, 84, 0.1);
+    background-color: rgba(46, 139, 87, 0.1);
 }
 
 .bg-subtle-danger {
-    background-color: rgba(220, 53, 69, 0.1);
+    background-color: rgba(199, 0, 57, 0.1);
 }
 
 .bg-subtle-warning {
-    background-color: rgba(255, 193, 7, 0.1);
+    background-color: rgba(255, 165, 0, 0.1);
 }
 
 .bg-subtle-info {
-    background-color: rgba(13, 202, 240, 0.1);
+    background-color: rgba(65, 105, 225, 0.1);
 }
 
 /* Border utilities */
 .border-subtle-success {
-    border-color: rgba(25, 135, 84, 0.3);
+    border-color: rgba(46, 139, 87, 0.3);
 }
 
 .border-subtle-danger {
-    border-color: rgba(220, 53, 69, 0.3);
+    border-color: rgba(199, 0, 57, 0.3);
 }
 
 .border-subtle-warning {
-    border-color: rgba(255, 193, 7, 0.3);
+    border-color: rgba(255, 165, 0, 0.3);
 }
 
 .border-subtle-info {
-    border-color: rgba(13, 202, 240, 0.3);
+    border-color: rgba(65, 105, 225, 0.3);
 }
 
 /* Gradient utilities */
@@ -1295,6 +1137,10 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
 
 .bg-gradient-success {
     background: linear-gradient(135deg, var(--success-color), var(--success-light));
+}
+
+.bg-primary-color {
+    background: var(--primary-color);
 }
 
 /*
@@ -1409,7 +1255,7 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
 
 .pagination-arrow-borderless:hover {
     color: var(--primary-color);
-    /*background-color: rgba(98, 0, 234, 0.1);*/
+    background-color: rgba(255, 211, 0, 0.1);
     transform: translateY(-1px);
 }
 
@@ -1473,10 +1319,15 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background-color: #40444b;
-    border: 1px solid #6c757d;
+    background-color: var(--border-color);
+    border: 1px solid var(--text-secondary);
     transition: all 0.2s ease;
     opacity: 0.3;
+}
+
+html[data-bs-theme="dark"] .rating-dot {
+    background-color: #40444b;
+    border: 1px solid #6c757d;
 }
 
 /* Filled rating dots */
@@ -1541,12 +1392,6 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
     justify-content: center;
 }
 
-[data-bs-theme="light"] .trade-details-container {
-    background: #f8f9fa;
-    color: #212529;
-    border-top-color: #dee2e6;
-}
-
 .details-cards-row {
     display: flex;
     gap: 1rem;
@@ -1559,9 +1404,9 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
 }
 
 .details-card {
-    background: #36393f;
+    background: var(--content-bg);
     border-radius: 8px;
-    border: 1px solid #40444b;
+    border: 1px solid var(--border-color);
     overflow: hidden;
     flex: 1;
 }
@@ -1574,7 +1419,7 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
 /* Chevron icons for expandable rows */
 .chevron-icon {
     transition: transform 0.3s ease;
-    color: var(--bs-secondary);
+    color: var(--text-secondary);
     font-size: 0.75rem;
     width: 8px;
 }
@@ -1606,22 +1451,22 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
     text-align: center;
     padding: 1rem;
     border-radius: 8px;
-    background: rgba(98, 0, 234, 0.05);
+    background: rgba(255, 211, 0, 0.1);
     margin-bottom: 1rem;
     transition: all 0.2s ease;
 }
 
 .feature-preview:hover {
-    background: rgba(98, 0, 234, 0.1);
+    background: rgba(255, 211, 0, 0.15);
     transform: translateY(-2px);
 }
 
 html[data-bs-theme="dark"] .feature-preview {
-    background: rgba(157, 139, 245, 0.05);
+    background: rgba(255, 211, 0, 0.08);
 }
 
 html[data-bs-theme="dark"] .feature-preview:hover {
-    background: rgba(157, 139, 245, 0.1);
+    background: rgba(255, 211, 0, 0.12);
 }
 
 /*
@@ -1715,32 +1560,7 @@ html[data-bs-theme="dark"] .feature-preview:hover {
 ================================================
 */
 
-/* Maintain compatibility with existing Bootstrap classes */
-.btn-outline-primary {
-    @extend .btn-navigate;
-}
-
-.btn-outline-success {
-    @extend .btn-add;
-}
-
-.btn-outline-warning {
-    @extend .btn-edit;
-}
-
-.btn-outline-danger {
-    @extend .btn-delete;
-}
-
-.btn-outline-info {
-    @extend .btn-view;
-}
-
-.btn-outline-secondary {
-    @extend .btn-utility;
-}
-
-/* Legacy button compatibility without @extend (for broader support) */
+/* Legacy button compatibility */
 .btn-primary-borderonly {
     color: var(--primary-color);
     background: transparent;
@@ -1749,7 +1569,17 @@ html[data-bs-theme="dark"] .feature-preview:hover {
 
 .btn-primary-borderonly:hover {
     background: var(--primary-color);
-    color: white;
+    color: #000;
+}
+
+html[data-bs-theme="dark"] .btn-primary-borderonly {
+    color: var(--primary-light);
+    border-color: var(--primary-light);
+}
+
+html[data-bs-theme="dark"] .btn-primary-borderonly:hover {
+    background: var(--primary-light);
+    color: #000;
 }
 
 .btn-success-borderonly {
@@ -1894,11 +1724,5 @@ html[data-bs-theme="dark"] .feature-preview:hover {
 /*
 ================================================
 END OF TRADING JOURNAL STYLESHEET
-================================================
-Random's (Matt Mickey) methodology implementation complete
-Comprehensive button system with 6 semantic categories
-Full theme support (light/dark) with proper color schemes
-Responsive design with mobile-first approach
-Accessibility features and reduced motion support
 ================================================
 */

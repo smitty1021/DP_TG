@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block head_extra %}
-
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <meta name="csrf-token" content="{{ csrf_token }}">
 
 <script>
@@ -1082,14 +1082,21 @@ const TradeListApp = {
     },
 
     showError(message) {
-        console.error('Error:', message);
-        // Use custom notification system if available, otherwise fallback to alert
+    console.error('Error:', message);
         if (typeof window.showNotification === 'function') {
             window.showNotification(message, 'danger', 'Error');
-        } else if (typeof showError === 'function') {
-            showError(message);
         } else {
             alert('Error: ' + message);
+        }
+    },
+
+    showSuccess(message) {
+        console.log('Success:', message);
+        // Use your dedicated notification system
+        if (typeof window.showNotification === 'function') {
+            window.showNotification(message, 'success', 'Success');
+        } else {
+            alert('Success: ' + message);
         }
     },
 
