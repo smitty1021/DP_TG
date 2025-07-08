@@ -999,6 +999,29 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
 .table-fixed tbody tr:hover {
     background-color: rgba(255, 211, 0, 0.1) !important;
 }
+
+.table td {
+    vertical-align: middle !important;
+}
+
+/* Also apply to table headers if needed */
+.table th {
+    vertical-align: middle !important;
+}
+
+/* Specific override for scenario tables if you want to be more targeted */
+.table tbody tr td {
+    vertical-align: middle !important;
+    line-height: 1.4 !important;
+}
+
+/* Ensure badges and content within cells are also centered */
+.table td .badge,
+.table td .btn-group-tight,
+.table td span {
+    vertical-align: middle;
+}
+
 /*
 ================================================
 8. MODAL SYSTEM
@@ -1319,15 +1342,10 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background-color: var(--border-color);
-    border: 1px solid var(--text-secondary);
-    transition: all 0.2s ease;
-    opacity: 0.3;
-}
-
-html[data-bs-theme="dark"] .rating-dot {
     background-color: #40444b;
     border: 1px solid #6c757d;
+    transition: all 0.2s ease;
+    opacity: 0.3;
 }
 
 /* Filled rating dots */
@@ -1381,6 +1399,7 @@ html[data-bs-theme="dark"] .rating-dot {
 .rating-dot.poor {
     background: linear-gradient(135deg, #dc3545, #e83e8c);
 }
+
 
 /* Trade details container*/
 .trade-details-container {
@@ -1720,6 +1739,86 @@ html[data-bs-theme="dark"] .btn-primary-borderonly:hover {
         transform: none !important;
     }
 }
+/*
+================================================
+NOTIFICATION SYSTEM - ADD TO YOUR STYLE.CSS
+================================================
+*/
+
+/* Flash message containers - Bottom right positioning */
+.flash-message-container,
+.flash-popup-container {
+    position: fixed;
+    top: 70px; /* Below navbar */
+    right: 20px;
+    width: 350px;
+    z-index: 9999;
+    pointer-events: none; /* Allow clicks through container */
+}
+
+.flash-message-container > *,
+.flash-popup-container > * {
+    pointer-events: all; /* But allow clicks on individual notifications */
+    margin-bottom: 10px;
+}
+
+/* Notification animations */
+@keyframes slideUpFromBottom {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideDownToBottom {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+/* Enhanced notification styling */
+.flash-message-container .alert,
+.flash-popup-container .alert {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideUpFromBottom 0.4s ease-out;
+    max-width: 350px;
+    word-wrap: break-word;
+}
+
+/* Dark theme adjustments */
+html[data-bs-theme="dark"] .flash-message-container .alert,
+html[data-bs-theme="dark"] .flash-popup-container .alert {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .flash-message-container,
+    .flash-popup-container {
+        top: 60px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+        max-width: calc(100vw - 20px);
+    }
+
+    .flash-message-container .alert,
+    .flash-popup-container .alert {
+        max-width: 100%;
+    }
+}
+
 
 /*
 ================================================

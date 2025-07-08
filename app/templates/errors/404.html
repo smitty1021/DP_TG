@@ -4,15 +4,16 @@
 {% set error_title = "Page Not Found" %}
 {% set error_description = "The page you are looking for does not exist or has been moved." %}
 {% set support_info = true %}
-{% set support_email = "support@example.com" %}
+{% set support_email = "support@tradingjournal.com" %}
 
 {% block extra_content %}
 <div class="suggestions">
-    <h3>You might want to try:</h3>
-    <ul>
+    <h6><i class="fas fa-search me-2"></i>You might want to try:</h6>
+    <ul class="text-start">
         <li>Checking the URL for typing errors</li>
-        <li>Going back to the <a href="{{ url_for('index') }}">homepage</a></li>
-        <li>Using the search function to find what you're looking for</li>
+        <li>Going back to the <a href="{{ url_for('main.index') }}" class="text-primary">main dashboard</a></li>
+        <li>Visiting your <a href="{{ url_for('trades.view_trades_list') }}" class="text-primary">trades list</a></li>
+        <li>Accessing your <a href="{{ url_for('journal.manage_daily_journal') }}" class="text-primary">daily journal</a></li>
     </ul>
 </div>
 {% endblock %}

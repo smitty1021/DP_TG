@@ -709,7 +709,7 @@ class BootstrapManager:
         db.session.commit()
         print(f"✅ Created {len(created_settings)} account settings")
 
-    def generate_realistic_trades(self, num_trades=2000):
+    def generate_realistic_trades(self, num_trades=10000):
         """Generate realistic trades with proper P&L calculations."""
         print(f"\n📊 Generating {num_trades} realistic trades...")
 

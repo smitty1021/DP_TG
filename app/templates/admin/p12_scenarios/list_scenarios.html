@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
 
-
+{% block head_extra %}{% endblock %}
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 {% block content %}
 <div class="container-fluid">
     <!-- Header Section -->
@@ -9,82 +10,17 @@
         <div class="col">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2 class="text-primary mb-1">
-                        <i class="fas fa-chart-line me-2"></i>P12 Scenarios Management
+                    <h2 class="text-color mb-1">
+                        <i class="fas fa-chart-line me-2"></i>P12 Scenario Management
                     </h2>
                     <p class="text-muted mb-0">
-                        Manage Random's P12 scenario definitions used in daily journal analysis
+                        Manage the P12 scenario definitions used in daily journal analysis for all users
                     </p>
                 </div>
                 <div>
                     <a href="{{ url_for('p12_scenarios.create_scenario') }}"
-                       class="btn btn-primary">
-                        <i class="fas fa-plus me-2"></i>Create New Scenario
+                       class="btn btn-add btn-icon" title="Create New Scenario"> <i class="fas fa-plus"></i>
                     </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scenarios Overview Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Total Scenarios</h6>
-                            <h3 class="mb-0">{{ scenarios|length }}</h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-list-ol fa-2x opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Active Scenarios</h6>
-                            <h3 class="mb-0">{{ scenarios|selectattr('is_active')|list|length }}</h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-check-circle fa-2x opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">With Images</h6>
-                            <h3 class="mb-0">{{ scenarios|selectattr('image_path')|list|length }}</h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-image fa-2x opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Total Selections</h6>
-                            <h3 class="mb-0">{{ scenarios|sum(attribute='times_selected') }}</h3>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-mouse-pointer fa-2x opacity-75"></i>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -92,35 +28,30 @@
 
     <!-- Scenarios Table -->
     <div class="card">
-        <div class="card-header">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-table me-2"></i>P12 Scenarios
-            </h5>
-        </div>
         <div class="card-body p-0">
             {% if scenarios %}
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
-                    <thead class="table-dark">
+                    <thead class="sticky-header">
                         <tr>
                             <th width="80" class="text-center">Scenario</th>
-                            <th width="150">Name</th>
+                            <th>Name</th>
                             <th>Description</th>
                             <th width="120" class="text-center">Bias</th>
                             <th width="100" class="text-center">Image</th>
                             <th width="100" class="text-center">Usage</th>
                             <th width="80" class="text-center">Status</th>
-                            <th width="150" class="text-center">Actions</th>
+                            <th width="150" class="text-center"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for scenario in scenarios %}
                         <tr class="{% if not scenario.is_active %}table-secondary{% endif %}">
                             <td class="text-center">
-                                <span class="badge bg-primary fs-6">{{ scenario.scenario_number }}</span>
+                                <span class="badge bg-primary-color text-black fs-6">{{ scenario.scenario_number }}</span>
                             </td>
                             <td>
-                                <strong>{{ scenario.scenario_name }}</strong>
+                                {{ scenario.scenario_name }}
                             </td>
                             <td>
                                 <div class="scenario-description">
@@ -167,20 +98,22 @@
                                     <span class="badge bg-secondary">Inactive</span>
                                 {% endif %}
                             </td>
-                            <td class="text-center">
-                                <div class="btn-group btn-group-sm" role="group">
+                            <td class="text-end" onclick="event.stopPropagation();" role="gridcell">
+                                <div class="btn-group-tight" role="group">
                                     <a href="{{ url_for('p12_scenarios.view_scenario', scenario_id=scenario.id) }}"
-                                       class="btn btn-outline-info" title="View Details">
-                                        <i class="fas fa-eye"></i>
+                                        class="btn btn-view-ghost btn-icon" title="View Scenario"
+                                        aria-label="View Scenario">
+                                        <i class="fas fa-eye" aria-hidden="true"></i>
                                     </a>
                                     <a href="{{ url_for('p12_scenarios.edit_scenario', scenario_id=scenario.id) }}"
-                                       class="btn btn-outline-warning" title="Edit">
-                                        <i class="fas fa-edit"></i>
+                                        class="btn btn-edit-ghost btn-icon" title="Edit Scenario"
+                                        aria-label="Edit Scenario">
+                                        <i class="fas fa-edit" aria-hidden="true"></i>
                                     </a>
-                                    <button type="button" class="btn btn-outline-danger"
-                                            title="Delete"
+                                    <button type="button" class="btn btn-delete-ghost btn-icon" title="Delete Scenario"
+                                            aria-label="Delete Scenario"
                                             onclick="confirmDelete({{ scenario.id }}, '{{ scenario.scenario_name }}')">
-                                        <i class="fas fa-trash"></i>
+                                            <i class="fas fa-trash-alt" aria-hidden="true"></i>
                                     </button>
                                 </div>
                             </td>
@@ -226,6 +159,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form id="deleteForm" method="POST" style="display: inline;">
+                    {{ csrf_token() }}
                     <button type="submit" class="btn btn-danger">
                         <i class="fas fa-trash me-2"></i>Delete Scenario
                     </button>
@@ -237,21 +171,41 @@
 
 <script>
 function confirmDelete(scenarioId, scenarioName) {
-    document.getElementById('scenarioName').textContent = scenarioName;
-    document.getElementById('deleteForm').action = `{{ url_for('p12_scenarios.delete_scenario', scenario_id=0) }}`.replace('0', scenarioId);
+    // Use your global custom confirmation modal
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: 'Confirm Deletion',
+            message: `Are you sure you want to delete the P12 scenario: <strong>${scenarioName}</strong>?<br><br>This action cannot be undone. Any daily journals referencing this scenario will lose the connection.`,
+            confirmText: 'Delete Scenario',
+            cancelText: 'Cancel',
+            confirmClass: 'btn-danger',
+            icon: 'exclamation-triangle',
+            onConfirm: function() {
+                // Create and submit form with CSRF token
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `{{ url_for('p12_scenarios.delete_scenario', scenario_id=0) }}`.replace('0', scenarioId);
 
-    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    modal.show();
+                // Add CSRF token
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = '{{ csrf_token() }}';
+                form.appendChild(csrfInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    } else {
+        // Fallback to old modal if custom function not available
+        document.getElementById('scenarioName').textContent = scenarioName;
+        document.getElementById('deleteForm').action = `{{ url_for('p12_scenarios.delete_scenario', scenario_id=0) }}`.replace('0', scenarioId);
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        modal.show();
+    }
 }
 </script>
 
-<style>
-.scenario-description {
-    max-width: 300px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 
-</style>
 {% endblock %}

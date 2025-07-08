@@ -30,8 +30,6 @@
 
         return null;
     };
-
-
 </script>
 
 <!-- Section 2: -- Base CSS Styles -->
@@ -1477,7 +1475,7 @@ console.log('✅ Enhanced trade list template loaded with accessibility and perf
     <!-- Enhanced Trades Table -->
     {% if trades %}
         <div class="table-container" role="region" aria-label="Trades List">
-            <table class="table table-hover table-striped mb-0 table-fixed" role="table">
+            <table class="table table-hover table-fixed" role="table">
                 <thead class="sticky-header">
                     <tr role="row">
                         <th width="1" class="text-center table-header-clean" role="columnheader"></th>
@@ -1677,23 +1675,23 @@ console.log('✅ Enhanced trade list template loaded with accessibility and perf
 
                     <!-- Enhanced Actions with better accessibility -->
                     <td class="text-end" onclick="event.stopPropagation();" role="gridcell">
-                        <div class="btn-group-spaced" role="group" aria-label="Trade actions">
+                        <div class="btn-group-tight" role="group" aria-label="Trade actions">
                             <a href="{{ url_for('journal.manage_daily_journal', date_str=trade.trade_date.strftime('%Y-%m-%d')) }}"
-                               class="btn btn-view-ghost btn-icon btn-sm" title="Daily Journal for {{ trade.trade_date.strftime('%m/%d/%Y') }}"
+                               class="btn btn-add-ghost btn-icon" title="Daily Journal for {{ trade.trade_date.strftime('%m/%d/%Y') }}"
                                aria-label="View daily journal">
                                 <i class="fas fa-journal-whills" aria-hidden="true"></i>
                             </a>
                             <a href="{{ url_for('trades.view_trade_detail', trade_id=trade.id) }}"
-                               class="btn btn-add-ghost btn-icon btn-sm" title="View trade details"
+                               class="btn btn-view-ghost btn-icon" title="View trade details"
                                aria-label="View details">
                                 <i class="fas fa-eye" aria-hidden="true"></i>
                             </a>
                             <a href="{{ url_for('trades.edit_trade', trade_id=trade.id) }}"
-                               class="btn btn-edit-ghost btn-icon btn-sm" title="Edit trade"
+                               class="btn btn-edit-ghost btn-icon" title="Edit trade"
                                aria-label="Edit trade">
                                 <i class="fas fa-edit" aria-hidden="true"></i>
                             </a>
-                            <button type="button" class="btn btn-delete-ghost btn-icon btn-sm"
+                            <button type="button" class="btn btn-delete-ghost btn-icon"
                                     title="Delete trade"
                                     aria-label="Delete trade"
                                     onclick="confirmSingleDelete({{ trade.id }}, '{{ trade.trade_date.strftime('%m/%d/%Y') }}', '{{ trade.instrument }}', '{{ trade.direction }}')">

@@ -4,10 +4,20 @@
 {% set error_title = "Access Denied" %}
 {% set error_description = "You don't have permission to access this resource." %}
 {% set support_info = true %}
-{% set support_email = "support@example.com" %}
+{% set support_email = "support@tradingjournal.com" %}
 
 {% block extra_content %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Access Restricted:</strong> This area requires special permissions.
+</div>
+
 <div class="suggestions">
-    <p>If you believe this is an error, please contact your administrator or support.</p>
+    <h6><i class="fas fa-lightbulb me-2"></i>What you can do:</h6>
+    <ul class="text-start">
+        <li>Contact your administrator if you believe you should have access</li>
+        <li>Check if you're logged in with the correct account</li>
+        <li>Return to the main dashboard to continue trading</li>
+    </ul>
 </div>
 {% endblock %}

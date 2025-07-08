@@ -180,33 +180,27 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // This simple script finds any hidden Flask messages and tells the
-        // global notifications.js script to display them. This ensures only
-        // ONE system manages the pop-ups, which resolves the conflict.
+        // Convert Flask flash messages to notifications
         const flaskMessages = document.querySelectorAll('#flask-flash-data > div');
         flaskMessages.forEach(msg => {
             let category = msg.dataset.category;
             const message = msg.dataset.message;
 
-            // Standardize Flask's 'error' category to 'danger' for Bootstrap
             if (category === 'error') {
                 category = 'danger';
             }
 
             if (message) {
-                // Use your global function to show the notification
                 showNotification(message, category);
             }
         });
     });
     </script>
     <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script> {# <-- ADD THIS LINE #}
+    <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 
-
-    {# This block allows individual templates to add their own page-specific scripts #}
     {% block scripts_extra %}{% endblock %}
     {% block extra_js %}{% endblock %}
 
-</body>
-</html>
+    </body>
+    </html>
