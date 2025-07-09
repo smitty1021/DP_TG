@@ -62,7 +62,7 @@
                                         <td>
                                             <div class="mb-2">
                                                 <label class="form-label fw-semibold">Scenario Number</label>
-                                                {{ form.scenario_number(class="form-control form-control-sm" + (" is-invalid" if form.scenario_number.errors else "")) }}
+                                                {{ form.scenario_number(class="form-control" + (" is-invalid" if form.scenario_number.errors else "")) }}
                                                 {% if form.scenario_number.errors %}
                                                     <div class="invalid-feedback">
                                                         {% for error in form.scenario_number.errors %}{{ error }}{% endfor %}
@@ -71,7 +71,7 @@
                                             </div>
                                             <div class="mb-2">
                                                 <label class="form-label fw-semibold">Scenario Name</label>
-                                                {{ form.scenario_name(class="form-control form-control-sm" + (" is-invalid" if form.scenario_name.errors else "")) }}
+                                                {{ form.scenario_name(class="form-control" + (" is-invalid" if form.scenario_name.errors else "")) }}
                                                 {% if form.scenario_name.errors %}
                                                     <div class="invalid-feedback">
                                                         {% for error in form.scenario_name.errors %}{{ error }}{% endfor %}
@@ -80,7 +80,7 @@
                                             </div>
                                             <div class="mb-2">
                                                 <label class="form-label fw-semibold">Short Description</label>
-                                                {{ form.short_description(class="form-control form-control-sm" + (" is-invalid" if form.short_description.errors else "")) }}
+                                                {{ form.short_description(class="form-control" + (" is-invalid" if form.short_description.errors else "")) }}
                                                 {% if form.short_description.errors %}
                                                     <div class="invalid-feedback">
                                                         {% for error in form.short_description.errors %}{{ error }}{% endfor %}
@@ -89,7 +89,7 @@
                                             </div>
                                             <div class="mb-2">
                                                 <label class="form-label fw-semibold">Detailed Description</label>
-                                                {{ form.detailed_description(class="form-control form-control-sm" + (" is-invalid" if form.detailed_description.errors else ""), rows="3") }}
+                                                {{ form.detailed_description(class="form-control" + (" is-invalid" if form.detailed_description.errors else ""), rows="3") }}
                                                 {% if form.detailed_description.errors %}
                                                     <div class="invalid-feedback">
                                                         {% for error in form.detailed_description.errors %}{{ error }}{% endfor %}
@@ -173,7 +173,7 @@
                                         <td>
                                             <div class="mb-2">
                                                 <label class="form-label fw-semibold">HOD/LOD Implication</label>
-                                                {{ form.hod_lod_implication(class="form-control form-control-sm" + (" is-invalid" if form.hod_lod_implication.errors else ""), rows="2") }}
+                                                {{ form.hod_lod_implication(class="form-control" + (" is-invalid" if form.hod_lod_implication.errors else ""), rows="2") }}
                                                 {% if form.hod_lod_implication.errors %}
                                                     <div class="invalid-feedback">
                                                         {% for error in form.hod_lod_implication.errors %}{{ error }}{% endfor %}
@@ -187,7 +187,7 @@
                                             </div>
                                             <div class="mb-2">
                                                 <label class="form-label fw-semibold">Alert Criteria</label>
-                                                {{ form.alert_criteria(class="form-control form-control-sm" + (" is-invalid" if form.alert_criteria.errors else ""), rows="2") }}
+                                                {{ form.alert_criteria(class="form-control" + (" is-invalid" if form.alert_criteria.errors else ""), rows="2") }}
                                                 {% if form.alert_criteria.errors %}
                                                     <div class="invalid-feedback">
                                                         {% for error in form.alert_criteria.errors %}{{ error }}{% endfor %}
@@ -196,7 +196,7 @@
                                             </div>
                                             <div>
                                                 <label class="form-label fw-semibold">Confirmation Criteria</label>
-                                                {{ form.confirmation_criteria(class="form-control form-control-sm" + (" is-invalid" if form.confirmation_criteria.errors else ""), rows="2") }}
+                                                {{ form.confirmation_criteria(class="form-control" + (" is-invalid" if form.confirmation_criteria.errors else ""), rows="2") }}
                                                 {% if form.confirmation_criteria.errors %}
                                                     <div class="invalid-feedback">
                                                         {% for error in form.confirmation_criteria.errors %}{{ error }}{% endfor %}
@@ -230,7 +230,7 @@
                                         <td>
                                             <div class="mb-2">
                                                 <label class="form-label fw-semibold">Entry Strategy</label>
-                                                {{ form.entry_strategy(class="form-control form-control-sm" + (" is-invalid" if form.entry_strategy.errors else ""), rows="3") }}
+                                                {{ form.entry_strategy(class="form-control" + (" is-invalid" if form.entry_strategy.errors else ""), rows="3") }}
                                                 {% if form.entry_strategy.errors %}
                                                     <div class="invalid-feedback">
                                                         {% for error in form.entry_strategy.errors %}{{ error }}{% endfor %}
@@ -239,7 +239,7 @@
                                             </div>
                                             <div class="mb-2">
                                                 <label class="form-label fw-semibold">Typical Targets</label>
-                                                {{ form.typical_targets(class="form-control form-control-sm" + (" is-invalid" if form.typical_targets.errors else ""), rows="2") }}
+                                                {{ form.typical_targets(class="form-control" + (" is-invalid" if form.typical_targets.errors else ""), rows="2") }}
                                                 {% if form.typical_targets.errors %}
                                                     <div class="invalid-feedback">
                                                         {% for error in form.typical_targets.errors %}{{ error }}{% endfor %}
@@ -248,7 +248,7 @@
                                             </div>
                                             <div class="mb-2">
                                                 <label class="form-label fw-semibold">Stop Loss Guidance</label>
-                                                {{ form.stop_loss_guidance(class="form-control form-control-sm" + (" is-invalid" if form.stop_loss_guidance.errors else ""), rows="2") }}
+                                                {{ form.stop_loss_guidance(class="form-control" + (" is-invalid" if form.stop_loss_guidance.errors else ""), rows="2") }}
                                                 {% if form.stop_loss_guidance.errors %}
                                                     <div class="invalid-feedback">
                                                         {% for error in form.stop_loss_guidance.errors %}{{ error }}{% endfor %}
@@ -258,7 +258,7 @@
                                             <div class="d-flex gap-2">
                                                 <div style="flex: 0 0 80px;">
                                                     <label class="form-label fw-semibold">Risk %</label>
-                                                    {{ form.risk_percentage(class="form-control form-control-sm" + (" is-invalid" if form.risk_percentage.errors else ""), step="0.01", min="0", max="5") }}
+                                                    {{ form.risk_percentage(class="form-control" + (" is-invalid" if form.risk_percentage.errors else ""), step="0.01", min="0", max="5") }}
                                                     {% if form.risk_percentage.errors %}
                                                         <div class="invalid-feedback">
                                                             {% for error in form.risk_percentage.errors %}{{ error }}{% endfor %}
@@ -267,7 +267,7 @@
                                                 </div>
                                                 <div style="flex: 1;">
                                                     <label class="form-label fw-semibold">Risk Guidance</label>
-                                                    {{ form.risk_guidance(class="form-control form-control-sm" + (" is-invalid" if form.risk_guidance.errors else ""), rows="2") }}
+                                                    {{ form.risk_guidance(class="form-control" + (" is-invalid" if form.risk_guidance.errors else ""), rows="2") }}
                                                     {% if form.risk_guidance.errors %}
                                                         <div class="invalid-feedback">
                                                             {% for error in form.risk_guidance.errors %}{{ error }}{% endfor %}
@@ -298,7 +298,7 @@
                                 <tbody>
                                     <tr>
                                         <td>
-                                            {{ form.key_considerations(class="form-control form-control-sm" + (" is-invalid" if form.key_considerations.errors else ""), rows="8") }}
+                                            {{ form.key_considerations(class="form-control" + (" is-invalid" if form.key_considerations.errors else ""), rows="8") }}
                                             {% if form.key_considerations.errors %}
                                                 <div class="invalid-feedback">
                                                     {% for error in form.key_considerations.errors %}{{ error }}{% endfor %}
@@ -316,7 +316,7 @@
                                             {% endif %}
                                             <div>
                                                 <label class="form-label fw-semibold">Upload Image</label>
-                                                {{ form.scenario_image(class="form-control form-control-sm" + (" is-invalid" if form.scenario_image.errors else "")) }}
+                                                {{ form.scenario_image(class="form-control" + (" is-invalid" if form.scenario_image.errors else "")) }}
                                                 {% if form.scenario_image.errors %}
                                                     <div class="invalid-feedback">
                                                         {% for error in form.scenario_image.errors %}{{ error }}{% endfor %}
