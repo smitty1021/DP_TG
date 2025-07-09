@@ -108,22 +108,6 @@
                                                     {% endif %}
                                                 </div>
                                             </div>
-                                            {% if scenario and scenario.image_path %}
-                                            <div class="mb-2 text-center">
-                                                <img src="{{ url_for('p12_scenarios.serve_image', scenario_id=scenario.id) }}"
-                                                     alt="Scenario {{ scenario.scenario_number }} Image"
-                                                     class="img-fluid rounded border" style="max-height: 120px;">
-                                            </div>
-                                            {% endif %}
-                                            <div>
-                                                <label class="form-label fw-semibold">Upload Image</label>
-                                                {{ form.scenario_image(class="form-control form-control-sm" + (" is-invalid" if form.scenario_image.errors else "")) }}
-                                                {% if form.scenario_image.errors %}
-                                                    <div class="invalid-feedback">
-                                                        {% for error in form.scenario_image.errors %}{{ error }}{% endfor %}
-                                                    </div>
-                                                {% endif %}
-                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -307,7 +291,7 @@
                                 <thead class="sticky-header">
                                     <tr>
                                         <th>
-                                            <i class="fas fa-lightbulb me-2"></i>Key Considerations
+                                            <i class="fas fa-lightbulb me-2"></i>Key Considerations & Scenario Example Image
                                         </th>
                                     </tr>
                                 </thead>
@@ -323,6 +307,22 @@
                                             {% if form.key_considerations.description %}
                                                 <div class="form-text">{{ form.key_considerations.description }}</div>
                                             {% endif %}
+                                            {% if scenario and scenario.image_path %}
+                                            <div class="mb-2 text-center">
+                                                <img src="{{ url_for('p12_scenarios.serve_image', scenario_id=scenario.id) }}"
+                                                     alt="Scenario {{ scenario.scenario_number }} Image"
+                                                     class="img-fluid rounded border" style="max-height: 220px;">
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                <label class="form-label fw-semibold">Upload Image</label>
+                                                {{ form.scenario_image(class="form-control form-control-sm" + (" is-invalid" if form.scenario_image.errors else "")) }}
+                                                {% if form.scenario_image.errors %}
+                                                    <div class="invalid-feedback">
+                                                        {% for error in form.scenario_image.errors %}{{ error }}{% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -444,6 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         hiddenField.value = value;
     }
+    const changeDetector = window.initUnsavedChangesDetector('#scenario-form');
 });
 </script>
 {% endblock %}

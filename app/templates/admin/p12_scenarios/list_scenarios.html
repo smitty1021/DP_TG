@@ -39,14 +39,13 @@
                             <th>Description</th>
                             <th width="120" class="text-center">Bias</th>
                             <th width="100" class="text-center">Image</th>
-                            <th width="100" class="text-center">Usage</th>
                             <th width="80" class="text-center">Status</th>
                             <th width="150" class="text-center"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for scenario in scenarios %}
-                        <tr class="{% if not scenario.is_active %}table-secondary{% endif %}">
+                        <tr class="{% if not scenario.is_active %}scenario-inactive{% endif %}">
                             <td class="text-center">
                                 <span class="badge bg-primary-color text-black fs-6">{{ scenario.scenario_number }}</span>
                             </td>
@@ -89,13 +88,10 @@
                                 {% endif %}
                             </td>
                             <td class="text-center">
-                                <span class="badge bg-info">{{ scenario.times_selected }}</span>
-                            </td>
-                            <td class="text-center">
                                 {% if scenario.is_active %}
                                     <span class="badge bg-success">Active</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Inactive</span>
+                                    <span class="badge bg-danger">Inactive</span>
                                 {% endif %}
                             </td>
                             <td class="text-end" onclick="event.stopPropagation();" role="gridcell">

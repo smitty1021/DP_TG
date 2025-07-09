@@ -1083,6 +1083,28 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
     line-height: 1.4 !important;
 }
 
+.scenario-inactive td {
+    color: var(--text-muted) !important;
+    opacity: 0.6;
+}
+
+.scenario-inactive .badge {
+    opacity: 0.7;
+}
+
+.scenario-inactive:hover td {
+    color: var(--text-secondary) !important;
+}
+
+/* Ensure buttons remain functional but slightly muted */
+.scenario-inactive .btn {
+    opacity: 0.8;
+}
+
+.scenario-inactive .btn:hover {
+    opacity: 1;
+}
+
 /* Ensure badges and content within cells are also centered */
 .table td .badge,
 .table td .btn-group-tight,
@@ -2162,7 +2184,28 @@ html[data-bs-theme="dark"] .suggestions a:hover {
 .error-code-number {
     animation: errorPulse 3s ease-in-out infinite;
 }
+/* Add to your existing style.css */
+#unsaved-warning {
+    border-left: 4px solid var(--warning-color);
+    animation: slideDown 0.3s ease-out;
+}
 
+#unsaved-warning.d-none {
+    animation: slideUp 0.3s ease-in;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 60px;
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
+    }
+}
 /*
 ================================================
 END OF TRADING JOURNAL STYLESHEET

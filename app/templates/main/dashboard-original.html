@@ -1,0 +1,892 @@
+{% extends "base.html" %}
+
+{% block title %}Trading Dashboard - Random's Methodology{% endblock %}
+
+{% block head_extra %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    :root {
+        --dashboard-bg: #1a1d21;
+        --card-bg: #242832;
+        --border-color: #393c47;
+        --text-primary: #ffffff;
+        --text-secondary: #8b949e;
+        --success-color: #2ea043;
+        --danger-color: #da3633;
+        --warning-color: #fb8500;
+        --info-color: #1f6feb;
+    }
+
+    /* Override base theme for dashboard */
+    [data-bs-theme="dark"] {
+        --bs-body-bg: var(--dashboard-bg);
+        --bs-body-color: var(--text-primary);
+    }
+
+    [data-bs-theme="light"] {
+        --dashboard-bg: #f8f9fa;
+        --card-bg: #ffffff;
+        --border-color: #dee2e6;
+        --text-primary: #212529;
+        --text-secondary: #6c757d;
+    }
+
+    body {
+        background-color: var(--dashboard-bg) !important;
+        color: var(--text-primary) !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .dashboard-container {
+        padding: 1.5rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .metric-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        height: 100%;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    [data-bs-theme="light"] .metric-card:hover {
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+
+    .metric-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .metric-title {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-subtitle {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .win-rate-gauge {
+        position: relative;
+        width: 100px;
+        height: 50px;
+        margin: 1rem auto;
+    }
+
+    .gauge-bg {
+        width: 100px;
+        height: 50px;
+        border: 8px solid var(--border-color);
+        border-bottom: none;
+        border-radius: 100px 100px 0 0;
+    }
+
+    .gauge-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100px;
+        height: 50px;
+        border: 8px solid var(--success-color);
+        border-bottom: none;
+        border-radius: 100px 100px 0 0;
+        transform-origin: center bottom;
+        transition: transform 0.8s ease;
+    }
+
+    .profit-factor-ring {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 1rem auto;
+        position: relative;
+    }
+
+    .profit-factor-ring::before {
+        content: '';
+        width: 60px;
+        height: 60px;
+        background: var(--card-bg);
+        border-radius: 50%;
+        position: absolute;
+    }
+
+    .profit-factor-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+        z-index: 1;
+    }
+
+    .trades-table {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .trades-table table {
+        margin: 0;
+    }
+
+    .trades-table th {
+        background: var(--border-color);
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 1rem 0.75rem;
+        border: none;
+    }
+
+    .trades-table td {
+        padding: 0.75rem;
+        border: none;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.85rem;
+        cursor: pointer;
+    }
+
+    .trades-table tbody tr:hover {
+        background: rgba(255,255,255,0.02);
+    }
+
+    [data-bs-theme="light"] .trades-table tbody tr:hover {
+        background: rgba(0,0,0,0.02);
+    }
+
+    .position-long {
+        color: var(--success-color);
+        font-weight: 600;
+    }
+
+    .position-short {
+        color: var(--danger-color);
+        font-weight: 600;
+    }
+
+    .pnl-positive {
+        color: var(--success-color);
+        font-weight: 600;
+    }
+
+    .pnl-negative {
+        color: var(--danger-color);
+        font-weight: 600;
+    }
+
+    .chart-container {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        height: 300px;
+    }
+
+    .calendar-container {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .calendar-nav {
+        background: none;
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .calendar-nav:hover {
+        background: var(--border-color);
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .calendar-day-header {
+        background: var(--border-color);
+        color: var(--text-secondary);
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .calendar-day {
+        background: var(--card-bg);
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        min-height: 60px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .calendar-day:hover {
+        background: rgba(255,255,255,0.05);
+    }
+
+    [data-bs-theme="light"] .calendar-day:hover {
+        background: rgba(0,0,0,0.05);
+    }
+
+    .calendar-day.other-month {
+        color: var(--text-secondary);
+        opacity: 0.5;
+    }
+
+    .calendar-day.today {
+        background: var(--info-color);
+        color: white;
+    }
+
+    .calendar-day.has-trades {
+        border-left: 3px solid var(--warning-color);
+    }
+
+    .calendar-pnl {
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-top: 0.25rem;
+    }
+
+    .calendar-pnl.positive {
+        color: var(--success-color);
+    }
+
+    .calendar-pnl.negative {
+        color: var(--danger-color);
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+        color: var(--text-secondary);
+        font-size: 1rem;
+    }
+
+    .quick-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .quick-action-btn {
+        background: var(--info-color);
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .quick-action-btn:hover {
+        background: #1a5bd8;
+        color: white;
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .quick-action-btn.success {
+        background: var(--success-color);
+    }
+
+    .quick-action-btn.success:hover {
+        background: #26923e;
+    }
+
+    .metric-trend {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        margin-top: 0.5rem;
+    }
+
+    .trend-up {
+        color: var(--success-color);
+    }
+
+    .trend-down {
+        color: var(--danger-color);
+    }
+
+    .equity-curve {
+        height: 200px;
+        margin-top: 1rem;
+    }
+
+    .closed-pnl-badge {
+        background: var(--success-color);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .text-success-custom {
+        color: var(--success-color) !important;
+    }
+
+    .text-danger-custom {
+        color: var(--danger-color) !important;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 1rem;
+        }
+
+        .calendar-day {
+            min-height: 50px;
+            padding: 0.5rem 0.25rem;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+        }
+
+        .quick-actions {
+            flex-direction: column;
+        }
+
+        .chart-container {
+            height: 250px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Trading Dashboard</h1>
+        <p class="page-subtitle">Random's Methodology - Track your trading performance</p>
+        <div class="quick-actions">
+            <a href="{{ url_for('trades.add_trade') }}" class="quick-action-btn success">
+                <i class="fas fa-plus"></i>
+                Log New Trade
+            </a>
+            <a href="{{ url_for('trades.view_trades_list') }}" class="quick-action-btn">
+                <i class="fas fa-list"></i>
+                View All Trades
+            </a>
+            <a href="{{ url_for('journal.manage_daily_journal', date_str=today_str) }}" class="quick-action-btn">
+                <i class="fas fa-book"></i>
+                Daily Journal
+            </a>
+        </div>
+    </div>
+
+    <!-- Top Metrics Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-2">
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">Trades Win%</span>
+                </div>
+                <div class="text-center">
+                    <div class="metric-value text-success-custom">{{ "%.2f".format(stats.win_rate) }}%</div>
+                    <div class="win-rate-gauge">
+                        <div class="gauge-bg"></div>
+                        <div class="gauge-fill" style="transform: rotate({{ (stats.win_rate * 1.8)|round }}deg);"></div>
+                    </div>
+                    <div class="metric-subtitle">W ({{ stats.winning_trades }}) L ({{ stats.losing_trades }})</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">Average Trade PnL</span>
+                </div>
+                <div class="text-center">
+                    {% set avg_trade_pnl = stats.total_pnl / stats.total_trades if stats.total_trades > 0 else 0 %}
+                    <div class="metric-value {{ 'text-success-custom' if avg_trade_pnl >= 0 else 'text-danger-custom' }}">
+                        ${{ "{:+.2f}".format(avg_trade_pnl) }}
+                    </div>
+                    <div class="metric-subtitle">WS ({{ "%.2f".format(stats.avg_winner) }}) LS ({{ "%.2f".format(stats.avg_loser) }})</div>
+                    {% if stats.total_trades > 0 %}
+                    <div class="metric-trend {{ 'trend-up' if avg_trade_pnl >= 0 else 'trend-down' }}">
+                        <i class="fas fa-arrow-{{ 'up' if avg_trade_pnl >= 0 else 'down' }}"></i>
+                        {{ "%.1f".format((avg_trade_pnl / 100) if avg_trade_pnl >= 0 else -(avg_trade_pnl / 100)) }}% avg per trade
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">Profit Factor</span>
+                </div>
+                <div class="text-center">
+                    <div class="metric-value">{{ "%.3f".format(stats.profit_factor) }}</div>
+                    <div class="profit-factor-ring" style="background: conic-gradient(var(--success-color) 0deg {{ (stats.profit_factor * 72)|round }}deg, var(--border-color) {{ (stats.profit_factor * 72)|round }}deg 360deg);">
+                        <div class="profit-factor-value">{{ "%.2f".format(stats.profit_factor) }}</div>
+                    </div>
+                    <div class="metric-subtitle">W (${{ "{:,.0f}".format(stats.gross_profit) }}) L (${{ "{:,.0f}".format(stats.gross_loss) }})</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">Closed PnL</span>
+                    <span class="closed-pnl-badge">${{ "{:,.2f}".format(stats.total_pnl) }}</span>
+                </div>
+                <div class="metric-value {{ 'text-success-custom' if stats.total_pnl >= 0 else 'text-danger-custom' }}">
+                    ${{ "{:+,.2f}".format(stats.total_pnl) }}
+                </div>
+                <div class="metric-subtitle">Total Realized PnL</div>
+                {% if stats.total_trades > 0 %}
+                <div class="metric-trend {{ 'trend-up' if stats.total_pnl >= 0 else 'trend-down' }}">
+                    <i class="fas fa-arrow-{{ 'up' if stats.total_pnl >= 0 else 'down' }}"></i>
+                    {{ stats.total_trades }} total trades
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">Unrealized PnL</span>
+                </div>
+                <div class="metric-value">$0.00</div>
+                <div class="metric-subtitle">Current Open Positions</div>
+                <div class="equity-curve">
+                    <canvas id="equityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Data Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="chart-container">
+                <h5 class="mb-3">Daily PnL Distribution</h5>
+                <canvas id="pnlChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-container">
+                <h5 class="mb-3">Equity Curve</h5>
+                <canvas id="equityCurveChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-container">
+                <h5 class="mb-3">Monthly Performance</h5>
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Trades and Calendar Row -->
+    <div class="row g-3">
+        <div class="col-md-7">
+            <div class="trades-table">
+                <div class="d-flex justify-content-between align-items-center p-3 border-bottom" style="border-color: var(--border-color) !important;">
+                    <h5 class="mb-0">Recent Trades</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small">Showing latest {{ recent_trades|length }}</span>
+                        <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-outline-primary btn-sm">View All</a>
+                    </div>
+                </div>
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Date</th>
+                            <th>Position</th>
+                            <th>Contracts</th>
+                            <th>PnL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trade in recent_trades %}
+                        <tr onclick="goToJournal('{{ trade.trade_date.strftime('%Y-%m-%d') }}')" style="cursor: pointer;">
+                            <td>{{ trade.instrument or 'N/A' }}</td>
+                            <td>{{ trade.trade_date.strftime('%d-%b-%y') }}</td>
+                            <td class="position-{{ trade.direction.lower() if trade.direction else 'unknown' }}">
+                                {{ trade.direction.lower() if trade.direction else 'N/A' }}
+                            </td>
+                            <td>{{ trade.total_contracts_entered or 0 }}</td>
+                            <td class="pnl-{{ 'positive' if trade.pnl and trade.pnl >= 0 else 'negative' }}">
+                                {% if trade.pnl is not none %}
+                                    ${{ "{:+,.2f}".format(trade.pnl) }}
+                                {% else %}
+                                    $0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not recent_trades %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                No trades found. <a href="{{ url_for('trades.add_trade') }}">Log your first trade</a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <button class="calendar-nav" onclick="changeMonth(-1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h5 class="mb-0" id="currentMonth">{{ current_month }}</h5>
+                    <button class="calendar-nav" onclick="changeMonth(1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- Calendar will be generated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Calendar and chart data from backend
+    const calendarData = {{ calendar_data|tojson }};
+    const chartData = {{ chart_data|tojson }};
+    const currentMonth = {{ current_month_num }};
+    const currentYear = {{ current_year }};
+
+    let currentDate = new Date(currentYear, currentMonth - 1, 1);
+
+    function generateCalendar() {
+        const grid = document.getElementById('calendarGrid');
+        const monthLabel = document.getElementById('currentMonth');
+
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        monthLabel.textContent = new Date(year, month).toLocaleDateString('en-US', {
+            month: 'long',
+            year: 'numeric'
+        });
+
+        // Clear existing calendar
+        grid.innerHTML = '';
+
+        // Add day headers
+        const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        dayHeaders.forEach(day => {
+            const header = document.createElement('div');
+            header.className = 'calendar-day-header';
+            header.textContent = day;
+            grid.appendChild(header);
+        });
+
+        // Get first day of month and number of days
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDayOfWeek = firstDay.getDay();
+
+        // Add empty cells for days before month starts
+        for (let i = 0; i < startingDayOfWeek; i++) {
+            const emptyDay = document.createElement('div');
+            emptyDay.className = 'calendar-day other-month';
+            grid.appendChild(emptyDay);
+        }
+
+        // Add days of the month
+        const today = new Date();
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const dayData = calendarData[dateStr];
+
+            if (dayData && dayData.trades > 0) {
+                dayElement.classList.add('has-trades');
+                dayElement.innerHTML = `
+                    <div>${day}</div>
+                    <div class="calendar-pnl ${dayData.pnl >= 0 ? 'positive' : 'negative'}">
+                        $${dayData.pnl >= 0 ? '+' : ''}${dayData.pnl.toFixed(0)}
+                    </div>
+                `;
+            } else {
+                dayElement.innerHTML = `<div>${day}</div>`;
+            }
+
+            // Add click handler to go to daily journal
+            dayElement.addEventListener('click', () => {
+                goToJournal(dateStr);
+            });
+
+            // Highlight today
+            if (year === today.getFullYear() &&
+                month === today.getMonth() &&
+                day === today.getDate()) {
+                dayElement.classList.add('today');
+            }
+
+            grid.appendChild(dayElement);
+        }
+    }
+
+    function changeMonth(direction) {
+        currentDate.setMonth(currentDate.getMonth() + direction);
+        generateCalendar();
+    }
+
+    function goToJournal(date) {
+        window.location.href = `{{ url_for('journal.manage_daily_journal', date_str='DATE_PLACEHOLDER') }}`.replace('DATE_PLACEHOLDER', date);
+    }
+
+    // Initialize charts
+    function initializeCharts() {
+        const chartColors = {
+            grid: getComputedStyle(document.documentElement).getPropertyValue('--border-color'),
+            text: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary'),
+            success: getComputedStyle(document.documentElement).getPropertyValue('--success-color'),
+            danger: getComputedStyle(document.documentElement).getPropertyValue('--danger-color'),
+            info: getComputedStyle(document.documentElement).getPropertyValue('--info-color')
+        };
+
+        // Daily PnL Chart
+        const pnlCtx = document.getElementById('pnlChart').getContext('2d');
+        new Chart(pnlCtx, {
+            type: 'bar',
+            data: {
+                labels: chartData.daily_labels || [],
+                datasets: [{
+                    data: chartData.daily_pnl || [],
+                    backgroundColor: function(context) {
+                        const value = context.parsed.y;
+                        return value >= 0 ? chartColors.success : chartColors.danger;
+                    },
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `PnL: $${context.parsed.y.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        grid: { color: chartColors.grid },
+                        ticks: {
+                            color: chartColors.text,
+                            callback: function(value) {
+                                return '$' + value.toFixed(0);
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { color: chartColors.grid },
+                        ticks: { color: chartColors.text }
+                    }
+                }
+            }
+        });
+
+        // Equity Curve Chart
+        const equityCtx = document.getElementById('equityCurveChart').getContext('2d');
+        new Chart(equityCtx, {
+            type: 'line',
+            data: {
+                labels: chartData.equity_labels || [],
+                datasets: [{
+                    data: chartData.equity_curve || [],
+                    borderColor: chartColors.success,
+                    backgroundColor: 'rgba(46, 160, 67, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 2,
+                    pointHoverRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Equity: $${context.parsed.y.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        grid: { color: chartColors.grid },
+                        ticks: {
+                            color: chartColors.text,
+                            callback: function(value) {
+                                return '$' + value.toFixed(0);
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { color: chartColors.grid },
+                        ticks: { color: chartColors.text }
+                    }
+                }
+            }
+        });
+
+        // Monthly Performance Chart
+        const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+        new Chart(monthlyCtx, {
+            type: 'bar',
+            data: {
+                labels: chartData.monthly_labels || [],
+                datasets: [{
+                    data: chartData.monthly_pnl || [],
+                    backgroundColor: function(context) {
+                        const value = context.parsed.y;
+                        return value >= 0 ? chartColors.success : chartColors.danger;
+                    },
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Monthly PnL: $${context.parsed.y.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        grid: { color: chartColors.grid },
+                        ticks: {
+                            color: chartColors.text,
+                            callback: function(value) {
+                                return '$' + value.toFixed(0);
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { color: chartColors.grid },
+                        ticks: { color: chartColors.text }
+                    }
+                }
+            }
+        });
+
+        // Small equity chart in unrealized PnL card
+        const equitySmallCtx = document.getElementById('equityChart').getContext('2d');
+        new Chart(equitySmallCtx, {
+            type: 'line',
+            data: {
+                labels: chartData.equity_labels || [],
+                datasets: [{
+                    data: chartData.equity_curve || [],
+                    borderColor: chartColors.success,
+                    backgroundColor: 'rgba(46, 160, 67, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { display: false },
+                    x: { display: false }
+                },
+                interaction: { intersect: false }
+            }
+        });
+    }
+
+    // Initialize everything when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        generateCalendar();
+        initializeCharts();
+    });
+</script>
+{% endblock %}
