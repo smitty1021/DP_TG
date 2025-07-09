@@ -935,6 +935,71 @@ html[data-bs-theme="dark"] .btn-goback-ghost:hover {
 
 /*
 ================================================
+9. TAG SYSTEM
+================================================
+*/
+
+/* Tag base styling */
+.tag-good,
+.tag-bad,
+.tag-neutral {
+    border-radius: 1rem !important;
+    padding: 0.25rem 0.75rem !important;
+    font-size: 0.875rem !important;
+    border: 1px solid !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    position: relative !important;
+    transition: opacity 0.2s ease;
+}
+
+.tag-good {
+    background-color: var(--bs-success-bg-subtle) !important;
+    border-color: var(--bs-success-border-subtle) !important;
+    color: var(--bs-success-text-emphasis) !important;
+}
+
+.tag-bad {
+    background-color: var(--bs-danger-bg-subtle) !important;
+    border-color: var(--bs-danger-border-subtle) !important;
+    color: var(--bs-danger-text-emphasis) !important;
+}
+
+.tag-neutral {
+    background-color: var(--bs-primary-bg-subtle) !important;
+    border-color: var(--bs-primary-border-subtle) !important;
+    color: var(--bs-primary-text-emphasis) !important;
+}
+
+/* Tag hover effects */
+.tag-good:hover,
+.tag-bad:hover,
+.tag-neutral:hover {
+    opacity: 0.8;
+}
+
+/* Badge variants */
+.badge.tag-good {
+    background-color: var(--bs-success-bg-subtle) !important;
+    color: var(--bs-success-text-emphasis) !important;
+    border: 1px solid var(--bs-success-border-subtle) !important;
+}
+
+.badge.tag-bad {
+    background-color: var(--bs-danger-bg-subtle) !important;
+    color: var(--bs-danger-text-emphasis) !important;
+    border: 1px solid var(--bs-danger-border-subtle) !important;
+}
+
+.badge.tag-neutral {
+    background-color: var(--bs-primary-bg-subtle) !important;
+    color: var(--bs-primary-text-emphasis) !important;
+    border: 1px solid var(--bs-primary-border-subtle) !important;
+}
+
+
+/*
+================================================
 7. TABLE SYSTEM
 ================================================
 */
