@@ -25,7 +25,7 @@ Version: 2.1 - Bumblebee Theme Update
 /* Light Theme (Bumblebee Complementary) */
 :root {
     /* Core Colors */
-    --primary-color: #FFD300; /* Strong Yellow */
+    --primary-color: #FFF000; /* Strong Yellow */
     --primary-light: #FFE366;
     --secondary-color: #4A4A4A; /* Dark Gray */
     --success-color: #2E8B57; /* Sea Green */
@@ -61,7 +61,7 @@ Version: 2.1 - Bumblebee Theme Update
 /* Dark Theme (Classic Bumblebee) */
 html[data-bs-theme="dark"] {
     /* Core Colors */
-    --primary-color: #FFD300; /* Strong Yellow */
+    --primary-color: #FFF000; /* Strong Yellow */
     --primary-light: #FFE366;
     --secondary-color: #AAAAAA;
     --success-color: #2E8B57; /* Sea Green */
@@ -757,6 +757,74 @@ html[data-bs-theme="dark"] .btn-utility-ghost {
 html[data-bs-theme="dark"] .btn-utility-ghost:hover {
     background-color: rgba(160, 160, 160, 0.1);
 }
+
+/*
+=== GO BACK ACTIONS ===
+*/
+
+/* Solid goback Buttons */
+.btn-goback-solid {
+    color: #000;
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-goback-solid:hover {
+    color: #000;
+    background-color: #E6BE00;
+    border-color: #CCAA00;
+}
+
+/* Outlined goback Buttons */
+.btn-goback,
+.btn-goback-outline {
+    color: var(--primary-color);
+    background-color: transparent;
+    border-color: var(--primary-color);
+}
+
+.btn-goback:hover,
+.btn-goback-outline:hover {
+    color: #000;
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+html[data-bs-theme="dark"] .btn-goback,
+html[data-bs-theme="dark"] .btn-goback-outline {
+    color: var(--primary-light);
+    border-color: var(--primary-light);
+}
+
+html[data-bs-theme="dark"] .btn-goback:hover,
+html[data-bs-theme="dark"] .btn-goback-outline:hover {
+    color: #000;
+    background-color: var(--primary-light);
+    border-color: var(--primary-light);
+}
+
+/* Ghost goback Buttons */
+.btn-goback-ghost {
+    color: var(--primary-color);
+    background: none;
+    border: none;
+}
+
+.btn-goback-ghost:hover {
+    color: var(--primary-color);
+    background-color: rgba(255, 211, 0, 0.1);
+}
+
+html[data-bs-theme="dark"] .btn-goback-ghost {
+    color: var(--primary-light);
+}
+
+html[data-bs-theme="dark"] .btn-goback-ghost:hover {
+    background-color: rgba(255, 227, 102, 0.1);
+}
+
+
+
 /*
 === ICON SPACING ===
 */
@@ -1658,6 +1726,75 @@ html[data-bs-theme="dark"] .btn-primary-borderonly:hover {
 .modal-footer .btn,
 .modal-footer .action-btn {
     min-width: 120px;
+}
+
+/*
+================================================
+TAG SELECTOR COMPONENT
+================================================
+*/
+
+.tag-selector {
+    min-height: 40px;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--content-bg);
+    margin-bottom: 0.5rem;
+}
+
+.tag-selectable {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    user-select: none;
+    cursor: pointer;
+    margin: 0.125rem;
+}
+
+.tag-selectable:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.tag-selectable.tag-selected {
+    background-color: var(--primary-color) !important;
+    color: #000 !important;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(255, 211, 0, 0.3);
+}
+
+html[data-bs-theme="dark"] .tag-selectable.tag-selected {
+    color: #000 !important;
+    box-shadow: 0 2px 6px rgba(255, 211, 0, 0.4);
+}
+
+.tag-selectable:not(.tag-selected) {
+    background-color: var(--text-secondary) !important;
+    color: var(--content-bg) !important;
+}
+
+.tag-selectable:not(.tag-selected):hover {
+    background-color: var(--text-color) !important;
+}
+
+/* Empty state for tag selector */
+.tag-selector:empty::after {
+    content: "Click to select options...";
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.875rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .tag-selectable {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
 }
 
 /*

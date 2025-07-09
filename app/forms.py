@@ -686,10 +686,10 @@ class DailyJournalForm(FlaskForm):
 class P12ScenarioForm(FlaskForm):
     """Form for creating/editing P12 scenarios."""
 
-    scenario_number = IntegerField(
+    scenario_number = StringField(
         'Scenario Number',
-        validators=[DataRequired(), NumberRange(min=1, max=5)],
-        description='Enter 1, 2, 3, 4, or 5'
+        validators=[DataRequired(), Length(min=1, max=10)],
+        description='Enter scenario ID (e.g. 1A, 3B, etc)'
     )
 
     scenario_name = StringField(
@@ -827,7 +827,6 @@ class P12ScenarioForm(FlaskForm):
     key_considerations = TextAreaField(
         'Key Trading Considerations',
         validators=[Optional()],
-        description='Additional important notes for trading this scenario',
         render_kw={'rows': 4, 'placeholder': 'Important factors traders should consider when this scenario occurs...'}
     )
 
@@ -841,7 +840,9 @@ class P12ScenarioForm(FlaskForm):
             from app.models import TradingModel
 
             # Get all active trading models from database
-            trading_models = TradingModel.query.filter_by(is_active=True).order_by(TradingModel.name).all()
+            # Get only default trading models from database
+            trading_models = TradingModel.query.filter_by(is_active=True, is_default=True).order_by(
+                TradingModel.name).all()
 
             # Create choices list from database models
             models = [(model.name, model.name) for model in trading_models]
