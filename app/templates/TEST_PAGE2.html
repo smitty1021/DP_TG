@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random's Trading Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #16a34a;
+            --warning-color: #ea580c;
+            --danger-color: #dc2626;
+            --dark-color: #1f2937;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin: 20px;
+            padding: 30px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+
+        .metric-change {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-active { background: #dcfce7; color: #166534; }
+        .status-warning { background: #fef3c7; color: #92400e; }
+        .status-danger { background: #fee2e2; color: #991b1b; }
+        .status-neutral { background: #f3f4f6; color: #374151; }
+
+        .section-header {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .time-display {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .current-time {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .current-date {
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .p12-levels {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .model-status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+        }
+
+        .calendar-mini {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .calendar-day {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-day:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .calendar-day.today {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        .progress-ring {
+            width: 100px;
+            height: 100px;
+        }
+
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .session-timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .session-item {
+            position: relative;
+            padding: 15px 0;
+            border-left: 3px solid #e5e7eb;
+            padding-left: 20px;
+            margin-left: 10px;
+        }
+
+        .session-item.active {
+            border-left-color: var(--primary-color);
+        }
+
+        .session-item::before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e5e7eb;
+        }
+
+        .session-item.active::before {
+            background: var(--primary-color);
+        }
+
+        .trade-log {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .trade-entry {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid;
+        }
+
+        .trade-win { border-left-color: var(--success-color); background: #f0fdf4; }
+        .trade-loss { border-left-color: var(--danger-color); background: #fef2f2; }
+        .trade-pending { border-left-color: var(--warning-color); background: #fffbeb; }
+
+        .instrument-switcher {
+            background: white;
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 20px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .instrument-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #6b7280;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin: 0 5px;
+        }
+
+        .instrument-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .risk-meter {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .scrollable-content {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+
+        .data-source-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            z-index: 1000;
+        }
+
+        .data-source-badge.disconnected {
+            background: rgba(239, 68, 68, 0.9);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f4f6;
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .connection-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .connection-indicator.disconnected {
+            background: #ef4444;
+        }
+
+        .quick-action-btn {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+
+        .instrument-details {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .market-hours {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .market-hours.closed {
+            background: linear-gradient(135deg, #6b7280, #9ca3af);
+        }
+
+        .alert-banner {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-banner.info {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+        }
+
+        .alert-banner.warning {
+            background: linear-gradient(135deg, #ea580c, #f97316);
+        }
+
+        .model-performance {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .model-performance.negative {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark-color);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Data Source Indicator -->
+    <div class="data-source-badge" id="dataSourceBadge">
+        <span class="connection-indicator" id="connectionIndicator"></span>
+        <span id="dataSourceText">Live Data Connected</span>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="text-primary mb-1">
+                            <i class="fas fa-chart-line me-2"></i>Random's Trading Command Center
+                        </h1>
+                        <p class="text-muted mb-0">
+                            Live dashboard implementing Matt Mickey's Four Steps methodology & P12 analysis
+                        </p>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <div class="time-display">
+                            <div class="current-time" id="currentTime">09:34:17</div>
+                            <div class="current-date" id="currentDate">Wednesday, July 09, 2025</div>
+                        </div>
+                        <div class="d-flex flex-column gap-2">
+                            <a href="/trades/add" class="quick-action-btn">
+                                <i class="fas fa-plus"></i>
+                                Add Trade
+                            </a>
+                            <a href="/journal" class="quick-action-btn">
+                                <i class="fas fa-journal-whills"></i>
+                                Journal
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Hours Alert -->
+        <div class="market-hours" id="marketHoursAlert">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-clock me-2"></i>
+                    <strong>Market Status:</strong> <span id="marketStatus">NY Session Open</span>
+                </div>
+                <div>
+                    <small>Next Session: <span id="nextSession">NY2 in 4h 26m</span></small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instrument Switcher -->
+        <div class="instrument-switcher">
+            <div class="d-flex justify-content-center">
+                <button class="instrument-btn active" data-instrument="ES" data-point-value="50">
+                    ES <small>($50/pt)</small>
+                </button>
+                <button class="instrument-btn" data-instrument="NQ" data-point-value="20">
+                    NQ <small>($20/pt)</small>
+                </button>
+                <button class="instrument-btn" data-instrument="YM" data-point-value="5">
+                    YM <small>($5/pt)</small>
+                </button>
+                <button class="instrument-btn" data-instrument="RTY" data-point-value="50">
+                    RTY <small>($50/pt)</small>
+                </button>
+            </div>
+            <div class="instrument-details" id="instrumentDetails">
+                <div class="row text-center">
+                    <div class="col-3">
+                        <div class="small text-muted">Exchange</div>
+                        <div class="fw-bold">CME</div>
+                    </div>
+                    <div class="col-3">
+                        <div class="small text-muted">Tick Size</div>
+                        <div class="fw-bold">0.25</div>
+                    </div>
+                    <div class="col-3">
+                        <div class="small text-muted">Point Value</div>
+                        <div class="fw-bold">$50</div>
+                    </div>
+                    <div class="col-3">
+                        <div class="small text-muted">Margin</div>
+                        <div class="fw-bold">$500</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Banner -->
+        <div class="alert-banner warning" id="alertBanner" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="alertText">High impact news event in 30 minutes - CPI Data</span>
+        </div>
+
+        <div class="row">
+            <!-- Left Column -->
+            <div class="col-lg-4">
+                <!-- Four Steps Analysis -->
+                <div class="section-header">
+                    <i class="fas fa-list-ol me-2"></i>Four Steps Analysis
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-title">Step 1: Define HOD/LOD</div>
+                    <div class="small mb-3" id="step1Analysis">
+                        <strong>Dashboard Analysis:</strong> <span id="step1Content">Loading analysis...</span>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="small text-muted">Expected HOD Time</div>
+                            <div class="fw-bold text-warning" id="expectedHODTime">15:00-16:00</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Expected LOD Time</div>
+                            <div class="fw-bold text-success" id="expectedLODTime">Already In</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-title">Step 2: Incorporate Variables</div>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="small text-muted">Asia Session</div>
+                            <div class="status-badge" id="asiaStatus">Loading...</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">London Session</div>
+                            <div class="status-badge" id="londonStatus">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <div class="small text-muted">RVOL</div>
+                            <div class="fw-bold text-primary" id="rvolValue">Loading...</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">ADR Remaining</div>
+                            <div class="fw-bold text-warning" id="adrRemaining">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-title">Step 3: Set Realistic Expectance</div>
+                    <div class="small mb-2">
+                        <strong>Daily Classification:</strong> <span class="status-badge" id="dailyClassification">Loading...</span>
+                    </div>
+                    <div class="small mb-2">Range Target: <strong id="rangeTarget">Loading...</strong></div>
+                    <div class="small">Extension Phase: <strong id="extensionPhase">Loading...</strong></div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-title">Step 4: Engage Structure</div>
+                    <div class="small mb-2">Active Models: <span id="activeModels">Loading...</span></div>
+                    <div class="small">Entry Quality: <span class="status-badge" id="entryQuality">Loading...</span></div>
+                </div>
+
+                <!-- P12 Levels -->
+                <div class="p12-levels">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-layer-group me-2"></i>P12 Levels
+                        </h5>
+                        <span class="status-badge" style="background: rgba(255,255,255,0.2); color: white;" id="p12Scenario">
+                            Loading...
+                        </span>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="small opacity-75">High</div>
+                            <div class="h4 mb-0" id="p12High">Loading...</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="small opacity-75">Mid</div>
+                            <div class="h4 mb-0" id="p12Mid">Loading...</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="small opacity-75">Low</div>
+                            <div class="h4 mb-0" id="p12Low">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 small" id="p12Status">
+                        Loading P12 status...
+                    </div>
+                </div>
+
+                <!-- Mini Calendar -->
+                <div class="calendar-mini mt-4">
+                    <div class="text-center mb-3">
+                        <h6 class="mb-0" id="calendarMonth">July 2025</h6>
+                    </div>
+                    <div class="row g-1 text-center">
+                        <div class="col small text-muted">S</div>
+                        <div class="col small text-muted">M</div>
+                        <div class="col small text-muted">T</div>
+                        <div class="col small text-muted">W</div>
+                        <div class="col small text-muted">T</div>
+                        <div class="col small text-muted">F</div>
+                        <div class="col small text-muted">S</div>
+                    </div>
+                    <div id="calendarGrid">
+                        <!-- Calendar will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Column -->
+            <div class="col-lg-4">
+                <!-- Market Statistics -->
+                <div class="section-header">
+                    <i class="fas fa-chart-bar me-2"></i>Market Statistics & Range Analysis
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <div class="metric-card text-center">
+                            <div class="metric-title">Current Price</div>
+                            <div class="metric-value text-primary" id="currentPrice">Loading...</div>
+                            <div class="metric-change" id="priceChange">
+                                <div class="loading-spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-card text-center">
+                            <div class="metric-title">Daily Range</div>
+                            <div class="metric-value text-warning" id="dailyRange">Loading...</div>
+                            <div class="metric-change text-muted" id="rangePercent">
+                                Loading...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <div class="metric-card text-center">
+                            <div class="metric-title">ADR10</div>
+                            <div class="metric-value" id="adr10Value">Loading...</div>
+                            <div class="metric-change text-muted">10-day average</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-card text-center">
+                            <div class="metric-title">RVOL</div>
+                            <div class="metric-value text-warning" id="rvolDisplay">Loading...</div>
+                            <div class="metric-change" id="rvolStatus">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HOD/LOD Probabilities -->
+                <div class="metric-card">
+                    <div class="metric-title">HOD/LOD Probability Analysis</div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="small text-muted">Current HOD</div>
+                            <div class="fw-bold" id="currentHOD">Loading...</div>
+                            <div class="small text-muted" id="hodTime">Loading...</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Current LOD</div>
+                            <div class="fw-bold" id="currentLOD">Loading...</div>
+                            <div class="small text-muted" id="lodTime">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span class="small">HOD Extension Prob</span>
+                            <span class="small fw-bold" id="hodExtProb">Loading...</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-warning" id="hodExtBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex justify-content-between">
+                            <span class="small">LOD Extension Prob</span>
+                            <span class="small fw-bold" id="lodExtProb">Loading...</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-success" id="lodExtBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Timeline -->
+                <div class="metric-card">
+                    <div class="metric-title">Session Timeline & O/U Status</div>
+                    <div class="session-timeline" id="sessionTimeline">
+                        <!-- Sessions will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Quarterly Levels -->
+                <div class="metric-card">
+                    <div class="metric-title">Hourly Quarters & Key Levels</div>
+                    <div class="row text-center" id="quarterLevels">
+                        <!-- Quarters will be populated by JavaScript -->
+                    </div>
+                    <div class="mt-3" id="quarterStatus">
+                        Loading quarter analysis...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="col-lg-4">
+                <!-- Trading Models Status -->
+                <div class="section-header">
+                    <i class="fas fa-cogs me-2"></i>Trading Models Status
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-title">Model Activation Status</div>
+                    <div id="tradingModels">
+                        <!-- Models will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Risk Management -->
+                <div class="risk-meter">
+                    <div class="metric-title">Risk Management</div>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <svg class="progress-ring" width="80" height="80">
+                                    <circle
+                                        class="progress-ring-circle"
+                                        stroke="#e5e7eb"
+                                        stroke-width="8"
+                                        fill="transparent"
+                                        r="32"
+                                        cx="40"
+                                        cy="40"/>
+                                    <circle
+                                        class="progress-ring-circle"
+                                        stroke="var(--success-color)"
+                                        stroke-width="8"
+                                        fill="transparent"
+                                        r="32"
+                                        cx="40"
+                                        cy="40"
+                                        stroke-dasharray="201"
+                                        stroke-dashoffset="161"
+                                        id="riskProgressCircle"/>
+                                </svg>
+                                <div class="small text-muted mt-2">Daily Risk</div>
+                                <div class="fw-bold" id="dailyRiskUsed">Loading...</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Max Position Size</div>
+                            <div class="fw-bold text-primary" id="maxPositionSize">Loading...</div>
+                            <div class="small text-muted mt-2">Setup Quality</div>
+                            <div class="fw-bold text-success" id="setupQuality">Loading...</div>
+                            <div class="small text-muted mt-2">Consecutive Losses</div>
+                            <div class="fw-bold" id="consecutiveLosses">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Trade Log -->
+                <div class="metric-card">
+                    <div class="metric-title">
+                        Live Trade Log
+                        <span class="notification-badge" id="tradeNotificationBadge" style="display: none;">0</span>
+                    </div>
+                    <div class="trade-log scrollable-content" id="tradeLog">
+                        <!-- Trades will be populated by JavaScript -->
+                    </div>
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="small text-muted">Today P&L</div>
+                                <div class="fw-bold" id="todayPnL">Loading...</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-muted">Win Rate</div>
+                                <div class="fw-bold" id="winRate">Loading...</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-muted">Avg Win</div>
+                                <div class="fw-bold" id="avgWin">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Economic Events -->
+                <div class="metric-card">
+                    <div class="metric-title">Economic Calendar</div>
+                    <div class="small mb-3" id="economicEvents">
+                        <!-- Events will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Market Sentiment -->
+                <div class="metric-card">
+                    <div class="metric-title">Market Sentiment Indicators</div>
+                    <div class="row" id="marketSentiment">
+                        <!-- Sentiment data will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row - Extended Analytics -->
+        <div class="row mt-4">
+            <div class="col-lg-6">
+                <!-- P12 Scenario Details -->
+                <div class="metric-card">
+                    <div class="metric-title">P12 Scenario Analysis</div>
+                    <div class="mb-3" id="p12ScenarioDetails">
+                        <!-- P12 details will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Session Statistics -->
+                <div class="metric-card">
+                    <div class="metric-title">Session Distribution Stats</div>
+                    <div class="scrollable-content">
+                        <table class="table table-sm" id="sessionStatsTable">
+                            <!-- Table will be populated by JavaScript -->
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <!-- Advanced Metrics -->
+                <div class="metric-card">
+                    <div class="metric-title">Advanced Range Analytics</div>
+                    <div class="stats-grid" id="advancedMetrics">
+                        <!-- Advanced metrics will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Captain Backtest Analysis -->
+                <div class="metric-card">
+                    <div class="metric-title">Captain Backtest - H4 Range Analysis</div>
+                    <div class="mb-3" id="captainBacktestAnalysis">
+                        <!-- Analysis will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Model Performance Stats -->
+                <div class="metric-card">
+                    <div class="metric-title">Model Performance (Last 30 Days)</div>
+                    <div id="modelPerformanceStats">
+                        <!-- Performance stats will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="row mt-4">
+            <div class="col">
+                <div class="text-center text-muted small">
+                    <i class="fas fa-graduation-cap me-2"></i>
+                    Trading Dashboard based on Random's (Matt Mickey) Four Steps Methodology
+                    <span class="mx-2">•</span>
+                    <i class="fas fa-clock me-1"></i>
+                    Last Updated: <span id="lastUpdate" class="animate-pulse">Loading...</span>
+                    <span class="mx-2">•</span>
+                    <i class="fas fa-wifi me-1"></i>
+                    <span id="dataFeedStatus">Connecting to data feed...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Dashboard State Management
+        class TradingDashboard {
+            constructor() {
+                this.currentInstrument = 'ES';
+                this.isConnected = false;
+                this.lastUpdate = new Date();
+                this.dataFeedInterval = null;
+                this.priceSimulationInterval = null;
+
+                // Sample data structure - in production, this would come from your Flask backend
+                this.sampleData = {
+                    instruments: {
+                        ES: {
+                            symbol: 'ES',
+                            name: 'E-mini S&P 500',
+                            exchange: 'CME',
+                            pointValue: 50,
+                            tickSize: 0.25,
+                            margin: 500,
+                            currentPrice: 4679.50,
+                            dailyHigh: 4685.25,
+                            dailyLow: 4666.50,
+                            adr10: 27.5,
+                            rvol: 142
+                        },
+                        NQ: {
+                            symbol: 'NQ',
+                            name: 'E-mini NASDAQ-100',
+                            exchange: 'CME',
+                            pointValue: 20,
+                            tickSize: 0.25,
+                            margin: 400,
+                            currentPrice: 18547.25,
+                            dailyHigh: 18592.75,
+                            dailyLow: 18489.50,
+                            adr10: 89.2,
+                            rvol: 138
+                        },
+                        YM: {
+                            symbol: 'YM',
+                            name: 'E-mini Dow Jones',
+                            exchange: 'CME',
+                            pointValue: 5,
+                            tickSize: 1.0,
+                            margin: 300,
+                            currentPrice: 36847.00,
+                            dailyHigh: 36923.00,
+                            dailyLow: 36751.00,
+                            adr10: 245.8,
+                            rvol: 125
+                        },
+                        RTY: {
+                            symbol: 'RTY',
+                            name: 'E-mini Russell 2000',
+                            exchange: 'CME',
+                            pointValue: 50,
+                            tickSize: 0.1,
+                            margin: 600,
+                            currentPrice: 2089.4,
+                            dailyHigh: 2098.7,
+                            dailyLow: 2076.1,
+                            adr10: 34.6,
+                            rvol: 156
+                        }
+                    },
+                    tradingModels: [
+                        {
+                            name: '0930 Opening Range',
+                            status: 'active',
+                            description: 'Clean snap detected',
+                            performance: { winRate: 72, avgWin: 325, last30Days: 8.5 }
+                        },
+                        {
+                            name: 'HOD/LOD Reversal',
+                            status: 'watching',
+                            description: 'Near statistical zone',
+                            performance: { winRate: 68, avgWin: 425, last30Days: 12.3 }
+                        },
+                        {
+                            name: 'Quarterly Theory',
+                            status: 'active',
+                            description: '05 box confirmed',
+                            performance: { winRate: 75, avgWin: 275, last30Days: 6.8 }
+                        },
+                        {
+                            name: 'Captain Backtest',
+                            status: 'off',
+                            description: 'Conditions not met',
+                            performance: { winRate: 71, avgWin: 380, last30Days: 9.2 }
+                        },
+                        {
+                            name: 'P12 Scenario-Based',
+                            status: 'active',
+                            description: 'Scenario 2 confirmed',
+                            performance: { winRate: 69, avgWin: 355, last30Days: 11.4 }
+                        },
+                        {
+                            name: 'Midnight Open Retracement',
+                            status: 'off',
+                            description: 'Outside time window',
+                            performance: { winRate: 66, avgWin: 295, last30Days: 4.7 }
+                        }
+                    ],
+                    p12Data: {
+                        scenario: 'Scenario 2',
+                        description: 'Look Outside P12 and Fail Back to Mid',
+                        probability: 73,
+                        high: 4687.25,
+                        mid: 4672.50,
+                        low: 4657.75,
+                        range: 29.5,
+                        currentStatus: 'Above Mid'
+                    },
+                    sessionData: {
+                        asia: { status: 'broken', probability: 91, ouStatus: 'under' },
+                        london: { status: 'broken', probability: 87, ouStatus: 'under' },
+                        ny1: { status: 'true', probability: 76, ouStatus: 'over' },
+                        ny2: { status: 'pending', probability: null, ouStatus: 'pending' }
+                    },
+                    todayStats: {
+                        pnl: 1187.50,
+                        winRate: 75,
+                        avgWin: 325,
+                        dailyRiskUsed: 2.0,
+                        maxPositionSize: 7.5,
+                        consecutiveLosses: 0,
+                        setupQuality: 'A+'
+                    }
+                };
+
+                this.init();
+            }
+
+            init() {
+                this.updateTime();
+                this.updateMarketHours();
+                this.setupEventListeners();
+                this.loadDashboardData();
+                this.generateCalendar();
+                this.startDataFeed();
+                this.startPriceSimulation();
+
+                // Update time every second
+                setInterval(() => this.updateTime(), 1000);
+            }
+
+            setupEventListeners() {
+                // Instrument switcher
+                document.querySelectorAll('.instrument-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        this.switchInstrument(e.target.dataset.instrument);
+                    });
+                });
+
+                // Calendar days
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('calendar-day')) {
+                        this.selectDate(e.target.textContent);
+                    }
+                });
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        switch(e.key) {
+                            case '1': e.preventDefault(); this.switchInstrument('ES'); break;
+                            case '2': e.preventDefault(); this.switchInstrument('NQ'); break;
+                            case '3': e.preventDefault(); this.switchInstrument('YM'); break;
+                            case '4': e.preventDefault(); this.switchInstrument('RTY'); break;
+                        }
+                    }
+                });
+            }
+
+            switchInstrument(instrument) {
+                this.currentInstrument = instrument;
+
+                // Update button states
+                document.querySelectorAll('.instrument-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.instrument === instrument) {
+                        btn.classList.add('active');
+                    }
+                });
+
+                // Update all instrument-specific data
+                this.updateInstrumentData();
+                this.updateMarketData();
+                this.updateTradingModels();
+            }
+
+            updateInstrumentData() {
+                const instrument = this.sampleData.instruments[this.currentInstrument];
+
+                // Update instrument details
+                document.getElementById('instrumentDetails').innerHTML = `
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <div class="small text-muted">Exchange</div>
+                            <div class="fw-bold">${instrument.exchange}</div>
+                        </div>
+                        <div class="col-3">
+                            <div class="small text-muted">Tick Size</div>
+                            <div class="fw-bold">${instrument.tickSize}</div>
+                        </div>
+                        <div class="col-3">
+                            <div class="small text-muted">Point Value</div>
+                            <div class="fw-bold">${instrument.pointValue}</div>
+                        </div>
+                        <div class="col-3">
+                            <div class="small text-muted">Margin</div>
+                            <div class="fw-bold">${instrument.margin}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            updateMarketData() {
+                const instrument = this.sampleData.instruments[this.currentInstrument];
+
+                // Update current price
+                document.getElementById('currentPrice').textContent = instrument.currentPrice.toFixed(2);
+
+                // Update price change
+                const change = ((instrument.currentPrice - instrument.dailyLow) / instrument.dailyLow * 100).toFixed(2);
+                const changeElement = document.getElementById('priceChange');
+                changeElement.innerHTML = `
+                    <i class="fas fa-arrow-up me-1"></i>+${change}%
+                `;
+                changeElement.className = 'metric-change text-success';
+
+                // Update daily range
+                const range = (instrument.dailyHigh - instrument.dailyLow).toFixed(2);
+                document.getElementById('dailyRange').textContent = range;
+
+                // Update range percentage
+                const rangePercent = ((parseFloat(range) / instrument.adr10) * 100).toFixed(0);
+                document.getElementById('rangePercent').textContent = `${rangePercent}% of ADR10`;
+
+                // Update ADR10
+                document.getElementById('adr10Value').textContent = instrument.adr10.toFixed(1);
+
+                // Update RVOL
+                document.getElementById('rvolDisplay').textContent = `${instrument.rvol}%`;
+                document.getElementById('rvolValue').textContent = `${instrument.rvol}%`;
+
+                const rvolStatus = instrument.rvol > 120 ? 'Above normal' : 'Normal';
+                const rvolClass = instrument.rvol > 120 ? 'text-success' : 'text-muted';
+                document.getElementById('rvolStatus').innerHTML = `<span class="${rvolClass}">${rvolStatus}</span>`;
+
+                // Update HOD/LOD
+                document.getElementById('currentHOD').textContent = instrument.dailyHigh.toFixed(2);
+                document.getElementById('currentLOD').textContent = instrument.dailyLow.toFixed(2);
+
+                // Update HOD/LOD times (sample data)
+                document.getElementById('hodTime').textContent = 'Set at: 07:45';
+                document.getElementById('lodTime').textContent = 'Set at: 02:30';
+
+                // Update extension probabilities
+                const hodExtProb = Math.max(0, 35 - rangePercent);
+                const lodExtProb = Math.max(0, 15 - rangePercent * 0.2);
+
+                document.getElementById('hodExtProb').textContent = `${Math.round(hodExtProb)}%`;
+                document.getElementById('lodExtProb').textContent = `${Math.round(lodExtProb)}%`;
+
+                document.getElementById('hodExtBar').style.width = `${hodExtProb}%`;
+                document.getElementById('lodExtBar').style.width = `${lodExtProb}%`;
+            }
+
+            updateTradingModels() {
+                const modelsContainer = document.getElementById('tradingModels');
+                modelsContainer.innerHTML = '';
+
+                this.sampleData.tradingModels.forEach(model => {
+                    const statusClass = {
+                        'active': 'status-active',
+                        'watching': 'status-warning',
+                        'off': 'status-neutral'
+                    }[model.status];
+
+                    const bgClass = {
+                        'active': 'background: #f0fdf4; border-left-color: var(--success-color);',
+                        'watching': 'background: #fffbeb; border-left-color: var(--warning-color);',
+                        'off': 'background: #f9fafb; border-left-color: #6b7280;'
+                    }[model.status];
+
+                    const modelElement = document.createElement('div');
+                    modelElement.className = 'model-status';
+                    modelElement.style.cssText = `${bgClass} padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid;`;
+
+                    modelElement.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-bold">${model.name}</div>
+                                <div class="small text-muted">${model.description}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="status-badge ${statusClass}">${model.status.toUpperCase()}</div>
+                                <div class="small text-muted mt-1">${model.performance.winRate}% WR</div>
+                            </div>
+                        </div>
+                        <div class="model-performance mt-2 ${model.performance.last30Days < 0 ? 'negative' : ''}">
+                            <div class="row">
+                                <div class="col-4">
+                                    <div class="small text-muted">Last 30d</div>
+                                    <div class="fw-bold">${model.performance.last30Days > 0 ? '+' : ''}${model.performance.last30Days}%</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="small text-muted">Avg Win</div>
+                                    <div class="fw-bold">${model.performance.avgWin}</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="small text-muted">Win Rate</div>
+                                    <div class="fw-bold">${model.performance.winRate}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    modelsContainer.appendChild(modelElement);
+                });
+            }
+
+            loadDashboardData() {
+                // Load Four Steps Analysis
+                this.loadFourStepsAnalysis();
+
+                // Load P12 data
+                this.loadP12Data();
+
+                // Load session data
+                this.loadSessionData();
+
+                // Load market data
+                this.updateMarketData();
+
+                // Load trading models
+                this.updateTradingModels();
+
+                // Load risk management
+                this.loadRiskManagement();
+
+                // Load trade log
+                this.loadTradeLog();
+
+                // Load economic events
+                this.loadEconomicEvents();
+
+                // Load market sentiment
+                this.loadMarketSentiment();
+
+                // Load advanced analytics
+                this.loadAdvancedAnalytics();
+            }
+
+            loadFourStepsAnalysis() {
+                // Step 1
+                document.getElementById('step1Content').textContent = 'DWP bias confirmed. Asia/London sessions broke key levels - expecting HOD around 15:00, LOD likely already established from overnight.';
+
+                // Step 2 - Session status
+                document.getElementById('asiaStatus').textContent = 'Broken';
+                document.getElementById('asiaStatus').className = 'status-badge status-danger';
+
+                document.getElementById('londonStatus').textContent = 'Broken';
+                document.getElementById('londonStatus').className = 'status-badge status-danger';
+
+                document.getElementById('adrRemaining').textContent = '68%';
+
+                // Step 3
+                document.getElementById('dailyClassification').textContent = 'DWP';
+                document.getElementById('dailyClassification').className = 'status-badge status-active';
+
+                document.getElementById('rangeTarget').textContent = '1.4% (72% of ADR10 used)';
+                document.getElementById('extensionPhase').textContent = 'Mid-day consolidation';
+
+                // Step 4
+                document.getElementById('activeModels').textContent = 'HOD/LOD Reversal, Quarterly Theory';
+                document.getElementById('entryQuality').textContent = 'A+ Setup';
+                document.getElementById('entryQuality').className = 'status-badge status-active';
+            }
+
+            loadP12Data() {
+                const p12 = this.sampleData.p12Data;
+
+                document.getElementById('p12Scenario').textContent = p12.scenario;
+                document.getElementById('p12High').textContent = p12.high.toFixed(2);
+                document.getElementById('p12Mid').textContent = p12.mid.toFixed(2);
+                document.getElementById('p12Low').textContent = p12.low.toFixed(2);
+                document.getElementById('p12Status').textContent = `Range: ${p12.range.toFixed(1)} points | Current P12 Status: ${p12.currentStatus}`;
+
+                // P12 Scenario Details
+                document.getElementById('p12ScenarioDetails').innerHTML = `
+                    <div class="fw-bold text-primary">${p12.description}</div>
+                    <div class="small text-muted mt-1">
+                        Price broke above P12 High (${p12.high.toFixed(2)}) during Asia session but failed to hold.
+                        Expecting pullback to P12 Mid (${p12.mid.toFixed(2)}) with ${p12.probability}% probability based on historical data.
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-4">
+                            <div class="small text-muted">Scenario Probability</div>
+                            <div class="fw-bold text-primary">${p12.probability}%</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="small text-muted">Target Level</div>
+                            <div class="fw-bold">${p12.mid.toFixed(2)}</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="small text-muted">Time Window</div>
+                            <div class="fw-bold">10:00-12:00</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            loadSessionData() {
+                const sessions = this.sampleData.sessionData;
+                const sessionTimeline = document.getElementById('sessionTimeline');
+
+                const sessionConfig = [
+                    { name: 'Asia (18:00-02:00)', key: 'asia', time: '18:00-02:00' },
+                    { name: 'London (02:00-08:00)', key: 'london', time: '02:00-08:00' },
+                    { name: 'NY1 (08:00-14:00)', key: 'ny1', time: '08:00-14:00' },
+                    { name: 'NY2 (14:00-18:00)', key: 'ny2', time: '14:00-18:00' }
+                ];
+
+                sessionTimeline.innerHTML = '';
+
+                sessionConfig.forEach(session => {
+                    const sessionData = sessions[session.key];
+                    const isActive = session.key === 'ny1'; // Current session
+
+                    const statusClass = {
+                        'broken': 'status-danger',
+                        'true': 'status-active',
+                        'false': 'status-warning',
+                        'pending': 'status-neutral'
+                    }[sessionData.status];
+
+                    const sessionElement = document.createElement('div');
+                    sessionElement.className = `session-item ${isActive ? 'active' : ''}`;
+                    sessionElement.innerHTML = `
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="fw-bold">${session.name}</div>
+                                <div class="small text-muted">${sessionData.status} - ${sessionData.probability ? sessionData.probability + '% prob' : 'Pending'}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="status-badge ${statusClass}">${sessionData.status.toUpperCase()}</div>
+                                <div class="small text-muted mt-1">${sessionData.ouStatus.toUpperCase()}</div>
+                            </div>
+                        </div>
+                    `;
+
+                    sessionTimeline.appendChild(sessionElement);
+                });
+            }
+
+            loadRiskManagement() {
+                const stats = this.sampleData.todayStats;
+
+                document.getElementById('dailyRiskUsed').textContent = `${stats.dailyRiskUsed}%`;
+                document.getElementById('maxPositionSize').textContent = `${stats.maxPositionSize}%`;
+                document.getElementById('setupQuality').textContent = stats.setupQuality;
+                document.getElementById('consecutiveLosses').textContent = `${stats.consecutiveLosses}/3`;
+
+                // Update risk progress ring
+                this.updateRiskProgressRing(stats.dailyRiskUsed);
+            }
+
+            updateRiskProgressRing(percentage) {
+                const circle = document.getElementById('riskProgressCircle');
+                const radius = 32;
+                const circumference = radius * 2 * Math.PI;
+                const offset = circumference - (percentage / 100 * circumference);
+
+                circle.style.strokeDasharray = `${circumference} ${circumference}`;
+                circle.style.strokeDashoffset = offset;
+
+                // Change color based on risk level
+                const color = percentage > 80 ? '#dc2626' : percentage > 60 ? '#ea580c' : '#16a34a';
+                circle.setAttribute('stroke', color);
+            }
+
+            loadTradeLog() {
+                const tradeLog = document.getElementById('tradeLog');
+                const stats = this.sampleData.todayStats;
+
+                // Sample trades
+                const sampleTrades = [
+                    { type: 'pending', symbol: 'ES', price: 4675.00, model: '0930 Snap', time: '09:33:45', pnl: 2.50, contracts: 5 },
+                    { type: 'win', symbol: 'ES', price: 4682.25, model: 'HOD Reversal', time: '09:15:22', pnl: 8.75, contracts: 3 },
+                    { type: 'win', symbol: 'ES', price: 4670.50, model: 'Quarter Level', time: '08:47:12', pnl: 4.25, contracts: 2 },
+                    { type: 'loss', symbol: 'ES', price: 4677.00, model: 'Failed setup', time: '08:23:15', pnl: -3.25, contracts: 2 }
+                ];
+
+                tradeLog.innerHTML = '';
+
+                sampleTrades.forEach(trade => {
+                    const tradeElement = document.createElement('div');
+                    tradeElement.className = `trade-entry trade-${trade.type}`;
+
+                    const pnlColor = trade.pnl > 0 ? 'text-success' : trade.pnl < 0 ? 'text-danger' : 'text-warning';
+                    const pnlSign = trade.pnl > 0 ? '+' : '';
+
+                    tradeElement.innerHTML = `
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="fw-bold">${trade.type === 'pending' ? 'Long' : trade.pnl > 0 ? 'Long' : 'Short'} ${trade.symbol} ${trade.price.toFixed(2)}</div>
+                                <div class="small text-muted">${trade.model} - ${trade.time}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold ${pnlColor}">${pnlSign}${trade.pnl.toFixed(2)}</div>
+                                <div class="small text-muted">${trade.contracts} contracts</div>
+                            </div>
+                        </div>
+                    `;
+
+                    tradeLog.appendChild(tradeElement);
+                });
+
+                // Update summary stats
+                document.getElementById('todayPnL').textContent = `${stats.pnl.toFixed(2)}`;
+                document.getElementById('todayPnL').className = `fw-bold ${stats.pnl > 0 ? 'text-success' : 'text-danger'}`;
+
+                document.getElementById('winRate').textContent = `${stats.winRate}%`;
+                document.getElementById('avgWin').textContent = `${stats.avgWin}`;
+
+                // Update notification badge
+                const badge = document.getElementById('tradeNotificationBadge');
+                badge.textContent = sampleTrades.length;
+                badge.style.display = sampleTrades.length > 0 ? 'flex' : 'none';
+            }
+
+            loadEconomicEvents() {
+                const events = [
+                    { name: 'CPI Data', time: '10:30', importance: 'high' },
+                    { name: 'Fed Speaker', time: '14:00', importance: 'medium' },
+                    { name: 'Market Close', time: '16:15', importance: 'low' }
+                ];
+
+                const eventsContainer = document.getElementById('economicEvents');
+                eventsContainer.innerHTML = '';
+
+                events.forEach(event => {
+                    const importanceClass = {
+                        'high': 'status-danger',
+                        'medium': 'status-warning',
+                        'low': 'status-neutral'
+                    }[event.importance];
+
+                    const eventElement = document.createElement('div');
+                    eventElement.className = 'd-flex justify-content-between align-items-center mb-2';
+                    eventElement.innerHTML = `
+                        <span>${event.name}</span>
+                        <span class="status-badge ${importanceClass}">${event.time}</span>
+                    `;
+
+                    eventsContainer.appendChild(eventElement);
+                });
+            }
+
+            loadMarketSentiment() {
+                const sentiment = {
+                    vix: { value: 18.4, change: -2.1 },
+                    putCall: { value: 0.87, status: 'Neutral' },
+                    dxy: { value: 104.2, change: 0.3 },
+                    yield10y: { value: 4.52, change: 0.05 }
+                };
+
+                const sentimentContainer = document.getElementById('marketSentiment');
+                sentimentContainer.innerHTML = `
+                    <div class="col-6">
+                        <div class="small text-muted">VIX</div>
+                        <div class="fw-bold text-success">${sentiment.vix.value}</div>
+                        <div class="small text-success">${sentiment.vix.change > 0 ? '+' : ''}${sentiment.vix.change}%</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-muted">Put/Call Ratio</div>
+                        <div class="fw-bold">${sentiment.putCall.value}</div>
+                        <div class="small text-muted">${sentiment.putCall.status}</div>
+                    </div>
+                    <div class="col-6 mt-2">
+                        <div class="small text-muted">DXY</div>
+                        <div class="fw-bold text-warning">${sentiment.dxy.value}</div>
+                        <div class="small text-warning">+${sentiment.dxy.change}%</div>
+                    </div>
+                    <div class="col-6 mt-2">
+                        <div class="small text-muted">10Y Yield</div>
+                        <div class="fw-bold text-danger">${sentiment.yield10y.value}%</div>
+                        <div class="small text-danger">+${sentiment.yield10y.change}%</div>
+                    </div>
+                `;
+            }
+
+            loadAdvancedAnalytics() {
+                // Quarter levels
+                const quarterLevels = document.getElementById('quarterLevels');
+                quarterLevels.innerHTML = `
+                    <div class="col-3">
+                        <div class="small text-muted">Q3</div>
+                        <div class="fw-bold">4,683.75</div>
+                    </div>
+                    <div class="col-3">
+                        <div class="small text-muted">Q2</div>
+                        <div class="fw-bold text-primary">4,679.25</div>
+                    </div>
+                    <div class="col-3">
+                        <div class="small text-muted">Q1</div>
+                        <div class="fw-bold">4,674.75</div>
+                    </div>
+                    <div class="col-3">
+                        <div class="small text-muted">Low</div>
+                        <div class="fw-bold">4,670.25</div>
+                    </div>
+                `;
+
+                document.getElementById('quarterStatus').innerHTML = `
+                    <div class="small">Current Hour: <strong>09:00-10:00</strong></div>
+                    <div class="small">Price vs 50%: <strong>Above (+4.25)</strong></div>
+                `;
+
+                // Advanced metrics
+                const advancedMetrics = document.getElementById('advancedMetrics');
+                advancedMetrics.innerHTML = `
+                    <div class="stat-item">
+                        <div class="stat-value">26.8</div>
+                        <div class="stat-label">MDR (10-day)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value text-primary">29.2</div>
+                        <div class="stat-label">DRO Target</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value text-warning">34%</div>
+                        <div class="stat-label">Extension Prob</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">+0.71%</div>
+                        <div class="stat-label">% from 18:00</div>
+                    </div>
+                `;
+
+                // Captain Backtest
+                const captainBacktest = document.getElementById('captainBacktestAnalysis');
+                captainBacktest.innerHTML = `
+                    <div class="mb-3">
+                        <div class="small text-muted">H4 Range (06:00-09:59)</div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="fw-bold">High: 4,683.75</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="fw-bold">Low: 4,668.25</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="small">
+                            <strong>Status:</strong> H4 High breached at 10:12 EST<br>
+                            <strong>Bias:</strong> Looking for Long entries only<br>
+                            <strong>Pullback:</strong> Waiting for confirmation
+                        </div>
+                    </div>
+                    <div class="status-badge status-warning">Monitoring Pullback</div>
+                `;
+
+                // Session stats table
+                const sessionStatsTable = document.getElementById('sessionStatsTable');
+                sessionStatsTable.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Session</th>
+                            <th>Range %</th>
+                            <th>Median Time</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Asia HOD</strong></td>
+                            <td>0.4%</td>
+                            <td>22:30</td>
+                            <td>127</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Asia LOD</strong></td>
+                            <td>0.8%</td>
+                            <td>01:15</td>
+                            <td>134</td>
+                        </tr>
+                        <tr>
+                            <td><strong>London HOD</strong></td>
+                            <td>0.6%</td>
+                            <td>05:45</td>
+                            <td>98</td>
+                        </tr>
+                        <tr>
+                            <td><strong>London LOD</strong></td>
+                            <td>0.9%</td>
+                            <td>04:20</td>
+                            <td>112</td>
+                        </tr>
+                        <tr class="table-primary">
+                            <td><strong>NY1 HOD</strong></td>
+                            <td>1.2%</td>
+                            <td>15:00</td>
+                            <td>156</td>
+                        </tr>
+                        <tr class="table-primary">
+                            <td><strong>NY1 LOD</strong></td>
+                            <td>1.1%</td>
+                            <td>09:30</td>
+                            <td>189</td>
+                        </tr>
+                    </tbody>
+                `;
+
+                // Model performance stats
+                const modelPerformance = document.getElementById('modelPerformanceStats');
+                modelPerformance.innerHTML = '';
+
+                this.sampleData.tradingModels.forEach(model => {
+                    const perfElement = document.createElement('div');
+                    perfElement.className = 'mb-3';
+                    perfElement.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="fw-bold">${model.name}</div>
+                            <div class="fw-bold ${model.performance.last30Days > 0 ? 'text-success' : 'text-danger'}">
+                                ${model.performance.last30Days > 0 ? '+' : ''}${model.performance.last30Days}%
+                            </div>
+                        </div>
+                        <div class="progress mt-1" style="height: 4px;">
+                            <div class="progress-bar ${model.performance.last30Days > 0 ? 'bg-success' : 'bg-danger'}"
+                                 style="width: ${Math.abs(model.performance.last30Days) * 5}%"></div>
+                        </div>
+                    `;
+                    modelPerformance.appendChild(perfElement);
+                });
+            }
+
+            generateCalendar() {
+                const today = new Date();
+                const currentMonth = today.getMonth();
+                const currentYear = today.getFullYear();
+                const firstDay = new Date(currentYear, currentMonth, 1);
+                const lastDay = new Date(currentYear, currentMonth + 1, 0);
+                const startDate = new Date(firstDay);
+                startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+                const calendarGrid = document.getElementById('calendarGrid');
+                calendarGrid.innerHTML = '';
+
+                // Generate 6 weeks of calendar
+                for (let week = 0; week < 6; week++) {
+                    const weekRow = document.createElement('div');
+                    weekRow.className = 'row g-1';
+
+                    for (let day = 0; day < 7; day++) {
+                        const currentDate = new Date(startDate);
+                        currentDate.setDate(startDate.getDate() + (week * 7) + day);
+
+                        const dayCol = document.createElement('div');
+                        dayCol.className = 'col';
+
+                        const dayElement = document.createElement('div');
+                        dayElement.className = 'calendar-day';
+                        dayElement.textContent = currentDate.getDate();
+
+                        if (currentDate.toDateString() === today.toDateString()) {
+                            dayElement.classList.add('today');
+                        }
+
+                        if (currentDate.getMonth() !== currentMonth) {
+                            dayElement.style.opacity = '0.3';
+                        }
+
+                        dayCol.appendChild(dayElement);
+                        weekRow.appendChild(dayCol);
+                    }
+
+                    calendarGrid.appendChild(weekRow);
+                }
+            }
+
+            updateTime() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', {
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                const dateString = now.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                document.getElementById('currentTime').textContent = timeString;
+                document.getElementById('currentDate').textContent = dateString;
+                document.getElementById('lastUpdate').textContent = timeString;
+            }
+
+            updateMarketHours() {
+                const now = new Date();
+                const hour = now.getHours();
+                const minute = now.getMinutes();
+                const currentTime = hour * 60 + minute;
+
+                const marketHours = {
+                    premarket: { start: 4 * 60, end: 9 * 60 + 30, name: 'Pre-Market' },
+                    regular: { start: 9 * 60 + 30, end: 16 * 60, name: 'Regular Hours' },
+                    afterhours: { start: 16 * 60, end: 20 * 60, name: 'After Hours' }
+                };
+
+                let currentSession = 'Closed';
+                let nextSession = 'Pre-Market opens at 04:00';
+                let isOpen = false;
+
+                if (currentTime >= marketHours.premarket.start && currentTime < marketHours.premarket.end) {
+                    currentSession = 'Pre-Market Open';
+                    nextSession = 'Regular Hours in ' + this.timeUntil(marketHours.regular.start, currentTime);
+                    isOpen = true;
+                } else if (currentTime >= marketHours.regular.start && currentTime < marketHours.regular.end) {
+                    currentSession = 'Regular Hours Open';
+                    nextSession = 'After Hours in ' + this.timeUntil(marketHours.afterhours.start, currentTime);
+                    isOpen = true;
+                } else if (currentTime >= marketHours.afterhours.start && currentTime < marketHours.afterhours.end) {
+                    currentSession = 'After Hours Open';
+                    nextSession = 'Market closes at 20:00';
+                    isOpen = true;
+                }
+
+                document.getElementById('marketStatus').textContent = currentSession;
+                document.getElementById('nextSession').textContent = nextSession;
+
+                const marketHoursAlert = document.getElementById('marketHoursAlert');
+                marketHoursAlert.className = isOpen ? 'market-hours' : 'market-hours closed';
+            }
+
+            timeUntil(targetMinutes, currentMinutes) {
+                const diff = targetMinutes - currentMinutes;
+                const hours = Math.floor(diff / 60);
+                const minutes = diff % 60;
+                return `${hours}h ${minutes}m`;
+            }
+
+            startDataFeed() {
+                // Simulate connection to data feed
+                setTimeout(() => {
+                    this.isConnected = true;
+                    document.getElementById('dataSourceBadge').className = 'data-source-badge';
+                    document.getElementById('connectionIndicator').className = 'connection-indicator';
+                    document.getElementById('dataSourceText').textContent = 'Flask Backend Connected';
+                    document.getElementById('dataFeedStatus').textContent = 'Connected to Flask data feed';
+                }, 2000);
+
+                // Simulate periodic data updates
+                this.dataFeedInterval = setInterval(() => {
+                    if (this.isConnected) {
+                        this.simulateDataUpdate();
+                    }
+                }, 5000);
+            }
+
+            startPriceSimulation() {
+                // Simulate live price updates
+                this.priceSimulationInterval = setInterval(() => {
+                    if (this.isConnected) {
+                        this.simulatePriceUpdate();
+                    }
+                }, 1000);
+            }
+
+            simulateDataUpdate() {
+                // Simulate RVOL changes
+                const instruments = Object.keys(this.sampleData.instruments);
+                instruments.forEach(symbol => {
+                    const instrument = this.sampleData.instruments[symbol];
+                    instrument.rvol = Math.max(80, Math.min(200, instrument.rvol + (Math.random() - 0.5) * 10));
+                });
+
+                // Update current instrument display
+                this.updateMarketData();
+            }
+
+            simulatePriceUpdate() {
+                // Simulate price movements
+                const instrument = this.sampleData.instruments[this.currentInstrument];
+                const priceChange = (Math.random() - 0.5) * 2; // +/- 1 point movement
+
+                instrument.currentPrice = Math.max(
+                    instrument.dailyLow,
+                    Math.min(instrument.dailyHigh, instrument.currentPrice + priceChange)
+                );
+
+                // Update current price display
+                document.getElementById('currentPrice').textContent = instrument.currentPrice.toFixed(2);
+
+                // Update price change color
+                const changeElement = document.getElementById('priceChange');
+                if (priceChange > 0) {
+                    changeElement.className = 'metric-change text-success';
+                    changeElement.innerHTML = '<i class="fas fa-arrow-up me-1"></i>+' + Math.abs(priceChange).toFixed(2);
+                } else if (priceChange < 0) {
+                    changeElement.className = 'metric-change text-danger';
+                    changeElement.innerHTML = '<i class="fas fa-arrow-down me-1"></i>-' + Math.abs(priceChange).toFixed(2);
+                }
+            }
+
+            selectDate(dateText) {
+                document.querySelectorAll('.calendar-day').forEach(day => {
+                    day.classList.remove('today');
+                });
+
+                event.target.classList.add('today');
+                console.log('Selected date:', dateText);
+
+                // In a real implementation, you would:
+                // 1. Fetch trades for the selected date
+                // 2. Update the dashboard with historical data
+                // 3. Show P&L for that specific date
+                // 4. Update the Four Steps analysis for that date
+            }
+
+            // Methods for integration with your Flask backend
+            async fetchFromFlask(endpoint) {
+                try {
+                    const response = await fetch(`/api/dashboard/${endpoint}`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error fetching from Flask:', error);
+                    return null;
+                }
+            }
+
+            async loadRealData() {
+                // Example integration with your Flask backend
+                try {
+                    // Fetch trading models
+                    const models = await this.fetchFromFlask('trading-models');
+                    if (models) {
+                        this.sampleData.tradingModels = models;
+                        this.updateTradingModels();
+                    }
+
+                    // Fetch today's trades
+                    const trades = await this.fetchFromFlask('trades/today');
+                    if (trades) {
+                        this.updateTradeLogFromFlask(trades);
+                    }
+
+                    // Fetch P12 scenarios
+                    const p12Scenarios = await this.fetchFromFlask('p12-scenarios');
+                    if (p12Scenarios) {
+                        this.updateP12FromFlask(p12Scenarios);
+                    }
+
+                    // Fetch instruments
+                    const instruments = await this.fetchFromFlask('instruments');
+                    if (instruments) {
+                        this.updateInstrumentsFromFlask(instruments);
+                    }
+
+                } catch (error) {
+                    console.error('Error loading real data:', error);
+                }
+            }
+
+            updateTradeLogFromFlask(trades) {
+                // Update trade log with real data from Flask
+                const tradeLog = document.getElementById('tradeLog');
+                tradeLog.innerHTML = '';
+
+                trades.forEach(trade => {
+                    const tradeElement = document.createElement('div');
+                    tradeElement.className = `trade-entry trade-${trade.pnl > 0 ? 'win' : trade.pnl < 0 ? 'loss' : 'pending'}`;
+
+                    const pnlColor = trade.pnl > 0 ? 'text-success' : trade.pnl < 0 ? 'text-danger' : 'text-warning';
+                    const pnlSign = trade.pnl > 0 ? '+' : '';
+
+                    tradeElement.innerHTML = `
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="fw-bold">${trade.direction} ${trade.instrument} ${trade.entry_price}</div>
+                                <div class="small text-muted">${trade.trading_model} - ${trade.entry_time}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold ${pnlColor}">${pnlSign}${Math.abs(trade.pnl)}</div>
+                                <div class="small text-muted">${trade.contracts} contracts</div>
+                            </div>
+                        </div>
+                    `;
+
+                    tradeLog.appendChild(tradeElement);
+                });
+            }
+
+            updateP12FromFlask(p12Data) {
+                // Update P12 data with real data from Flask
+                if (p12Data.current_scenario) {
+                    document.getElementById('p12Scenario').textContent = p12Data.current_scenario.name;
+                    document.getElementById('p12High').textContent = p12Data.high.toFixed(2);
+                    document.getElementById('p12Mid').textContent = p12Data.mid.toFixed(2);
+                    document.getElementById('p12Low').textContent = p12Data.low.toFixed(2);
+                }
+            }
+
+            updateInstrumentsFromFlask(instruments) {
+                // Update instrument data with real data from Flask
+                instruments.forEach(instrument => {
+                    if (this.sampleData.instruments[instrument.symbol]) {
+                        this.sampleData.instruments[instrument.symbol] = {
+                            ...this.sampleData.instruments[instrument.symbol],
+                            ...instrument
+                        };
+                    }
+                });
+
+                this.updateInstrumentData();
+            }
+
+            destroy() {
+                // Clean up intervals
+                if (this.dataFeedInterval) {
+                    clearInterval(this.dataFeedInterval);
+                }
+                if (this.priceSimulationInterval) {
+                    clearInterval(this.priceSimulationInterval);
+                }
+            }
+        }
+
+        // Initialize dashboard when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Initializing Random\'s Trading Dashboard...');
+
+            // Check if we're in a Flask environment
+            const isFlaskEnvironment = typeof flask !== 'undefined' || window.location.hostname !== 'localhost';
+
+            window.dashboard = new TradingDashboard();
+
+            // If in Flask environment, load real data
+            if (isFlaskEnvironment) {
+                window.dashboard.loadRealData();
+            }
+
+            console.log('✅ Dashboard initialized successfully!');
+            console.log('📊 Data source: ' + (isFlaskEnvironment ? 'Flask Backend' : 'Simulated Data'));
+            console.log('💡 Press Ctrl+1,2,3,4 to switch instruments');
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', function() {
+            if (window.dashboard) {
+                window.dashboard.destroy();
+            }
+        });
+    </script>
+</body>
+</html>

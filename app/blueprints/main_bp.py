@@ -211,3 +211,21 @@ def get_default_chart_data():
         'monthly_labels': [],
         'monthly_pnl': []
     }
+
+
+#=========================================================================================================
+# Run a test page
+
+from flask import render_template
+
+@main_bp.route('/preview1')
+def TEST_PAGE():
+    """Route to preview the TEST-PAGE.html file"""
+    return render_template('TEST_PAGE.html')
+
+@main_bp.route('/preview2')
+def TEST_PAGE2():
+    """Route to preview the TEST-PAGE.html file"""
+    return render_template('TEST_PAGE2.html')
+
+#=========================================================================================================
