@@ -158,10 +158,10 @@
                 <div class="card-body text-center">
                     {% if scenario.images %}
                         {% set primary_image = scenario.images[0] %}
-                        <img src="{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=primary_image.id) }}"
+                        <img src="{{ url_for('images.serve_image', image_id=primary_image.id) }}"
                              alt="Scenario {{ scenario.scenario_number }} Example"
                              class="img-fluid rounded cursor-pointer"
-                             onclick="showImageModal('{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=primary_image.id) }}', 'Scenario {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')"
+                             onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Scenario {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')"
                              style="max-height: 300px;">
 
                         {% if primary_image.caption %}

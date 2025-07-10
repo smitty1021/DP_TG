@@ -154,8 +154,10 @@ class File(db.Model):
 
     @property
     def full_disk_path(self):
-        upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-        return os.path.join(upload_folder, self.filepath)
+        """Get full path to file on disk."""
+        upload_folder = current_app.config.get('UPLOAD_FOLDER',
+                                               os.path.join(current_app.instance_path, 'uploads'))
+        return os.path.join(upload_folder, self.filepath)  # Changed from self.relative_path
 
     @property
     def extension(self):
@@ -697,6 +699,8 @@ class TradeImage(db.Model):
 
     def __repr__(self):
         return f'<TradeImage {self.filename} for Trade ID {self.trade_id}>'
+
+
 
 
 class Trade(db.Model):
@@ -1571,11 +1575,41 @@ class GlobalImage(db.Model):
     # Relationships
     uploader = db.relationship('User', backref='uploaded_images', lazy=True)
 
+    # Indexes for common queries
+    __table_args__ = (
+        db.Index('idx_global_image_entity', 'entity_type', 'entity_id'),
+        db.Index('idx_global_image_user_date', 'user_id', 'upload_date'),
+    )
+
     def __repr__(self):
         return f'<GlobalImage {self.filename} for {self.entity_type}:{self.entity_id}>'
+
+    @property
+    def full_disk_path(self):
+        """Get full path to image file on disk."""
+        upload_folder = current_app.config.get('UPLOAD_FOLDER',
+                                               os.path.join(current_app.instance_path, 'uploads'))
+        return os.path.join(upload_folder, self.relative_path)
+
+    @property
+    def full_thumbnail_path(self):
+        """Get full path to thumbnail file on disk."""
+        if not self.thumbnail_path:
+            return None
+        upload_folder = current_app.config.get('UPLOAD_FOLDER',
+                                               os.path.join(current_app.instance_path, 'uploads'))
+        return os.path.join(upload_folder, self.thumbnail_path)
+
+    def increment_view_count(self):
+        """Increment view count and update last accessed time."""
+        self.view_count += 1
+        self.last_accessed = datetime.utcnow()
+        try:
+            db.session.commit()
+        except:
+            db.session.rollback()
 
     @classmethod
     def get_for_entity(cls, entity_type, entity_id):
         """Get all images for a specific entity."""
         return cls.query.filter_by(entity_type=entity_type, entity_id=entity_id).order_by(cls.upload_date.desc()).all()
-

@@ -379,7 +379,7 @@ def upload_scenario_image(scenario_id):
         return jsonify({
             'success': True,
             'image_id': global_image.id,
-            'image_url': url_for('p12_scenarios.serve_scenario_image_new', image_id=global_image.id),
+            'image_url': url_for('images.serve_image', image_id=global_image.id),
             'message': f'Image uploaded successfully for scenario {scenario.scenario_number}'
         })
 
@@ -389,23 +389,6 @@ def upload_scenario_image(scenario_id):
         return jsonify({'success': False, 'error': 'Failed to upload image'})
 
 
-# Add this route for serving images from global system
-@p12_scenarios_bp.route('/image-new/<int:image_id>')
-@login_required
-def serve_scenario_image_new(image_id):
-    """Serve image from global image system."""
-    image = GlobalImage.query.get_or_404(image_id)
-
-    # Track view
-    try:
-        image.increment_view_count()
-    except:
-        pass
-
-    if not os.path.exists(image.full_disk_path):
-        abort(404)
-
-    return send_file(image.full_disk_path)
 
 
 # Add this route for deleting images

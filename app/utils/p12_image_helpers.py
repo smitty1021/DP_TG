@@ -1,12 +1,13 @@
 # Create this file: app/utils/p12_image_helpers.py
 
 from app.utils.image_manager import ImageManager
-from app.models.image_models import GlobalImage
+from app.models import GlobalImage
 from app.models import P12Scenario
 from app import db
 from flask_login import current_user
 from flask import current_app
 import os
+from datetime import datetime
 
 
 def upload_p12_scenario_image(scenario_id, file, user_id, caption=None):

@@ -1,9 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
 
-{% block head_extra %}{% endblock %}
+{% block head_extra %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/p12-images.js') }}"></script>
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+{% endblock %}
 {% block content %}
 <div class="container-fluid">
     <!-- Header Section -->
@@ -86,39 +89,22 @@
                                     {% if scenario.images %}
                                     <div class="image-preview">
                                         {% set primary_image = scenario.images[0] %}
-                                        <img src="{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=primary_image.id) }}"
+                                        <img src="{{ url_for('images.serve_image', image_id=primary_image.id) }}"
                                              alt="Scenario {{ scenario.scenario_number }} Preview"
                                              class="scenario-image-preview"
-                                             onclick="showImageModal('{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=primary_image.id) }}', 'Scenario {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')"
-                                        <div class="image-badge has-image">
-                                            <i class="fas fa-check"></i>
-                                        </div>
+                                             style="max-width: 60px; max-height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;"
+                                             onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Scenario {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')">
+
                                     </div>
                                     {% else %}
                                     <div class="image-preview">
                                         <div class="text-muted" style="position: relative;">
                                             <i class="fas fa-image" style="font-size: 24px; opacity: 0.3;"></i>
-                                            <div class="image-badge">
-                                                <i class="fas fa-times"></i>
-                                            </div>
+
                                         </div>
                                     </div>
                                     {% endif %}
 
-                                    <div class="image-actions mt-1">
-                                        <button class="btn btn-sm btn-outline-primary"
-                                                onclick="showImageUploadDialog({{ scenario.id }}, '{{ scenario.scenario_name }}')"
-                                                title="{% if scenario.images %}Replace Image{% else %}Upload Image{% endif %}">
-                                            <i class="fas fa-{% if scenario.images %}edit{% else %}upload{% endif %} fa-xs"></i>
-                                        </button>
-                                        {% if scenario.images %}
-                                        <button class="btn btn-sm btn-outline-danger ms-1"
-                                                onclick="deleteP12Image({{ scenario.id }}, '{{ scenario.scenario_name }}')"
-                                                title="Delete Image">
-                                            <i class="fas fa-trash fa-xs"></i>
-                                        </button>
-                                        {% endif %}
-                                    </div>
                                 </div>
                             </td>
                             <td class="text-center">
@@ -199,13 +185,14 @@
     </div>
 </div>
 
+
 <script>
 function confirmDelete(scenarioId, scenarioName) {
-    // Use your global custom confirmation modal
+    // Check if custom confirmation function exists
     if (typeof showCustomConfirmation === 'function') {
         showCustomConfirmation({
             title: 'Confirm Deletion',
-            message: `Are you sure you want to delete the P12 scenario: <strong>${scenarioName}</strong>?<br><br>This action cannot be undone. Any daily journals referencing this scenario will lose the connection.`,
+            message: `Are you sure you want to delete the P12 scenario: <strong>${scenarioName}</strong>?<br><br><div class="alert alert-warning mt-2"><i class="fas fa-exclamation-triangle me-2"></i>This action cannot be undone. Any daily journals referencing this scenario will lose the connection.</div>`,
             confirmText: 'Delete Scenario',
             cancelText: 'Cancel',
             confirmClass: 'btn-danger',
@@ -214,13 +201,14 @@ function confirmDelete(scenarioId, scenarioName) {
                 // Create and submit form with CSRF token
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = `{{ url_for('p12_scenarios.delete_scenario', scenario_id=0) }}`.replace('0', scenarioId);
+                // Build URL using the base URL pattern
+                form.action = '/admin/p12-scenarios/delete/' + scenarioId;
 
                 // Add CSRF token
                 const csrfInput = document.createElement('input');
                 csrfInput.type = 'hidden';
                 csrfInput.name = 'csrf_token';
-                csrfInput.value = '{{ csrf_token() }}';
+                csrfInput.value = document.querySelector('meta[name="csrf-token"]').content || '{{ csrf_token() }}';
                 form.appendChild(csrfInput);
 
                 document.body.appendChild(form);
@@ -228,13 +216,31 @@ function confirmDelete(scenarioId, scenarioName) {
             }
         });
     } else {
-        // Fallback to old modal if custom function not available
-        document.getElementById('scenarioName').textContent = scenarioName;
-        document.getElementById('deleteForm').action = `{{ url_for('p12_scenarios.delete_scenario', scenario_id=0) }}`.replace('0', scenarioId);
-        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-        modal.show();
+        // Fallback to browser confirm if custom modal not available
+        console.warn('Custom confirmation modal not available, using browser confirm');
+        if (confirm(`Are you sure you want to delete the P12 scenario: ${scenarioName}?\n\nThis action cannot be undone. Any daily journals referencing this scenario will lose the connection.`)) {
+            // Create and submit form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/admin/p12-scenarios/delete/' + scenarioId;
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = document.querySelector('meta[name="csrf-token"]').content || '{{ csrf_token() }}';
+            form.appendChild(csrfInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
 }
+
+// Test function availability on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Custom modal available:', typeof showCustomConfirmation === 'function');
+    console.log('P12 image functions available:', typeof showImageUploadDialog === 'function');
+});
 </script>
 
 

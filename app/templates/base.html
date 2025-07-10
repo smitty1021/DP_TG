@@ -40,6 +40,9 @@
                                 <li><a class="dropdown-item" href="{{ url_for('admin.show_admin_dashboard') }}">Admin Dashboard</a></li>
                                 <li><a class="dropdown-item" href="/admin/users">Manage Users</a></li>
                                 <li><a class="dropdown-item" href="/admin/files">View All Files</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('images.image_gallery') }}">
+                                    <i class="fas fa-images me-2"></i>Image Gallery
+                                </a></li>
                                 <li><a class="dropdown-item" href="/admin/analytics">Analytics</a></li>
 
                             </ul>
@@ -198,6 +201,7 @@
     </script>
     <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
     <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+
 
 
 

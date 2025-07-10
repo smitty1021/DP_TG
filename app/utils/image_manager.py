@@ -126,9 +126,3 @@ class ImageManager:
             current_app.logger.error(f'Error deleting image {filename}: {str(e)}')
             return False
 
-    @property
-    def full_disk_path(self):
-        """Get full path to image file on disk."""
-        upload_folder = current_app.config.get('UPLOAD_FOLDER',
-                                               os.path.join(current_app.instance_path, 'uploads'))
-        return os.path.join(upload_folder, self.relative_path)
