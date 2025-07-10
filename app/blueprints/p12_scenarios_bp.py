@@ -72,8 +72,131 @@ def save_scenario_image(file):
 def list_scenarios():
     """List all P12 scenarios."""
     scenarios = P12Scenario.query.order_by(P12Scenario.scenario_number).all()
+
+    # Get main P12 overview image
+    main_image = GlobalImage.query.filter_by(
+        entity_type='p12_overview',
+        entity_id=1
+    ).first()
+
+    print("=== LIST SCENARIOS DEBUG ===")
+    print("Scenarios found:", len(scenarios))
+    print("Main image found:", main_image.id if main_image else None)
+    print("============================")
+
     return render_template('admin/p12_scenarios/list_scenarios.html',
-                           scenarios=scenarios, title="Manage P12 Scenarios")
+                           scenarios=scenarios,
+                           main_image=main_image,
+                           title="Manage P12 Scenarios")
+
+
+@p12_scenarios_bp.route('/upload-main-image', methods=['POST'])
+@login_required
+@admin_required
+def upload_main_image():
+    """Upload main P12 overview image."""
+    print("=== UPLOAD MAIN IMAGE ROUTE CALLED ===")
+    print("Request files:", list(request.files.keys()))
+    print("Request form:", dict(request.form))
+
+    if 'image' not in request.files:
+        print("No image file in request")
+        return jsonify({'success': False, 'error': 'No image file provided'})
+
+    file = request.files['image']
+    print("File received:", file.filename)
+    print("File size:", len(file.read()))
+    file.seek(0)  # Reset file pointer after reading
+
+    caption = request.form.get('caption', 'P12 Scenarios Overview')
+    print("Caption:", caption)
+
+    try:
+        # Use global image manager
+        image_manager = ImageManager('p12_scenario')
+        save_result = image_manager.save_image(file, entity_id=1)
+        print("Save result:", save_result)
+
+        if not save_result['success']:
+            print("Image manager failed:", save_result)
+            return jsonify(save_result)
+
+        # Delete existing main image if it exists
+        existing_image = GlobalImage.query.filter_by(
+            entity_type='p12_overview',
+            entity_id=1
+        ).first()
+
+        if existing_image:
+            print("Deleting existing image:", existing_image.id)
+            image_manager.delete_image(existing_image.filename)
+            db.session.delete(existing_image)
+
+        # Create database record
+        global_image = GlobalImage(
+            entity_type='p12_overview',
+            entity_id=1,
+            user_id=current_user.id,
+            filename=save_result['filename'],
+            original_filename=file.filename,
+            relative_path=save_result['relative_path'],
+            file_size=save_result['file_size'],
+            mime_type=save_result['mime_type'],
+            caption=caption,
+            is_optimized=True
+        )
+
+        db.session.add(global_image)
+        db.session.commit()
+        print("Image saved with ID:", global_image.id)
+
+        response_data = {
+            'success': True,
+            'image_id': global_image.id,
+            'image_url': url_for('images.serve_image', image_id=global_image.id),
+            'message': 'Overview image uploaded successfully'
+        }
+        print("Returning response:", response_data)
+        return jsonify(response_data)
+
+    except Exception as e:
+        db.session.rollback()
+        print("Exception occurred:", str(e))
+        import traceback
+        traceback.print_exc()
+        current_app.logger.error(f'Error uploading main P12 image: {str(e)}')
+        return jsonify({'success': False, 'error': 'Failed to upload image'})
+
+
+@p12_scenarios_bp.route('/delete-main-image', methods=['POST'])
+@login_required
+@admin_required
+def delete_main_image():
+    """Delete main P12 overview image."""
+    try:
+        # Get the main image
+        main_image = GlobalImage.query.filter_by(
+            entity_type='p12_overview',
+            entity_id=1
+        ).first()
+
+        if not main_image:
+            return jsonify({'success': False, 'error': 'No overview image to delete'})
+
+        image_manager = ImageManager('p12_scenario')
+        image_manager.delete_image(main_image.filename)
+        db.session.delete(main_image)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Overview image deleted successfully'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error deleting main P12 image: {str(e)}')
+        return jsonify({'success': False, 'error': 'Failed to delete image'})
 
 
 @p12_scenarios_bp.route('/create', methods=['GET', 'POST'])

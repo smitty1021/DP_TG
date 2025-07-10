@@ -7,6 +7,7 @@
 <script src="{{ url_for('static', filename='js/p12-images.js') }}"></script>
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 {% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <!-- Header Section -->
@@ -23,12 +24,70 @@
                 </div>
                 <div>
                     <a href="{{ url_for('p12_scenarios.create_scenario') }}"
-                       class="btn btn-add btn-icon" title="Create New Scenario"> <i class="fas fa-plus"></i>
+                       class="btn btn-add btn-icon" title="Create New Scenario">
+                        <i class="fas fa-plus"></i>
                     </a>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- P12 Overview Image Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-image me-2"></i>P12 Scenarios Overview
+                    </h6>
+                    {% if current_user.is_admin() %}
+                    <div class="btn-group-sm">
+                        <button class="btn btn-sm btn-outline-primary"
+                                onclick="showMainImageUploadDialog()"
+                                title="{% if main_image %}Replace Overview Image{% else %}Upload Overview Image{% endif %}">
+                            <i class="fas fa-{% if main_image %}edit{% else %}upload{% endif %} fa-xs me-1"></i>
+                            {% if main_image %}Replace{% else %}Upload{% endif %}
+                        </button>
+                        {% if main_image %}
+                        <button class="btn btn-sm btn-outline-danger ms-1"
+                                onclick="deleteMainP12Image()"
+                                title="Delete Overview Image">
+                            <i class="fas fa-trash fa-xs me-1"></i>Delete
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-body text-center">
+                    {% if main_image %}
+                    <img src="{{ url_for('images.serve_image', image_id=main_image.id) }}"
+                         alt="P12 Scenarios Overview"
+                         class="img-fluid rounded cursor-pointer"
+                         style="max-height: 300px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;"
+                         onclick="showImageModal('{{ url_for('images.serve_image', image_id=main_image.id) }}', 'P12 Scenarios Overview')"
+                         onmouseover="this.style.border='2px solid #007bff'; this.style.transform='scale(1.02)'"
+                         onmouseout="this.style.border='2px solid transparent'; this.style.transform='scale(1)'">
+                    <p class="text-muted small mt-2">
+                        <i class="fas fa-search-plus me-1"></i>P12 Scenarios Overview (click to enlarge)
+                    </p>
+                    {% else %}
+                    <div class="py-4">
+                        <i class="fas fa-image fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
+                        <p class="text-muted mb-0">No overview image uploaded</p>
+                        {% if current_user.is_admin() %}
+                        <button class="btn btn-primary btn-sm mt-2" onclick="showMainImageUploadDialog()">
+                            <i class="fas fa-upload me-1"></i>Upload Overview Image
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden CSRF Token for JavaScript -->
+    <input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
 
     <!-- Scenarios Table -->
     <div class="card">
@@ -94,17 +153,35 @@
                                              class="scenario-image-preview"
                                              style="max-width: 60px; max-height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;"
                                              onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Scenario {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')">
-
+                                        <div class="image-badge has-image">
+                                            <i class="fas fa-check"></i>
+                                        </div>
                                     </div>
                                     {% else %}
                                     <div class="image-preview">
                                         <div class="text-muted" style="position: relative;">
                                             <i class="fas fa-image" style="font-size: 24px; opacity: 0.3;"></i>
-
+                                            <div class="image-badge">
+                                                <i class="fas fa-times"></i>
+                                            </div>
                                         </div>
                                     </div>
                                     {% endif %}
 
+                                    <div class="image-actions mt-1">
+                                        <button class="btn btn-sm btn-outline-primary"
+                                                onclick="showImageUploadDialog({{ scenario.id }}, '{{ scenario.scenario_name }}')"
+                                                title="{% if scenario.images %}Replace Image{% else %}Upload Image{% endif %}">
+                                            <i class="fas fa-{% if scenario.images %}edit{% else %}upload{% endif %} fa-xs"></i>
+                                        </button>
+                                        {% if scenario.images %}
+                                        <button class="btn btn-sm btn-outline-danger ms-1"
+                                                onclick="deleteP12Image({{ scenario.id }}, '{{ scenario.scenario_name }}')"
+                                                title="Delete Image">
+                                            <i class="fas fa-trash fa-xs"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </td>
                             <td class="text-center">
@@ -153,6 +230,24 @@
     </div>
 </div>
 
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalTitle">Scenario Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="imageModalImg" src="" alt="Scenario Image" class="img-fluid rounded">
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
     <div class="modal-dialog">
@@ -185,8 +280,10 @@
     </div>
 </div>
 
-
 <script>
+// =====================================
+// SCENARIO DELETE FUNCTIONS
+// =====================================
 function confirmDelete(scenarioId, scenarioName) {
     // Check if custom confirmation function exists
     if (typeof showCustomConfirmation === 'function') {
@@ -198,50 +295,309 @@ function confirmDelete(scenarioId, scenarioName) {
             confirmClass: 'btn-danger',
             icon: 'exclamation-triangle',
             onConfirm: function() {
-                // Create and submit form with CSRF token
-                const form = document.createElement('form');
-                form.method = 'POST';
-                // Build URL using the base URL pattern
-                form.action = '/admin/p12-scenarios/delete/' + scenarioId;
-
-                // Add CSRF token
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrf_token';
-                csrfInput.value = document.querySelector('meta[name="csrf-token"]').content || '{{ csrf_token() }}';
-                form.appendChild(csrfInput);
-
-                document.body.appendChild(form);
-                form.submit();
+                performDeleteScenario(scenarioId);
             }
         });
     } else {
         // Fallback to browser confirm if custom modal not available
         console.warn('Custom confirmation modal not available, using browser confirm');
         if (confirm(`Are you sure you want to delete the P12 scenario: ${scenarioName}?\n\nThis action cannot be undone. Any daily journals referencing this scenario will lose the connection.`)) {
-            // Create and submit form
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/admin/p12-scenarios/delete/' + scenarioId;
-
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrf_token';
-            csrfInput.value = document.querySelector('meta[name="csrf-token"]').content || '{{ csrf_token() }}';
-            form.appendChild(csrfInput);
-
-            document.body.appendChild(form);
-            form.submit();
+            performDeleteScenario(scenarioId);
         }
     }
 }
 
-// Test function availability on page load
+function performDeleteScenario(scenarioId) {
+    // Create and submit form with CSRF token
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/admin/p12-scenarios/delete/' + scenarioId;
+
+    // Add CSRF token
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = getCSRFToken();
+    form.appendChild(csrfInput);
+
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// =====================================
+// MAIN OVERVIEW IMAGE FUNCTIONS
+// =====================================
+function showMainImageUploadDialog() {
+    // Create modal HTML for main image upload
+    const modalHtml = `
+        <div class="modal fade" id="mainImageUploadModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload P12 Overview Image</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="mainImageUploadForm">
+                            <div class="mb-3">
+                                <label class="form-label">Select Image</label>
+                                <input type="file" class="form-control" id="mainImageFile"
+                                       accept="image/*" required>
+                                <div class="form-text">Supported formats: PNG, JPG, JPEG, GIF, WebP (Max 5MB)</div>
+                            </div>
+                            <div id="mainImagePreview" class="mb-3" style="display: none;">
+                                <img id="mainPreviewImg" src="" alt="Preview"
+                                     style="max-width: 100%; max-height: 200px;">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="mainImageUploadBtn">
+                            <i class="fas fa-upload"></i> Upload Image
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('mainImageUploadModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Setup file preview
+    const fileInput = document.getElementById('mainImageFile');
+    fileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('mainPreviewImg').src = e.target.result;
+                document.getElementById('mainImagePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+
+    // Setup upload button
+    document.getElementById('mainImageUploadBtn').addEventListener('click', function() {
+        const file = fileInput.files[0];
+        if (file) {
+            uploadMainP12Image(file);
+        } else {
+            showErrorMessage('Please select an image file');
+        }
+    });
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('mainImageUploadModal'));
+    modal.show();
+}
+
+function uploadMainP12Image(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('caption', 'P12 Scenarios Overview');
+
+    // Get CSRF token
+    const csrfToken = getCSRFToken();
+    if (!csrfToken) {
+        showErrorMessage('CSRF token not available. Please refresh the page and try again.');
+        return;
+    }
+
+    formData.append('csrf_token', csrfToken);
+
+    // Show loading state
+    const uploadBtn = document.getElementById('mainImageUploadBtn');
+    const originalText = uploadBtn.innerHTML;
+    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+    uploadBtn.disabled = true;
+
+    console.log('Starting main image upload...');
+
+    fetch('/admin/p12-scenarios/upload-main-image', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+
+        if (!response.ok) {
+            return response.text().then(text => {
+                console.error('Server error response:', text);
+                throw new Error(`Server error (${response.status}): ${text.substring(0, 200)}`);
+            });
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return response.text().then(text => {
+                console.error('Non-JSON response:', text);
+                throw new Error('Server returned HTML instead of JSON');
+            });
+        }
+
+        return response.json();
+    })
+    .then(data => {
+        console.log('Upload response data:', data);
+        console.log('Success status:', data.success);
+        console.log('Image ID:', data.image_id);
+        console.log('Image URL:', data.image_url);
+
+        if (data.success) {
+            console.log('Upload successful, closing modal and reloading...');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('mainImageUploadModal'));
+            if (modal) modal.hide();
+
+            // Add a small delay before reload to ensure modal closes
+            setTimeout(() => {
+                location.reload();
+            }, 500);
+        } else {
+            console.error('Upload failed:', data.error);
+            showErrorMessage('Upload failed: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        showErrorMessage('Error uploading image: ' + error.message);
+    })
+    .finally(() => {
+        if (uploadBtn) {
+            uploadBtn.innerHTML = originalText;
+            uploadBtn.disabled = false;
+        }
+    });
+}
+
+function deleteMainP12Image() {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: 'Delete Overview Image',
+            message: 'Are you sure you want to delete the P12 overview image?<br><br><div class="alert alert-warning mt-2"><i class="fas fa-exclamation-triangle me-2"></i>This action cannot be undone.</div>',
+            confirmText: 'Delete Image',
+            cancelText: 'Cancel',
+            confirmClass: 'btn-danger',
+            icon: 'trash',
+            onConfirm: function() {
+                performDeleteMainImage();
+            }
+        });
+    } else {
+        if (confirm('Delete the P12 overview image? This action cannot be undone.')) {
+            performDeleteMainImage();
+        }
+    }
+}
+
+function performDeleteMainImage() {
+    const csrfToken = getCSRFToken();
+
+    fetch('/admin/p12-scenarios/delete-main-image', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            showErrorMessage('Error deleting image: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        showErrorMessage('Error deleting image: ' + error.message);
+    });
+}
+
+// =====================================
+// IMAGE MODAL FUNCTION
+// =====================================
+function showImageModal(imageUrl, title) {
+    document.getElementById('imageModalTitle').textContent = title;
+    document.getElementById('imageModalImg').src = imageUrl;
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    modal.show();
+}
+
+// =====================================
+// UTILITY FUNCTIONS
+// =====================================
+function getCSRFToken() {
+    // Try multiple methods to get CSRF token
+    let csrfToken = null;
+
+    // Method 1: Direct hidden input
+    const directInput = document.getElementById('js-csrf-token');
+    if (directInput && directInput.value) {
+        csrfToken = directInput.value;
+    }
+
+    // Method 2: Meta tag
+    if (!csrfToken) {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag && metaTag.getAttribute('content')) {
+            csrfToken = metaTag.getAttribute('content');
+        }
+    }
+
+    // Method 3: Hidden input in forms
+    if (!csrfToken) {
+        const hiddenInput = document.querySelector('input[name="csrf_token"]');
+        if (hiddenInput && hiddenInput.value) {
+            csrfToken = hiddenInput.value;
+        }
+    }
+
+    console.log('CSRF Token retrieved:', csrfToken ? 'Yes' : 'No');
+    return csrfToken;
+}
+
+function showErrorMessage(message) {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: 'Error',
+            message: message,
+            confirmText: 'OK',
+            confirmClass: 'btn-danger',
+            icon: 'exclamation-triangle',
+            showCancel: false,
+            onConfirm: function() {}
+        });
+    } else {
+        alert(message);
+    }
+}
+
+// =====================================
+// PAGE INITIALIZATION
+// =====================================
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== P12 SCENARIOS PAGE LOADED ===');
     console.log('Custom modal available:', typeof showCustomConfirmation === 'function');
     console.log('P12 image functions available:', typeof showImageUploadDialog === 'function');
+
+    // Debug CSRF token availability
+    const csrfToken = getCSRFToken();
+    console.log('CSRF Token available:', csrfToken ? 'Yes' : 'No');
+
+    if (!csrfToken) {
+        console.warn('No CSRF token found - uploads may fail');
+    }
+
+    console.log('====================================');
 });
 </script>
-
 
 {% endblock %}
