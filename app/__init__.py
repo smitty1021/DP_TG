@@ -71,7 +71,12 @@ def create_app(config_class=None):
         MAX_CONTENT_LENGTH=int(os.environ.get('MAX_CONTENT_LENGTH', 16 * 1024 * 1024)),
         ALLOWED_EXTENSIONS=set(
             os.environ.get('ALLOWED_EXTENSIONS', 'pdf,png,jpg,jpeg,doc,docx,xls,xlsx,txt,csv').split(',')),
-        ALLOWED_IMAGE_EXTENSIONS={'png', 'jpg', 'jpeg', 'gif'},  # Used by _is_allowed_image helpers
+        ALLOWED_IMAGE_EXTENSIONS={'png', 'jpg', 'jpeg', 'gif', 'webp'},  # UPDATED: Added 'webp'
+        # NEW: Global Image Management Configuration
+        IMAGE_QUALITY=85,  # JPEG quality (1-100)
+        MAX_IMAGE_DIMENSION=1920,  # Max width or height in pixels
+        RESIZE_LARGE_IMAGES=True,
+
         ITEMS_PER_PAGE=int(os.environ.get('ITEMS_PER_PAGE', 10)),
         PER_PAGE_TRADES=int(os.environ.get('PER_PAGE_TRADES', 25)),  # Used in trades_bp
         PROFILE_PICS_FOLDER_REL=os.environ.get('PROFILE_PICS_FOLDER_REL', 'profile_pics'),
@@ -99,6 +104,15 @@ def create_app(config_class=None):
             os.makedirs(p12_folder)
         except OSError as e:
             app.logger.error(f"Could not create P12_SCENARIOS_FOLDER: {e}")
+
+    image_folders = ['daily_journals', 'trades', 'general', 'user_profile']
+    for folder in image_folders:
+        folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
+        if not os.path.exists(folder_path):
+            try:
+                os.makedirs(folder_path)
+            except OSError as e:
+                app.logger.error(f"Could not create {folder} folder: {e}")
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -139,9 +153,6 @@ def create_app(config_class=None):
 
     app.jinja_env.filters['format_date'] = format_date_filter
     app.jinja_env.filters['file_size'] = format_filesize
-
-    from app.template_filters import register_template_filters
-    register_template_filters(app)
 
     @app.context_processor
     def inject_current_year():
@@ -245,14 +256,14 @@ def create_app(config_class=None):
         app.register_blueprint(settings_bp, url_prefix='/settings')  # Added prefix
         from app.blueprints.analytics_bp import analytics_bp
         app.register_blueprint(analytics_bp)
-
-        # ADDED: Import and Register Journal Blueprint
         from .blueprints.journal_bp import journal_bp
         app.register_blueprint(journal_bp, url_prefix='/journal')
-
-        #P12
         from app.blueprints.p12_scenarios_bp import p12_scenarios_bp
         app.register_blueprint(p12_scenarios_bp)
+        from app.blueprints.image_bp import image_bp
+        app.register_blueprint(image_bp)
+        from app.template_filters import register_template_filters
+        register_template_filters(app)
 
 
         @app.errorhandler(403)

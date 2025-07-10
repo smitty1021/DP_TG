@@ -144,21 +144,73 @@
         <!-- Right Column - Image and Stats -->
         <div class="col-lg-4">
             <!-- Scenario Image -->
-            {% if scenario.image_path %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-image me-2"></i>Scenario Chart
-                    </h5>
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-image me-2"></i>Visual Example</h6>
+                    {% if current_user.is_admin() %}
+                    <button class="btn btn-sm btn-outline-primary"
+                            onclick="showImageUploadDialog({{ scenario.id }}, '{{ scenario.scenario_name }}')"
+                            title="{% if scenario.images %}Replace{% else %}Upload{% endif %} Image">
+                        <i class="fas fa-{% if scenario.images %}edit{% else %}upload{% endif %}"></i>
+                    </button>
+                    {% endif %}
                 </div>
-                <div class="card-body p-0">
-                    <img src="{{ url_for('p12_scenarios.serve_image', scenario_id=scenario.id) }}"
-                         class="img-fluid w-100"
-                         alt="Scenario {{ scenario.scenario_number }} chart"
-                         style="height: 300px; object-fit: cover;">
+                <div class="card-body text-center">
+                    {% if scenario.images %}
+                        {% set primary_image = scenario.images[0] %}
+                        <img src="{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=primary_image.id) }}"
+                             alt="Scenario {{ scenario.scenario_number }} Example"
+                             class="img-fluid rounded cursor-pointer"
+                             onclick="showImageModal('{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=primary_image.id) }}', 'Scenario {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')"
+                             style="max-height: 300px;">
+
+                        {% if primary_image.caption %}
+                        <p class="text-muted small mt-2 mb-0">{{ primary_image.caption }}</p>
+                        {% endif %}
+
+                        <div class="mt-2 small text-muted">
+                            <i class="fas fa-eye me-1"></i>{{ primary_image.view_count }} views
+                            <span class="ms-2">
+                                <i class="fas fa-calendar me-1"></i>{{ primary_image.upload_date.strftime('%m/%d/%y') }}
+                            </span>
+                        </div>
+                    {% else %}
+                        <div class="text-muted py-4">
+                            <i class="fas fa-image fa-3x mb-3 opacity-25"></i>
+                            <p>No visual example uploaded</p>
+                            {% if current_user.is_admin() %}
+                            <button class="btn btn-primary btn-sm"
+                                    onclick="showImageUploadDialog({{ scenario.id }}, '{{ scenario.scenario_name }}')">
+                                <i class="fas fa-upload me-1"></i>Upload Image
+                            </button>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Additional Images (if multiple) -->
+            {% if scenario.images|length > 1 %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-images me-2"></i>Additional Images</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        {% for image in scenario.images[1:] %}
+                        <div class="col-6">
+                            <img src="{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=image.id) }}"
+                                 alt="Additional view"
+                                 class="img-fluid rounded cursor-pointer"
+                                 onclick="showImageModal('{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=image.id) }}', '{{ image.caption or 'Additional Image' }}')"
+                                 style="height: 80px; object-fit: cover;">
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
             {% endif %}
+
 
             <!-- Statistics Card -->
             <div class="card mb-4">
@@ -206,7 +258,7 @@
         </div>
     </div>
 </div>
-
+<script src="{{ url_for('static', filename='js/p12-images.js') }}"></script>
 
 {% endblock %}
                     

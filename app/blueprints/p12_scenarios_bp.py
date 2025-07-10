@@ -15,6 +15,9 @@ from werkzeug.utils import secure_filename
 from app import db
 from app.models import P12Scenario
 from app.forms import P12ScenarioForm
+from app.utils.image_manager import ImageManager
+from app.models import GlobalImage
+
 
 
 def admin_required(f):
@@ -72,8 +75,6 @@ def list_scenarios():
     return render_template('admin/p12_scenarios/list_scenarios.html',
                            scenarios=scenarios, title="Manage P12 Scenarios")
 
-
-# Replace your create_scenario and edit_scenario routes with these updated versions:
 
 @p12_scenarios_bp.route('/create', methods=['GET', 'POST'])
 @login_required
@@ -243,6 +244,19 @@ def api_get_scenarios():
 
     scenario_data = []
     for scenario in scenarios:
+        # Get image URL from global system or fallback to legacy
+        image_url = None
+        thumbnail_url = None
+
+        images = GlobalImage.get_for_entity('p12_scenario', scenario.id)
+        if images:
+            image_url = url_for('images.serve_image', image_id=images[0].id)
+            if images[0].has_thumbnail:
+                thumbnail_url = url_for('images.serve_image', image_id=images[0].id, thumbnail='true')
+        elif scenario.image_path:
+            # Fallback to legacy system
+            image_url = url_for('p12_scenarios.serve_scenario_image', scenario_id=scenario.id)
+
         scenario_data.append({
             'id': scenario.id,
             'scenario_number': scenario.scenario_number,
@@ -258,22 +272,33 @@ def api_get_scenarios():
             'stop_loss_guidance': scenario.stop_loss_guidance,
             'risk_percentage': float(scenario.risk_percentage) if scenario.risk_percentage else None,
 
-            # NEW: Model recommendations from database
+            # Model recommendations
             'models_to_activate': scenario.models_to_activate or [],
             'models_to_avoid': scenario.models_to_avoid or [],
             'risk_guidance': scenario.risk_guidance,
             'preferred_timeframes': scenario.preferred_timeframes or [],
             'key_considerations': scenario.key_considerations,
 
-            'image_url': url_for('p12_scenarios.serve_image', scenario_id=scenario.id) if scenario.image_path else None
+            # Image URLs (global system)
+            'image_url': image_url,
+            'thumbnail_url': thumbnail_url
         })
 
     return jsonify(scenario_data)
 
+
 @p12_scenarios_bp.route('/image/<int:scenario_id>')
 @login_required
-def serve_image(scenario_id):
-    """Serve scenario images."""
+def serve_scenario_image(scenario_id):
+    """Serve P12 scenario image (backward compatibility)."""
+    # Try to get from global image system first
+    images = GlobalImage.get_for_entity('p12_scenario', scenario_id)
+
+    if images:
+        # Redirect to global image service
+        return redirect(url_for('images.serve_image', image_id=images[0].id))
+
+    # Fallback to legacy system
     scenario = P12Scenario.query.get_or_404(scenario_id)
     if not scenario.image_path:
         abort(404)
@@ -295,3 +320,130 @@ def increment_scenario_usage(scenario_id):
     scenario = P12Scenario.query.get_or_404(scenario_id)
     scenario.increment_usage()
     return jsonify({'success': True})
+
+
+@p12_scenarios_bp.route('/upload-image/<int:scenario_id>', methods=['POST'])
+@login_required
+@admin_required
+def upload_scenario_image(scenario_id):
+    """Upload image for P12 scenario using global image system."""
+    scenario = P12Scenario.query.get_or_404(scenario_id)
+
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'error': 'No image file provided'})
+
+    file = request.files['image']
+    caption = request.form.get('caption', f'P12 Scenario {scenario.scenario_number} Example')
+    replace_existing = request.form.get('replace_existing', 'false').lower() == 'true'
+
+    try:
+        # Use global image manager
+        image_manager = ImageManager('p12_scenario')
+        save_result = image_manager.save_image(file, entity_id=scenario_id)
+
+        if not save_result['success']:
+            return jsonify(save_result)
+
+        # Delete existing image if replace is requested
+        if replace_existing:
+            existing_images = GlobalImage.get_for_entity('p12_scenario', scenario_id)
+            for existing_image in existing_images:
+                image_manager.delete_image(existing_image.filename)
+                db.session.delete(existing_image)
+
+        # Create database record
+        global_image = GlobalImage(
+            entity_type='p12_scenario',
+            entity_id=scenario_id,
+            user_id=current_user.id,
+            filename=save_result['filename'],
+            original_filename=file.filename,
+            relative_path=save_result['relative_path'],
+            file_size=save_result['file_size'],
+            mime_type=save_result['mime_type'],
+            has_thumbnail=save_result['thumbnail_path'] is not None,
+            thumbnail_path=save_result['thumbnail_path'],
+            caption=caption,
+            is_optimized=True
+        )
+
+        db.session.add(global_image)
+        db.session.commit()
+
+        # Update legacy fields for backward compatibility
+        scenario.image_filename = save_result['filename']
+        scenario.image_path = save_result['filename']
+        scenario.updated_date = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'image_id': global_image.id,
+            'image_url': url_for('p12_scenarios.serve_scenario_image_new', image_id=global_image.id),
+            'message': f'Image uploaded successfully for scenario {scenario.scenario_number}'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error uploading P12 scenario image: {str(e)}')
+        return jsonify({'success': False, 'error': 'Failed to upload image'})
+
+
+# Add this route for serving images from global system
+@p12_scenarios_bp.route('/image-new/<int:image_id>')
+@login_required
+def serve_scenario_image_new(image_id):
+    """Serve image from global image system."""
+    image = GlobalImage.query.get_or_404(image_id)
+
+    # Track view
+    try:
+        image.increment_view_count()
+    except:
+        pass
+
+    if not os.path.exists(image.full_disk_path):
+        abort(404)
+
+    return send_file(image.full_disk_path)
+
+
+# Add this route for deleting images
+@p12_scenarios_bp.route('/delete-image/<int:scenario_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_scenario_image(scenario_id):
+    """Delete image for P12 scenario."""
+    scenario = P12Scenario.query.get_or_404(scenario_id)
+
+    # Get the scenario's images
+    images = GlobalImage.get_for_entity('p12_scenario', scenario_id)
+
+    if not images:
+        return jsonify({'success': False, 'error': 'No images to delete'})
+
+    try:
+        image_manager = ImageManager('p12_scenario')
+
+        for image in images:
+            # Delete files
+            image_manager.delete_image(image.filename)
+            # Delete database record
+            db.session.delete(image)
+
+        # Clear legacy fields
+        scenario.image_filename = None
+        scenario.image_path = None
+        scenario.updated_date = datetime.utcnow()
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'Images deleted successfully for scenario {scenario.scenario_number}'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error deleting P12 scenario images: {str(e)}')
+        return jsonify({'success': False, 'error': 'Failed to delete images'})

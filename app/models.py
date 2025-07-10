@@ -13,6 +13,7 @@ from app.extensions import db
 from enum import Enum
 
 
+
 user_default_tags = db.Table('user_default_tags',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True)
@@ -937,6 +938,11 @@ class Trade(db.Model):
         from datetime import datetime
         return datetime.combine(self.trade_date, first_entry.entry_time)
 
+    @property
+    def images(self):
+        """Get all images for this trade."""
+        return GlobalImage.get_for_entity('trade', self.id)
+
 
 class EntryPoint(db.Model):
     """Entry points for trades - supports multiple entries"""
@@ -1100,6 +1106,11 @@ class DailyJournal(db.Model):
 
     # Constraints
     __table_args__ = (db.UniqueConstraint('user_id', 'journal_date', name='uq_user_daily_journal_date'),)
+
+    @property
+    def images(self):
+        """Get all images for this daily journal."""
+        return GlobalImage.get_for_entity('daily_journal', self.id)
 
     @property
     def average_review_psych_rating(self):
@@ -1426,6 +1437,16 @@ class P12Scenario(db.Model):
         self.times_selected += 1
         db.session.commit()
 
+    @property
+    def images(self):
+        """Get all images for this P12 scenario."""
+        return GlobalImage.get_for_entity('p12_scenario', self.id)
+
+    @property
+    def primary_image(self):
+        """Get the primary/first image for this scenario."""
+        images = self.images
+        return images[0] if images else None
 
 # Add this to app/models.py
 
@@ -1517,3 +1538,44 @@ class P12UsageStats(db.Model):
             return None  # No data available
 
         return (successful / total_with_outcome) * 100  # Return percentage
+
+
+class GlobalImage(db.Model):
+    """Global image model for all entities in the application."""
+    __tablename__ = 'global_image'
+
+    id = db.Column(db.Integer, primary_key=True)
+    entity_type = db.Column(db.String(50), nullable=False, index=True)
+    entity_id = db.Column(db.Integer, nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+
+    filename = db.Column(db.String(255), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=False)
+    relative_path = db.Column(db.String(500), nullable=False)
+    file_size = db.Column(db.Integer, nullable=False)
+    mime_type = db.Column(db.String(100), nullable=True)
+
+    image_width = db.Column(db.Integer, nullable=True)
+    image_height = db.Column(db.Integer, nullable=True)
+    has_thumbnail = db.Column(db.Boolean, default=False, nullable=False)
+    thumbnail_path = db.Column(db.String(500), nullable=True)
+
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    caption = db.Column(db.String(500), nullable=True)
+    image_type = db.Column(db.String(50), nullable=True)
+    is_optimized = db.Column(db.Boolean, default=False, nullable=False)
+
+    view_count = db.Column(db.Integer, default=0, nullable=False)
+    last_accessed = db.Column(db.DateTime, nullable=True)
+
+    # Relationships
+    uploader = db.relationship('User', backref='uploaded_images', lazy=True)
+
+    def __repr__(self):
+        return f'<GlobalImage {self.filename} for {self.entity_type}:{self.entity_id}>'
+
+    @classmethod
+    def get_for_entity(cls, entity_type, entity_id):
+        """Get all images for a specific entity."""
+        return cls.query.filter_by(entity_type=entity_type, entity_id=entity_id).order_by(cls.upload_date.desc()).all()
+

@@ -284,21 +284,21 @@
                 </div>
             </div>
             <div class="col-lg-6">
-                <div class="card">
+                <div class="card mb-3">
                     <div class="card-body p-0">
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="sticky-header">
                                     <tr>
                                         <th>
-                                            <i class="fas fa-lightbulb me-2"></i>Key Considerations & Scenario Example Image
+                                            <i class="fas fa-lightbulb me-2"></i>Key Considerations
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
                                         <td>
-                                            {{ form.key_considerations(class="form-control" + (" is-invalid" if form.key_considerations.errors else ""), rows="8") }}
+                                            {{ form.key_considerations(class="form-control" + (" is-invalid" if form.key_considerations.errors else ""), rows="6") }}
                                             {% if form.key_considerations.errors %}
                                                 <div class="invalid-feedback">
                                                     {% for error in form.key_considerations.errors %}{{ error }}{% endfor %}
@@ -307,27 +307,69 @@
                                             {% if form.key_considerations.description %}
                                                 <div class="form-text">{{ form.key_considerations.description }}</div>
                                             {% endif %}
-                                            {% if scenario and scenario.image_path %}
-                                            <div class="mb-2 text-center">
-                                                <img src="{{ url_for('p12_scenarios.serve_image', scenario_id=scenario.id) }}"
-                                                     alt="Scenario {{ scenario.scenario_number }} Image"
-                                                     class="img-fluid rounded border" style="max-height: 220px;">
-                                            </div>
-                                            {% endif %}
-                                            <div>
-                                                <label class="form-label fw-semibold">Upload Image</label>
-                                                {{ form.scenario_image(class="form-control" + (" is-invalid" if form.scenario_image.errors else "")) }}
-                                                {% if form.scenario_image.errors %}
-                                                    <div class="invalid-feedback">
-                                                        {% for error in form.scenario_image.errors %}{{ error }}{% endfor %}
-                                                    </div>
-                                                {% endif %}
-                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Scenario Image Management Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-image me-2"></i>Scenario Visual Example</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if scenario and scenario.images %}
+                            {% set primary_image = scenario.images[0] %}
+                            <div class="text-center mb-3">
+                                <img src="{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=primary_image.id) }}"
+                                     alt="Current scenario image"
+                                     class="img-fluid rounded"
+                                     style="max-height: 200px;">
+                                <p class="text-muted small mt-2">Current image</p>
+                            </div>
+                        {% endif %}
+
+                        <!-- File upload for new/replacement image -->
+                        <div class="mb-3">
+                            <label class="form-label">Upload New Image</label>
+                            <input type="file"
+                                   class="form-control"
+                                   id="scenarioImageFile"
+                                   accept="image/*"
+                                   onchange="previewNewImage(this)">
+                            <div class="form-text">
+                                Supported formats: PNG, JPG, JPEG, GIF, WebP (Max 5MB)
+                                {% if scenario and scenario.images %}
+                                <br><strong>Note:</strong> This will replace the existing image.
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Preview new image -->
+                        <div id="newImagePreview" style="display: none;" class="text-center mb-3">
+                            <img id="previewImg" src="" alt="Preview" class="img-fluid rounded" style="max-height: 150px;">
+                            <p class="text-muted small mt-1">New image preview</p>
+                        </div>
+
+                        {% if scenario %}
+                        <button type="button"
+                                class="btn btn-success"
+                                onclick="uploadImageForScenario({{ scenario.id }})">
+                            <i class="fas fa-upload me-1"></i>
+                            {% if scenario.images %}Replace Image{% else %}Upload Image{% endif %}
+                        </button>
+
+                        {% if scenario.images %}
+                        <button type="button"
+                                class="btn btn-outline-danger ms-2"
+                                onclick="deleteP12Image({{ scenario.id }}, '{{ scenario.scenario_name }}')">
+                            <i class="fas fa-trash me-1"></i>Delete Image
+                        </button>
+                        {% endif %}
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -446,5 +488,95 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     const changeDetector = window.initUnsavedChangesDetector('#scenario-form');
 });
+</script>
+<script>
+function previewNewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('newImagePreview').style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function uploadImageForScenario(scenarioId) {
+    const fileInput = document.getElementById('scenarioImageFile');
+    if (!fileInput.files || !fileInput.files[0]) {
+        alert('Please select an image file first');
+        return;
+    }
+
+    const scenarioName = '{{ scenario.scenario_name if scenario else "Scenario" }}';
+    uploadP12Image(scenarioId, fileInput, scenarioName);
+}
+
+// P12 Image upload function (if not already included)
+function uploadP12Image(scenarioId, fileInput, scenarioName) {
+    if (!fileInput.files || !fileInput.files[0]) {
+        alert('Please select an image file');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('image', fileInput.files[0]);
+    formData.append('caption', `P12 Scenario ${scenarioName} Example`);
+    formData.append('replace_existing', 'true');
+
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name=csrf-token]')?.content ||
+                     document.querySelector('input[name=csrf_token]')?.value;
+
+    fetch(`/admin/p12-scenarios/upload-image/${scenarioId}`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Image uploaded:', data.image_url);
+            location.reload(); // Refresh to show new image
+        } else {
+            console.error('Upload failed:', data.error);
+            alert('Upload failed: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error uploading image:', error);
+        alert('Error uploading image: ' + error.message);
+    });
+}
+
+function deleteP12Image(scenarioId, scenarioName) {
+    if (!confirm(`Delete the image for "${scenarioName}"? This action cannot be undone.`)) {
+        return;
+    }
+
+    const csrfToken = document.querySelector('meta[name=csrf-token]')?.content ||
+                     document.querySelector('input[name=csrf_token]')?.value;
+
+    fetch(`/admin/p12-scenarios/delete-image/${scenarioId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error deleting image: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        alert('Error deleting image: ' + error.message);
+    });
+}
 </script>
 {% endblock %}

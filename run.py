@@ -94,3 +94,29 @@ if __name__ == '__main__':
     # Otherwise, debug=True here will enable it.
     # For production, ensure debug is False.
     app.run(debug=(os.environ.get('FLASK_DEBUG', '1') == '1'))
+
+
+# Or you can add the command directly here:
+@app.cli.command("migrate-p12-images")
+def migrate_p12_images_command():
+    """Migrate existing P12 scenario images to global system."""
+    import click
+    from app.utils.p12_image_helpers import migrate_legacy_p12_images
+
+    click.echo("Starting P12 image migration...")
+    result = migrate_legacy_p12_images()
+
+    if result['success']:
+        click.echo(f"Migration completed successfully!")
+        click.echo(f"Migrated: {result['migrated_count']} images")
+        click.echo(f"Total scenarios checked: {result['total_scenarios']}")
+
+        if result['errors']:
+            click.echo(f"Errors encountered: {len(result['errors'])}")
+            for error in result['errors']:
+                click.echo(f"  - {error}")
+    else:
+        click.echo(f"Migration failed: {result['error']}")
+
+# You can then run this command with:
+# flask migrate-p12-images

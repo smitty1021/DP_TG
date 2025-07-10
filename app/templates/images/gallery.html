@@ -1,0 +1,750 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block head_extra %}
+<style>
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+.gallery-item {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.gallery-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.gallery-image-container {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+}
+
+.gallery-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.gallery-item:hover .gallery-image {
+    transform: scale(1.05);
+}
+
+.gallery-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.1) 0%,
+        rgba(0,0,0,0) 30%,
+        rgba(0,0,0,0) 70%,
+        rgba(0,0,0,0.8) 100%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    display: flex;
+    align-items: flex-end;
+    padding: 1rem;
+}
+
+.gallery-item:hover .gallery-overlay {
+    opacity: 1;
+}
+
+.gallery-overlay-content {
+    color: white;
+    width: 100%;
+}
+
+.gallery-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+}
+
+.gallery-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.gallery-item:hover .gallery-actions {
+    opacity: 1;
+}
+
+.gallery-info {
+    padding: 1rem;
+    background: white;
+}
+
+.gallery-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.entity-type-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.entity-p12_scenario { background-color: #e3f2fd; color: #1976d2; }
+.entity-daily_journal { background-color: #f3e5f5; color: #7b1fa2; }
+.entity-trade { background-color: #e8f5e8; color: #388e3c; }
+.entity-user_profile { background-color: #fff3e0; color: #f57c00; }
+.entity-general { background-color: #f5f5f5; color: #616161; }
+
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-panel {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.lightbox {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    animation: fadeIn 0.3s ease;
+}
+
+.lightbox-content {
+    position: relative;
+    margin: auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 1000px;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: center;
+}
+
+.lightbox img {
+    max-width: 100%;
+    max-height: 80vh;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.lightbox-close:hover {
+    color: #ccc;
+}
+
+.lightbox-info {
+    color: white;
+    text-align: center;
+    margin-top: 1rem;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.empty-gallery {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6c757d;
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+@media (max-width: 768px) {
+    .gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+    
+    .stats-cards {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+    
+    .filter-panel {
+        padding: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-color mb-1">
+                        <i class="fas fa-images me-2"></i>{{ title }}
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Global image gallery and management system
+                    </p>
+                </div>
+                <div>
+                    {% if request.args.get('entity_type') %}
+                    <a href="{{ url_for('images.export_images', entity_type=request.args.get('entity_type')) }}"
+                       class="btn btn-success me-2" title="Export Images">
+                        <i class="fas fa-download me-1"></i>Export ZIP
+                    </a>
+                    {% endif %}
+                    <button class="btn btn-primary me-2" onclick="showBulkUpload()" title="Bulk Upload">
+                        <i class="fas fa-upload me-1"></i>Bulk Upload
+                    </button>
+                    <a href="{{ url_for('images.cleanup_orphaned_images') }}"
+                       class="btn btn-warning" title="Cleanup Orphaned Files"
+                       onclick="return confirm('This will delete orphaned files and records. Continue?')">
+                        <i class="fas fa-broom me-1"></i>Cleanup
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total_images }}</div>
+            <div class="stat-label">Total Images</div>
+        </div>
+        {% for entity_type, count in stats.by_entity_type.items() %}
+        <div class="stat-card">
+            <div class="stat-number">{{ count }}</div>
+            <div class="stat-label">{{ entity_type.replace('_', ' ').title() }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="filter-panel">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Entity Type</label>
+                <select name="entity_type" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="p12_scenario" {% if request.args.get('entity_type') == 'p12_scenario' %}selected{% endif %}>P12 Scenarios</option>
+                    <option value="daily_journal" {% if request.args.get('entity_type') == 'daily_journal' %}selected{% endif %}>Daily Journals</option>
+                    <option value="trade" {% if request.args.get('entity_type') == 'trade' %}selected{% endif %}>Trades</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sort By</label>
+                <select name="sort_by" class="form-select">
+                    <option value="upload_date" {% if request.args.get('sort_by') == 'upload_date' %}selected{% endif %}>Upload Date</option>
+                    <option value="filename" {% if request.args.get('sort_by') == 'filename' %}selected{% endif %}>Filename</option>
+                    <option value="file_size" {% if request.args.get('sort_by') == 'file_size' %}selected{% endif %}>File Size</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <!-- Empty column for spacing -->
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter me-1"></i>Apply Filters
+                </button>
+                <a href="{{ url_for('images.image_gallery') }}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-times me-1"></i>Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Image Gallery -->
+    {% if images.items %}
+    <div class="gallery-grid">
+        {% for image in images.items %}
+        <div class="gallery-item">
+            <!-- Entity Type Badge -->
+            <div class="gallery-badge">
+                <span class="entity-type-badge entity-{{ image.entity_type }}">
+                    {{ image.entity_type.replace('_', ' ').title() }}
+                </span>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="gallery-actions">
+                <div class="btn-group-vertical" role="group">
+                    <button class="btn btn-light btn-icon" 
+                            onclick="openLightbox('{{ url_for('images.serve_image', image_id=image.id) }}', '{{ image.original_filename }}', '{{ image.caption or '' }}')"
+                            title="View Full Size">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="btn btn-success btn-icon"
+                            onclick="downloadImage('{{ url_for('images.serve_image', image_id=image.id) }}', '{{ image.original_filename }}')"
+                            title="Download">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    {% if current_user.id == image.user_id or current_user.is_admin() %}
+                    <button class="btn btn-danger btn-icon"
+                            onclick="deleteImage({{ image.id }}, '{{ image.original_filename }}')"
+                            title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Image Container -->
+            <div class="gallery-image-container">
+                {% if image.has_thumbnail %}
+                <img src="{{ url_for('images.serve_image', image_id=image.id, thumbnail='true') }}"
+                     alt="{{ image.original_filename }}"
+                     class="gallery-image"
+                     onclick="openLightbox('{{ url_for('images.serve_image', image_id=image.id) }}', '{{ image.original_filename }}', '{{ image.caption or '' }}')">
+                {% else %}
+                <img src="{{ url_for('images.serve_image', image_id=image.id) }}"
+                     alt="{{ image.original_filename }}"
+                     class="gallery-image"
+                     onclick="openLightbox('{{ url_for('images.serve_image', image_id=image.id) }}', '{{ image.original_filename }}', '{{ image.caption or '' }}')">
+                {% endif %}
+                
+                <!-- Hover Overlay -->
+                <div class="gallery-overlay">
+                    <div class="gallery-overlay-content">
+                        <div class="fw-bold">{{ image.original_filename }}</div>
+                        {% if image.caption %}
+                        <div class="mt-1 small">{{ image.caption }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Image Info -->
+            <div class="gallery-info">
+                <h6 class="mb-1">{{ image.original_filename|truncate(30) }}</h6>
+                {% if image.caption %}
+                <p class="small text-muted mb-2">{{ image.caption|truncate(60) }}</p>
+                {% endif %}
+                
+                <div class="gallery-meta">
+                    <span>
+                        <i class="fas fa-calendar me-1"></i>
+                        {{ image.upload_date.strftime('%m/%d/%y') }}
+                    </span>
+                    <span>
+                        <i class="fas fa-eye me-1"></i>
+                        {{ image.view_count }}
+                    </span>
+                </div>
+                
+                <div class="gallery-meta mt-1">
+                    <span>
+                        <i class="fas fa-link me-1"></i>
+                        ID: {{ image.entity_id }}
+                    </span>
+                    <span>
+                        <i class="fas fa-weight me-1"></i>
+                        {{ "%.1f"|format(image.file_size/1024) }} KB
+                    </span>
+                </div>
+                
+                {% if image.image_width and image.image_height %}
+                <div class="gallery-meta mt-1">
+                    <span>
+                        <i class="fas fa-arrows-alt me-1"></i>
+                        {{ image.image_width }} × {{ image.image_height }}
+                    </span>
+                    {% if image.has_thumbnail %}
+                    <span class="text-success">
+                        <i class="fas fa-image me-1"></i>
+                        Thumbnail
+                    </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if images.pages > 1 %}
+    <div class="pagination-wrapper">
+        {{ render_pagination(images) }}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-gallery">
+        <i class="fas fa-images fa-4x mb-3"></i>
+        <h4>No Images Found</h4>
+        <p>No images match your current filters.</p>
+        <a href="{{ url_for('images.image_gallery') }}" class="btn btn-primary">
+            <i class="fas fa-refresh me-2"></i>View All Images
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Lightbox Modal -->
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+    <div class="lightbox-content">
+        <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+        <img id="lightbox-image" src="" alt="">
+        <div class="lightbox-info">
+            <h5 id="lightbox-title"></h5>
+            <p id="lightbox-description"></p>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Upload Modal -->
+<div class="modal fade" id="bulkUploadModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-upload me-2"></i>Bulk Image Upload
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bulkUploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Entity Type</label>
+                        <select name="entity_type" class="form-select" required>
+                            <option value="">Select entity type...</option>
+                            <option value="p12_scenario">P12 Scenarios</option>
+                            <option value="daily_journal">Daily Journals</option>
+                            <option value="trade">Trades</option>
+                            <option value="general">General</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Images</label>
+                        <input type="file" name="images" class="form-control" multiple accept="image/*" required>
+                        <div class="form-text">Select multiple images. For P12 scenarios, name them P12_1.png, P12_2.jpg, etc.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Naming Pattern</label>
+                        <select name="naming_pattern" class="form-select">
+                            <option value="original">Keep original names</option>
+                            <option value="p12_scenario">P12 Scenario matching</option>
+                            <option value="sequential">Sequential numbering</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-check">
+                        <input type="checkbox" name="overwrite_existing" class="form-check-input" id="overwriteCheck">
+                        <label class="form-check-label" for="overwriteCheck">
+                            Overwrite existing images
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitBulkUpload()">
+                    <i class="fas fa-upload me-2"></i>Upload Images
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Lightbox functionality
+function openLightbox(imageUrl, title, description) {
+    document.getElementById('lightbox-image').src = imageUrl;
+    document.getElementById('lightbox-title').textContent = title;
+    document.getElementById('lightbox-description').textContent = description || '';
+    document.getElementById('lightbox').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Close lightbox with escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeLightbox();
+    }
+});
+
+// Prevent lightbox from closing when clicking on content
+document.querySelector('.lightbox-content').addEventListener('click', function(event) {
+    event.stopPropagation();
+});
+
+// Download functionality
+function downloadImage(imageUrl, filename) {
+    fetch(imageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        })
+        .catch(error => {
+            console.error('Error downloading image:', error);
+            alert('Failed to download image');
+        });
+}
+
+// Delete functionality
+function deleteImage(imageId, filename) {
+    if (confirm(`Delete image "${filename}"? This action cannot be undone.`)) {
+        fetch(`/images/delete/${imageId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deleting image: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            alert('Error deleting image: ' + error.message);
+        });
+    }
+}
+
+// Bulk upload functionality
+function showBulkUpload() {
+    const modal = new bootstrap.Modal(document.getElementById('bulkUploadModal'));
+    modal.show();
+}
+
+function submitBulkUpload() {
+    const form = document.getElementById('bulkUploadForm');
+    const formData = new FormData(form);
+    const entityType = formData.get('entity_type');
+
+    if (!entityType) {
+        alert('Please select an entity type');
+        return;
+    }
+
+    // Show loading state
+    const submitBtn = event.target;
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+    submitBtn.disabled = true;
+
+    fetch(`/images/bulk-upload/${entityType}`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('bulkUploadModal')).hide();
+            alert(`Successfully uploaded ${data.uploaded_count} of ${data.total_files} images!`);
+            location.reload();
+        } else {
+            alert('Error uploading images: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        alert('Error uploading images: ' + error.message);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
+
+// Auto-submit form when filters change (optional)
+document.addEventListener('DOMContentLoaded', function() {
+    const filterSelects = document.querySelectorAll('.filter-panel select');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            // Optionally auto-submit the form
+            // this.form.submit();
+        });
+    });
+});
+
+// Image loading error handling
+document.addEventListener('DOMContentLoaded', function() {
+    const images = document.querySelectorAll('.gallery-image');
+    images.forEach(img => {
+        img.addEventListener('error', function() {
+            this.src = '/static/images/image-placeholder.png'; // Add a placeholder image
+            this.alt = 'Image not found';
+            this.parentElement.classList.add('image-error');
+        });
+    });
+});
+
+// Lazy loading for better performance
+document.addEventListener('DOMContentLoaded', function() {
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.classList.remove('lazy');
+                    observer.unobserve(img);
+                }
+            });
+        });
+
+        const lazyImages = document.querySelectorAll('img[data-src]');
+        lazyImages.forEach(img => imageObserver.observe(img));
+    }
+});
+</script>
+
+<!-- Pagination macro (add this to your base template or here) -->
+{% macro render_pagination(pagination, endpoint=None) %}
+    {% if pagination.pages > 1 %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for(endpoint or request.endpoint, page=pagination.prev_num, **request.args) }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                </li>
+            {% endif %}
+
+            {% for page in pagination.iter_pages() %}
+                {% if page %}
+                    {% if page != pagination.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for(endpoint or request.endpoint, page=page, **request.args) }}">{{ page }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page }}</span>
+                        </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">…</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for(endpoint or request.endpoint, page=pagination.next_num, **request.args) }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+{% endmacro %}
+
+{% endblock %}
