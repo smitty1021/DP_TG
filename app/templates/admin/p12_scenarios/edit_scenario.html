@@ -381,8 +381,7 @@
 
                         {% if scenario %}
                         <button type="button"
-                                class="btn btn-add-outline btn-icon" title="{% if scenario.images %}Replace Image{% else %}Upload Image{% endif %}"
-
+                                class="btn btn-add-ghost btn-icon" title="{% if scenario.images %}Replace Image{% else %}Upload Image{% endif %}"
                                 onclick="uploadImageForScenario({{ scenario.id }})">
                             <i class="fas fa-upload me-1"></i>
 
@@ -390,7 +389,7 @@
 
                         {% if scenario.images %}
                         <button type="button"
-                                class="btn btn-delete-outline btn-icon" title="Delete Image"
+                                class="btn btn-delete-ghost btn-icon" title="Delete Image"
                                 onclick="deleteP12Image({{ scenario.id }}, '{{ scenario.scenario_name }}')">
                             <i class="fas fa-trash me-1"></i>
                         </button>
@@ -403,22 +402,7 @@
     </form>
 </div>
 
-<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="imageModalTitle">Scenario Image</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <img id="imageModalImg" src="" alt="Scenario Image" class="img-fluid rounded">
-            </div>
-            <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -657,12 +641,7 @@ function deleteP12Image(scenarioId, scenarioName) {
         }
     }
 }
-function showImageModal(imageUrl, title) {
-    document.getElementById('imageModalTitle').textContent = title;
-    document.getElementById('imageModalImg').src = imageUrl;
-    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
-    modal.show();
-}
+
 function performDeleteP12Image(scenarioId, scenarioName) {
     const csrfToken = document.querySelector('meta[name=csrf-token]')?.content ||
                      document.querySelector('input[name=csrf_token]')?.value;

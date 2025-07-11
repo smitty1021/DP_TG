@@ -5,13 +5,7 @@ TRADING JOURNAL STYLESHEET
 Random's (Matt Mickey) Trading Methodology Implementation
 Comprehensive styling for trade journal application
 Author: Generated for Random's Trading System
-Version: 2.1 - Bumblebee Theme Update
-================================================
-*/
-
-/*
-================================================
-1. CSS VARIABLES & THEME SYSTEM
+Version: 2.2 - Global Bumblebee Card Theme
 ================================================
 */
 
@@ -22,66 +16,91 @@ Version: 2.1 - Bumblebee Theme Update
     object-fit: contain;
 }
 
-/* Light Theme (Bumblebee Complementary) */
-:root {
-    /* Core Colors */
-    --primary-color: #FFF000; /* Strong Yellow */
-    --primary-light: #FFE366;
-    --secondary-color: #4A4A4A; /* Dark Gray */
-    --success-color: #2E8B57; /* Sea Green */
-    --success-light: #3CB371;
-    --warning-color: #FFA500; /* Orange for warnings */
-    --warning-light: #FFC133;
-    --danger-color: #C70039;  /* Strong Red */
-    --danger-light: #E06666;
-    --info-color: #4169E1;   /* Royal Blue */
-    --info-light: #6495ED;
-    --yellow-color: #FFD300;
+/*
+================================================
+1. CSS VARIABLES & THEME SYSTEM
+================================================
+Global theme colors inspired by a bumblebee/yellow jacket.
+*/
 
-    /* Layout Colors */
+/* Light Theme (Yellow Jacket) */
+:root {
+    /* Core Brand Colors */
+    --primary-color: #FFC300; /* Vibrant Yellow */
+    --primary-light: #FFD440;
+    --secondary-color: #333333; /* Dark Gray */
+    --text-color: #1E1E1E; /* Near Black */
+    --text-on-primary: #1E1E1E; /* Text for on top of yellow */
     --main-bg: #F5F5F5;
     --content-bg: #FFFFFF;
     --sidebar-bg: #F5F5F5;
     --border-color: #DDDDDD;
-    --text-color: #212529;
+    --text-primary: #1E1E1E;
     --text-secondary: #6c757d;
     --text-muted: #888888;
 
-    /* Trading Colors */
+    /* Semantic Colors */
+    --success-color: #2E8B57;
+    --warning-color: #FFA500;
+    --danger-color: #C70039;
+    --info-color: #4169E1;
     --profit-color: var(--success-color);
     --loss-color: var(--danger-color);
     --neutral-color: var(--text-secondary);
 
-    /* Shadows */
-    --box-shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    --box-shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+    /* Card Specific Colors - Light Theme */
+    --card-bg: #FFFFFF;
+    --card-border-color: #E0E0E0;
+    --card-header-bg: #FFC300;
+    --card-header-color: #1E1E1E;
+    --card-body-color: #333333;
+    --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --card-text-headings-color: var(--primary-color);
+
+    /* NEW: Sidebar Hover/Active Colors - Light Theme */
+    --sidebar-hover-bg: rgba(0, 0, 0, 0.05);
+    --sidebar-hover-text: #000000;
+    --sidebar-hover-border: var(--primary-color);
+    --sidebar-submenu-hover-bg: rgba(0, 0, 0, 0.1);
 }
 
-/* Dark Theme (Classic Bumblebee) */
+/* Dark Theme (Bumblebee) */
 html[data-bs-theme="dark"] {
-    /* Core Colors */
-    --primary-color: #FFF000; /* Strong Yellow */
+    /* Core Brand Colors */
+    --primary-color: #FFD700; /* Gold Yellow */
     --primary-light: #FFE366;
-    --secondary-color: #AAAAAA;
-    --success-color: #2E8B57; /* Sea Green */
-    --success-light: #3CB371;
-    --warning-color: #FFD300; /* Using primary yellow for warnings */
-    --warning-light: #FFE366;
-    --danger-color: #C70039;  /* Strong Red */
-    --danger-light: #E06666;
-    --info-color: #4169E1;   /* Royal Blue */
-    --info-light: #6495ED;
-    --yellow-color: #FFD300;
-
-    /* Layout Colors */
-    --main-bg: #101010;
-    --content-bg: #181818;
-    --sidebar-bg: #101010;
-    --border-color: #333333;
+    --secondary-color: #BDBDBD;
     --text-color: #EAEAEA;
+    --text-on-primary: #1E1E1E;
+    --main-bg: #121212;
+    --content-bg: #1E1E1E;
+    --sidebar-bg: #121212;
+    --border-color: #333333;
     --text-secondary: #A0A0A0;
     --text-muted: #606060;
+
+    /* Semantic Colors */
+    --success-color: #2E8B57;
+    --warning-color: #FFD300;
+    --danger-color: #C70039;
+    --info-color: #4169E1;
+    --profit-color: var(--success-color);
+    --loss-color: var(--danger-color);
+    --neutral-color: var(--text-secondary);
+
+    /* Card Specific Colors - Dark Theme */
+    --card-bg: #1E1E1E;
+    --card-border-color: #444444;
+    --card-header-bg: rgba(255, 211, 0, 0.08);
+    --card-header-color: var(--primary-color);
+    --card-body-color: #EAEAEA;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    /* NEW: Sidebar Hover/Active Colors - Dark Theme */
+    --sidebar-hover-bg: rgba(255, 211, 0, 0.08);
+    --sidebar-hover-text: var(--primary-color);
+    --sidebar-hover-border: var(--primary-color);
+    --sidebar-submenu-hover-bg: rgba(255, 211, 0, 0.1);
 }
 
 
@@ -117,7 +136,6 @@ body {
 ================================================
 */
 
-/* Main application layout */
 .app-body-container {
     display: flex;
     flex-grow: 1;
@@ -146,7 +164,6 @@ body {
 ================================================
 */
 
-/* Sidebar container */
 .sidebar {
     width: 75px;
     background-color: var(--sidebar-bg);
@@ -162,7 +179,6 @@ body {
     transition: width 0.25s ease-in-out, transform 0.25s ease-in-out;
 }
 
-/* Sidebar states */
 .sidebar.desktop-full-open {
     width: 260px;
 }
@@ -179,7 +195,6 @@ body {
     justify-content: center;
 }
 
-/* Hover-to-expand functionality */
 .sidebar.desktop-icon-only:hover {
     width: 260px;
     box-shadow: 3px 0 10px rgba(0,0,0,0.1);
@@ -199,7 +214,6 @@ body {
     justify-content: flex-start;
 }
 
-/* Sidebar navigation */
 .sidebar-nav {
     overflow-y: auto;
     flex-grow: 1;
@@ -223,36 +237,32 @@ body {
     border-left: 4px solid transparent;
 }
 
-/* Sidebar link hover states */
+/* Sidebar link hover states - DARK THEME */
 html[data-bs-theme="dark"] .sidebar-nav li a:hover,
 html[data-bs-theme="dark"] .sidebar-nav li a.active {
-    color: var(--primary-color);
-    background-color: rgba(255, 211, 0, 0.08);
-    border-left-color: var(--primary-color);
+    color: var(--sidebar-hover-text);
+    background-color: var(--sidebar-hover-bg);
+    border-left-color: var(--sidebar-hover-border);
 }
 
 html[data-bs-theme="dark"] .sidebar-nav .submenu li a:hover,
 html[data-bs-theme="dark"] .sidebar-nav .submenu li a.active {
-    color: var(--primary-light);
-    background-color: rgba(255, 211, 0, 0.1);
-    border-left-color: var(--primary-color);
+    background-color: var(--sidebar-submenu-hover-bg);
 }
 
+/* Sidebar link hover states - LIGHT THEME */
 html[data-bs-theme="light"] .sidebar-nav li a:hover,
 html[data-bs-theme="light"] .sidebar-nav li a.active {
-    color: #000;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-left-color: var(--primary-color);
+    color: var(--sidebar-hover-text);
+    background-color: var(--sidebar-hover-bg);
+    border-left-color: var(--sidebar-hover-border);
 }
 
 html[data-bs-theme="light"] .sidebar-nav .submenu li a:hover,
 html[data-bs-theme="light"] .sidebar-nav .submenu li a.active {
-    color: #000;
-    background-color: rgba(0,0,0,0.1);
-    border-left-color: var(--primary-color);
+    background-color: var(--sidebar-submenu-hover-bg);
 }
 
-/* Sidebar icons and labels */
 .sidebar-nav li a .icon {
     width: 20px;
     text-align: center;
@@ -278,7 +288,6 @@ html[data-bs-theme="light"] .sidebar-nav .submenu li a.active {
     transition: transform 0.3s ease;
 }
 
-/* Submenu styling */
 .sidebar-nav .submenu {
     list-style: none;
     padding-left: 0;
@@ -302,7 +311,6 @@ html[data-bs-theme="dark"] .sidebar-nav .submenu {
     border-left: 4px solid transparent;
 }
 
-/* Hide submenu when sidebar is collapsed */
 .sidebar.desktop-icon-only .submenu.open {
     max-height: 0;
 }
@@ -311,7 +319,6 @@ html[data-bs-theme="dark"] .sidebar-nav .submenu {
     max-height: 500px;
 }
 
-/* Sidebar footer */
 .sidebar-footer {
     padding: 15px 25px;
     text-align: center;
@@ -320,7 +327,6 @@ html[data-bs-theme="dark"] .sidebar-nav .submenu {
     white-space: nowrap;
     overflow: hidden;
 }
-
 
 /*
 ================================================
@@ -907,37 +913,46 @@ html[data-bs-theme="dark"] .btn-goback-ghost:hover {
 
 /*
 ================================================
-6. CARD SYSTEM
+6. CARD SYSTEM (UPDATED)
 ================================================
+Cards now use the global theme variables for easy customization.
 */
 
 .card {
-    background-color: var(--content-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: var(--box-shadow-sm);
-    margin-bottom: 1rem;
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border-color);
+    border-radius: 12px; /* Slightly more rounded */
+    box-shadow: var(--card-shadow);
+    margin-bottom: 1.5rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
 }
 
 .card-header {
-    background-color: var(--sidebar-bg);
-    color: var(--text-color);
-    border-bottom: 1px solid var(--border-color);
-    padding: 1rem;
-    font-weight: 600;
-    border-radius: 8px 8px 0 0;
+    background-color: var(--card-header-bg);
+    color: var(--card-header-color);
+    border-bottom: 2px solid rgba(0,0,0,0.1); /* Subtle border */
+    padding: 1rem 1.25rem;
+    font-weight: 700; /* Bolder header text */
+    border-radius: 11px 11px 0 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .card-body {
-    padding: 1rem;
-    color: var(--text-color);
+    padding: 1.25rem;
+    color: var(--card-body-color);
 }
 
 .card-footer {
-    background-color: var(--main-bg);
-    border-top: 1px solid var(--border-color);
-    padding: 0.75rem 1rem;
-    border-radius: 0 0 8px 8px;
+    background-color: var(--card-bg);
+    border-top: 1px solid var(--card-border-color);
+    padding: 0.75rem 1.25rem;
+    border-radius: 0 0 11px 11px;
 }
 
 /*
@@ -1079,7 +1094,7 @@ html[data-bs-theme="dark"] .btn-goback-ghost:hover {
     z-index: 10;
     background: var(--main-bg);
     box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-    border-bottom: 2px solid var(--primary-color);
+    border-bottom: 1px solid var(--primary-color);
 }
 
 html[data-bs-theme="dark"] .sticky-header {
@@ -1090,7 +1105,7 @@ html[data-bs-theme="dark"] .sticky-header {
     font-size: 0.875rem !important;
     font-weight: 700 !important;
     letter-spacing: 0.5px;
-    text-transform: uppercase;
+
     color: var(--text-color) !important;
     padding: 1rem 0.75rem !important;
     border-color: var(--primary-color);
@@ -1263,6 +1278,10 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
 */
 
 /* Text utilities */
+.text-primary {
+    color: var(--card-text-headings-color) !important;
+}
+
 .text-profit {
     color: var(--profit-color);
     font-weight: 600;

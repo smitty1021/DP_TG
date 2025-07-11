@@ -32,201 +32,184 @@
         </div>
     </div>
 
-    <!-- P12 Overview Image Section -->
-    <div class="row mb-4">
-        <div class="col">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">
-                        <i class="fas fa-image me-2"></i>P12 Scenarios Overview
-                    </h6>
-                    {% if current_user.is_admin() %}
-                    <div class="btn-group-sm">
-                        <button class="btn btn-add-outline btn-icon"
-                                onclick="showMainImageUploadDialog()"
-                                title="{% if main_image %}Replace Overview Image{% else %}Upload Overview Image{% endif %}">
-                            <i class="fas fa-upload me-1"></i>
 
-                        </button>
-
-                        {% if main_image %}
-                        <button class="btn btn-delete-outline btn-icon" title="Delete Overview Image"
-                                onclick="deleteMainP12Image()">
-
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                </div>
-                <div class="card-body text-center">
-                    {% if main_image %}
-                    <img src="{{ url_for('images.serve_image', image_id=main_image.id) }}"
-                         alt="P12 Scenarios Overview"
-                         class="img-fluid rounded cursor-pointer"
-                         style="max-height: 300px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;"
-                         onclick="showImageModal('{{ url_for('images.serve_image', image_id=main_image.id) }}', 'P12 Scenarios Overview')"
-                         onmouseover="this.style.border='2px solid #007bff'; this.style.transform='scale(1.02)'"
-                         onmouseout="this.style.border='2px solid transparent'; this.style.transform='scale(1)'">
-                    <p class="text-muted small mt-2">
-                        <i class="fas fa-search-plus me-1"></i>P12 Scenarios Overview (click to enlarge)
-                    </p>
-                    {% else %}
-                    <div class="py-4">
-                        <i class="fas fa-image fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
-                        <p class="text-muted mb-0">No overview image uploaded</p>
-                        {% if current_user.is_admin() %}
-                        <button class="btn btn-primary btn-sm mt-2" onclick="showMainImageUploadDialog()">
-                            <i class="fas fa-upload me-1"></i>Upload Overview Image
-                        </button>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Hidden CSRF Token for JavaScript -->
     <input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
 
-    <!-- Scenarios Table -->
-    <div class="card">
-        <div class="card-body p-0">
-            {% if scenarios %}
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="sticky-header">
-                        <tr>
-                            <th width="80" class="text-center">Scenario</th>
-                            <th>Name</th>
-                            <th>Description</th>
-                            <th width="120" class="text-center">Bias</th>
-                            <th width="100" class="text-center">Image</th>
-                            <th width="80" class="text-center">Status</th>
-                            <th width="150" class="text-center"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for scenario in scenarios %}
-                        <tr class="{% if not scenario.is_active %}scenario-inactive{% endif %}">
-                            <td class="text-center">
-                                <span class="badge bg-primary-color text-black fs-6">{{ scenario.scenario_number }}</span>
-                            </td>
-                            <td>
-                                {{ scenario.scenario_name }}
-                            </td>
-                            <td>
-                                <div class="scenario-description">
-                                    {{ scenario.short_description }}
-                                </div>
-                            </td>
-                            <td class="text-center">
-                                {% if scenario.directional_bias %}
-                                    {% if scenario.directional_bias == 'bullish' %}
-                                        <span class="badge bg-success">
-                                            <i class="fas fa-arrow-up me-1"></i>Bullish
-                                        </span>
-                                    {% elif scenario.directional_bias == 'bearish' %}
-                                        <span class="badge bg-danger">
-                                            <i class="fas fa-arrow-down me-1"></i>Bearish
-                                        </span>
-                                    {% elif scenario.directional_bias == 'choppy' %}
-                                        <span class="badge bg-warning">
-                                            <i class="fas fa-random me-1"></i>Choppy
-                                        </span>
+    <!-- Main Content Row -->
+<div class="row">
+    <!-- Left Column - Scenarios Table -->
+    <div class="col-lg-8">
+        <!-- Scenarios Table -->
+        <div class="card">
+            <div class="card-body p-0">
+                {% if scenarios %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="sticky-header">
+                            <tr>
+                                <th width="80" class="text-center">Scenario</th>
+                                <th>Name</th>
+                                <th width="120" class="text-center">Bias</th>
+                                <th width="100" class="text-center">Image</th>
+                                <th width="80" class="text-center">Status</th>
+                                <th width="150" class="text-center"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for scenario in scenarios %}
+                            <tr class="{% if not scenario.is_active %}scenario-inactive{% endif %}">
+                                <td class="text-center">
+                                    <span class="badge bg-primary-color text-black fs-6">{{ scenario.scenario_number }}</span>
+                                </td>
+                                <td>
+                                    {{ scenario.scenario_name }}
+                                </td>
+                                <td class="text-center">
+                                    {% if scenario.directional_bias %}
+                                        {% if scenario.directional_bias == 'bullish' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-arrow-up me-1"></i>Bullish
+                                            </span>
+                                        {% elif scenario.directional_bias == 'bearish' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-arrow-down me-1"></i>Bearish
+                                            </span>
+                                        {% elif scenario.directional_bias == 'choppy' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-random me-1"></i>Choppy
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-minus me-1"></i>Neutral
+                                            </span>
+                                        {% endif %}
                                     {% else %}
-                                        <span class="badge bg-secondary">
-                                            <i class="fas fa-minus me-1"></i>Neutral
-                                        </span>
+                                        <span class="text-muted">-</span>
                                     {% endif %}
-                                {% else %}
-                                    <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">
-                                <div class="image-status {% if scenario.images %}has-image{% endif %}" id="scenario-{{ scenario.id }}">
-                                    {% if scenario.images %}
-                                    <div class="image-preview">
-                                        {% set primary_image = scenario.images[0] %}
-                                        <img src="{{ url_for('images.serve_image', image_id=primary_image.id) }}"
-                                             alt="Scenario {{ scenario.scenario_number }} Preview"
-                                             class="scenario-image-preview"
-                                             style="max-width: 60px; max-height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;"
-                                             onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Scenario {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')">
-
-                                    </div>
-                                    {% else %}
-                                    <div class="image-preview">
-                                        <div class="text-muted" style="position: relative;">
-                                            <i class="fas fa-image" style="font-size: 24px; opacity: 0.3;"></i>
-
+                                </td>
+                                <td class="text-center">
+                                    <div class="image-status {% if scenario.images %}has-image{% endif %}" id="scenario-{{ scenario.id }}">
+                                        {% if scenario.images %}
+                                        <div class="image-preview">
+                                            {% set primary_image = scenario.images[0] %}
+                                            <img src="{{ url_for('images.serve_image', image_id=primary_image.id) }}"
+                                                 alt="Scenario {{ scenario.scenario_number }} Preview"
+                                                 class="scenario-image-preview"
+                                                 style="max-width: 60px; max-height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;"
+                                                 onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Scenario {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')">
                                         </div>
+                                        {% else %}
+                                        <div class="image-preview">
+                                            <div class="text-muted" style="position: relative;">
+                                                <i class="fas fa-image" style="font-size: 24px; opacity: 0.3;"></i>
+                                            </div>
+                                        </div>
+                                        {% endif %}
                                     </div>
+                                </td>
+                                <td class="text-center">
+                                    {% if scenario.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
                                     {% endif %}
-
-
-                                </div>
-                            </td>
-                            <td class="text-center">
-                                {% if scenario.is_active %}
-                                    <span class="badge bg-success">Active</span>
-                                {% else %}
-                                    <span class="badge bg-danger">Inactive</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end" onclick="event.stopPropagation();" role="gridcell">
-                                <div class="btn-group-tight" role="group">
-                                    <a href="{{ url_for('p12_scenarios.view_scenario', scenario_id=scenario.id) }}"
-                                        class="btn btn-view-ghost btn-icon" title="View Scenario"
-                                        aria-label="View Scenario">
-                                        <i class="fas fa-eye" aria-hidden="true"></i>
-                                    </a>
-                                    <a href="{{ url_for('p12_scenarios.edit_scenario', scenario_id=scenario.id) }}"
-                                        class="btn btn-edit-ghost btn-icon" title="Edit Scenario"
-                                        aria-label="Edit Scenario">
-                                        <i class="fas fa-edit" aria-hidden="true"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-delete-ghost btn-icon" title="Delete Scenario"
-                                            aria-label="Delete Scenario"
-                                            onclick="confirmDelete({{ scenario.id }}, '{{ scenario.scenario_name }}')">
-                                            <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                </td>
+                                <td class="text-end" onclick="event.stopPropagation();" role="gridcell">
+                                    <div class="btn-group-tight" role="group">
+                                        <a href="{{ url_for('p12_scenarios.view_scenario', scenario_id=scenario.id) }}"
+                                            class="btn btn-view-ghost btn-icon" title="View Scenario"
+                                            aria-label="View Scenario">
+                                            <i class="fas fa-eye" aria-hidden="true"></i>
+                                        </a>
+                                        <a href="{{ url_for('p12_scenarios.edit_scenario', scenario_id=scenario.id) }}"
+                                            class="btn btn-edit-ghost btn-icon" title="Edit Scenario"
+                                            aria-label="Edit Scenario">
+                                            <i class="fas fa-edit" aria-hidden="true"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-delete-ghost btn-icon" title="Delete Scenario"
+                                                aria-label="Delete Scenario"
+                                                onclick="confirmDelete({{ scenario.id }}, '{{ scenario.scenario_name }}')">
+                                                <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No P12 scenarios found</h5>
+                    <p class="text-muted">Create your first scenario to get started.</p>
+                    <a href="{{ url_for('p12_scenarios.create_scenario') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Create First Scenario
+                    </a>
+                </div>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No P12 scenarios found</h5>
-                <p class="text-muted">Create your first scenario to get started.</p>
-                <a href="{{ url_for('p12_scenarios.create_scenario') }}"
-                   class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Create First Scenario
-                </a>
-            </div>
-            {% endif %}
         </div>
     </div>
-</div>
 
-<!-- Image Modal -->
-<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="imageModalTitle">Scenario Image</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <img id="imageModalImg" src="" alt="Scenario Image" class="img-fluid rounded">
-            </div>
-            <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    <!-- Right Column - P12 Scenarios Overview (Table-styled) -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead class="sticky-header">
+                            <tr>
+                                <th>
+                                    <i class="fas fa-lightbulb me-2"></i>P12 Scenarios Overview
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-center p-3">
+                                    {% if current_user.is_admin() %}
+                                    <div class="mb-2">
+                                        <button class="btn btn-add-ghost btn-icon" title="Upload Overview Image" onclick="showMainImageUploadDialog()">
+                                            <i class="fas fa-upload"></i>
+                                        </button>
+                                        {% if main_image %}
+                                        <button class="btn btn-delete-ghost btn-icon" title="Delete Overview Image" onclick="deleteMainP12Image()">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+
+                                    {% if main_image %}
+                                    <img src="{{ url_for('images.serve_image', image_id=main_image.id) }}"
+                                         alt="P12 Scenarios Overview"
+                                         class="img-fluid rounded cursor-pointer"
+                                         style="max-height: 300px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;"
+                                         onclick="showImageModal('{{ url_for('images.serve_image', image_id=main_image.id) }}', 'P12 Scenarios Overview')"
+                                         onmouseover="this.style.border='2px solid #007bff'; this.style.transform='scale(1.02)'"
+                                         onmouseout="this.style.border='2px solid transparent'; this.style.transform='scale(1)'">
+                                    <p class="text-muted small mt-2 mb-0">
+                                        <i class="fas fa-search-plus me-1"></i>P12 Scenarios Overview (click to enlarge)
+                                    </p>
+                                    {% else %}
+                                    <div class="py-4">
+                                        <i class="fas fa-image fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
+                                        <p class="text-muted mb-0">No overview image uploaded</p>
+                                        {% if current_user.is_admin() %}
+                                        <button class="btn btn-primary btn-sm mt-2" onclick="showMainImageUploadDialog()">
+                                            <i class="fas fa-upload me-1"></i>Upload Overview Image
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -505,15 +488,7 @@ function performDeleteMainImage() {
     });
 }
 
-// =====================================
-// IMAGE MODAL FUNCTION
-// =====================================
-function showImageModal(imageUrl, title) {
-    document.getElementById('imageModalTitle').textContent = title;
-    document.getElementById('imageModalImg').src = imageUrl;
-    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
-    modal.show();
-}
+
 
 // =====================================
 // UTILITY FUNCTIONS

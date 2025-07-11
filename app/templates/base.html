@@ -205,20 +205,23 @@
     <!-- 5. Global Image Modal (add once to your base template or main layout) -->
     <!-- Add this modal to your base template or include it where needed -->
     <div class="modal fade" id="imageModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="imageModalTitle">Image</h5>
+                    <h5 class="modal-title mb-0">
+                        <i class="fas fa-image me-2"></i>
+                        <span id="imageModalTitle">Image</span>
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body text-center p-0">
-                    <img id="imageModalImg" src="" alt="" class="img-fluid">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="downloadCurrentImage()">
-                        <i class="fas fa-download me-1"></i>Download
-                    </button>
+
+                <div class="modal-body text-center p-3">
+                    <img id="imageModalImg" src="" alt="" class="img-fluid" style="max-height: 75vh;">
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-utility-ghost" onclick="downloadCurrentImage()">
+                            <i class="fas fa-download me-1"></i>Download Image
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -227,11 +230,12 @@
     <script>
     // Global function to show image modal
     function showImageModal(imageUrl, title) {
+        // Set title in the new structure
         document.getElementById('imageModalTitle').textContent = title;
         document.getElementById('imageModalImg').src = imageUrl;
         const modal = new bootstrap.Modal(document.getElementById('imageModal'));
         modal.show();
-    }
+}
 
     // Function to download current modal image
     function downloadCurrentImage() {

@@ -8,27 +8,21 @@
         <div class="col">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2 class="text-color mb-1">
-                        <span class="badge bg-primary-color text-black me-3">{{ scenario.scenario_number }}</span>
+                    <h2 class="text-primary mb-1">
+                        <span class="badge bg-primary me-3">{{ scenario.scenario_number }}</span>
                         {{ scenario.scenario_name }}
                     </h2>
                     <p class="text-muted mb-0">{{ scenario.short_description }}</p>
                 </div>
-                <div class="btn-group-spaced d-flex gap-2">
-                    <a href="{{ url_for('p12_scenarios.list_scenarios') }}"
-                       class="btn btn-goback-outline btn-icon" title="Back to Scenarios List">
-                        <i class="fas fa-arrow-left me-2"></i>
+                <div>
+                    <a href="{{ url_for('p12_scenarios.edit_scenario', scenario_id=scenario.id) }}" 
+                       class="btn btn-warning me-2">
+                        <i class="fas fa-edit me-2"></i>Edit
                     </a>
-                    <a href="{{ url_for('p12_scenarios.edit_scenario', scenario_id=scenario.id) }}"
-                       class="btn btn-edit-outline btn-icon">
-                        <i class="fas fa-edit me-2"></i>
+                    <a href="{{ url_for('p12_scenarios.list_scenarios') }}" 
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
                     </a>
-                    {% if scenario %}
-                    <button type="button" class="btn btn-delete-outline btn-icon" title="Delete Scenario"
-                            onclick="confirmDeleteScenario({{ scenario.id }}, '{{ scenario.scenario_name }}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -46,7 +40,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <h6 class="fw-semibold text-primary">Directional Bias</h6>
                             {% if scenario.directional_bias %}
                                 {% if scenario.directional_bias == 'bullish' %}
@@ -70,24 +64,12 @@
                                 <span class="text-muted">Not specified</span>
                             {% endif %}
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <h6 class="fw-semibold text-primary">Risk Percentage</h6>
                             {% if scenario.risk_percentage %}
-                                <span class="mb-0">{{ scenario.risk_percentage }}%</span>
+                                <span class="badge bg-info fs-6">{{ scenario.risk_percentage }}%</span>
                             {% else %}
                                 <span class="text-muted">Not specified</span>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-4">
-                            <h6 class="fw-semibold text-primary">Status</h6>
-                            {% if scenario.is_active %}
-                                <span class="badge bg-subtle-success text-success border border-success fs-6">
-                                    <i class="fas fa-check-circle me-1"></i>Active
-                                </span>
-                            {% else %}
-                                <span class="badge bg-subtle-danger text-danger border border-danger fs-6">
-                                    <i class="fas fa-pause-circle me-1"></i>Inactive
-                                </span>
                             {% endif %}
                         </div>
                     </div>
@@ -115,13 +97,13 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <h6 class="fw-semibold text-primary">Alert Criteria</h6>
+                                <h6 class="fw-semibold text-success">Alert Criteria</h6>
                                 <p class="mb-0 small">{{ scenario.alert_criteria }}</p>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <h6 class="fw-semibold text-primary">Confirmation Criteria</h6>
+                                <h6 class="fw-semibold text-warning">Confirmation Criteria</h6>
                                 <p class="mb-0 small">{{ scenario.confirmation_criteria }}</p>
                             </div>
                         </div>
@@ -144,98 +126,33 @@
                 <div class="card-body">
                     {% if scenario.typical_targets %}
                     <div class="mb-3">
-                        <h6 class="fw-semibold text-primary">Typical Targets</h6>
+                        <h6 class="fw-semibold text-success">Typical Targets</h6>
                         <p class="mb-0">{{ scenario.typical_targets }}</p>
                     </div>
                     {% endif %}
 
                     {% if scenario.stop_loss_guidance %}
                     <div class="mb-0">
-                        <h6 class="fw-semibold text-primary">Stop Loss Guidance</h6>
+                        <h6 class="fw-semibold text-danger">Stop Loss Guidance</h6>
                         <p class="mb-0">{{ scenario.stop_loss_guidance }}</p>
                     </div>
                     {% endif %}
                 </div>
             </div>
-
-            <!-- Model Recommendations Card -->
-            {% if scenario.models_to_activate or scenario.models_to_avoid or scenario.preferred_timeframes or scenario.key_considerations %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-cogs me-2"></i>Model Recommendations
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if scenario.models_to_activate %}
-                    <div class="mb-3">
-                        <h6 class="fw-semibold text-primary">Models to Activate</h6>
-                        <div class="d-flex flex-wrap gap-1">
-                            {% for model in scenario.models_to_activate %}
-                            <span class="badge bg-subtle-info text-success border border-success fs-6">{{ model }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if scenario.models_to_avoid %}
-                    <div class="mb-3">
-                        <h6 class="fw-semibold text-primary">Models to Avoid</h6>
-                        <div class="d-flex flex-wrap gap-1">
-                            {% for model in scenario.models_to_avoid %}
-                            <span class="badge bg-danger-subtle text-danger border border-danger fs-6">{{ model }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if scenario.preferred_timeframes %}
-                    <div class="mb-3">
-                        <h6 class="fw-semibold text-info">Preferred Timeframes</h6>
-                        <div class="d-flex flex-wrap gap-1">
-                            {% for timeframe in scenario.preferred_timeframes %}
-                            <span class="badge bg-info-subtle text-info border border-info">{{ timeframe }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if scenario.key_considerations %}
-                    <div class="mb-0">
-                        <h6 class="fw-semibold text-warning">Key Considerations</h6>
-                        <p class="mb-0">{{ scenario.key_considerations }}</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
         </div>
 
         <!-- Right Column - Image and Stats -->
-
-
-
-
-
-
-
-
         <div class="col-lg-4">
             <!-- Scenario Image -->
-
-
-
-
-
-
-
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-image me-2"></i>Visual Example</h5>
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-image me-2"></i>Visual Example</h6>
                     {% if current_user.is_admin() %}
-
+                    <button class="btn btn-sm btn-outline-primary"
+                            onclick="showImageUploadDialog({{ scenario.id }}, '{{ scenario.scenario_name }}')"
+                            title="{% if scenario.images %}Replace{% else %}Upload{% endif %} Image">
+                        <i class="fas fa-{% if scenario.images %}edit{% else %}upload{% endif %}"></i>
+                    </button>
                     {% endif %}
                 </div>
                 <div class="card-body text-center">
@@ -246,6 +163,7 @@
                              class="img-fluid rounded cursor-pointer"
                              onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Scenario {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')"
                              style="max-height: 300px;">
+
                         {% if primary_image.caption %}
                         <p class="text-muted small mt-2 mb-0">{{ primary_image.caption }}</p>
                         {% endif %}
@@ -293,6 +211,32 @@
             </div>
             {% endif %}
 
+
+            <!-- Statistics Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary mb-1">{{ scenario.times_selected }}</h4>
+                                <p class="small text-muted mb-0">Times Selected</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="{% if scenario.is_active %}text-success{% else %}text-secondary{% endif %} mb-1">
+                                {% if scenario.is_active %}Active{% else %}Inactive{% endif %}
+                            </h4>
+                            <p class="small text-muted mb-0">Status</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Metadata Card -->
             <div class="card">
                 <div class="card-header">
@@ -315,47 +259,7 @@
     </div>
 </div>
 <script src="{{ url_for('static', filename='js/p12-images.js') }}"></script>
-<script>
-function confirmDeleteScenario(scenarioId, scenarioName) {
-    // Use custom modal for confirmation
-    if (typeof showCustomConfirmation === 'function') {
-        showCustomConfirmation({
-            title: 'Delete Scenario',
-            message: `Are you sure you want to <strong>permanently delete</strong> the P12 scenario:<br><br><strong>"${scenarioName}"</strong><br><br><div class="alert alert-danger mt-2"><i class="fas fa-exclamation-triangle me-2"></i><strong>Warning:</strong> This action cannot be undone. Any daily journals referencing this scenario will lose the connection.</div>`,
-            confirmText: 'Delete Scenario',
-            cancelText: 'Cancel',
-            confirmClass: 'btn-danger',
-            icon: 'exclamation-triangle',
-            onConfirm: function() {
-                performDeleteScenario(scenarioId);
-            }
-        });
-    } else {
-        // Fallback to browser confirm
-        if (confirm(`Are you sure you want to permanently delete the P12 scenario: "${scenarioName}"?\n\nThis action cannot be undone. Any daily journals referencing this scenario will lose the connection.`)) {
-            performDeleteScenario(scenarioId);
-        }
-    }
-}
 
-function performDeleteScenario(scenarioId) {
-    // Create and submit form with CSRF token
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '/admin/p12-scenarios/delete/' + scenarioId;
-
-    // Add CSRF token
-    const csrfInput = document.createElement('input');
-    csrfInput.type = 'hidden';
-    csrfInput.name = 'csrf_token';
-    csrfInput.value = document.querySelector('meta[name="csrf-token"]').content ||
-                     document.querySelector('input[name="csrf_token"]').value;
-    form.appendChild(csrfInput);
-
-    document.body.appendChild(form);
-    form.submit();
-}
-</script>
 {% endblock %}
-
+                    
 
