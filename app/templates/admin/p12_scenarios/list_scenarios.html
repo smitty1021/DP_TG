@@ -42,17 +42,18 @@
                     </h6>
                     {% if current_user.is_admin() %}
                     <div class="btn-group-sm">
-                        <button class="btn btn-sm btn-outline-primary"
+                        <button class="btn btn-add-outline btn-icon"
                                 onclick="showMainImageUploadDialog()"
                                 title="{% if main_image %}Replace Overview Image{% else %}Upload Overview Image{% endif %}">
-                            <i class="fas fa-{% if main_image %}edit{% else %}upload{% endif %} fa-xs me-1"></i>
-                            {% if main_image %}Replace{% else %}Upload{% endif %}
+                            <i class="fas fa-upload me-1"></i>
+
                         </button>
+
                         {% if main_image %}
-                        <button class="btn btn-sm btn-outline-danger ms-1"
-                                onclick="deleteMainP12Image()"
-                                title="Delete Overview Image">
-                            <i class="fas fa-trash fa-xs me-1"></i>Delete
+                        <button class="btn btn-delete-outline btn-icon" title="Delete Overview Image"
+                                onclick="deleteMainP12Image()">
+
+                            <i class="fas fa-trash-alt"></i>
                         </button>
                         {% endif %}
                     </div>
@@ -153,35 +154,18 @@
                                              class="scenario-image-preview"
                                              style="max-width: 60px; max-height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;"
                                              onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Scenario {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')">
-                                        <div class="image-badge has-image">
-                                            <i class="fas fa-check"></i>
-                                        </div>
+
                                     </div>
                                     {% else %}
                                     <div class="image-preview">
                                         <div class="text-muted" style="position: relative;">
                                             <i class="fas fa-image" style="font-size: 24px; opacity: 0.3;"></i>
-                                            <div class="image-badge">
-                                                <i class="fas fa-times"></i>
-                                            </div>
+
                                         </div>
                                     </div>
                                     {% endif %}
 
-                                    <div class="image-actions mt-1">
-                                        <button class="btn btn-sm btn-outline-primary"
-                                                onclick="showImageUploadDialog({{ scenario.id }}, '{{ scenario.scenario_name }}')"
-                                                title="{% if scenario.images %}Replace Image{% else %}Upload Image{% endif %}">
-                                            <i class="fas fa-{% if scenario.images %}edit{% else %}upload{% endif %} fa-xs"></i>
-                                        </button>
-                                        {% if scenario.images %}
-                                        <button class="btn btn-sm btn-outline-danger ms-1"
-                                                onclick="deleteP12Image({{ scenario.id }}, '{{ scenario.scenario_name }}')"
-                                                title="Delete Image">
-                                            <i class="fas fa-trash fa-xs"></i>
-                                        </button>
-                                        {% endif %}
-                                    </div>
+
                                 </div>
                             </td>
                             <td class="text-center">
@@ -272,7 +256,7 @@
                 <form id="deleteForm" method="POST" style="display: inline;">
                     {{ csrf_token() }}
                     <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash me-2"></i>Delete Scenario
+                        <i class="fas fa-trash-alt me-2"></i>Delete Scenario
                     </button>
                 </form>
             </div>
