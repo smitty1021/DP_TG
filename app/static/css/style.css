@@ -709,20 +709,17 @@ html[data-bs-theme="dark"] .btn-navigate-ghost:hover {
 /*
 === UTILITY ACTIONS (SECONDARY/GRAY THEME) ===
 */
-
 /* Solid Utility Buttons */
 .btn-utility-solid {
     color: white;
     background-color: var(--secondary-color);
     border-color: var(--secondary-color);
 }
-
 .btn-utility-solid:hover {
     color: white;
     background-color: #383838;
     border-color: #2E2E2E;
 }
-
 /* Outlined Utility Buttons */
 .btn-utility,
 .btn-utility-outline {
@@ -730,118 +727,99 @@ html[data-bs-theme="dark"] .btn-navigate-ghost:hover {
     background-color: transparent;
     border-color: var(--secondary-color);
 }
-
 .btn-utility:hover,
 .btn-utility-outline:hover {
     color: white;
     background-color: var(--secondary-color);
     border-color: var(--secondary-color);
 }
-
 html[data-bs-theme="dark"] .btn-utility,
 html[data-bs-theme="dark"] .btn-utility-outline {
     color: var(--text-secondary);
     border-color: var(--text-secondary);
 }
-
 html[data-bs-theme="dark"] .btn-utility:hover,
 html[data-bs-theme="dark"] .btn-utility-outline:hover {
     color: var(--text-color);
     background-color: rgba(160, 160, 160, 0.2);
     border-color: var(--text-secondary);
 }
-
 /* Ghost Utility Buttons */
 .btn-utility-ghost {
     color: var(--secondary-color);
     background: none;
     border: none;
 }
-
 .btn-utility-ghost:hover {
     color: var(--secondary-color);
     background-color: rgba(74, 74, 74, 0.1);
 }
-
 html[data-bs-theme="dark"] .btn-utility-ghost {
     color: var(--text-secondary);
 }
-
 html[data-bs-theme="dark"] .btn-utility-ghost:hover {
     background-color: rgba(160, 160, 160, 0.1);
 }
 
 /*
-=== GO BACK ACTIONS ===
+=== GOBACK ACTIONS (SECONDARY/GRAY THEME) ===
 */
-
-/* Solid goback Buttons */
+/* Solid Goback Buttons */
 .btn-goback-solid {
-    color: #000;
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
+    color: white;
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
 }
-
 .btn-goback-solid:hover {
-    color: #000;
-    background-color: #E6BE00;
-    border-color: #CCAA00;
+    color: white;
+    background-color: #383838;
+    border-color: #2E2E2E;
 }
-
-/* Outlined goback Buttons */
+/* Outlined Goback Buttons */
 .btn-goback,
 .btn-goback-outline {
-    color: var(--primary-color);
+    color: var(--secondary-color);
     background-color: transparent;
-    border-color: var(--primary-color);
+    border-color: var(--secondary-color);
 }
-
 .btn-goback:hover,
 .btn-goback-outline:hover {
-    color: #000;
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
+    color: white;
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
 }
-
 html[data-bs-theme="dark"] .btn-goback,
 html[data-bs-theme="dark"] .btn-goback-outline {
-    color: var(--primary-light);
-    border-color: var(--primary-light);
+    color: var(--text-secondary);
+    border-color: var(--text-secondary);
 }
-
 html[data-bs-theme="dark"] .btn-goback:hover,
 html[data-bs-theme="dark"] .btn-goback-outline:hover {
-    color: #000;
-    background-color: var(--primary-light);
-    border-color: var(--primary-light);
+    color: var(--text-color);
+    background-color: rgba(160, 160, 160, 0.2);
+    border-color: var(--text-secondary);
 }
-
-/* Ghost goback Buttons */
+/* Ghost Goback Buttons */
 .btn-goback-ghost {
-    color: var(--primary-color);
+    color: var(--secondary-color);
     background: none;
     border: none;
 }
-
 .btn-goback-ghost:hover {
-    color: var(--primary-color);
-    background-color: rgba(255, 211, 0, 0.1);
+    color: var(--secondary-color);
+    background-color: rgba(74, 74, 74, 0.1);
 }
-
 html[data-bs-theme="dark"] .btn-goback-ghost {
-    color: var(--primary-light);
+    color: var(--text-secondary);
 }
-
 html[data-bs-theme="dark"] .btn-goback-ghost:hover {
-    background-color: rgba(255, 227, 102, 0.1);
+    background-color: rgba(160, 160, 160, 0.1);
 }
-
 
 
 /*
 === ICON SPACING ===
 */
-
 .btn i + span, .action-btn i + span {
     margin-left: 0.5rem;
 }
