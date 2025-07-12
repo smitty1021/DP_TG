@@ -330,6 +330,59 @@ html[data-bs-theme="dark"] .sidebar-nav .submenu {
 
 /*
 ================================================
+DROPDOWN STYLING (to match sidebar)
+================================================
+*/
+
+/* Admin and User Dropdown Menu Items */
+.dropdown-menu .dropdown-item {
+    color: var(--text-secondary);
+    transition: background-color 0.2s, color 0.2s;
+    border-left: 4px solid transparent;
+}
+
+/* Dark Theme Dropdown Hover/Active */
+html[data-bs-theme="dark"] .dropdown-menu .dropdown-item:hover,
+html[data-bs-theme="dark"] .dropdown-menu .dropdown-item:focus,
+html[data-bs-theme="dark"] .dropdown-menu .dropdown-item.active {
+    color: var(--sidebar-hover-text);
+    background-color: var(--sidebar-hover-bg);
+    border-left-color: var(--sidebar-hover-border);
+}
+
+/* Light Theme Dropdown Hover/Active */
+html[data-bs-theme="light"] .dropdown-menu .dropdown-item:hover,
+html[data-bs-theme="light"] .dropdown-menu .dropdown-item:focus,
+html[data-bs-theme="light"] .dropdown-menu .dropdown-item.active {
+    color: var(--sidebar-hover-text);
+    background-color: var(--sidebar-hover-bg);
+    border-left-color: var(--sidebar-hover-border);
+}
+
+/* Dropdown Menu Background */
+.dropdown-menu {
+    background-color: var(--sidebar-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Dropdown Dividers */
+.dropdown-menu .dropdown-divider {
+    border-color: var(--border-color);
+}
+
+/* Dropdown Headers */
+.dropdown-menu .dropdown-header {
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.75rem;
+}
+
+/*
+================================================
 5. COMPREHENSIVE BUTTON SYSTEM
 ================================================
 */
@@ -930,7 +983,7 @@ Cards now use the global theme variables for easy customization.
     background-color: var(--card-bg);
     border-top: 1px solid var(--card-border-color);
     padding: 0.75rem 1.25rem;
-    border-radius: 0 0 11px 11px;
+    border-radius: 12
 }
 
 /*
@@ -997,7 +1050,6 @@ Cards now use the global theme variables for easy customization.
     border: 1px solid var(--bs-primary-border-subtle) !important;
 }
 
-
 /*
 ================================================
 7. TABLE SYSTEM
@@ -1033,7 +1085,7 @@ Cards now use the global theme variables for easy customization.
     overflow-y: auto;
     overflow-x: hidden;
     border: 1px solid var(--border-color);
-    border-radius: 0.375rem;
+    border-radius: 12px
     scroll-behavior: smooth;
 }
 /* Loading states for better UX */
@@ -1070,23 +1122,30 @@ Cards now use the global theme variables for easy customization.
     position: sticky;
     top: 0;
     z-index: 10;
-    background: var(--main-bg);
+    background: var(--card-header-bg);
     box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-    border-bottom: 1px solid var(--primary-color);
+    border-bottom: 1px solid var(--border-color);
 }
 
 html[data-bs-theme="dark"] .sticky-header {
-    background: #181818;
+    background: var(--card-header-bg);
 }
 
 .sticky-header th {
-    font-size: 0.875rem !important;
-    font-weight: 700 !important;
+    background-color: var(--card-header-bg);
+    color: var(--card-header-color);
+    border-bottom: 2px solid rgba(0,0,0,0.1); /* Subtle border */
+    padding: 1rem 1.25rem;
+    font-weight: 700; /* Bolder header text */
+    border-radius: 12;
+    text-transform: uppercase;
     letter-spacing: 0.5px;
+    font-size: 1.25rem !important;
+}
 
-    color: var(--text-color) !important;
-    padding: 1rem 0.75rem !important;
-    border-color: var(--primary-color);
+/* Ensure borders match */
+.table > thead {
+    border-bottom: 1px solid var(--border-color);
 }
 
 /* Sortable columns */
@@ -1175,6 +1234,41 @@ html[data-bs-theme="dark"] .table-fixed tbody tr:nth-child(even) {
 .table td .btn-group-tight,
 .table td span {
     vertical-align: middle;
+}
+
+/* Round the bottom corners of tables */
+.table {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Specifically target the last row's cells for rounded bottom corners */
+.table tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 12px;
+}
+
+.table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 12px;
+}
+
+/* Ensure cards with tables have proper rounded corners */
+.card .table {
+    margin-bottom: 0;
+    border-radius: 12px;
+}
+
+.card .table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ONLY style table headers, not all rows */
+.table thead th {
+    background-color: var(--card-header-bg) !important;
+    color: var(--card-header-color) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    font-weight: 600 !important;
+    padding: 1rem !important;
+    font-size: 1.25rem !important;
 }
 
 /*

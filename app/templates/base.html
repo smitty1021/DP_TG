@@ -203,17 +203,16 @@
     <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 
     <!-- 5. Global Image Modal (add once to your base template or main layout) -->
-    <!-- Add this modal to your base template or include it where needed -->
-    <div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalTitle" aria-hidden="true">
         <div class="modal-dialog modal-xl">
-            <div class="modal-content">
+            <div class="modal-content card">
                 <!-- Card-style header -->
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0" id="imageModalLabel">
                         <i class="fas fa-image me-2"></i>
                         <span id="imageModalTitle">Image</span>
-
                     </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
                 <!-- Card-style body -->
@@ -231,33 +230,88 @@
 
     <script>
     // Global function to show image modal
-    function showImageModal(imageUrl, title) {
-        // Set title in the new structure
-        document.getElementById('imageModalTitle').textContent = title;
-        document.getElementById('imageModalImg').src = imageUrl;
-        const modal = new bootstrap.Modal(document.getElementById('imageModal'));
-        modal.show();
-}
+    function showImagePreview(imageUrl, title) {
+        document.getElementById('imagePreviewTitle').textContent = title;
+        document.getElementById('imagePreviewImg').src = imageUrl;
+        document.getElementById('imagePreviewCard').style.display = 'block';
 
-    // Function to download current modal image
-    function downloadCurrentImage() {
+        // Scroll to the preview card
+        document.getElementById('imagePreviewCard').scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+    }
+
+        function closeImagePreview() {
+            document.getElementById('imagePreviewCard').style.display = 'none';
+        }
+
+        // Update the downloadCurrentImage function to work with the new IDs
+        function downloadCurrentImage() {
         const imageUrl = document.getElementById('imageModalImg').src;
         const title = document.getElementById('imageModalTitle').textContent;
 
-        fetch(imageUrl)
-            .then(response => response.blob())
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.png';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            });
+        // Clean up the filename
+        const filename = title.replace(/[^a-z0-9\s]/gi, '_').replace(/\s+/g, '_').toLowerCase() + '.png';
+
+        // Try direct download first (works for same-origin images)
+        try {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = filename;
+            link.target = '_blank'; // Fallback to opening in new tab
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Direct download failed:', error);
+
+            // Fallback: try fetch approach
+            fetch(imageUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(error => {
+                    console.error('Fetch download failed:', error);
+                    // Final fallback: open image in new tab
+                    window.open(imageUrl, '_blank');
+                });
+        }
     }
+    </script>
+
+    <script>
+    // Global fix for Bootstrap modal aria-hidden focus issue
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle all modals on the page
+        document.querySelectorAll('.modal').forEach(function(modal) {
+            // Remove focus when modal is hiding
+            modal.addEventListener('hide.bs.modal', function() {
+                // Remove focus from any focused elements within the modal
+                const focusedElement = modal.querySelector(':focus');
+                if (focusedElement) {
+                    focusedElement.blur();
+                }
+            });
+
+            // Ensure proper focus management when modal is hidden
+            modal.addEventListener('hidden.bs.modal', function() {
+                // Return focus to document body
+                document.body.focus();
+            });
+        });
+    });
     </script>
 
     {% block scripts_extra %}{% endblock %}

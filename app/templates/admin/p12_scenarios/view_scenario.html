@@ -1,8 +1,15 @@
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
 
+
+{% block head_extra %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
+
+
 {% block content %}
 <div class="container-fluid">
+    <input type="hidden" id="csrf_token" name="csrf_token" value="{{ csrf_token() }}">
     <!-- Header -->
     <div class="row mb-4">
         <div class="col">
@@ -325,6 +332,39 @@ function confirmDeleteScenario(scenarioId, scenarioName) {
 }
 
 function performDeleteScenario(scenarioId) {
+    // Get CSRF token with better error handling
+    function getCSRFToken() {
+    // Try multiple methods to get CSRF token
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    if (metaTag && metaTag.content) {
+        return metaTag.content;
+    }
+
+    const hiddenInput = document.querySelector('input[name="csrf_token"]');
+    if (hiddenInput && hiddenInput.value) {
+        return hiddenInput.value;
+    }
+
+    // Check for the specific ID we added
+    const csrfInput = document.getElementById('csrf_token');
+    if (csrfInput && csrfInput.value) {
+        return csrfInput.value;
+    }
+
+    // Check if there's a global variable
+    if (typeof window.csrf_token !== 'undefined') {
+        return window.csrf_token;
+    }
+
+    return null;
+}
+
+    const csrfToken = getCSRFToken();
+    if (!csrfToken) {
+        alert('CSRF token not found. Please refresh the page and try again.');
+        return;
+    }
+
     // Create and submit form with CSRF token
     const form = document.createElement('form');
     form.method = 'POST';
@@ -334,13 +374,13 @@ function performDeleteScenario(scenarioId) {
     const csrfInput = document.createElement('input');
     csrfInput.type = 'hidden';
     csrfInput.name = 'csrf_token';
-    csrfInput.value = document.querySelector('meta[name="csrf-token"]').content ||
-                     document.querySelector('input[name="csrf_token"]').value;
+    csrfInput.value = csrfToken;
     form.appendChild(csrfInput);
 
     document.body.appendChild(form);
     form.submit();
 }
+
 </script>
 {% endblock %}
 

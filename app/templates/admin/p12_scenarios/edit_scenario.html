@@ -373,28 +373,14 @@
                             </div>
                         </div>
 
+                        <!-- Hidden field to track if we need to upload image -->
+                        <input type="hidden" id="uploadImageAfterSave" value="0">
+
                         <!-- Preview new image -->
                         <div id="newImagePreview" style="display: none;" class="text-center mb-3">
                             <img id="previewImg" src="" alt="Preview" class="img-fluid rounded" style="max-height: 150px;">
                             <p class="text-muted small mt-1">New image preview</p>
                         </div>
-
-                        {% if scenario %}
-                        <button type="button"
-                                class="btn btn-add-ghost btn-icon" title="{% if scenario.images %}Replace Image{% else %}Upload Image{% endif %}"
-                                onclick="uploadImageForScenario({{ scenario.id }})">
-                            <i class="fas fa-upload me-1"></i>
-
-                        </button>
-
-                        {% if scenario.images %}
-                        <button type="button"
-                                class="btn btn-delete-ghost btn-icon" title="Delete Image"
-                                onclick="deleteP12Image({{ scenario.id }}, '{{ scenario.scenario_name }}')">
-                            <i class="fas fa-trash me-1"></i>
-                        </button>
-                        {% endif %}
-                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -524,52 +510,55 @@ function previewNewImage(input) {
         reader.onload = function(e) {
             document.getElementById('previewImg').src = e.target.result;
             document.getElementById('newImagePreview').style.display = 'block';
+            // Mark that we need to upload image after save
+            document.getElementById('uploadImageAfterSave').value = "1";
         };
         reader.readAsDataURL(input.files[0]);
     }
 }
 
-// Replace the functions in your edit_scenario.html script section with these:
-
-function uploadImageForScenario(scenarioId) {
+// Intercept form submission to handle image upload
+document.getElementById('scenario-form').addEventListener('submit', function(e) {
+    const needsImageUpload = document.getElementById('uploadImageAfterSave').value === "1";
     const fileInput = document.getElementById('scenarioImageFile');
-    if (!fileInput.files || !fileInput.files[0]) {
-        // Use custom modal instead of alert
-        if (typeof showCustomConfirmation === 'function') {
-            showCustomConfirmation({
-                title: 'No File Selected',
-                message: 'Please select an image file first before uploading.',
-                confirmText: 'OK',
-                confirmClass: 'btn-primary',
-                icon: 'info-circle',
-                showCancel: false,
-                onConfirm: function() {
-                    // Just close the modal
-                }
-            });
-        } else {
-            alert('Please select an image file first');
-        }
-        return;
+
+    if (needsImageUpload && fileInput.files && fileInput.files[0]) {
+        e.preventDefault(); // Stop normal form submission
+
+        // First save the scenario without image
+        const formData = new FormData(this);
+        formData.delete('scenario_image'); // Remove image from form data
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text())
+        .then(html => {
+            // If save was successful, then upload image
+            const scenarioId = {{ scenario.id if scenario else 'null' }};
+            if (scenarioId) {
+                uploadImageAfterSave(scenarioId, fileInput);
+            } else {
+                // For new scenarios, we need to extract the ID from the response
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error saving scenario:', error);
+            alert('Error saving scenario');
+        });
     }
+    // If no image, let form submit normally
+});
 
-    const scenarioName = '{{ scenario.scenario_name if scenario else "Scenario" }}';
-    uploadP12Image(scenarioId, fileInput, scenarioName);
-}
-
-function uploadP12Image(scenarioId, fileInput, scenarioName) {
-    if (!fileInput.files || !fileInput.files[0]) {
-        return;
-    }
-
+function uploadImageAfterSave(scenarioId, fileInput) {
     const formData = new FormData();
     formData.append('image', fileInput.files[0]);
-    formData.append('caption', `P12 Scenario ${scenarioName} Example`);
+    formData.append('caption', 'Scenario Image');
     formData.append('replace_existing', 'true');
 
-    // Get CSRF token
-    const csrfToken = document.querySelector('meta[name=csrf-token]')?.content ||
-                     document.querySelector('input[name=csrf_token]')?.value;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
     fetch(`/admin/p12-scenarios/upload-image/${scenarioId}`, {
         method: 'POST',
@@ -581,118 +570,17 @@ function uploadP12Image(scenarioId, fileInput, scenarioName) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log('Image uploaded:', data.image_url);
-            location.reload(); // Refresh to show new image
+            // Redirect to list or show success
+            window.location.href = "{{ url_for('p12_scenarios.list_scenarios') }}";
         } else {
-            console.error('Upload failed:', data.error);
-            // Use custom modal for error
-            if (typeof showCustomConfirmation === 'function') {
-                showCustomConfirmation({
-                    title: 'Upload Failed',
-                    message: `Failed to upload image: ${data.error || 'Unknown error'}`,
-                    confirmText: 'OK',
-                    confirmClass: 'btn-danger',
-                    icon: 'exclamation-triangle',
-                    showCancel: false,
-                    onConfirm: function() {}
-                });
-            } else {
-                alert('Upload failed: ' + (data.error || 'Unknown error'));
-            }
+            alert('Scenario saved but image upload failed: ' + data.error);
         }
     })
     .catch(error => {
         console.error('Error uploading image:', error);
-        // Use custom modal for error
-        if (typeof showCustomConfirmation === 'function') {
-            showCustomConfirmation({
-                title: 'Upload Error',
-                message: `Error uploading image: ${error.message}`,
-                confirmText: 'OK',
-                confirmClass: 'btn-danger',
-                icon: 'exclamation-triangle',
-                showCancel: false,
-                onConfirm: function() {}
-            });
-        } else {
-            alert('Error uploading image: ' + error.message);
-        }
+        alert('Scenario saved but image upload failed');
     });
 }
-
-function deleteP12Image(scenarioId, scenarioName) {
-    // Use custom modal for confirmation
-    if (typeof showCustomConfirmation === 'function') {
-        showCustomConfirmation({
-            title: 'Delete Image',
-            message: `Are you sure you want to delete the image for <strong>"${scenarioName}"</strong>?<br><br><div class="alert alert-warning mt-2"><i class="fas fa-exclamation-triangle me-2"></i>This action cannot be undone.</div>`,
-            confirmText: 'Delete Image',
-            cancelText: 'Cancel',
-            confirmClass: 'btn-danger',
-            icon: 'trash',
-            onConfirm: function() {
-                performDeleteP12Image(scenarioId, scenarioName);
-            }
-        });
-    } else {
-        // Fallback to browser confirm
-        if (confirm(`Delete the image for "${scenarioName}"? This action cannot be undone.`)) {
-            performDeleteP12Image(scenarioId, scenarioName);
-        }
-    }
-}
-
-function performDeleteP12Image(scenarioId, scenarioName) {
-    const csrfToken = document.querySelector('meta[name=csrf-token]')?.content ||
-                     document.querySelector('input[name=csrf_token]')?.value;
-
-    fetch(`/admin/p12-scenarios/delete-image/${scenarioId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            // Use custom modal for error
-            if (typeof showCustomConfirmation === 'function') {
-                showCustomConfirmation({
-                    title: 'Delete Failed',
-                    message: `Error deleting image: ${data.error || 'Unknown error'}`,
-                    confirmText: 'OK',
-                    confirmClass: 'btn-danger',
-                    icon: 'exclamation-triangle',
-                    showCancel: false,
-                    onConfirm: function() {}
-                });
-            } else {
-                alert('Error deleting image: ' + (data.error || 'Unknown error'));
-            }
-        }
-    })
-    .catch(error => {
-        // Use custom modal for error
-        if (typeof showCustomConfirmation === 'function') {
-            showCustomConfirmation({
-                title: 'Delete Error',
-                message: `Error deleting image: ${error.message}`,
-                confirmText: 'OK',
-                confirmClass: 'btn-danger',
-                icon: 'exclamation-triangle',
-                showCancel: false,
-                onConfirm: function() {}
-            });
-        } else {
-            alert('Error deleting image: ' + error.message);
-        }
-    });
-}
-
-// Add this function to your edit_scenario.html script section:
 
 function confirmDeleteScenario(scenarioId, scenarioName) {
     // Use custom modal for confirmation
@@ -733,5 +621,7 @@ function performDeleteScenario(scenarioId) {
     document.body.appendChild(form);
     form.submit();
 }
+
+
 </script>
 {% endblock %}
