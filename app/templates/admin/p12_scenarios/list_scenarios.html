@@ -22,7 +22,11 @@
                         Manage the P12 scenario definitions used in daily journal analysis for all users
                     </p>
                 </div>
-                <div>
+                <div class="btn-group-spaced d-flex gap-2">
+                    <a href="{{ url_for('p12_scenarios.list_scenarios') }}"
+                       class="btn btn-goback-outline btn-icon" title="Go Back">
+                        <i class="fas fa-arrow-left me-2"></i>
+                    </a>
                     <a href="{{ url_for('p12_scenarios.create_scenario') }}"
                        class="btn btn-add btn-icon" title="Create New Scenario">
                         <i class="fas fa-plus"></i>
@@ -31,8 +35,6 @@
             </div>
         </div>
     </div>
-
-
 
     <!-- Hidden CSRF Token for JavaScript -->
     <input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">

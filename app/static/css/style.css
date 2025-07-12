@@ -158,6 +158,15 @@ body {
     padding: 1rem;
 }
 
+/* Override image hover border color */
+.img-fluid:hover,
+.scenario-image:hover,
+img.cursor-pointer:hover {
+    border: 2px solid var(--primary-color) !important; /* Green instead of blue */
+}
+
+
+
 /*
 ================================================
 4. SIDEBAR NAVIGATION

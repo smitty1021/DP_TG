@@ -359,12 +359,13 @@
 
                         <!-- File upload for new/replacement image -->
                         <div class="mb-3">
-                            <label class="form-label">Upload New Image</label>
-                            <input type="file"
-                                   class="form-control"
-                                   id="scenarioImageFile"
-                                   accept="image/*"
-                                   onchange="previewNewImage(this)">
+                            <label class="form-label">{{ form.scenario_image.label.text }}</label>
+                            {{ form.scenario_image(class="form-control", id="scenarioImageFile", accept="image/*", onchange="previewNewImage(this)") }}
+                            {% if form.scenario_image.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.scenario_image.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
                             <div class="form-text">
                                 Supported formats: PNG, JPG, JPEG, GIF, WebP (Max 5MB)
                                 {% if scenario and scenario.images %}
@@ -372,9 +373,6 @@
                                 {% endif %}
                             </div>
                         </div>
-
-                        <!-- Hidden field to track if we need to upload image -->
-                        <input type="hidden" id="uploadImageAfterSave" value="0">
 
                         <!-- Preview new image -->
                         <div id="newImagePreview" style="display: none;" class="text-center mb-3">
@@ -393,10 +391,27 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const tradingModels = [];
-    const timeframes = ['5 minutes', '15 minutes', '30 minutes', '1 hour', '4 hours', 'Daily'];
     const directionalBias = ['bullish', 'bearish', 'neutral', 'choppy'];
     const modelsActivateField = document.querySelector('select[name="{{ form.models_to_activate.name }}"]');
     const modelsAvoidField = document.querySelector('select[name="{{ form.models_to_avoid.name }}"]');
+
+    // Track if image has been changed
+    window.imageChanged = false;
+
+    // Our own form change tracking
+    let originalFormData = {};
+    let hasChanges = false;
+
+    // Extract timeframes from the actual form field
+    const timeframes = [];
+    const timeframesField = document.querySelector('select[name="{{ form.preferred_timeframes.name }}"]');
+    if (timeframesField) {
+        Array.from(timeframesField.options).forEach(option => {
+            if (option.value && option.value !== '') {
+                timeframes.push(option.value);
+            }
+        });
+    }
 
     if (modelsActivateField) {
         Array.from(modelsActivateField.options).forEach(option => {
@@ -410,6 +425,120 @@ document.addEventListener('DOMContentLoaded', function() {
     initTagSelector('models-avoid-tags', tradingModels, '{{ form.models_to_avoid.name }}');
     initTagSelector('timeframes-tags', timeframes, '{{ form.preferred_timeframes.name }}');
     initSingleTagSelector('directional-bias-tags', directionalBias, '{{ form.directional_bias.name }}');
+
+    // Capture original form state
+    function captureFormState() {
+        const form = document.getElementById('scenario-form');
+        const formData = new FormData(form);
+        const data = {};
+        for (let [key, value] of formData.entries()) {
+            if (data[key]) {
+                if (Array.isArray(data[key])) {
+                    data[key].push(value);
+                } else {
+                    data[key] = [data[key], value];
+                }
+            } else {
+                data[key] = value;
+            }
+        }
+        return data;
+    }
+
+    // Check if form has changes
+    function checkForChanges() {
+        const currentData = captureFormState();
+        const changed = compareFormData(originalFormData, currentData);
+        hasChanges = changed || window.imageChanged;
+        return hasChanges;
+    }
+
+    // Compare form data
+    function compareFormData(original, current) {
+        const allKeys = new Set([...Object.keys(original), ...Object.keys(current)]);
+
+        for (let key of allKeys) {
+            const originalValue = original[key];
+            const currentValue = current[key];
+
+            // Handle arrays (multi-select values)
+            if (Array.isArray(originalValue) || Array.isArray(currentValue)) {
+                const origArray = Array.isArray(originalValue) ? originalValue.sort() : (originalValue ? [originalValue] : []);
+                const currArray = Array.isArray(currentValue) ? currentValue.sort() : (currentValue ? [currentValue] : []);
+
+                if (origArray.length !== currArray.length ||
+                    !origArray.every((val, index) => val === currArray[index])) {
+                    return true;
+                }
+            } else {
+                // Normalize values for comparison
+                const normalizedOriginal = (originalValue === undefined || originalValue === null || originalValue === '') ? '' : String(originalValue).trim();
+                const normalizedCurrent = (currentValue === undefined || currentValue === null || currentValue === '') ? '' : String(currentValue).trim();
+
+                if (normalizedOriginal !== normalizedCurrent) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // Get list of changed fields
+    function getChangedFields() {
+        const changes = [];
+
+        if (window.imageChanged) {
+            changes.push('Scenario Image');
+        }
+
+        const currentData = captureFormState();
+        const fieldMappings = {
+            'scenario_number': 'Scenario Number',
+            'scenario_name': 'Scenario Name',
+            'short_description': 'Short Description',
+            'detailed_description': 'Detailed Description',
+            'hod_lod_implication': 'HOD/LOD Implication',
+            'directional_bias': 'Directional Bias',
+            'alert_criteria': 'Alert Criteria',
+            'confirmation_criteria': 'Confirmation Criteria',
+            'entry_strategy': 'Entry Strategy',
+            'typical_targets': 'Typical Targets',
+            'stop_loss_guidance': 'Stop Loss Guidance',
+            'risk_percentage': 'Risk Percentage',
+            'risk_guidance': 'Risk Guidance',
+            'key_considerations': 'Key Considerations',
+            'is_active': 'Active Status',
+            'models_to_activate': 'Models to Activate',
+            'models_to_avoid': 'Models to Avoid',
+            'preferred_timeframes': 'Preferred Timeframes'
+        };
+
+        for (const [fieldName, friendlyName] of Object.entries(fieldMappings)) {
+            const originalValue = originalFormData[fieldName];
+            const currentValue = currentData[fieldName];
+
+            // Handle arrays (multi-select values)
+            if (Array.isArray(originalValue) || Array.isArray(currentValue)) {
+                const origArray = Array.isArray(originalValue) ? originalValue.sort() : (originalValue ? [originalValue] : []);
+                const currArray = Array.isArray(currentValue) ? currentValue.sort() : (currentValue ? [currentValue] : []);
+
+                if (origArray.length !== currArray.length ||
+                    !origArray.every((val, index) => val === currArray[index])) {
+                    changes.push(friendlyName);
+                }
+            } else {
+                // Normalize values for comparison
+                const normalizedOriginal = (originalValue === undefined || originalValue === null || originalValue === '') ? '' : String(originalValue).trim();
+                const normalizedCurrent = (currentValue === undefined || currentValue === null || currentValue === '') ? '' : String(currentValue).trim();
+
+                if (normalizedOriginal !== normalizedCurrent) {
+                    changes.push(friendlyName);
+                }
+            }
+        }
+
+        return changes;
+    }
 
     function initTagSelector(containerId, options, hiddenFieldName) {
         const container = document.getElementById(containerId);
@@ -484,6 +613,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+
+        // Check for changes
+        checkForChanges();
     }
 
     function toggleSingleTag(tagElement, hiddenField, containerId) {
@@ -499,87 +631,92 @@ document.addEventListener('DOMContentLoaded', function() {
         tagElement.classList.add('tag-selected', 'bg-primary');
 
         hiddenField.value = value;
+
+        // Check for changes
+        checkForChanges();
     }
-    const changeDetector = window.initUnsavedChangesDetector('#scenario-form');
+
+    // Initialize form state tracking
+    originalFormData = captureFormState();
+
+    // Add form change listeners
+    const form = document.getElementById('scenario-form');
+    form.addEventListener('input', checkForChanges);
+    form.addEventListener('change', checkForChanges);
+
+    // Track form submission
+    let isSubmitting = false;
+    form.addEventListener('submit', function() {
+        isSubmitting = true;
+        hasChanges = false;
+        window.imageChanged = false;
+    });
+
+    // Single beforeunload handler
+    window.addEventListener('beforeunload', function(e) {
+        if (hasChanges && !isSubmitting) {
+            const message = 'You have unsaved changes. Are you sure you want to leave?';
+            e.preventDefault();
+            e.returnValue = message;
+            return message;
+        }
+    });
+
+    // Single click navigation handler
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[href]');
+        if (link && hasChanges && !isSubmitting) {
+            const href = link.getAttribute('href');
+            if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const changedFields = getChangedFields();
+                const changesText = changedFields.length > 0
+                    ? `<br><br><strong>Changed fields:</strong><br>• ${changedFields.join('<br>• ')}`
+                    : '';
+
+                if (typeof showCustomConfirmation === 'function') {
+                    showCustomConfirmation({
+                        title: 'Unsaved Changes',
+                        message: `You have unsaved changes that will be lost if you leave this page.${changesText}<br><br>Are you sure you want to continue?`,
+                        confirmText: 'Leave Page',
+                        cancelText: 'Stay on Page',
+                        confirmClass: 'btn-warning',
+                        icon: 'exclamation-triangle',
+                        onConfirm: function() {
+                            isSubmitting = true;
+                            hasChanges = false;
+                            window.imageChanged = false;
+                            window.location.href = href;
+                        }
+                    });
+                } else {
+                    if (confirm('You have unsaved changes. Are you sure you want to leave this page?')) {
+                        isSubmitting = true;
+                        hasChanges = false;
+                        window.imageChanged = false;
+                        window.location.href = href;
+                    }
+                }
+                return false;
+            }
+        }
+    });
 });
-</script>
-<script>
+
 function previewNewImage(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
             document.getElementById('previewImg').src = e.target.result;
             document.getElementById('newImagePreview').style.display = 'block';
-            // Mark that we need to upload image after save
-            document.getElementById('uploadImageAfterSave').value = "1";
         };
         reader.readAsDataURL(input.files[0]);
+
+        // Set image changed flag
+        window.imageChanged = true;
     }
-}
-
-// Intercept form submission to handle image upload
-document.getElementById('scenario-form').addEventListener('submit', function(e) {
-    const needsImageUpload = document.getElementById('uploadImageAfterSave').value === "1";
-    const fileInput = document.getElementById('scenarioImageFile');
-
-    if (needsImageUpload && fileInput.files && fileInput.files[0]) {
-        e.preventDefault(); // Stop normal form submission
-
-        // First save the scenario without image
-        const formData = new FormData(this);
-        formData.delete('scenario_image'); // Remove image from form data
-
-        fetch(this.action, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.text())
-        .then(html => {
-            // If save was successful, then upload image
-            const scenarioId = {{ scenario.id if scenario else 'null' }};
-            if (scenarioId) {
-                uploadImageAfterSave(scenarioId, fileInput);
-            } else {
-                // For new scenarios, we need to extract the ID from the response
-                location.reload();
-            }
-        })
-        .catch(error => {
-            console.error('Error saving scenario:', error);
-            alert('Error saving scenario');
-        });
-    }
-    // If no image, let form submit normally
-});
-
-function uploadImageAfterSave(scenarioId, fileInput) {
-    const formData = new FormData();
-    formData.append('image', fileInput.files[0]);
-    formData.append('caption', 'Scenario Image');
-    formData.append('replace_existing', 'true');
-
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-    fetch(`/admin/p12-scenarios/upload-image/${scenarioId}`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': csrfToken
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Redirect to list or show success
-            window.location.href = "{{ url_for('p12_scenarios.list_scenarios') }}";
-        } else {
-            alert('Scenario saved but image upload failed: ' + data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error uploading image:', error);
-        alert('Scenario saved but image upload failed');
-    });
 }
 
 function confirmDeleteScenario(scenarioId, scenarioName) {
@@ -621,7 +758,5 @@ function performDeleteScenario(scenarioId) {
     document.body.appendChild(form);
     form.submit();
 }
-
-
 </script>
 {% endblock %}

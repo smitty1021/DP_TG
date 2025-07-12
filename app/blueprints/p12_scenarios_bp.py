@@ -46,6 +46,11 @@ def allowed_file(filename):
 
 def save_scenario_image(file):
     """Save uploaded scenario image and return the file path."""
+
+    print(f"=== SAVE_SCENARIO_IMAGE DEBUG ===")
+    print(f"File received: {file}")
+    print(f"File filename: {file.filename}")
+    print(f"File allowed check: {allowed_file(file.filename)}")
     if not file or not allowed_file(file.filename):
         return None
 
@@ -267,6 +272,14 @@ def edit_scenario(scenario_id):
     form = P12ScenarioForm(obj=scenario)
 
     if form.validate_on_submit():
+        # Debug logging - ADD THIS HERE
+        print(f"Form validation passed: {form.validate_on_submit()}")
+        print(f"Scenario image data: {form.scenario_image.data}")
+        print(f"Request files: {request.files}")
+        if form.scenario_image.data:
+            print(f"Image filename: {form.scenario_image.data.filename}")
+            print(f"Image content type: {form.scenario_image.data.content_type}")
+
         # Check if scenario number conflicts (only if changed)
         if form.scenario_number.data != scenario.scenario_number:
             existing = P12Scenario.query.filter_by(scenario_number=form.scenario_number.data).first()
@@ -277,16 +290,49 @@ def edit_scenario(scenario_id):
 
         # Handle image upload
         if form.scenario_image.data:
-            new_image = save_scenario_image(form.scenario_image.data)
-            if new_image:
-                # Delete old image if it exists
-                if scenario.image_path:
-                    old_path = scenario.full_image_path
-                    if old_path and os.path.exists(old_path):
-                        os.remove(old_path)
+            print("=== CALLING global image upload ===")
+            try:
+                # Use global image manager
+                image_manager = ImageManager('p12_scenario')
+                save_result = image_manager.save_image(form.scenario_image.data, entity_id=scenario_id)
 
-                scenario.image_filename = new_image
-                scenario.image_path = new_image
+                if save_result['success']:
+                    # Delete existing images first
+                    existing_images = GlobalImage.get_for_entity('p12_scenario', scenario_id)
+                    for existing_image in existing_images:
+                        image_manager.delete_image(existing_image.filename)
+                        db.session.delete(existing_image)
+
+                    # Create new global image record
+                    global_image = GlobalImage(
+                        entity_type='p12_scenario',
+                        entity_id=scenario_id,
+                        user_id=current_user.id,
+                        filename=save_result['filename'],
+                        original_filename=form.scenario_image.data.filename,
+                        relative_path=save_result['relative_path'],
+                        file_size=save_result['file_size'],
+                        mime_type=save_result['mime_type'],
+                        has_thumbnail=save_result['thumbnail_path'] is not None,
+                        thumbnail_path=save_result['thumbnail_path'],
+                        caption=f'P12 Scenario {scenario.scenario_number} Example',
+                        is_optimized=True
+                    )
+
+                    db.session.add(global_image)
+
+                    # Update legacy fields for backward compatibility
+                    scenario.image_filename = save_result['filename']
+                    scenario.image_path = save_result['filename']
+
+                    print(f"Global image created with ID: {global_image.id}")
+                else:
+                    print(f"Global image save failed: {save_result}")
+
+            except Exception as e:
+                print(f"Error with global image upload: {str(e)}")
+                import traceback
+                traceback.print_exc()
 
         # Update ALL scenario fields including model recommendations
         scenario.scenario_number = form.scenario_number.data
