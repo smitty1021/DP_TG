@@ -299,14 +299,88 @@ def seed_default_tags():
 @login_required
 @admin_required
 def show_admin_dashboard():
+    """Admin comprehensive dashboard with all system statistics"""
+    from datetime import datetime
+
+    # Initialize default values
     total_users = "N/A"
+    active_users_count = "N/A"
+    admin_users_count = "N/A"
+    total_instruments = 0
+    active_instruments = 0
+    inactive_instruments = 0
+    instruments_by_class = []
+    total_tags = 0
+    active_tags = 0
+    inactive_tags = 0
+    tags_by_category = []
+    default_models_count = 0
+    current_timestamp = datetime.now()
+
     try:
+        # User statistics
         total_users = User.query.count()
-        current_app.logger.info(f"Admin {current_user.username} accessed admin dashboard.")
+        active_users_count = User.query.filter_by(is_active=True).count()
+        admin_users_count = User.query.filter_by(role=UserRole.ADMIN).count()
+
+        # Instrument statistics
+        total_instruments = Instrument.query.count()
+        active_instruments = Instrument.query.filter_by(is_active=True).count()
+        inactive_instruments = total_instruments - active_instruments
+
+        # Get instruments by asset class (active only)
+        instruments_by_class = db.session.query(
+            Instrument.asset_class,
+            db.func.count(Instrument.id)
+        ).filter_by(is_active=True).group_by(Instrument.asset_class).all()
+
+        # Tag statistics
+        total_tags = Tag.query.filter_by(is_default=True).count()
+        active_tags = Tag.query.filter_by(is_default=True, is_active=True).count()
+        inactive_tags = total_tags - active_tags
+
+        # Get tags by category (active default tags only)
+        from app.models import TagCategory
+        tags_by_category = []
+        for category in TagCategory:
+            count = Tag.query.filter_by(
+                is_default=True,
+                is_active=True,
+                category=category
+            ).count()
+            if count > 0:  # Only include categories with tags
+                # Convert enum to display name
+                category_name = category.value.replace(' & ', ' ').replace(' Factors', '')
+                if len(category_name) > 15:  # Shorten long category names
+                    category_name = category_name.replace('Psychological Emotional', 'Psychology')
+                    category_name = category_name.replace('Execution Management', 'Execution')
+                    category_name = category_name.replace('Market Conditions', 'Market')
+                tags_by_category.append((category_name, count))
+
+        # Trading Models count
+        default_models_count = TradingModel.query.filter_by(is_default=True).count()
+
+        current_app.logger.info(f"Admin {current_user.username} accessed comprehensive admin dashboard.")
+
     except Exception as e:
         current_app.logger.error(f"Error fetching admin dashboard stats: {e}", exc_info=True)
         flash("Could not load all dashboard statistics.", "warning")
-    return render_template('dashboard.html', title='Admin Dashboard', total_users=total_users)
+
+    return render_template('admin/dashboard.html',
+                           title='Admin Dashboard',
+                           total_users=total_users,
+                           active_users_count=active_users_count,
+                           admin_users_count=admin_users_count,
+                           total_instruments=total_instruments,
+                           active_instruments=active_instruments,
+                           inactive_instruments=inactive_instruments,
+                           instruments_by_class=instruments_by_class,
+                           total_tags=total_tags,
+                           active_tags=active_tags,
+                           inactive_tags=inactive_tags,
+                           tags_by_category=tags_by_category,
+                           default_models_count=default_models_count,
+                           current_timestamp=current_timestamp)
 
 
 @admin_bp.route('/users')

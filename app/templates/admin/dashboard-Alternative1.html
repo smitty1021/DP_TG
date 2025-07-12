@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ title or "Admin Dashboard" }} - Trading Journal
+{% endblock %}
+
+{% block head_extra %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <!-- Compact Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 mb-1">
+                        <i class="fas fa-tachometer-alt me-2"></i>Administrative Dashboard
+                    </h1>
+                    <p class="text-muted mb-0">Welcome, <strong>{{ current_user.username }}</strong></p>
+                </div>
+                <div class="btn-group-spaced d-flex gap-2">
+                    <a href="{{ url_for('main.index') }}" class="btn btn-goback-outline btn-icon" title="Back to Main">
+                        <i class="fas fa-home me-2"></i>
+                    </a>
+                    <button type="button" class="btn btn-utility-outline btn-icon" title="Refresh Dashboard" onclick="location.reload()">
+                        <i class="fas fa-sync-alt me-2"></i>
+                    </button>
+                    <a href="#" onclick="history.back();" class="btn btn-goback-outline btn-icon" title="Go Back">
+                        <i class="fas fa-arrow-left me-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compact Stats Row -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-3 col-6">
+            <div class="stat-box bg-primary text-white">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-users fa-2x me-3"></i>
+                    <div>
+                        <div class="stat-number">{{ total_users if total_users is not none else 'N/A' }}</div>
+                        <div class="stat-label">Users</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-box bg-success text-white">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-chart-line fa-2x me-3"></i>
+                    <div>
+                        <div class="stat-number">{{ total_instruments or 0 }}</div>
+                        <div class="stat-label">Instruments</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-box bg-info text-white">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-tags fa-2x me-3"></i>
+                    <div>
+                        <div class="stat-number">{{ total_tags or 0 }}</div>
+                        <div class="stat-label">Tags</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-box bg-warning text-white">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-sitemap fa-2x me-3"></i>
+                    <div>
+                        <div class="stat-number">{{ default_models_count or 0 }}</div>
+                        <div class="stat-label">Models</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row g-4">
+        <!-- Management Sections -->
+        <div class="col-lg-8">
+            <!-- User Management -->
+            <div class="admin-section mb-4">
+                <div class="section-title">
+                    <i class="fas fa-users-cog text-primary me-2"></i>User Management
+
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{{ url_for('admin.admin_users_list') }}" class="list-group-item list-group-item-action border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-list text-primary me-2"></i>
+                                <strong>View All Users</strong>
+                                <small class="text-muted d-block">Browse and manage user accounts</small>
+                            </div>
+                            <span class="badge bg-light text-dark">{{ total_users if total_users is not none else 'N/A' }}</span>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('admin.admin_create_user') }}" class="list-group-item list-group-item-action border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-user-plus text-success me-2"></i>
+                                <strong>Create New User</strong>
+                                <small class="text-muted d-block">Add new accounts</small>
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- System Management -->
+            <div class="admin-section mb-4">
+                <div class="section-title">
+                    <i class="fas fa-cogs text-info me-2"></i>System Management
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{{ url_for('admin.instruments_list') }}" class="list-group-item list-group-item-action border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-chart-line text-success me-2"></i>
+                                <strong>Trading Instruments</strong>
+                                <small class="text-muted d-block">Manage instruments and asset classes</small>
+                            </div>
+                            <span class="badge bg-success">{{ total_instruments or 0 }}</span>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('admin.manage_default_tags') }}" class="list-group-item list-group-item-action border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-tags text-secondary me-2"></i>
+                                <strong>Default Tags</strong>
+                                <small class="text-muted d-block">System-wide tag configuration</small>
+                            </div>
+                            <span class="badge bg-secondary">{{ total_tags or 0 }}</span>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('p12_scenarios.list_scenarios') }}" class="list-group-item list-group-item-action border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-chart-pie text-info me-2"></i>
+                                <strong>P12 Scenarios</strong>
+                                <small class="text-muted d-block">Random's methodology scenarios</small>
+                            </div>
+                            <span class="badge bg-info">5</span>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('admin.manage_default_trading_models') }}" class="list-group-item list-group-item-action border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-sitemap text-warning me-2"></i>
+                                <strong>Trading Models</strong>
+                                <small class="text-muted d-block">0930 Open, HOD/LOD, P12, Captain Backtest</small>
+                            </div>
+                            <span class="badge bg-warning text-dark">{{ default_models_count or 0 }}</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Other Settings -->
+            <div class="admin-section">
+                <div class="section-title">
+                    <i class="fas fa-wrench text-secondary me-2"></i>
+                    Other Settings
+                    <span class="badge bg-light text-dark ms-2">Coming Soon</span>
+                </div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item border-0 disabled">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-database text-muted me-2"></i>
+                                <strong class="text-muted">Database Settings</strong>
+                                <small class="text-muted d-block">Configuration and maintenance</small>
+                            </div>
+                            <span class="badge bg-light text-dark">Soon</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item border-0 disabled">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-bell text-muted me-2"></i>
+                                <strong class="text-muted">Notifications</strong>
+                                <small class="text-muted d-block">System alerts and notifications</small>
+                            </div>
+                            <span class="badge bg-light text-dark">Soon</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item border-0 disabled">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-shield-alt text-muted me-2"></i>
+                                <strong class="text-muted">Security</strong>
+                                <small class="text-muted d-block">Access controls and security</small>
+                            </div>
+                            <span class="badge bg-light text-dark">Soon</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- System Overview -->
+            <div class="admin-section mb-4">
+                <div class="section-title">
+                    <i class="fas fa-chart-bar text-primary me-2"></i>
+                    System Overview
+                </div>
+                <div class="overview-grid">
+                    <div class="overview-item">
+                        <div class="overview-label">Instruments</div>
+                        <div class="overview-stats">
+                            <span class="text-primary fw-bold">{{ total_instruments or 0 }}</span> total,
+                            <span class="text-success">{{ active_instruments or 0 }}</span> active
+                        </div>
+                    </div>
+                    <div class="overview-item">
+                        <div class="overview-label">Tags</div>
+                        <div class="overview-stats">
+                            <span class="text-secondary fw-bold">{{ total_tags or 0 }}</span> total,
+                            <span class="text-success">{{ active_tags or 0 }}</span> active
+                        </div>
+                    </div>
+                    <div class="overview-item">
+                        <div class="overview-label">Status</div>
+                        <div class="overview-stats">
+                            <span class="badge bg-success me-2">Running</span>
+                            <span class="badge bg-success">Connected</span>
+                        </div>
+                    </div>
+                    <div class="overview-item">
+                        <div class="overview-label">Updated</div>
+                        <div class="overview-stats text-muted">
+                            {{ current_timestamp.strftime('%b %d, %Y') if current_timestamp else 'Today' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Analytics -->
+            <div class="admin-section">
+                <div class="section-title">
+                    <i class="fas fa-chart-pie text-info me-2"></i>
+                    Analytics
+                    <span class="badge bg-info ms-2">Preview</span>
+                </div>
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h6 class="text-muted">Analytics Dashboard</h6>
+                    <p class="small text-muted mb-3">
+                        User activity, trading metrics, and P12 performance insights coming soon.
+                    </p>
+                    <button type="button" class="btn btn-outline-info btn-sm" disabled>
+                        <i class="fas fa-clock me-1"></i>Coming Soon
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Simple hover effects
+    const listItems = document.querySelectorAll('.list-group-item-action');
+    listItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            if (!this.classList.contains('disabled')) {
+                this.style.backgroundColor = 'rgba(var(--bs-primary-rgb), 0.05)';
+                this.style.borderLeft = '3px solid var(--bs-primary)';
+                this.style.paddingLeft = '13px';
+            }
+        });
+
+        item.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+            this.style.borderLeft = '';
+            this.style.paddingLeft = '';
+        });
+    });
+
+    // Simple stat box hover
+    const statBoxes = document.querySelectorAll('.stat-box');
+    statBoxes.forEach(box => {
+        box.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+        });
+
+        box.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+            this.style.boxShadow = '';
+        });
+    });
+
+    console.log('Simple Admin Dashboard loaded');
+});
+</script>
+
+<style>
+/* Compact Dashboard Styles */
+.stat-box {
+    background: var(--bs-primary);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.2s ease;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+.admin-section {
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.section-title {
+    background: var(--bs-light);
+    padding: 0.875rem 1rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    display: flex;
+    align-items: center;
+}
+
+html[data-bs-theme="dark"] .section-title {
+    background: var(--bs-dark);
+}
+
+.list-group-item {
+    padding: 0.875rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.list-group-item strong {
+    font-size: 0.95rem;
+}
+
+.list-group-item small {
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.overview-grid {
+    padding: 1rem;
+}
+
+.overview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.overview-item:last-child {
+    border-bottom: none;
+}
+
+.overview-label {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--bs-secondary);
+}
+
+.overview-stats {
+    font-size: 0.85rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stat-box {
+        min-height: 70px;
+        padding: 0.75rem;
+    }
+
+    .stat-number {
+        font-size: 1.25rem;
+    }
+
+    .display-6 {
+        font-size: 1.5rem;
+    }
+
+    .section-title {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .list-group-item {
+        padding: 0.75rem;
+    }
+
+    .overview-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+}
+
+/* Dark theme adjustments */
+html[data-bs-theme="dark"] .admin-section {
+    background: var(--bs-dark);
+    border-color: var(--bs-secondary);
+}
+
+html[data-bs-theme="dark"] .stat-box {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Simple animations */
+.admin-section {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.stat-box:nth-child(1) { animation-delay: 0.1s; }
+.stat-box:nth-child(2) { animation-delay: 0.2s; }
+.stat-box:nth-child(3) { animation-delay: 0.3s; }
+.stat-box:nth-child(4) { animation-delay: 0.4s; }
+</style>
+{% endblock %}

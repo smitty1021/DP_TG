@@ -228,4 +228,9 @@ def TEST_PAGE2():
     """Route to preview the TEST-PAGE.html file"""
     return render_template('TEST_PAGE2.html')
 
+@main_bp.route('/preview3')
+def TEST_PAGE3():
+    """Route to preview the TEST-PAGE.html file"""
+    return render_template('admin/analytics.html')
+
 #=========================================================================================================
