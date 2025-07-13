@@ -823,6 +823,129 @@ Add after section 3 (Enterprise Layout System)
     border-radius: var(--enterprise-radius);
 }
 
+/* Outline-only buttons */
+.btn-outline-info {
+    color: var(--enterprise-info);
+    background-color: transparent;
+    border-color: var(--enterprise-info);
+}
+
+.btn-outline-info:hover {
+    color: var(--enterprise-white);
+    background-color: var(--enterprise-info);
+    border-color: var(--enterprise-info);
+}
+
+.btn-outline-warning {
+    color: var(--enterprise-warning);
+    background-color: transparent;
+    border-color: var(--enterprise-warning);
+}
+
+.btn-outline-warning:hover {
+    color: var(--enterprise-gray-800);
+    background-color: var(--enterprise-warning);
+    border-color: var(--enterprise-warning);
+}
+
+.btn-outline-danger {
+    color: var(--enterprise-danger);
+    background-color: transparent;
+    border-color: var(--enterprise-danger);
+}
+
+.btn-outline-danger:hover {
+    color: var(--enterprise-white);
+    background-color: var(--enterprise-danger);
+    border-color: var(--enterprise-danger);
+}
+
+.btn-outline-success {
+    color: var(--enterprise-success);
+    background-color: transparent;
+    border-color: var(--enterprise-success);
+}
+
+.btn-outline-success:hover {
+    color: var(--enterprise-white);
+    background-color: var(--enterprise-success);
+    border-color: var(--enterprise-success);
+}
+
+/* Dark outline with lighter background buttons */
+.btn-dark-outline-info {
+    color: var(--enterprise-info);
+    background-color: rgba(23, 162, 184, 0.1);
+    border: 2px solid var(--enterprise-info);
+}
+
+.btn-dark-outline-info:hover {
+    color: var(--enterprise-white);
+    background-color: rgba(23, 162, 184, 0.3);
+    border-color: var(--enterprise-info);
+}
+
+.btn-dark-outline-warning {
+    color: var(--enterprise-warning);
+    background-color: rgba(255, 140, 0, 0.1);
+    border: 2px solid var(--enterprise-warning);
+}
+
+.btn-dark-outline-warning:hover {
+    color: var(--enterprise-gray-800);
+    background-color: rgba(255, 140, 0, 0.3);
+    border-color: var(--enterprise-warning);
+}
+
+.btn-dark-outline-danger {
+    color: var(--enterprise-danger);
+    background-color: rgba(209, 52, 56, 0.1);
+    border: 2px solid var(--enterprise-danger);
+}
+
+.btn-dark-outline-danger:hover {
+    color: var(--enterprise-white);
+    background-color: rgba(209, 52, 56, 0.3);
+    border-color: var(--enterprise-danger);
+}
+
+.btn-dark-outline-success {
+    color: var(--enterprise-success);
+    background-color: rgba(0, 112, 192, 0.1);
+    border: 2px solid var(--enterprise-success);
+}
+
+.btn-dark-outline-success:hover {
+    color: var(--enterprise-white);
+    background-color: rgba(0, 112, 192, 0.3);
+    border-color: var(--enterprise-success);
+}
+
+/* Dark theme adjustments */
+html[data-bs-theme="dark"] .btn-dark-outline-info {
+    background-color: rgba(56, 189, 248, 0.15);
+    border-color: #38bdf8;
+    color: #7dd3fc;
+}
+
+html[data-bs-theme="dark"] .btn-dark-outline-warning {
+    background-color: rgba(251, 191, 36, 0.15);
+    border-color: #fbbf24;
+    color: #fcd34d;
+}
+
+html[data-bs-theme="dark"] .btn-dark-outline-danger {
+    background-color: rgba(248, 113, 113, 0.15);
+    border-color: #f87171;
+    color: #fca5a5;
+}
+
+html[data-bs-theme="dark"] .btn-dark-outline-success {
+    background-color: rgba(74, 222, 128, 0.15);
+    border-color: #4ade80;
+    color: #86efac;
+}
+
 /*
 ===============================================================================
 8. OPERATION & ACTION LISTS

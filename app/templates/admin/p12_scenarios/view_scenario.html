@@ -3,6 +3,7 @@
 
 {% block head_extra %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/p12-images.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -14,7 +15,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <div class="header-content">
                 <h1 class="executive-title">
-                    <span class="badge bg-primary me-3">{{ scenario.scenario_number }}</span>
+                    <span class="badge bg-primary text-black me-3">{{ scenario.scenario_number }}</span>
                     {{ scenario.scenario_name }}
                 </h1>
                 <div class="executive-subtitle">
@@ -287,11 +288,10 @@
                                 <div class="mb-3">
                                     <img src="{{ url_for('images.serve_image', image_id=primary_image.id) }}"
                                          alt="Strategic Framework {{ scenario.scenario_number }} Analysis"
-                                         class="img-fluid rounded"
-                                         style="max-height: 300px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s ease;"
-                                         onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Strategic Framework {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')"
-                                         onmouseover="this.style.border='2px solid var(--enterprise-primary)'; this.style.transform='translateY(-2px)'"
-                                         onmouseout="this.style.border='2px solid transparent'; this.style.transform='translateY(0)'">
+                                         class="img-fluid rounded image-preview-trigger"
+                                         data-image-url="{{ url_for('images.serve_image', image_id=primary_image.id) }}"
+                                         data-image-title="Strategic Framework {{ scenario.scenario_number }}: {{ scenario.scenario_name }}"
+                                         style="max-height: 300px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s ease;">
                                 </div>
 
                                 {% if primary_image.caption %}
@@ -309,31 +309,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Additional Visual Examples -->
-                            {% if scenario.images|length > 1 %}
-                            <div class="mt-4">
-                                <div class="border-top pt-3">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <i class="fas fa-images me-2 text-muted"></i>
-                                        <span class="small fw-semibold text-muted">Additional Examples</span>
-                                    </div>
-                                    <div class="row g-2">
-                                        {% for image in scenario.images[1:] %}
-                                        <div class="col-6">
-                                            <img src="{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=image.id) }}"
-                                                 alt="Additional Analysis View"
-                                                 class="img-fluid rounded"
-                                                 style="height: 80px; object-fit: cover; cursor: pointer; transition: all 0.2s ease;"
-                                                 onclick="showImageModal('{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=image.id) }}', '{{ image.caption or 'Additional Analysis' }}')"
-                                                 onmouseover="this.style.transform='scale(1.05)'"
-                                                 onmouseout="this.style.transform='scale(1)'">
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-                            {% endif %}
 
                         {% else %}
                             <div class="text-center py-5">
@@ -395,7 +370,7 @@
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/p12-images.js') }}"></script>
+
 <script>
 function confirmDeleteScenario(scenarioId, scenarioName) {
     if (typeof showCustomConfirmation === 'function') {
@@ -460,10 +435,37 @@ function performDeleteScenario(scenarioId) {
     document.body.appendChild(form);
     form.submit();
 }
-
-// Professional interactions
 document.addEventListener('DOMContentLoaded', function() {
-    // Enhanced hover effects for operation items
+    // Flag to prevent double calls
+    let modalInProgress = false;
+
+    // Override or wrap the global showImageModal function
+    const originalShowImageModal = window.showImageModal;
+    window.showImageModal = function(imageUrl, title) {
+        if (modalInProgress) return;
+        modalInProgress = true;
+
+        originalShowImageModal(imageUrl, title);
+
+        // Reset flag after modal is shown
+        setTimeout(() => {
+            modalInProgress = false;
+        }, 500);
+    };
+
+    // Image preview functionality with debouncing
+    document.querySelectorAll('.image-preview-trigger').forEach(img => {
+        img.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (!modalInProgress) {
+                showImageModal(this.dataset.imageUrl, this.dataset.imageTitle);
+            }
+        });
+    });
+
+    // Rest of your code...
     const operationItems = document.querySelectorAll('.operation-item:not([onclick])');
     operationItems.forEach(item => {
         item.addEventListener('mouseenter', function() {
@@ -480,7 +482,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Special hover for decommission operation
     const dangerOperation = document.querySelector('.operation-item[onclick]');
     if (dangerOperation) {
         dangerOperation.addEventListener('mouseenter', function() {
@@ -497,7 +498,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Professional fade-in animations
     const modules = document.querySelectorAll('.enterprise-module');
     modules.forEach((module, index) => {
         module.style.animationDelay = `${index * 0.1}s`;
