@@ -2818,7 +2818,82 @@ Add after section 14 (Navigation System)
     letter-spacing: 0.5px;
     font-weight: 600;
 }
+/* Dark Theme Dropdown Styling */
+html[data-bs-theme="dark"] .dropdown-menu {
+    background-color: var(--enterprise-content-bg);
+    border-color: var(--enterprise-border);
+}
 
+html[data-bs-theme="dark"] .dropdown-item {
+    color: var(--enterprise-text-primary);
+}
+
+html[data-bs-theme="dark"] .dropdown-item:hover,
+html[data-bs-theme="dark"] .dropdown-item:focus {
+    color: var(--enterprise-primary);
+    background-color: var(--enterprise-gray-200);
+}
+
+html[data-bs-theme="dark"] .dropdown-item.active,
+html[data-bs-theme="dark"] .dropdown-item:active {
+    color: var(--enterprise-white);
+    background-color: var(--enterprise-primary);
+}
+
+html[data-bs-theme="dark"] .dropdown-divider {
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="dark"] .dropdown-header {
+    color: var(--enterprise-text-secondary);
+}
+
+/* Light Theme Dropdown Styling */
+html[data-bs-theme="light"] .dropdown-menu {
+    background-color: var(--enterprise-white);
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="light"] .dropdown-item {
+    color: var(--enterprise-text-primary);
+}
+
+html[data-bs-theme="light"] .dropdown-item:hover,
+html[data-bs-theme="light"] .dropdown-item:focus {
+    color: var(--enterprise-primary);
+    background-color: var(--enterprise-gray-50);
+}
+
+html[data-bs-theme="light"] .dropdown-item.active,
+html[data-bs-theme="light"] .dropdown-item:active {
+    color: var(--enterprise-white);
+    background-color: var(--enterprise-primary);
+}
+
+html[data-bs-theme="light"] .dropdown-divider {
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="light"] .dropdown-header {
+    color: var(--enterprise-text-secondary);
+}
+
+/* User Avatar Styling */
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border: 2px solid var(--enterprise-border);
+}
+
+/* Enhanced Sidebar Submenu Auto-Close */
+.sidebar:not(:hover) .has-submenu.open {
+    transition: all var(--enterprise-transition-slow);
+}
+
+.sidebar:not(:hover) .has-submenu .submenu {
+    transition: max-height var(--enterprise-transition-slow);
+}
 /*
 ===============================================================================
 16. ALERT SYSTEM

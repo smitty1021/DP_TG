@@ -126,7 +126,7 @@
                         </a>
                     </li>
 
-                    <li class="has-submenu {{ 'open' if request.blueprint == 'journal' else '' }}">
+                    <li class="has-submenu">
                         <a href="#" class="nav-link {{ 'active' if request.blueprint == 'journal' else '' }}">
                             <span class="icon"><i class="fas fa-book-open"></i></span>
                             <span class="label">Strategic Journal</span>
@@ -387,8 +387,29 @@
     </script>
 
     <script>
-    // Enterprise sidebar dropdown functionality
+    // Enhanced Enterprise sidebar dropdown functionality
     document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.querySelector('.sidebar');
+
+        // Function to close all sidebar submenus
+        function closeSidebarSubmenus() {
+            document.querySelectorAll('.sidebar-nav .has-submenu').forEach(function(item) {
+                item.classList.remove('open');
+            });
+        }
+
+        // FIXED: Initialize sidebar with all dropdowns collapsed on page load
+        // Sidebar dropdowns should only open on user interaction, not automatically
+        function initializeSidebarState() {
+            // Always close all dropdowns on page load for clean state
+            document.querySelectorAll('.sidebar-nav .has-submenu').forEach(function(item) {
+                item.classList.remove('open');
+            });
+        }
+
+        // Initialize sidebar state on page load
+        initializeSidebarState();
+
         // Sidebar dropdown toggle functionality
         document.querySelectorAll('.sidebar-nav .has-submenu > a').forEach(function(link) {
             link.addEventListener('click', function(e) {
@@ -398,43 +419,63 @@
 
                 // Close all other submenus
                 document.querySelectorAll('.sidebar-nav .has-submenu').forEach(function(item) {
-                    item.classList.remove('open');
+                    if (item !== parentLi) {
+                        item.classList.remove('open');
+                    }
                 });
 
                 // Toggle current submenu
                 if (!isOpen) {
                     parentLi.classList.add('open');
+                } else {
+                    parentLi.classList.remove('open');
                 }
             });
         });
 
+        // Enhanced sidebar dropdown management on navigation
+        document.querySelectorAll('.sidebar-nav a[href]').forEach(function(link) {
+            // Skip dropdown toggle links (they don't have actual hrefs)
+            if (link.getAttribute('href') !== '#') {
+                link.addEventListener('click', function() {
+                    // Close all dropdowns when navigating to a new page
+                    closeSidebarSubmenus();
+                });
+            }
+        });
+
+        // FIXED: Close sidebar dropdowns when sidebar collapses to icon-only mode
+        if (sidebar) {
+            sidebar.addEventListener('mouseleave', function() {
+                // Wait a short delay to ensure sidebar has collapsed
+                setTimeout(function() {
+                    if (!sidebar.matches(':hover')) {
+                        closeSidebarSubmenus();
+                    }
+                }, 100);
+            });
+        }
+
         // Close all sidebar dropdowns when clicking outside sidebar
         document.addEventListener('click', function(e) {
-            const sidebar = document.querySelector('.sidebar');
             const isClickInsideSidebar = sidebar && sidebar.contains(e.target);
 
             if (!isClickInsideSidebar) {
-                document.querySelectorAll('.sidebar-nav .has-submenu').forEach(function(item) {
-                    item.classList.remove('open');
-                });
+                closeSidebarSubmenus();
             }
         });
 
         // Close dropdowns when sidebar loses focus
         document.addEventListener('focusin', function(e) {
-            const sidebar = document.querySelector('.sidebar');
             const isClickInsideSidebar = sidebar && sidebar.contains(e.target);
 
             if (!isClickInsideSidebar) {
-                document.querySelectorAll('.sidebar-nav .has-submenu').forEach(function(item) {
-                    item.classList.remove('open');
-                });
+                closeSidebarSubmenus();
             }
         });
 
         // Mobile menu toggle
         const menuToggle = document.getElementById('menuToggle');
-        const sidebar = document.querySelector('.sidebar');
 
         if (menuToggle && sidebar) {
             menuToggle.addEventListener('click', function() {
@@ -444,7 +485,6 @@
 
         // Close mobile sidebar when clicking outside
         document.addEventListener('click', function(e) {
-            const sidebar = document.querySelector('.sidebar');
             const menuToggle = document.getElementById('menuToggle');
 
             if (sidebar && menuToggle &&
@@ -452,6 +492,7 @@
                 !menuToggle.contains(e.target) &&
                 sidebar.classList.contains('show')) {
                 sidebar.classList.remove('show');
+                closeSidebarSubmenus();
             }
         });
     });
