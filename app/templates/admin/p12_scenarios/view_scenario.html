@@ -288,10 +288,11 @@
                                 <div class="mb-3">
                                     <img src="{{ url_for('images.serve_image', image_id=primary_image.id) }}"
                                          alt="Strategic Framework {{ scenario.scenario_number }} Analysis"
-                                         class="img-fluid rounded image-preview-trigger"
-                                         data-image-url="{{ url_for('images.serve_image', image_id=primary_image.id) }}"
-                                         data-image-title="Strategic Framework {{ scenario.scenario_number }}: {{ scenario.scenario_name }}"
-                                         style="max-height: 300px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s ease;">
+                                         class="img-fluid rounded"
+                                         style="max-height: 300px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;"
+                                         onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Strategic Framework {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')"
+                                         onmouseover="this.style.border='2px solid var(--enterprise-primary)'; this.style.transform='scale(1.02)'"
+                                         onmouseout="this.style.border='2px solid transparent'; this.style.transform='scale(1)'">
                                 </div>
 
                                 {% if primary_image.caption %}
@@ -436,36 +437,7 @@ function performDeleteScenario(scenarioId) {
     form.submit();
 }
 document.addEventListener('DOMContentLoaded', function() {
-    // Flag to prevent double calls
-    let modalInProgress = false;
-
-    // Override or wrap the global showImageModal function
-    const originalShowImageModal = window.showImageModal;
-    window.showImageModal = function(imageUrl, title) {
-        if (modalInProgress) return;
-        modalInProgress = true;
-
-        originalShowImageModal(imageUrl, title);
-
-        // Reset flag after modal is shown
-        setTimeout(() => {
-            modalInProgress = false;
-        }, 500);
-    };
-
-    // Image preview functionality with debouncing
-    document.querySelectorAll('.image-preview-trigger').forEach(img => {
-        img.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            if (!modalInProgress) {
-                showImageModal(this.dataset.imageUrl, this.dataset.imageTitle);
-            }
-        });
-    });
-
-    // Rest of your code...
+    // Enhanced operation items hover effects
     const operationItems = document.querySelectorAll('.operation-item:not([onclick])');
     operationItems.forEach(item => {
         item.addEventListener('mouseenter', function() {
@@ -482,6 +454,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Danger operation hover effect
     const dangerOperation = document.querySelector('.operation-item[onclick]');
     if (dangerOperation) {
         dangerOperation.addEventListener('mouseenter', function() {
@@ -498,6 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Module animation initialization
     const modules = document.querySelectorAll('.enterprise-module');
     modules.forEach((module, index) => {
         module.style.animationDelay = `${index * 0.1}s`;
