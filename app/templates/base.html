@@ -289,23 +289,20 @@
 
     <!-- Enterprise Media Modal Component -->
     <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalTitle" aria-hidden="true">
-        <div class="modal-dialog modal-sm">
-            <div class="modal-content enterprise-module">
-                <div class="module-header">
-                    <h5 class="module-title mb-0" id="imageModalLabel">
-                        <i class="module-icon fas fa-image"></i>
-                        <span id="imageModalTitle">Media Asset</span>
-                    </h5>
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalTitle">Media Asset</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-
-                <div class="module-content text-center">
-                    <img id="imageModalImg" src="" alt="" class="img-fluid analysis-chart">
-                    <div class="mt-3">
-                        <button type="button" class="btn btn-outline-primary" onclick="downloadCurrentImage()">
-                            <i class="fas fa-download me-1"></i>Download Asset
-                        </button>
-                    </div>
+                <div class="modal-body text-center">
+                    <img id="imageModalImg" src="" alt="" class="img-fluid">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" onclick="downloadCurrentImage()">
+                        <i class="fas fa-download me-1"></i>Download Asset
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
