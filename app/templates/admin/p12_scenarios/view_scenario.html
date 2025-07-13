@@ -13,34 +13,34 @@
     <div class="executive-header">
         <div class="d-flex justify-content-between align-items-center">
             <div class="header-content">
-                <h1 class="scenario-title">
-                    <span class="scenario-badge">{{ scenario.scenario_number }}</span>
+                <h1 class="executive-title">
+                    <span class="badge bg-primary me-3">{{ scenario.scenario_number }}</span>
                     {{ scenario.scenario_name }}
                 </h1>
-                <div class="scenario-subtitle">
+                <div class="executive-subtitle">
                     {{ scenario.short_description }}
                     {% if scenario.is_active %}
                         <span class="status-indicator active">
-                            <i class="fas fa-circle"></i> Active Configuration
+                            <i class="fas fa-circle"></i> Operational Framework
                         </span>
                     {% else %}
                         <span class="status-indicator inactive">
-                            <i class="fas fa-pause-circle"></i> Inactive Configuration
+                            <i class="fas fa-pause-circle"></i> Standby Configuration
                         </span>
                     {% endif %}
                 </div>
             </div>
             <div class="btn-group">
                 <a href="{{ url_for('p12_scenarios.list_scenarios') }}"
-                   class="btn btn-outline-secondary btn-sm" title="Back to Scenarios List">
+                   class="btn btn-outline-secondary btn-sm" title="Back to Strategic Frameworks">
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <a href="{{ url_for('p12_scenarios.edit_scenario', scenario_id=scenario.id) }}"
-                   class="btn btn-outline-secondary btn-sm">
+                   class="btn btn-warning btn-sm">
                     <i class="fas fa-edit"></i>
                 </a>
                 {% if scenario %}
-                <button type="button" class="btn btn-outline-secondary btn-sm" title="Delete Scenario"
+                <button type="button" class="btn btn-danger btn-sm" title="Decommission Framework"
                         onclick="confirmDeleteScenario({{ scenario.id }}, '{{ scenario.scenario_name }}')">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -49,78 +49,10 @@
         </div>
     </div>
 
-    <!-- Key Metrics Bar -->
-    <div class="metrics-bar">
-        <div class="row g-0">
-            <div class="col-lg-3">
-                <div class="metric-item">
-                    <div class="metric-label">Directional Bias</div>
-                    <div class="metric-value">
-                        {% if scenario.directional_bias %}
-                            {% if scenario.directional_bias == 'bullish' %}
-                                <span class="bias-indicator bullish">
-                                    <i class="fas fa-arrow-up"></i> Bullish
-                                </span>
-                            {% elif scenario.directional_bias == 'bearish' %}
-                                <span class="bias-indicator bearish">
-                                    <i class="fas fa-arrow-down"></i> Bearish
-                                </span>
-                            {% elif scenario.directional_bias == 'choppy' %}
-                                <span class="bias-indicator choppy">
-                                    <i class="fas fa-random"></i> Choppy
-                                </span>
-                            {% else %}
-                                <span class="bias-indicator neutral">
-                                    <i class="fas fa-minus"></i> Neutral
-                                </span>
-                            {% endif %}
-                        {% else %}
-                            <span class="text-muted">Not specified</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3">
-                <div class="metric-item">
-                    <div class="metric-label">Risk Allocation</div>
-                    <div class="metric-value">
-                        {% if scenario.risk_percentage %}
-                            <span class="risk-percentage">{{ scenario.risk_percentage }}%</span>
-                        {% else %}
-                            <span class="text-muted">Not specified</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3">
-                <div class="metric-item">
-                    <div class="metric-label">Configuration Status</div>
-                    <div class="metric-value">
-                        {% if scenario.is_active %}
-                            <span class="config-status active">
-                                <i class="fas fa-check-circle"></i> Operational
-                            </span>
-                        {% else %}
-                            <span class="config-status inactive">
-                                <i class="fas fa-pause-circle"></i> Standby
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3">
-                <div class="metric-item">
-                    <div class="metric-label">Last Modified</div>
-                    <div class="metric-value">
-                        <span class="timestamp">{{ scenario.updated_date.strftime('%m/%d/%Y') }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Main Content Grid -->
-    <div class="scenario-grid">
+    <div class="container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 300px);">
         <div class="row g-4">
             <!-- Primary Information Panel -->
             <div class="col-xl-8">
@@ -134,13 +66,40 @@
                         <div class="module-meta">P12 Methodology Framework</div>
                     </div>
                     <div class="module-content">
-                        <div class="content-section">
-                            <div class="section-label">Strategic Context</div>
-                            <div class="section-content">{{ scenario.detailed_description }}</div>
+                        <div class="mb-4">
+                            <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Strategic Context</div>
+                            <div class="text-muted">{{ scenario.detailed_description }}</div>
                         </div>
-                        <div class="content-section">
-                            <div class="section-label">HOD/LOD Market Implications</div>
-                            <div class="section-content">{{ scenario.hod_lod_implication }}</div>
+                        <div class="mb-4">
+                            <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">HOD/LOD Market Implications</div>
+                            <div class="text-muted">{{ scenario.hod_lod_implication }}</div>
+                        </div>
+                        <!-- Directional Bias -->
+                        <div>
+                            <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Directional Bias</div>
+                            <div>
+                                {% if scenario.directional_bias %}
+                                    {% if scenario.directional_bias == 'bullish' %}
+                                        <span class="bias-indicator bullish">
+                                            <i class="fas fa-arrow-up"></i> Bullish
+                                        </span>
+                                    {% elif scenario.directional_bias == 'bearish' %}
+                                        <span class="bias-indicator bearish">
+                                            <i class="fas fa-arrow-down"></i> Bearish
+                                        </span>
+                                    {% elif scenario.directional_bias == 'choppy' %}
+                                        <span class="bias-indicator choppy">
+                                            <i class="fas fa-random"></i> Choppy
+                                        </span>
+                                    {% else %}
+                                        <span class="bias-indicator neutral">
+                                            <i class="fas fa-minus"></i> Neutral
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">Not specified</span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -156,17 +115,17 @@
                                 </div>
                             </div>
                             <div class="module-content">
-                                <div class="execution-step">
-                                    <div class="step-label">Alert Threshold</div>
-                                    <div class="step-content">{{ scenario.alert_criteria }}</div>
+                                <div class="mb-3">
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Alert Threshold</div>
+                                    <div class="small text-muted">{{ scenario.alert_criteria }}</div>
                                 </div>
-                                <div class="execution-step">
-                                    <div class="step-label">Confirmation Protocol</div>
-                                    <div class="step-content">{{ scenario.confirmation_criteria }}</div>
+                                <div class="mb-3">
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Confirmation Protocol</div>
+                                    <div class="small text-muted">{{ scenario.confirmation_criteria }}</div>
                                 </div>
-                                <div class="execution-step">
-                                    <div class="step-label">Entry Strategy</div>
-                                    <div class="step-content">{{ scenario.entry_strategy }}</div>
+                                <div>
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Entry Strategy</div>
+                                    <div class="small text-muted">{{ scenario.entry_strategy }}</div>
                                 </div>
                             </div>
                         </div>
@@ -182,16 +141,24 @@
                             </div>
                             <div class="module-content">
                                 {% if scenario.typical_targets %}
-                                <div class="risk-parameter">
-                                    <div class="parameter-label">Target Objectives</div>
-                                    <div class="parameter-content">{{ scenario.typical_targets }}</div>
+                                <div class="mb-3">
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Target Objectives</div>
+                                    <div class="small text-muted">{{ scenario.typical_targets }}</div>
                                 </div>
                                 {% endif %}
 
                                 {% if scenario.stop_loss_guidance %}
-                                <div class="risk-parameter">
-                                    <div class="parameter-label">Loss Mitigation Protocol</div>
-                                    <div class="parameter-content">{{ scenario.stop_loss_guidance }}</div>
+                                <div class="mb-3">
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Loss Mitigation Protocol</div>
+                                    <div class="small text-muted">{{ scenario.stop_loss_guidance }}</div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Risk Allocation -->
+                                {% if scenario.risk_percentage %}
+                                <div>
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Risk Allocation</div>
+                                    <div><span class="small text-muted">{{ scenario.risk_percentage }}%</span></div>
                                 </div>
                                 {% endif %}
                             </div>
@@ -207,47 +174,47 @@
                             <div class="module-header">
                                 <div class="module-title">
                                     <i class="fas fa-cogs module-icon"></i>
-                                    Model Configuration Matrix
+                                    System Configuration Matrix
                                 </div>
                             </div>
                             <div class="module-content">
                                 {% if scenario.models_to_activate %}
-                                <div class="config-section">
-                                    <div class="config-label">Recommended Models</div>
-                                    <div class="model-tags">
+                                <div class="mb-3">
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Recommended Models</div>
+                                    <div class="d-flex flex-wrap gap-2">
                                         {% for model in scenario.models_to_activate %}
-                                        <span class="model-tag recommended">{{ model }}</span>
+                                        <span class="badge bg-success-soft">{{ model }}</span>
                                         {% endfor %}
                                     </div>
                                 </div>
                                 {% endif %}
 
                                 {% if scenario.models_to_avoid %}
-                                <div class="config-section">
-                                    <div class="config-label">Restricted Models</div>
-                                    <div class="model-tags">
+                                <div class="mb-3">
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Restricted Models</div>
+                                    <div class="d-flex flex-wrap gap-2">
                                         {% for model in scenario.models_to_avoid %}
-                                        <span class="model-tag restricted">{{ model }}</span>
+                                        <span class="badge bg-danger-soft">{{ model }}</span>
                                         {% endfor %}
                                     </div>
                                 </div>
                                 {% endif %}
 
                                 {% if scenario.preferred_timeframes %}
-                                <div class="config-section">
-                                    <div class="config-label">Optimal Timeframes</div>
-                                    <div class="model-tags">
+                                <div class="mb-3">
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Optimal Timeframes</div>
+                                    <div class="d-flex flex-wrap gap-2">
                                         {% for timeframe in scenario.preferred_timeframes %}
-                                        <span class="model-tag timeframe">{{ timeframe }}</span>
+                                        <span class="small text-muted">{{ timeframe }}</span>
                                         {% endfor %}
                                     </div>
                                 </div>
                                 {% endif %}
 
                                 {% if scenario.key_considerations %}
-                                <div class="config-section">
-                                    <div class="config-label">Strategic Considerations</div>
-                                    <div class="consideration-content">{{ scenario.key_considerations }}</div>
+                                <div>
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Executive Guidelines</div>
+                                    <div class="small text-muted">{{ scenario.key_considerations }}</div>
                                 </div>
                                 {% endif %}
                             </div>
@@ -263,22 +230,37 @@
                                 </div>
                             </div>
                             <div class="module-content">
-                                <div class="metadata-grid">
-                                    <div class="metadata-item">
-                                        <div class="metadata-label">Configuration ID</div>
-                                        <div class="metadata-value">{{ scenario.scenario_number }}</div>
+                                <div class="d-flex flex-column gap-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="fw-500 text-muted small">Configuration ID</div>
+                                        <div class="fw-600 small">{{ scenario.scenario_number }}</div>
                                     </div>
-                                    <div class="metadata-item">
-                                        <div class="metadata-label">Created</div>
-                                        <div class="metadata-value">{{ scenario.created_date.strftime('%m/%d/%Y') }}</div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="fw-500 text-muted small">Created</div>
+                                        <div class="fw-600 small">{{ scenario.created_date.strftime('%m/%d/%Y') }}</div>
                                     </div>
-                                    <div class="metadata-item">
-                                        <div class="metadata-label">Last Updated</div>
-                                        <div class="metadata-value">{{ scenario.updated_date.strftime('%m/%d/%Y') }}</div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="fw-500 text-muted small">Last Modified</div>
+                                        <div class="fw-600 small">{{ scenario.updated_date.strftime('%m/%d/%Y') }}</div>
                                     </div>
-                                    <div class="metadata-item">
-                                        <div class="metadata-label">Framework</div>
-                                        <div class="metadata-value">Random Methodology</div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="fw-500 text-muted small">Framework</div>
+                                        <div class="fw-600 small">P12 Methodology</div>
+                                    </div>
+                                    <!-- Configuration Status -->
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="fw-500 text-muted small">Status</div>
+                                        <div>
+                                            {% if scenario.is_active %}
+                                                <span class="config-status active">
+                                                    <i class="fas fa-check-circle"></i> Operational
+                                                </span>
+                                            {% else %}
+                                                <span class="config-status inactive">
+                                                    <i class="fas fa-pause-circle"></i> Standby
+                                                </span>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -301,25 +283,27 @@
                     <div class="module-content">
                         {% if scenario.images %}
                             {% set primary_image = scenario.images[0] %}
-                            <div class="visual-showcase">
-                                <div class="primary-visual">
+                            <div class="text-center">
+                                <div class="mb-3">
                                     <img src="{{ url_for('images.serve_image', image_id=primary_image.id) }}"
-                                         alt="Scenario {{ scenario.scenario_number }} Analysis"
-                                         class="analysis-chart"
-                                         onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Scenario {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')"
-                                         style="max-height: 300px;">
+                                         alt="Strategic Framework {{ scenario.scenario_number }} Analysis"
+                                         class="img-fluid rounded"
+                                         style="max-height: 300px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s ease;"
+                                         onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Strategic Framework {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')"
+                                         onmouseover="this.style.border='2px solid var(--enterprise-primary)'; this.style.transform='translateY(-2px)'"
+                                         onmouseout="this.style.border='2px solid transparent'; this.style.transform='translateY(0)'">
                                 </div>
 
                                 {% if primary_image.caption %}
-                                <div class="visual-caption">{{ primary_image.caption }}</div>
+                                <div class="text-muted small mb-3" style="font-style: italic;">{{ primary_image.caption }}</div>
                                 {% endif %}
 
-                                <div class="visual-metadata">
-                                    <div class="metadata-row">
-                                        <span class="meta-item">
+                                <div class="border-top pt-3">
+                                    <div class="d-flex justify-content-center gap-3">
+                                        <span class="small text-muted d-flex align-items-center gap-1">
                                             <i class="fas fa-eye"></i> {{ primary_image.view_count }} views
                                         </span>
-                                        <span class="meta-item">
+                                        <span class="small text-muted d-flex align-items-center gap-1">
                                             <i class="fas fa-calendar"></i> {{ primary_image.upload_date.strftime('%m/%d/%y') }}
                                         </span>
                                     </div>
@@ -328,80 +312,79 @@
 
                             <!-- Additional Visual Examples -->
                             {% if scenario.images|length > 1 %}
-                            <div class="additional-visuals">
-                                <div class="visuals-header">
-                                    <span class="visuals-title">
-                                        <i class="fas fa-images"></i> Additional Examples
-                                    </span>
-                                </div>
-                                <div class="visuals-grid">
-                                    {% for image in scenario.images[1:] %}
-                                    <div class="visual-thumbnail">
-                                        <img src="{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=image.id) }}"
-                                             alt="Additional Analysis View"
-                                             class="thumbnail-image"
-                                             onclick="showImageModal('{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=image.id) }}', '{{ image.caption or 'Additional Analysis' }}')"
-                                             style="height: 80px; object-fit: cover;">
+                            <div class="mt-4">
+                                <div class="border-top pt-3">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <i class="fas fa-images me-2 text-muted"></i>
+                                        <span class="small fw-semibold text-muted">Additional Examples</span>
                                     </div>
-                                    {% endfor %}
+                                    <div class="row g-2">
+                                        {% for image in scenario.images[1:] %}
+                                        <div class="col-6">
+                                            <img src="{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=image.id) }}"
+                                                 alt="Additional Analysis View"
+                                                 class="img-fluid rounded"
+                                                 style="height: 80px; object-fit: cover; cursor: pointer; transition: all 0.2s ease;"
+                                                 onclick="showImageModal('{{ url_for('p12_scenarios.serve_scenario_image_new', image_id=image.id) }}', '{{ image.caption or 'Additional Analysis' }}')"
+                                                 onmouseover="this.style.transform='scale(1.05)'"
+                                                 onmouseout="this.style.transform='scale(1)'">
+                                        </div>
+                                        {% endfor %}
+                                    </div>
                                 </div>
                             </div>
                             {% endif %}
 
                         {% else %}
-                            <div class="no-visual-state">
-                                <div class="no-visual-icon">
-                                    <i class="fas fa-chart-area"></i>
-                                </div>
-                                <div class="no-visual-text">
-                                    <h6>No Visual Analysis Available</h6>
-                                    <p>Chart examples and pattern analysis pending upload</p>
-                                </div>
+                            <div class="text-center py-5">
+                                <i class="fas fa-chart-area fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
+                                <h6 class="text-muted">No Visual Analysis Available</h6>
+                                <p class="text-muted small">Chart examples and pattern analysis pending upload</p>
                             </div>
                         {% endif %}
                     </div>
                 </div>
 
-                <!-- Quick Actions Panel -->
+                <!-- Administrative Controls Panel -->
                 <div class="enterprise-module">
                     <div class="module-header">
                         <div class="module-title">
                             <i class="fas fa-tools module-icon"></i>
-                            Configuration Actions
+                            Administrative Controls
                         </div>
                     </div>
                     <div class="module-content">
-                        <div class="action-grid">
+                        <div class="operation-list">
                             <a href="{{ url_for('p12_scenarios.edit_scenario', scenario_id=scenario.id) }}"
-                               class="action-item">
-                                <div class="action-icon">
+                               class="operation-item">
+                                <div class="operation-icon">
                                     <i class="fas fa-edit"></i>
                                 </div>
-                                <div class="action-details">
-                                    <div class="action-name">Modify Configuration</div>
-                                    <div class="action-description">Update parameters and criteria</div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold small">Modify Configuration</div>
+                                    <div class="text-muted" style="font-size: 0.8rem;">Update parameters and criteria</div>
                                 </div>
                             </a>
 
                             <a href="{{ url_for('p12_scenarios.list_scenarios') }}"
-                               class="action-item">
-                                <div class="action-icon">
+                               class="operation-item">
+                                <div class="operation-icon">
                                     <i class="fas fa-list"></i>
                                 </div>
-                                <div class="action-details">
-                                    <div class="action-name">View All Scenarios</div>
-                                    <div class="action-description">Return to scenario overview</div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold small">View All Frameworks</div>
+                                    <div class="text-muted" style="font-size: 0.8rem;">Return to strategic overview</div>
                                 </div>
                             </a>
 
-                            <div class="action-item danger"
+                            <div class="operation-item" style="cursor: pointer;"
                                  onclick="confirmDeleteScenario({{ scenario.id }}, '{{ scenario.scenario_name }}')">
-                                <div class="action-icon">
-                                    <i class="fas fa-trash-alt"></i>
+                                <div class="operation-icon" style="background: rgba(209, 52, 56, 0.1);">
+                                    <i class="fas fa-trash-alt" style="color: var(--enterprise-danger);"></i>
                                 </div>
-                                <div class="action-details">
-                                    <div class="action-name">Remove Configuration</div>
-                                    <div class="action-description">Permanently delete scenario</div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold small text-danger">Decommission Framework</div>
+                                    <div class="text-muted" style="font-size: 0.8rem;">Permanently remove configuration</div>
                                 </div>
                             </div>
                         </div>
@@ -415,12 +398,11 @@
 <script src="{{ url_for('static', filename='js/p12-images.js') }}"></script>
 <script>
 function confirmDeleteScenario(scenarioId, scenarioName) {
-    // Use custom modal for confirmation
     if (typeof showCustomConfirmation === 'function') {
         showCustomConfirmation({
-            title: 'Remove Configuration',
-            message: `Are you sure you want to <strong>permanently remove</strong> the P12 scenario configuration:<br><br><strong>"${scenarioName}"</strong><br><br><div class="alert alert-danger mt-2"><i class="fas fa-exclamation-triangle me-2"></i><strong>Warning:</strong> This action cannot be undone. Any daily journals referencing this scenario will lose the connection.</div>`,
-            confirmText: 'Remove Configuration',
+            title: 'Decommission Strategic Framework',
+            message: `Confirm decommissioning of P12 strategic framework:<br><br><strong>"${scenarioName}"</strong><br><br><div class="alert alert-danger mt-2"><i class="fas fa-exclamation-triangle me-2"></i><strong>Warning:</strong> This action cannot be undone. Any daily journals referencing this framework will lose the connection.</div>`,
+            confirmText: 'Decommission Framework',
             cancelText: 'Cancel',
             confirmClass: 'btn-danger',
             icon: 'exclamation-triangle',
@@ -429,17 +411,14 @@ function confirmDeleteScenario(scenarioId, scenarioName) {
             }
         });
     } else {
-        // Fallback to browser confirm
-        if (confirm(`Are you sure you want to permanently remove the P12 scenario configuration: "${scenarioName}"?\n\nThis action cannot be undone. Any daily journals referencing this scenario will lose the connection.`)) {
+        if (confirm(`Confirm decommissioning of P12 strategic framework: "${scenarioName}"?\n\nThis action cannot be undone. Any daily journals referencing this framework will lose the connection.`)) {
             performDeleteScenario(scenarioId);
         }
     }
 }
 
 function performDeleteScenario(scenarioId) {
-    // Get CSRF token with better error handling
     function getCSRFToken() {
-        // Try multiple methods to get CSRF token
         const metaTag = document.querySelector('meta[name="csrf-token"]');
         if (metaTag && metaTag.content) {
             return metaTag.content;
@@ -450,13 +429,11 @@ function performDeleteScenario(scenarioId) {
             return hiddenInput.value;
         }
 
-        // Check for the specific ID we added
         const csrfInput = document.getElementById('csrf_token');
         if (csrfInput && csrfInput.value) {
             return csrfInput.value;
         }
 
-        // Check if there's a global variable
         if (typeof window.csrf_token !== 'undefined') {
             return window.csrf_token;
         }
@@ -470,12 +447,10 @@ function performDeleteScenario(scenarioId) {
         return;
     }
 
-    // Create and submit form with CSRF token
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '/admin/p12-scenarios/delete/' + scenarioId;
 
-    // Add CSRF token
     const csrfInput = document.createElement('input');
     csrfInput.type = 'hidden';
     csrfInput.name = 'csrf_token';
@@ -488,13 +463,13 @@ function performDeleteScenario(scenarioId) {
 
 // Professional interactions
 document.addEventListener('DOMContentLoaded', function() {
-    // Enhanced hover effects for action items
-    const actionItems = document.querySelectorAll('.action-item:not(.danger)');
-    actionItems.forEach(item => {
+    // Enhanced hover effects for operation items
+    const operationItems = document.querySelectorAll('.operation-item:not([onclick])');
+    operationItems.forEach(item => {
         item.addEventListener('mouseenter', function() {
-            this.style.backgroundColor = '#f8f9fa';
-            this.style.borderLeft = '4px solid #0066cc';
-            this.style.paddingLeft = '1.75rem';
+            this.style.backgroundColor = 'var(--enterprise-gray-50)';
+            this.style.borderLeft = '4px solid var(--enterprise-primary)';
+            this.style.paddingLeft = 'calc(1.5rem - 4px + 0.5rem)';
             this.style.transition = 'all 0.2s ease';
         });
 
@@ -505,17 +480,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Special hover for danger action
-    const dangerAction = document.querySelector('.action-item.danger');
-    if (dangerAction) {
-        dangerAction.addEventListener('mouseenter', function() {
-            this.style.backgroundColor = '#fdf2f2';
-            this.style.borderLeft = '4px solid #dc3545';
-            this.style.paddingLeft = '1.75rem';
+    // Special hover for decommission operation
+    const dangerOperation = document.querySelector('.operation-item[onclick]');
+    if (dangerOperation) {
+        dangerOperation.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = 'rgba(209, 52, 56, 0.05)';
+            this.style.borderLeft = '4px solid var(--enterprise-danger)';
+            this.style.paddingLeft = 'calc(1.5rem - 4px + 0.5rem)';
             this.style.transition = 'all 0.2s ease';
         });
 
-        dangerAction.addEventListener('mouseleave', function() {
+        dangerOperation.addEventListener('mouseleave', function() {
             this.style.backgroundColor = '';
             this.style.borderLeft = '';
             this.style.paddingLeft = '';
@@ -529,833 +504,8 @@ document.addEventListener('DOMContentLoaded', function() {
         module.classList.add('fade-in');
     });
 
-    console.log('Enterprise P12 Scenario View initialized');
+    console.log('Enterprise P12 Strategic Framework View initialized');
 });
 </script>
 
-<style>
-/* Enterprise P12 Scenario View Styles */
-:root {
-    --enterprise-primary: #0066cc;
-    --enterprise-secondary: #004494;
-    --enterprise-accent: #00a0e6;
-    --enterprise-success: #0070c0;
-    --enterprise-warning: #ff8c00;
-    --enterprise-danger: #d13438;
-    --enterprise-gray-50: #f8f9fa;
-    --enterprise-gray-100: #e9ecef;
-    --enterprise-gray-200: #dee2e6;
-    --enterprise-gray-300: #ced4da;
-    --enterprise-gray-400: #adb5bd;
-    --enterprise-gray-500: #6c757d;
-    --enterprise-gray-600: #495057;
-    --enterprise-gray-700: #343a40;
-    --enterprise-gray-800: #212529;
-    --enterprise-border: #e0e6ed;
-    --enterprise-shadow: 0 2px 4px rgba(0,0,0,0.04);
-    --enterprise-shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-/* Executive Header */
-.executive-header {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border-bottom: 1px solid var(--enterprise-border);
-    padding: 2rem 1.5rem;
-    margin-bottom: 0;
-}
-
-.scenario-title {
-    font-size: 1.75rem;
-    font-weight: 600;
-    color: var(--enterprise-gray-800);
-    margin: 0;
-    letter-spacing: -0.02em;
-    display: flex;
-    align-items: center;
-}
-
-.scenario-badge {
-    background: var(--enterprise-primary);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 700;
-    margin-right: 1rem;
-    min-width: 60px;
-    text-align: center;
-}
-
-.scenario-subtitle {
-    color: var(--enterprise-gray-600);
-    font-size: 1rem;
-    margin-top: 0.5rem;
-    font-weight: 400;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.status-indicator {
-    font-size: 0.85rem;
-    font-weight: 500;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-.status-indicator.active {
-    background: rgba(0, 112, 192, 0.1);
-    color: var(--enterprise-success);
-}
-
-.status-indicator.inactive {
-    background: rgba(108, 117, 125, 0.1);
-    color: var(--enterprise-gray-500);
-}
-
-/* Metrics Bar */
-.metrics-bar {
-    background: white;
-    border-bottom: 1px solid var(--enterprise-border);
-    padding: 0;
-}
-
-.metric-item {
-    padding: 1.5rem;
-    border-right: 1px solid var(--enterprise-border);
-    min-height: 100px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.metric-item:last-child {
-    border-right: none;
-}
-
-.metric-label {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--enterprise-gray-600);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.5rem;
-}
-
-.metric-value {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--enterprise-gray-800);
-}
-
-.bias-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 0.9rem;
-}
-
-.bias-indicator.bullish {
-    background: rgba(34, 197, 94, 0.1);
-    color: #059669;
-}
-
-.bias-indicator.bearish {
-    background: rgba(239, 68, 68, 0.1);
-    color: #dc2626;
-}
-
-.bias-indicator.choppy {
-    background: rgba(245, 158, 11, 0.1);
-    color: #d97706;
-}
-
-.bias-indicator.neutral {
-    background: rgba(107, 114, 128, 0.1);
-    color: #6b7280;
-}
-
-.risk-percentage {
-    font-weight: 700;
-    color: var(--enterprise-primary);
-}
-
-.config-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 500;
-}
-
-.config-status.active {
-    color: var(--enterprise-success);
-}
-
-.config-status.inactive {
-    color: var(--enterprise-gray-500);
-}
-
-.timestamp {
-    color: var(--enterprise-gray-600);
-    font-weight: 500;
-}
-
-/* Scenario Grid */
-.scenario-grid {
-    padding: 1.5rem;
-    background: var(--enterprise-gray-50);
-    min-height: calc(100vh - 300px);
-}
-
-/* Enterprise Modules */
-.enterprise-module {
-    background: white;
-    border: 1px solid var(--enterprise-border);
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    box-shadow: var(--enterprise-shadow);
-    overflow: hidden;
-}
-
-.module-header {
-    background: var(--enterprise-gray-50);
-    border-bottom: 1px solid var(--enterprise-border);
-    padding: 1rem 1.25rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.module-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--enterprise-gray-800);
-    display: flex;
-    align-items: center;
-}
-
-.module-icon {
-    color: var(--enterprise-primary);
-    margin-right: 0.5rem;
-    font-size: 1rem;
-}
-
-.module-meta {
-    font-size: 0.85rem;
-    color: var(--enterprise-gray-500);
-    font-weight: 500;
-}
-
-.module-content {
-    padding: 1.25rem;
-}
-
-/* Content Sections */
-.content-section {
-    margin-bottom: 1.5rem;
-}
-
-.content-section:last-child {
-    margin-bottom: 0;
-}
-
-.section-label {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--enterprise-primary);
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.section-content {
-    color: var(--enterprise-gray-700);
-    line-height: 1.5;
-    font-size: 0.95rem;
-}
-
-/* Execution Steps */
-.execution-step {
-    margin-bottom: 1.25rem;
-    padding-bottom: 1.25rem;
-    border-bottom: 1px solid var(--enterprise-border);
-}
-
-.execution-step:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.step-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--enterprise-primary);
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.step-content {
-    color: var(--enterprise-gray-700);
-    line-height: 1.4;
-    font-size: 0.9rem;
-}
-
-/* Risk Parameters */
-.risk-parameter {
-    margin-bottom: 1rem;
-}
-
-.risk-parameter:last-child {
-    margin-bottom: 0;
-}
-
-.parameter-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--enterprise-primary);
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.parameter-content {
-    color: var(--enterprise-gray-700);
-    line-height: 1.4;
-    font-size: 0.9rem;
-}
-
-/* Configuration Sections */
-.config-section {
-    margin-bottom: 1.5rem;
-}
-
-.config-section:last-child {
-    margin-bottom: 0;
-}
-
-.config-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--enterprise-primary);
-    margin-bottom: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.model-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.model-tag {
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    border: 1px solid;
-    display: inline-flex;
-    align-items: center;
-}
-
-.model-tag.recommended {
-    background: rgba(34, 197, 94, 0.1);
-    border-color: #10b981;
-    color: #059669;
-}
-
-.model-tag.restricted {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: #ef4444;
-    color: #dc2626;
-}
-
-.model-tag.timeframe {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: #3b82f6;
-    color: #2563eb;
-}
-
-.consideration-content {
-    color: var(--enterprise-gray-700);
-    line-height: 1.5;
-    font-size: 0.95rem;
-}
-
-/* Metadata Grid */
-.metadata-grid {
-    display: grid;
-    gap: 1rem;
-}
-
-.metadata-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid var(--enterprise-border);
-}
-
-.metadata-item:last-child {
-    border-bottom: none;
-}
-
-.metadata-label {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--enterprise-gray-600);
-}
-
-.metadata-value {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--enterprise-gray-800);
-}
-
-/* Visual Analysis Panel */
-.visual-showcase {
-    text-align: center;
-}
-
-.primary-visual {
-    margin-bottom: 1rem;
-}
-
-.analysis-chart {
-    width: 100%;
-    border-radius: 8px;
-    border: 1px solid var(--enterprise-border);
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.analysis-chart:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
-}
-
-.visual-caption {
-    font-size: 0.9rem;
-    color: var(--enterprise-gray-600);
-    margin-bottom: 1rem;
-    font-style: italic;
-}
-
-.visual-metadata {
-    border-top: 1px solid var(--enterprise-border);
-    padding-top: 1rem;
-}
-
-.metadata-row {
-    display: flex;
-    justify-content: center;
-    gap: 1.5rem;
-}
-
-.meta-item {
-    font-size: 0.8rem;
-    color: var(--enterprise-gray-500);
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-.additional-visuals {
-    margin-top: 1.5rem;
-    border-top: 1px solid var(--enterprise-border);
-    padding-top: 1.5rem;
-}
-
-.visuals-header {
-    margin-bottom: 1rem;
-}
-
-.visuals-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--enterprise-gray-700);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.visuals-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-}
-
-.visual-thumbnail {
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid var(--enterprise-border);
-}
-
-.thumbnail-image {
-    width: 100%;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.thumbnail-image:hover {
-    transform: scale(1.05);
-}
-
-.no-visual-state {
-    text-align: center;
-    padding: 3rem 1rem;
-    color: var(--enterprise-gray-500);
-}
-
-.no-visual-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.3;
-}
-
-.no-visual-text h6 {
-    color: var(--enterprise-gray-600);
-    margin-bottom: 0.5rem;
-}
-
-.no-visual-text p {
-    font-size: 0.9rem;
-    margin: 0;
-}
-
-/* Action Grid */
-.action-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-}
-
-.action-item {
-    display: flex;
-    align-items: center;
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--enterprise-border);
-    text-decoration: none;
-    color: inherit;
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.action-item:last-child {
-    border-bottom: none;
-}
-
-.action-item:hover {
-    text-decoration: none;
-    color: inherit;
-}
-
-.action-item.danger:hover {
-    background-color: rgba(220, 53, 69, 0.05) !important;
-    border-left-color: var(--enterprise-danger) !important;
-}
-
-.action-icon {
-    width: 40px;
-    height: 40px;
-    background: var(--enterprise-gray-100);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 1rem;
-    flex-shrink: 0;
-}
-
-.action-icon i {
-    color: var(--enterprise-primary);
-    font-size: 1.1rem;
-}
-
-.action-item.danger .action-icon i {
-    color: var(--enterprise-danger);
-}
-
-.action-details {
-    flex: 1;
-}
-
-.action-name {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--enterprise-gray-800);
-    margin-bottom: 0.2rem;
-}
-
-.action-description {
-    font-size: 0.85rem;
-    color: var(--enterprise-gray-600);
-    line-height: 1.3;
-}
-
-/* Dark Theme Support */
-html[data-bs-theme="dark"] {
-    --enterprise-primary: #4da6ff;
-    --enterprise-secondary: #66b3ff;
-    --enterprise-accent: #80c0ff;
-    --enterprise-gray-50: #1a1d20;
-    --enterprise-gray-100: #212529;
-    --enterprise-gray-200: #343a40;
-    --enterprise-gray-300: #495057;
-    --enterprise-gray-400: #6c757d;
-    --enterprise-gray-500: #adb5bd;
-    --enterprise-gray-600: #ced4da;
-    --enterprise-gray-700: #dee2e6;
-    --enterprise-gray-800: #f8f9fa;
-    --enterprise-border: #343a40;
-    --enterprise-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    --enterprise-shadow-lg: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-html[data-bs-theme="dark"] .executive-header {
-    background: linear-gradient(135deg, var(--enterprise-gray-100) 0%, var(--enterprise-gray-50) 100%);
-}
-
-html[data-bs-theme="dark"] .metrics-bar {
-    background: var(--enterprise-gray-100);
-}
-
-html[data-bs-theme="dark"] .metric-item {
-    border-color: var(--enterprise-border);
-}
-
-html[data-bs-theme="dark"] .scenario-grid {
-    background: var(--enterprise-gray-50);
-}
-
-html[data-bs-theme="dark"] .enterprise-module {
-    background: var(--enterprise-gray-100);
-    border-color: var(--enterprise-border);
-}
-
-html[data-bs-theme="dark"] .module-header {
-    background: var(--enterprise-gray-200);
-    border-color: var(--enterprise-border);
-}
-
-html[data-bs-theme="dark"] .action-item:hover {
-    background: var(--enterprise-gray-200) !important;
-}
-
-html[data-bs-theme="dark"] .action-icon {
-    background: var(--enterprise-gray-200);
-}
-
-html[data-bs-theme="dark"] .analysis-chart {
-    border-color: var(--enterprise-border);
-}
-
-html[data-bs-theme="dark"] .visual-thumbnail {
-    border-color: var(--enterprise-border);
-}
-
-/* Responsive Design */
-@media (max-width: 1200px) {
-    .scenario-grid {
-        padding: 1rem;
-    }
-
-    .enterprise-module {
-        margin-bottom: 1rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .executive-header {
-        padding: 1.5rem 1rem;
-    }
-
-    .scenario-title {
-        font-size: 1.5rem;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-    }
-
-    .scenario-badge {
-        margin-right: 0;
-        margin-bottom: 0.5rem;
-    }
-
-    .scenario-subtitle {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-
-    .metric-item {
-        padding: 1rem;
-        min-height: 80px;
-        border-right: none;
-        border-bottom: 1px solid var(--enterprise-border);
-    }
-
-    .metric-item:last-child {
-        border-bottom: none;
-    }
-
-    .scenario-grid {
-        padding: 0.75rem;
-    }
-
-    .module-header {
-        padding: 0.875rem 1rem;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-
-    .model-tags {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .model-tag {
-        justify-content: center;
-    }
-
-    .metadata-row {
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .visuals-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .action-item {
-        padding: 0.875rem 1rem;
-    }
-}
-
-@media (max-width: 576px) {
-    .executive-header .d-flex {
-        flex-direction: column;
-        gap: 1rem;
-        text-align: center;
-    }
-
-    .scenario-title {
-        font-size: 1.25rem;
-        text-align: center;
-    }
-
-    .metric-item {
-        text-align: center;
-    }
-
-    .bias-indicator {
-        justify-content: center;
-    }
-
-    .metadata-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.25rem;
-    }
-
-    .action-item {
-        flex-direction: column;
-        text-align: center;
-        gap: 0.75rem;
-    }
-
-    .action-icon {
-        margin-right: 0;
-    }
-}
-
-/* Animation Classes */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.fade-in {
-    animation: fadeIn 0.6s ease-out forwards;
-}
-
-/* Focus States for Accessibility */
-.action-item:focus {
-    outline: 2px solid var(--enterprise-primary);
-    outline-offset: 2px;
-}
-
-.analysis-chart:focus,
-.thumbnail-image:focus {
-    outline: 2px solid var(--enterprise-primary);
-    outline-offset: 2px;
-}
-
-.btn:focus {
-    box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
-}
-
-/* Print Styles */
-@media print {
-    .executive-header .btn-group,
-    .action-grid {
-        display: none;
-    }
-
-    .enterprise-module {
-        break-inside: avoid;
-        box-shadow: none;
-        border: 1px solid #ccc;
-    }
-
-    .metric-item {
-        border: 1px solid #ccc;
-    }
-}
-
-/* High Contrast Mode Support */
-@media (prefers-contrast: high) {
-    :root {
-        --enterprise-border: #000;
-        --enterprise-gray-500: #000;
-        --enterprise-gray-600: #000;
-    }
-
-    .action-item:hover {
-        background: #000 !important;
-        color: #fff !important;
-    }
-}
-
-/* Reduced Motion Support */
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-
-    .analysis-chart:hover,
-    .thumbnail-image:hover {
-        transform: none !important;
-    }
-}
-</style>
 {% endblock %}

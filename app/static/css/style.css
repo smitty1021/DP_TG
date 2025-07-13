@@ -1129,7 +1129,7 @@ Add after section 3 (Enterprise Layout System)
 /* Badge System */
 .badge {
     padding: 0.35em 0.65em;
-    font-size: 0.75em;
+    font-size: .8em;
     font-weight: 500;
     line-height: 1;
     border-radius: var(--enterprise-radius-sm);
@@ -1144,6 +1144,12 @@ Add after section 3 (Enterprise Layout System)
 .badge.bg-info { background-color: var(--enterprise-info) !important; color: var(--enterprise-white); }
 .badge.bg-light { background-color: var(--enterprise-gray-200) !important; color: var(--enterprise-text-primary); }
 .badge.bg-dark { background-color: var(--enterprise-gray-800) !important; color: var(--enterprise-white); }
+
+/* Dark Theme Badge Adjustments */
+html[data-bs-theme="dark"] .badge.bg-success {background-color: rgba(74, 222, 128, 0.5); color: var(--enterprise-text-primary);}
+html[data-bs-theme="dark"] .badge.bg-danger {background-color: rgba(248, 113, 113, 0.5); color: var(--enterprise-text-primary);}
+html[data-bs-theme="dark"] .badge.bg-info {background-color: rgba(56, 189, 248, 0.5); color: var(--enterprise-text-primary);}
+html[data-bs-theme="dark"] .badge.bg-warning {background-color: rgba(251, 191, 36, 0.5); color: var(--enterprise-gray-800);}
 
 /*
 ===============================================================================
@@ -1450,6 +1456,30 @@ Add after section 9 (Status & Badge System)
 
 .form-check-label {
     color: var(--enterprise-text-primary);
+}
+
+/* Dark theme form control */
+html[data-bs-theme="dark"] .form-control {
+    background-color: var(--enterprise-gray-200) !important;
+    border-color: var(--enterprise-gray-300) !important;
+    color: var(--enterprise-text-primary) !important;
+}
+
+html[data-bs-theme="dark"] .form-control:focus {
+    background-color: var(--enterprise-gray-200) !important;
+    border-color: var(--enterprise-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(77, 166, 255, 0.25) !important;
+    color: var(--enterprise-text-primary) !important;
+}
+
+html[data-bs-theme="dark"] .form-control::placeholder {
+    color: var(--enterprise-text-muted) !important;
+}
+
+/* Fix textarea specifically */
+html[data-bs-theme="dark"] textarea.form-control {
+    background-color: var(--enterprise-gray-200) !important;
+    color: var(--enterprise-text-primary) !important;
 }
 
 /*
@@ -2254,7 +2284,38 @@ Add after section 35 (Collapse System)
 }
 
 .modal-xl {
-    max-width: 1140px;
+    max-width: 95vw;
+}
+
+#imageModal #imageModalImg {
+    max-height: 75vh;
+    max-width: 80vw;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
+/* Ensure button stays at bottom and is visible */
+#imageModal .module-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    height: 100%;
+}
+
+#imageModal .modal-dialog {
+    max-width: 65vw;
+    width: 90vw;
+    margin: 1rem auto;
+}
+
+#imageModal .modal-content {
+    width: 100%;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
 }
 
 @media (min-width: 576px) {
@@ -5556,6 +5617,7 @@ Add after section 24 (Accessibility Features)
 .bg-success-soft { background: rgba(0, 112, 192, 0.1); color: var(--enterprise-success); }
 .bg-info-soft { background: rgba(23, 162, 184, 0.1); color: var(--enterprise-info); }
 .bg-warning-soft { background: rgba(255, 140, 0, 0.1); color: var(--enterprise-warning); }
+.bg-danger-soft { background: rgba(209, 52, 56, 0.1); color: var(--enterprise-danger); }
 .bg-secondary-soft { background: rgba(108, 117, 125, 0.1); color: var(--enterprise-gray-600); }
 
 .item-info {
