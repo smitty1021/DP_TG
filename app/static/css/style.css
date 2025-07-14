@@ -1662,6 +1662,36 @@ Add after section 10 (Form System)
     background-color: var(--enterprise-gray-100);
 }
 
+/* Dark Theme Search & Filter Support */
+html[data-bs-theme="dark"] .search-input {
+    background-color: var(--enterprise-gray-200) !important;
+    border-color: var(--enterprise-gray-300) !important;
+    color: var(--enterprise-text-primary) !important;
+}
+
+html[data-bs-theme="dark"] .search-input:focus {
+    background-color: var(--enterprise-gray-200) !important;
+    border-color: var(--enterprise-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(77, 166, 255, 0.25) !important;
+}
+
+html[data-bs-theme="dark"] .search-input::placeholder {
+    color: var(--enterprise-text-muted) !important;
+}
+
+html[data-bs-theme="dark"] .form-select {
+    background-color: var(--enterprise-gray-200) !important;
+    border-color: var(--enterprise-gray-300) !important;
+    color: var(--enterprise-text-primary) !important;
+}
+
+html[data-bs-theme="dark"] .form-select:focus {
+    background-color: var(--enterprise-gray-200) !important;
+    border-color: var(--enterprise-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(77, 166, 255, 0.25) !important;
+}
+
+
 /* Filter Components */
 .filter-bar {
     display: flex;
