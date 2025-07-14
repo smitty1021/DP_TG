@@ -481,109 +481,180 @@
 
 {% block scripts_extra %}
 <script>
-// Enhanced User Administration Console JavaScript
-document.addEventListener('DOMContentLoaded', function () {
-    // Initialize selection tracking
-    let selectedUsers = new Set();
-    let isLoading = false;
+// =============================================================================
+// GLOBAL FUNCTIONS - AVAILABLE IMMEDIATELY FOR ONCLICK HANDLERS
+// =============================================================================
 
-    // Get DOM elements
-    const selectAllCheckbox = document.getElementById('select-all-users-checkbox');
-    const userCheckboxes = document.querySelectorAll('.user-checkbox');
-    const selectedCountBadge = document.getElementById('selected-count');
+function toggleBulkOperations() {
+    try {
+        const module = document.getElementById('bulk-operations-module');
+        const toggle = document.getElementById('bulk-ops-toggle');
 
-    // Initialize Enterprise Search (will auto-initialize search, filters, sorting, pagination)
-    console.log('🎯 Initializing User Administration Console with Enterprise Search...');
-
-    // Custom configuration for this page
-    EnterpriseSearch.initializeStandardAdminList({
-        formId: 'search-filter-form',
-        searchInputId: 'search',
-        tableId: 'data-table',
-        pageSizeSelectId: 'page-size',
-        filterIds: ['role_filter', 'status_filter', 'verified_filter']
-    });
-
-    // Initialize user-specific functionality
-    setupUserSelectionListeners();
-    updateSelectedCount();
-
-    function setupUserSelectionListeners() {
-        // Master checkbox functionality
-        if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', function(e) {
-                const isChecked = e.target.checked;
-                userCheckboxes.forEach(checkbox => {
-                    checkbox.checked = isChecked;
-                    toggleUser(checkbox.value, isChecked);
-                });
-            });
+        if (module && toggle) {
+            if (module.style.display === 'none' || module.style.display === '') {
+                module.style.display = 'block';
+                toggle.classList.remove('btn-outline-info');
+                toggle.classList.add('btn-info');
+            } else {
+                module.style.display = 'none';
+                toggle.classList.remove('btn-info');
+                toggle.classList.add('btn-outline-info');
+            }
         }
-
-        // Individual user checkboxes
-        userCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function(e) {
-                toggleUser(e.target.value, e.target.checked);
-                updateMasterCheckbox();
-            });
-        });
+    } catch (error) {
+        console.error('Error in toggleBulkOperations:', error);
     }
+}
 
-    function toggleUser(userId, checked) {
-        if (checked) {
-            selectedUsers.add(userId);
-        } else {
-            selectedUsers.delete(userId);
-        }
-        updateSelectedCount();
-    }
-
-    function updateMasterCheckbox() {
-        if (!selectAllCheckbox) return;
-
-        const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
-        const totalBoxes = document.querySelectorAll('.user-checkbox');
-
-        if (checkedBoxes.length === 0) {
-            selectAllCheckbox.checked = false;
-            selectAllCheckbox.indeterminate = false;
-        } else if (checkedBoxes.length === totalBoxes.length) {
-            selectAllCheckbox.checked = true;
-            selectAllCheckbox.indeterminate = false;
-        } else {
-            selectAllCheckbox.checked = false;
-            selectAllCheckbox.indeterminate = true;
-        }
-    }
-
-    function updateSelectedCount() {
-        if (selectedCountBadge) {
-            const count = selectedUsers.size;
-            selectedCountBadge.textContent = `${count} selected`;
-            selectedCountBadge.className = count > 0 ? 'badge bg-primary' : 'badge bg-secondary';
-        }
-    }
-
-    function getSelectedUserIds() {
-        return Array.from(selectedUsers);
-    }
-
-    function performBulkAction(action, userIds) {
-        if (!userIds || userIds.length === 0) {
+function confirmDeleteUser(userId, username) {
+    try {
+        if (typeof showCustomConfirmation === 'function') {
             showCustomConfirmation({
-                title: 'No Users Selected',
-                message: 'Please select at least one user to perform this action.',
-                confirmText: 'OK',
-                confirmClass: 'btn-primary',
-                icon: 'info-circle',
-                onConfirm: () => {}
+                title: 'Remove User Configuration',
+                message: 'CRITICAL OPERATION: Permanently remove user configuration for "' + username + '"? This action cannot be reversed and will remove all associated operational data.',
+                confirmText: 'REMOVE CONFIGURATION',
+                cancelText: 'Cancel',
+                confirmClass: 'btn-danger',
+                icon: 'trash-alt',
+                onConfirm: function() {
+                    const csrfToken = document.querySelector('meta[name=csrf-token]').content;
+                    const deleteUrl = "{{ url_for('admin.admin_delete_user', user_id=999999) }}".replace('999999', userId);
+
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = deleteUrl;
+
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrf_token';
+                    csrfInput.value = csrfToken;
+                    form.appendChild(csrfInput);
+
+                    document.body.appendChild(form);
+                    form.submit();
+                }
             });
+        } else {
+            if (confirm('Permanently remove user configuration for "' + username + '"? This action cannot be reversed.')) {
+                const csrfToken = document.querySelector('meta[name=csrf-token]').content;
+                const deleteUrl = "{{ url_for('admin.admin_delete_user', user_id=999999) }}".replace('999999', userId);
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = deleteUrl;
+
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    } catch (error) {
+        console.error('Error in confirmDeleteUser:', error);
+        alert('Error: Could not delete user. Please refresh the page and try again.');
+    }
+}
+
+function clearSearch() {
+    try {
+        const searchInput = document.getElementById('search');
+        if (searchInput) {
+            searchInput.value = '';
+            const form = searchInput.closest('form');
+            if (form) {
+                form.submit();
+            }
+        }
+    } catch (error) {
+        console.error('Error in clearSearch:', error);
+    }
+}
+
+function changePageSize(size) {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        params.set('per_page', size);
+        params.set('page', '1');
+        window.location.href = window.location.pathname + '?' + params.toString();
+    } catch (error) {
+        console.error('Error in changePageSize:', error);
+    }
+}
+
+// Bulk operation functions
+function bulkResetPasswords() {
+    checkAndExecuteBulkAction('reset-passwords', 'Reset Passwords', 'Reset passwords for selected users? New passwords will be generated and sent via email.', 'btn-warning', 'key');
+}
+
+function bulkActivateUsers() {
+    checkAndExecuteBulkAction('activate', 'Activate Users', 'Activate selected users? They will be able to access the system.', 'btn-success', 'user-check');
+}
+
+function bulkDeactivateUsers() {
+    checkAndExecuteBulkAction('deactivate', 'Deactivate Users', 'Deactivate selected users? They will not be able to access the system until reactivated.', 'btn-secondary', 'user-times');
+}
+
+function bulkVerifyEmails() {
+    checkAndExecuteBulkAction('verify-emails', 'Verify Email Addresses', 'Mark email addresses as verified for selected users? This will bypass email verification requirements.', 'btn-info', 'envelope-circle-check');
+}
+
+function bulkDeleteUsers() {
+    checkAndExecuteBulkAction('delete', 'CRITICAL OPERATION: Remove User Configurations', 'PERMANENTLY REMOVE selected user configurations? This action cannot be reversed and will remove all associated data including trades, configurations, and access credentials.', 'btn-danger', 'exclamation-triangle');
+}
+
+function checkAndExecuteBulkAction(action, title, message, buttonClass, icon) {
+    try {
+        const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
+        const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+        if (selectedIds.length === 0) {
+            if (typeof showCustomConfirmation === 'function') {
+                showCustomConfirmation({
+                    title: 'No Users Selected',
+                    message: 'Please select users to perform this action.',
+                    confirmText: 'OK',
+                    confirmClass: 'btn-primary',
+                    icon: 'info-circle'
+                });
+            } else {
+                alert('Please select users to perform this action.');
+            }
             return;
         }
 
-        const csrfToken = document.querySelector('meta[name=csrf-token]')?.content;
+        const finalMessage = message.replace('selected users', selectedIds.length + ' selected user(s)').replace('selected user configurations', selectedIds.length + ' selected user configuration(s)');
 
-        // Use the existing bulk delete endpoint pattern
+        if (typeof showCustomConfirmation === 'function') {
+            showCustomConfirmation({
+                title: title,
+                message: finalMessage,
+                confirmText: title.includes('CRITICAL') ? 'REMOVE CONFIGURATIONS' : 'Confirm (' + selectedIds.length + ')',
+                cancelText: 'Cancel',
+                confirmClass: buttonClass,
+                icon: icon,
+                onConfirm: function() {
+                    executeBulkAction(action, selectedIds);
+                }
+            });
+        } else {
+            if (confirm(title + '\n\n' + finalMessage)) {
+                executeBulkAction(action, selectedIds);
+            }
+        }
+    } catch (error) {
+        console.error('Error in checkAndExecuteBulkAction:', error);
+        alert('Error: Could not perform bulk action. Please refresh the page and try again.');
+    }
+}
+
+function executeBulkAction(action, userIds) {
+    try {
+        const csrfToken = document.querySelector('meta[name=csrf-token]').content;
+
         let endpoint;
         switch(action) {
             case 'delete':
@@ -593,14 +664,17 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'deactivate':
             case 'reset-passwords':
             case 'verify-emails':
-                // These endpoints don't exist yet, so show a message
-                showCustomConfirmation({
-                    title: 'Feature Not Implemented',
-                    message: `The ${action} bulk operation is not yet implemented in the backend. Please contact your administrator.`,
-                    confirmText: 'OK',
-                    confirmClass: 'btn-info',
-                    icon: 'info-circle'
-                });
+                if (typeof showCustomConfirmation === 'function') {
+                    showCustomConfirmation({
+                        title: 'Feature Not Implemented',
+                        message: 'The ' + action + ' bulk operation is not yet implemented in the backend. Please contact your administrator.',
+                        confirmText: 'OK',
+                        confirmClass: 'btn-info',
+                        icon: 'info-circle'
+                    });
+                } else {
+                    alert('The ' + action + ' bulk operation is not yet implemented in the backend.');
+                }
                 return;
             default:
                 endpoint = "{{ url_for('admin.admin_bulk_delete_users') }}";
@@ -614,200 +688,141 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             body: JSON.stringify({ user_ids: userIds })
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
             if (data.status === 'success') {
+                if (typeof showCustomConfirmation === 'function') {
+                    showCustomConfirmation({
+                        title: 'Operation Completed',
+                        message: data.message || action + ' operation completed successfully.',
+                        confirmText: 'OK',
+                        confirmClass: 'btn-success',
+                        icon: 'check-circle',
+                        onConfirm: function() {
+                            location.reload();
+                        }
+                    });
+                } else {
+                    alert('Operation completed successfully.');
+                    location.reload();
+                }
+            } else {
+                if (typeof showCustomConfirmation === 'function') {
+                    showCustomConfirmation({
+                        title: 'Operation Failed',
+                        message: data.message || 'Failed to perform ' + action + ' operation.',
+                        confirmText: 'OK',
+                        confirmClass: 'btn-danger',
+                        icon: 'exclamation-triangle'
+                    });
+                } else {
+                    alert('Operation failed: ' + (data.message || 'Unknown error'));
+                }
+            }
+        })
+        .catch(function(error) {
+            console.error('Bulk operation error:', error);
+            if (typeof showCustomConfirmation === 'function') {
                 showCustomConfirmation({
-                    title: 'Operation Completed',
-                    message: data.message || `${action} operation completed successfully.`,
+                    title: 'System Error',
+                    message: 'An unexpected error occurred during the operation.',
                     confirmText: 'OK',
-                    confirmClass: 'btn-success',
-                    icon: 'check-circle',
-                    onConfirm: () => location.reload()
+                    confirmClass: 'btn-danger',
+                    icon: 'exclamation-triangle'
                 });
             } else {
-                showCustomConfirmation({
-                    title: 'Operation Failed',
-                    message: data.message || `Failed to perform ${action} operation.`,
-                    confirmText: 'OK',
-                    icon: 'exclamation-triangle'
+                alert('System error occurred during the operation.');
+            }
+        });
+    } catch (error) {
+        console.error('Error in executeBulkAction:', error);
+        alert('Error: Could not execute bulk action. Please refresh the page and try again.');
+    }
+}
+
+// =============================================================================
+// INITIALIZATION - RUNS AFTER DOM IS LOADED
+// =============================================================================
+
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('🎯 User Administration Console: Enterprise Search handling search/filter/sort automatically');
+
+    try {
+        // Initialize selection tracking
+        let selectedUsers = new Set();
+
+        // Get DOM elements
+        const selectAllCheckbox = document.getElementById('select-all-users-checkbox');
+        const userCheckboxes = document.querySelectorAll('.user-checkbox');
+        const selectedCountBadge = document.getElementById('selected-count');
+
+        // Initialize user selection functionality
+        setupUserSelectionListeners();
+        updateSelectedCount();
+
+        function setupUserSelectionListeners() {
+            // Master checkbox functionality
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function(e) {
+                    const isChecked = e.target.checked;
+                    userCheckboxes.forEach(function(checkbox) {
+                        checkbox.checked = isChecked;
+                        toggleUser(checkbox.value, isChecked);
+                    });
+                });
+            }
+
+            // Individual user checkboxes
+            userCheckboxes.forEach(function(checkbox) {
+                checkbox.addEventListener('change', function(e) {
+                    toggleUser(e.target.value, e.target.checked);
+                    updateMasterCheckbox();
+                });
             });
-        });
-    }
-
-    // Expose functions globally for button onclick events
-    window.userAdminConsole = {
-        getSelectedUserIds: getSelectedUserIds,
-        performBulkAction: performBulkAction
-    };
-
-    console.log('✅ User Administration Console initialized successfully');
-});
-
-// Global functions for UI interactions
-function toggleBulkOperations() {
-    const module = document.getElementById('bulk-operations-module');
-    const toggle = document.getElementById('bulk-ops-toggle');
-
-    if (module.style.display === 'none') {
-        module.style.display = 'block';
-        toggle.classList.remove('btn-outline-info');
-        toggle.classList.add('btn-info');
-    } else {
-        module.style.display = 'none';
-        toggle.classList.remove('btn-info');
-        toggle.classList.add('btn-outline-info');
-    }
-}
-
-// Bulk operation functions
-function bulkResetPasswords() {
-    const selectedIds = window.userAdminConsole.getSelectedUserIds();
-    if (selectedIds.length === 0) {
-        showCustomConfirmation({
-            title: 'No Users Selected',
-            message: 'Please select users to reset passwords for.',
-            confirmText: 'OK',
-            confirmClass: 'btn-primary',
-            icon: 'info-circle'
-        });
-        return;
-    }
-
-    showCustomConfirmation({
-        title: 'Reset Passwords',
-        message: `Reset passwords for ${selectedIds.length} selected user(s)? New passwords will be generated and sent via email.`,
-        confirmText: 'Reset Passwords',
-        cancelText: 'Cancel',
-        confirmClass: 'btn-warning',
-        icon: 'key',
-        onConfirm: () => window.userAdminConsole.performBulkAction('reset-passwords', selectedIds)
-    });
-}
-
-function bulkActivateUsers() {
-    const selectedIds = window.userAdminConsole.getSelectedUserIds();
-    if (selectedIds.length === 0) {
-        showCustomConfirmation({
-            title: 'No Users Selected',
-            message: 'Please select users to activate.',
-            confirmText: 'OK',
-            confirmClass: 'btn-primary',
-            icon: 'info-circle'
-        });
-        return;
-    }
-
-    showCustomConfirmation({
-        title: 'Activate Users',
-        message: `Activate ${selectedIds.length} selected user(s)? They will be able to access the system.`,
-        confirmText: 'Activate',
-        cancelText: 'Cancel',
-        confirmClass: 'btn-success',
-        icon: 'user-check',
-        onConfirm: () => window.userAdminConsole.performBulkAction('activate', selectedIds)
-    });
-}
-
-function bulkDeactivateUsers() {
-    const selectedIds = window.userAdminConsole.getSelectedUserIds();
-    if (selectedIds.length === 0) {
-        showCustomConfirmation({
-            title: 'No Users Selected',
-            message: 'Please select users to deactivate.',
-            confirmText: 'OK',
-            confirmClass: 'btn-primary',
-            icon: 'info-circle'
-        });
-        return;
-    }
-
-    showCustomConfirmation({
-        title: 'Deactivate Users',
-        message: `Deactivate ${selectedIds.length} selected user(s)? They will not be able to access the system until reactivated.`,
-        confirmText: 'Deactivate',
-        cancelText: 'Cancel',
-        confirmClass: 'btn-secondary',
-        icon: 'user-times',
-        onConfirm: () => window.userAdminConsole.performBulkAction('deactivate', selectedIds)
-    });
-}
-
-function bulkVerifyEmails() {
-    const selectedIds = window.userAdminConsole.getSelectedUserIds();
-    if (selectedIds.length === 0) {
-        showCustomConfirmation({
-            title: 'No Users Selected',
-            message: 'Please select users to verify emails for.',
-            confirmText: 'OK',
-            confirmClass: 'btn-primary',
-            icon: 'info-circle'
-        });
-        return;
-    }
-
-    showCustomConfirmation({
-        title: 'Verify Email Addresses',
-        message: `Mark email addresses as verified for ${selectedIds.length} selected user(s)? This will bypass email verification requirements.`,
-        confirmText: 'Verify Emails',
-        cancelText: 'Cancel',
-        confirmClass: 'btn-info',
-        icon: 'envelope-circle-check',
-        onConfirm: () => window.userAdminConsole.performBulkAction('verify-emails', selectedIds)
-    });
-}
-
-function bulkDeleteUsers() {
-    const selectedIds = window.userAdminConsole.getSelectedUserIds();
-    if (selectedIds.length === 0) {
-        showCustomConfirmation({
-            title: 'No Users Selected',
-            message: 'Please select users to remove configurations for.',
-            confirmText: 'OK',
-            confirmClass: 'btn-primary',
-            icon: 'info-circle'
-        });
-        return;
-    }
-
-    showCustomConfirmation({
-        title: 'CRITICAL OPERATION: Remove User Configurations',
-        message: `PERMANENTLY REMOVE ${selectedIds.length} selected user configuration(s)? This action cannot be reversed and will remove all associated data including trades, configurations, and access credentials.`,
-        confirmText: 'REMOVE CONFIGURATIONS',
-        cancelText: 'Cancel',
-        confirmClass: 'btn-danger',
-        icon: 'exclamation-triangle',
-        onConfirm: () => window.userAdminConsole.performBulkAction('delete', selectedIds)
-    });
-}
-
-function confirmDeleteUser(userId, username) {
-    showCustomConfirmation({
-        title: 'Remove User Configuration',
-        message: `CRITICAL OPERATION: Permanently remove user configuration for "${username}"? This action cannot be reversed and will remove all associated operational data.`,
-        confirmText: 'REMOVE CONFIGURATION',
-        cancelText: 'Cancel',
-        confirmClass: 'btn-danger',
-        icon: 'trash-alt',
-        onConfirm: () => {
-            const csrfToken = document.querySelector('meta[name=csrf-token]')?.content;
-            const deleteUrl = "{{ url_for('admin.admin_delete_user', user_id=0) }}".replace('0', userId);
-
-            // Use a form submission instead of fetch since the endpoint expects form data
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = deleteUrl;
-
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrf_token';
-            csrfInput.value = csrfToken;
-            form.appendChild(csrfInput);
-
-            document.body.appendChild(form);
-            form.submit();
         }
-    });
-}
+
+        function toggleUser(userId, checked) {
+            if (checked) {
+                selectedUsers.add(userId);
+            } else {
+                selectedUsers.delete(userId);
+            }
+            updateSelectedCount();
+        }
+
+        function updateMasterCheckbox() {
+            if (!selectAllCheckbox) return;
+
+            const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+            const totalBoxes = document.querySelectorAll('.user-checkbox');
+
+            if (checkedBoxes.length === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else if (checkedBoxes.length === totalBoxes.length) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+
+        function updateSelectedCount() {
+            if (selectedCountBadge) {
+                const count = selectedUsers.size;
+                selectedCountBadge.textContent = count + ' selected';
+                selectedCountBadge.className = count > 0 ? 'badge bg-primary' : 'badge bg-secondary';
+            }
+        }
+
+        console.log('✅ User Administration Console initialized successfully');
+
+    } catch (error) {
+        console.error('Error initializing User Administration Console:', error);
+    }
+});
 </script>
 {% endblock %}
