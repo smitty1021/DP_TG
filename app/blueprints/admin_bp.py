@@ -747,7 +747,353 @@ def admin_bulk_delete_users():
     return jsonify({'status': status, 'message': message, 'deleted_count': deleted_count, 'skipped_count': skipped_count, 'skipped_info': skipped_users_info})
 
 
-# Add this to your admin_bp.py route for system_config
+# Add these routes to your app/blueprints/admin_bp.py file
+
+@admin_bp.route('/users/bulk_reset_passwords', methods=['POST'])
+@login_required
+@admin_required
+def admin_bulk_reset_passwords():
+    """Handles bulk password reset for users by an admin."""
+    data = request.get_json()
+    if not data or 'user_ids' not in data:
+        return jsonify({'status': 'error', 'message': 'Missing user_ids parameter.'}), 400
+
+    user_ids_to_reset_str = data['user_ids']
+    if not isinstance(user_ids_to_reset_str, list):
+        return jsonify({'status': 'error', 'message': 'user_ids must be a list.'}), 400
+
+    reset_count = 0
+    skipped_count = 0
+    skipped_users_info = []
+
+    # Convert string IDs to integers and filter out invalid ones
+    user_ids_to_reset = []
+    for user_id_str_item in user_ids_to_reset_str:
+        try:
+            user_ids_to_reset.append(int(user_id_str_item))
+        except ValueError:
+            skipped_count += 1
+            skipped_users_info.append(f"Invalid User ID format: {user_id_str_item}")
+            current_app.logger.warning(f"Admin bulk reset passwords: Invalid user ID format {user_id_str_item}.")
+
+    if not user_ids_to_reset:
+        return jsonify({'status': 'error', 'message': 'No valid user IDs provided for password reset.',
+                        'skipped_info': skipped_users_info}), 400
+
+    try:
+        # Process each user
+        for user_id in user_ids_to_reset:
+            try:
+                user_to_reset = User.query.get(user_id)
+                if not user_to_reset:
+                    skipped_count += 1
+                    skipped_users_info.append(f"User ID {user_id} (not found)")
+                    continue
+
+                # Generate new password
+                import secrets
+                import string
+                new_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
+
+                # Set new password
+                user_to_reset.set_password(new_password)
+
+                # Send email with new password
+                email_sent = send_email(
+                    to=user_to_reset.email,
+                    subject="Your Password Has Been Reset - Trading Journal",
+                    template_name="password_reset_by_admin.html",
+                    username=user_to_reset.username,
+                    new_password=new_password,
+                    reset_by_admin=current_user.username
+                )
+
+                if email_sent:
+                    reset_count += 1
+                    current_app.logger.info(
+                        f"Admin {current_user.username} reset password for user {user_to_reset.username} (ID: {user_id})")
+                else:
+                    skipped_count += 1
+                    skipped_users_info.append(f"User {user_to_reset.username} (email send failed)")
+                    current_app.logger.error(f"Failed to send password reset email to {user_to_reset.email}")
+
+            except Exception as e:
+                skipped_count += 1
+                skipped_users_info.append(f"User ID {user_id} (error: {str(e)})")
+                current_app.logger.error(f"Error resetting password for user ID {user_id}: {e}", exc_info=True)
+
+        # Commit all changes
+        db.session.commit()
+
+        # Record activity
+        record_activity('admin_bulk_reset_passwords',
+                        f"Admin {current_user.username} reset passwords for {reset_count} users",
+                        user_id_for_activity=current_user.id)
+
+        # Prepare response message
+        message = f"Successfully reset passwords for {reset_count} user(s)."
+        if skipped_count > 0:
+            message += f" Skipped {skipped_count} user(s)."
+
+        return jsonify({
+            'status': 'success',
+            'message': message,
+            'reset_count': reset_count,
+            'skipped_count': skipped_count,
+            'skipped_info': skipped_users_info
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error in bulk password reset by admin {current_user.username}: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': f'Bulk password reset failed: {str(e)}'}), 500
+
+
+@admin_bp.route('/users/bulk_activate', methods=['POST'])
+@login_required
+@admin_required
+def admin_bulk_activate_users():
+    """Handles bulk activation of users by an admin."""
+    data = request.get_json()
+    if not data or 'user_ids' not in data:
+        return jsonify({'status': 'error', 'message': 'Missing user_ids parameter.'}), 400
+
+    user_ids_to_activate_str = data['user_ids']
+    if not isinstance(user_ids_to_activate_str, list):
+        return jsonify({'status': 'error', 'message': 'user_ids must be a list.'}), 400
+
+    activated_count = 0
+    skipped_count = 0
+    skipped_users_info = []
+
+    # Convert string IDs to integers and filter out invalid ones
+    user_ids_to_activate = []
+    for user_id_str_item in user_ids_to_activate_str:
+        try:
+            user_ids_to_activate.append(int(user_id_str_item))
+        except ValueError:
+            skipped_count += 1
+            skipped_users_info.append(f"Invalid User ID format: {user_id_str_item}")
+
+    if not user_ids_to_activate:
+        return jsonify({'status': 'error', 'message': 'No valid user IDs provided for activation.'}), 400
+
+    try:
+        for user_id in user_ids_to_activate:
+            try:
+                user_to_activate = User.query.get(user_id)
+                if not user_to_activate:
+                    skipped_count += 1
+                    skipped_users_info.append(f"User ID {user_id} (not found)")
+                    continue
+
+                if user_to_activate.is_active:
+                    skipped_count += 1
+                    skipped_users_info.append(f"User {user_to_activate.username} (already active)")
+                    continue
+
+                user_to_activate.is_active = True
+                activated_count += 1
+                current_app.logger.info(
+                    f"Admin {current_user.username} activated user {user_to_activate.username} (ID: {user_id})")
+
+            except Exception as e:
+                skipped_count += 1
+                skipped_users_info.append(f"User ID {user_id} (error: {str(e)})")
+                current_app.logger.error(f"Error activating user ID {user_id}: {e}", exc_info=True)
+
+        db.session.commit()
+
+        record_activity('admin_bulk_activate_users',
+                        f"Admin {current_user.username} activated {activated_count} users",
+                        user_id_for_activity=current_user.id)
+
+        message = f"Successfully activated {activated_count} user(s)."
+        if skipped_count > 0:
+            message += f" Skipped {skipped_count} user(s)."
+
+        return jsonify({
+            'status': 'success',
+            'message': message,
+            'activated_count': activated_count,
+            'skipped_count': skipped_count,
+            'skipped_info': skipped_users_info
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error in bulk user activation by admin {current_user.username}: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': f'Bulk user activation failed: {str(e)}'}), 500
+
+
+@admin_bp.route('/users/bulk_deactivate', methods=['POST'])
+@login_required
+@admin_required
+def admin_bulk_deactivate_users():
+    """Handles bulk deactivation of users by an admin."""
+    data = request.get_json()
+    if not data or 'user_ids' not in data:
+        return jsonify({'status': 'error', 'message': 'Missing user_ids parameter.'}), 400
+
+    user_ids_to_deactivate_str = data['user_ids']
+    if not isinstance(user_ids_to_deactivate_str, list):
+        return jsonify({'status': 'error', 'message': 'user_ids must be a list.'}), 400
+
+    deactivated_count = 0
+    skipped_count = 0
+    skipped_users_info = []
+
+    # Convert string IDs to integers and filter out invalid ones
+    user_ids_to_deactivate = []
+    for user_id_str_item in user_ids_to_deactivate_str:
+        try:
+            user_ids_to_deactivate.append(int(user_id_str_item))
+        except ValueError:
+            skipped_count += 1
+            skipped_users_info.append(f"Invalid User ID format: {user_id_str_item}")
+
+    if not user_ids_to_deactivate:
+        return jsonify({'status': 'error', 'message': 'No valid user IDs provided for deactivation.'}), 400
+
+    try:
+        admin_users_total_in_db = User.query.filter_by(role=UserRole.ADMIN).count()
+
+        for user_id in user_ids_to_deactivate:
+            try:
+                user_to_deactivate = User.query.get(user_id)
+                if not user_to_deactivate:
+                    skipped_count += 1
+                    skipped_users_info.append(f"User ID {user_id} (not found)")
+                    continue
+
+                # Prevent deactivating self
+                if user_id == current_user.id:
+                    skipped_count += 1
+                    skipped_users_info.append(f"User {user_to_deactivate.username} (cannot deactivate self)")
+                    continue
+
+                # Prevent deactivating the last admin
+                if user_to_deactivate.is_admin() and admin_users_total_in_db <= 1:
+                    skipped_count += 1
+                    skipped_users_info.append(f"User {user_to_deactivate.username} (cannot deactivate last admin)")
+                    continue
+
+                if not user_to_deactivate.is_active:
+                    skipped_count += 1
+                    skipped_users_info.append(f"User {user_to_deactivate.username} (already inactive)")
+                    continue
+
+                user_to_deactivate.is_active = False
+                deactivated_count += 1
+                current_app.logger.info(
+                    f"Admin {current_user.username} deactivated user {user_to_deactivate.username} (ID: {user_id})")
+
+            except Exception as e:
+                skipped_count += 1
+                skipped_users_info.append(f"User ID {user_id} (error: {str(e)})")
+                current_app.logger.error(f"Error deactivating user ID {user_id}: {e}", exc_info=True)
+
+        db.session.commit()
+
+        record_activity('admin_bulk_deactivate_users',
+                        f"Admin {current_user.username} deactivated {deactivated_count} users",
+                        user_id_for_activity=current_user.id)
+
+        message = f"Successfully deactivated {deactivated_count} user(s)."
+        if skipped_count > 0:
+            message += f" Skipped {skipped_count} user(s)."
+
+        return jsonify({
+            'status': 'success',
+            'message': message,
+            'deactivated_count': deactivated_count,
+            'skipped_count': skipped_count,
+            'skipped_info': skipped_users_info
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error in bulk user deactivation by admin {current_user.username}: {e}",
+                                 exc_info=True)
+        return jsonify({'status': 'error', 'message': f'Bulk user deactivation failed: {str(e)}'}), 500
+
+
+@admin_bp.route('/users/bulk_verify_emails', methods=['POST'])
+@login_required
+@admin_required
+def admin_bulk_verify_emails():
+    """Handles bulk email verification for users by an admin."""
+    data = request.get_json()
+    if not data or 'user_ids' not in data:
+        return jsonify({'status': 'error', 'message': 'Missing user_ids parameter.'}), 400
+
+    user_ids_to_verify_str = data['user_ids']
+    if not isinstance(user_ids_to_verify_str, list):
+        return jsonify({'status': 'error', 'message': 'user_ids must be a list.'}), 400
+
+    verified_count = 0
+    skipped_count = 0
+    skipped_users_info = []
+
+    # Convert string IDs to integers and filter out invalid ones
+    user_ids_to_verify = []
+    for user_id_str_item in user_ids_to_verify_str:
+        try:
+            user_ids_to_verify.append(int(user_id_str_item))
+        except ValueError:
+            skipped_count += 1
+            skipped_users_info.append(f"Invalid User ID format: {user_id_str_item}")
+
+    if not user_ids_to_verify:
+        return jsonify({'status': 'error', 'message': 'No valid user IDs provided for email verification.'}), 400
+
+    try:
+        for user_id in user_ids_to_verify:
+            try:
+                user_to_verify = User.query.get(user_id)
+                if not user_to_verify:
+                    skipped_count += 1
+                    skipped_users_info.append(f"User ID {user_id} (not found)")
+                    continue
+
+                if user_to_verify.is_email_verified:
+                    skipped_count += 1
+                    skipped_users_info.append(f"User {user_to_verify.username} (email already verified)")
+                    continue
+
+                user_to_verify.is_email_verified = True
+                verified_count += 1
+                current_app.logger.info(
+                    f"Admin {current_user.username} verified email for user {user_to_verify.username} (ID: {user_id})")
+
+            except Exception as e:
+                skipped_count += 1
+                skipped_users_info.append(f"User ID {user_id} (error: {str(e)})")
+                current_app.logger.error(f"Error verifying email for user ID {user_id}: {e}", exc_info=True)
+
+        db.session.commit()
+
+        record_activity('admin_bulk_verify_emails',
+                        f"Admin {current_user.username} verified emails for {verified_count} users",
+                        user_id_for_activity=current_user.id)
+
+        message = f"Successfully verified emails for {verified_count} user(s)."
+        if skipped_count > 0:
+            message += f" Skipped {skipped_count} user(s)."
+
+        return jsonify({
+            'status': 'success',
+            'message': message,
+            'verified_count': verified_count,
+            'skipped_count': skipped_count,
+            'skipped_info': skipped_users_info
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error in bulk email verification by admin {current_user.username}: {e}",
+                                 exc_info=True)
+        return jsonify({'status': 'error', 'message': f'Bulk email verification failed: {str(e)}'}), 500
 
 @admin_bp.route('/system-config')
 @login_required
@@ -1066,4 +1412,20 @@ def add_tag_category():
         'message': 'Adding new categories requires code deployment. Current categories are fixed in the TagCategory enum.'
     })
 
+
+@admin_bp.route('/debug/routes')
+@login_required
+@admin_required
+def debug_routes():
+    routes = []
+    for rule in current_app.url_map.iter_rules():
+        if 'bulk' in rule.rule:
+            routes.append(f"{rule.rule} - Methods: {list(rule.methods)}")
+    return f"<pre>{'<br>'.join(routes)}</pre>"
+
+@admin_bp.route('/users/test_bulk', methods=['POST'])
+@login_required
+@admin_required
+def test_bulk():
+    return jsonify({'status': 'success', 'message': 'Test route working!'})
 

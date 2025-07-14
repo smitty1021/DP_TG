@@ -661,23 +661,30 @@ function executeBulkAction(action, userIds) {
                 endpoint = "{{ url_for('admin.admin_bulk_delete_users') }}";
                 break;
             case 'activate':
+                endpoint = "{{ url_for('admin.admin_bulk_activate_users') }}";
+                break;
             case 'deactivate':
+                endpoint = "{{ url_for('admin.admin_bulk_deactivate_users') }}";
+                break;
             case 'reset-passwords':
+                endpoint = "{{ url_for('admin.admin_bulk_reset_passwords') }}";
+                break;
             case 'verify-emails':
+                endpoint = "{{ url_for('admin.admin_bulk_verify_emails') }}";
+                break;
+            default:
                 if (typeof showCustomConfirmation === 'function') {
                     showCustomConfirmation({
-                        title: 'Feature Not Implemented',
-                        message: 'The ' + action + ' bulk operation is not yet implemented in the backend. Please contact your administrator.',
+                        title: 'Unknown Action',
+                        message: 'Unknown bulk action: ' + action,
                         confirmText: 'OK',
-                        confirmClass: 'btn-info',
-                        icon: 'info-circle'
+                        confirmClass: 'btn-danger',
+                        icon: 'exclamation-triangle'
                     });
                 } else {
-                    alert('The ' + action + ' bulk operation is not yet implemented in the backend.');
+                    alert('Unknown bulk action: ' + action);
                 }
                 return;
-            default:
-                endpoint = "{{ url_for('admin.admin_bulk_delete_users') }}";
         }
 
         fetch(endpoint, {
@@ -693,10 +700,21 @@ function executeBulkAction(action, userIds) {
         })
         .then(function(data) {
             if (data.status === 'success') {
+                let message = data.message;
+
+                // Add detailed info for certain actions
+                if (action === 'reset-passwords' && data.reset_count) {
+                    message += '\n\nNew passwords have been sent via email.';
+                }
+
+                if (data.skipped_count && data.skipped_count > 0) {
+                    message += '\n\nSkipped users: ' + data.skipped_info.join(', ');
+                }
+
                 if (typeof showCustomConfirmation === 'function') {
                     showCustomConfirmation({
-                        title: 'Operation Completed',
-                        message: data.message || action + ' operation completed successfully.',
+                        title: 'Operation Completed Successfully',
+                        message: message,
                         confirmText: 'OK',
                         confirmClass: 'btn-success',
                         icon: 'check-circle',
@@ -705,7 +723,7 @@ function executeBulkAction(action, userIds) {
                         }
                     });
                 } else {
-                    alert('Operation completed successfully.');
+                    alert('Operation completed successfully.\n\n' + message);
                     location.reload();
                 }
             } else {
@@ -727,7 +745,7 @@ function executeBulkAction(action, userIds) {
             if (typeof showCustomConfirmation === 'function') {
                 showCustomConfirmation({
                     title: 'System Error',
-                    message: 'An unexpected error occurred during the operation.',
+                    message: 'An unexpected error occurred during the operation. Please check the console for details.',
                     confirmText: 'OK',
                     confirmClass: 'btn-danger',
                     icon: 'exclamation-triangle'
