@@ -8,6 +8,7 @@
 {% block head_extra %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+<script src="{{ url_for('static', filename='js/enterprise-search.js') }}"></script>
 <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 {% endblock %}
@@ -229,7 +230,7 @@
                             </div>
                             <div class="col-md-auto">
                                 <button class="btn btn-outline-danger btn-sm" onclick="bulkDeleteUsers()">
-                                    <i class="fas fa-trash-alt me-1"></i>Delete Users
+                                    <i class="fas fa-trash-alt me-1"></i>Remove Configurations
                                 </button>
                             </div>
                             <div class="col-md-auto ms-auto">
@@ -255,7 +256,7 @@
                     <div class="module-content">
                         {% if users %}
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle enterprise-table" id="users-table">
+                            <table class="table table-hover align-middle enterprise-table" id="data-table">
                                 <thead class="table-header">
                                     <tr>
                                         <th scope="col" style="width: 40px; text-align: center;">
@@ -381,7 +382,7 @@
                 </div>
             </div>
 
-<!-- Enhanced Pagination Module -->
+            <!-- Enhanced Pagination Module -->
             {% if pagination and pagination.pages > 1 %}
             <div class="col-12">
                 <div class="enterprise-module">
@@ -416,27 +417,57 @@
                         <!-- Standard Pagination -->
                         <nav aria-label="User resource pagination">
                             <ul class="pagination justify-content-center">
-                                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                                    <a class="page-link" href="{% if pagination.has_prev %}{{ url_for('admin.admin_users_list', page=pagination.prev_num, **request.args.to_dict()) }}{% else %}#{% endif %}" aria-label="Previous">
-                                        <span aria-hidden="true">&laquo;</span>
-                                    </a>
-                                </li>
+                                {% if pagination.has_prev %}
+                                    {% set prev_args = request.args.copy() %}
+                                    {% if prev_args.update({'page': pagination.prev_num}) %}{% endif %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin.admin_users_list', **prev_args) }}" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </span>
+                                    </li>
+                                {% endif %}
+
                                 {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                                     {% if page_num %}
                                         {% if page_num == pagination.page %}
-                                            <li class="page-item active" aria-current="page"><span class="page-link">{{ page_num }}</span></li>
+                                            <li class="page-item active" aria-current="page">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
                                         {% else %}
-                                            <li class="page-item"><a class="page-link" href="{{ url_for('admin.admin_users_list', page=page_num, **request.args.to_dict()) }}">{{ page_num }}</a></li>
+                                            {% set page_args = request.args.copy() %}
+                                            {% if page_args.update({'page': page_num}) %}{% endif %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('admin.admin_users_list', **page_args) }}">{{ page_num }}</a>
+                                            </li>
                                         {% endif %}
                                     {% else %}
-                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
                                     {% endif %}
                                 {% endfor %}
-                                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                                    <a class="page-link" href="{% if pagination.has_next %}{{ url_for('admin.admin_users_list', page=pagination.next_num, **request.args.to_dict()) }}{% else %}#{% endif %}" aria-label="Next">
-                                        <span aria-hidden="true">&raquo;</span>
-                                    </a>
-                                </li>
+
+                                {% if pagination.has_next %}
+                                    {% set next_args = request.args.copy() %}
+                                    {% if next_args.update({'page': pagination.next_num}) %}{% endif %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin.admin_users_list', **next_args) }}" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </span>
+                                    </li>
+                                {% endif %}
                             </ul>
                         </nav>
                     </div>
@@ -461,11 +492,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const userCheckboxes = document.querySelectorAll('.user-checkbox');
     const selectedCountBadge = document.getElementById('selected-count');
 
-    // Initialize event listeners
-    setupEventListeners();
+    // Initialize Enterprise Search (will auto-initialize search, filters, sorting, pagination)
+    console.log('🎯 Initializing User Administration Console with Enterprise Search...');
+
+    // Custom configuration for this page
+    EnterpriseSearch.initializeStandardAdminList({
+        formId: 'search-filter-form',
+        searchInputId: 'search',
+        tableId: 'data-table',
+        pageSizeSelectId: 'page-size',
+        filterIds: ['role_filter', 'status_filter', 'verified_filter']
+    });
+
+    // Initialize user-specific functionality
+    setupUserSelectionListeners();
     updateSelectedCount();
 
-    function setupEventListeners() {
+    function setupUserSelectionListeners() {
         // Master checkbox functionality
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', function(e) {
@@ -483,31 +526,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 toggleUser(e.target.value, e.target.checked);
                 updateMasterCheckbox();
             });
-        });
-
-        // Search form auto-submit with debouncing
-        const searchInput = document.getElementById('search');
-        if (searchInput) {
-            let searchTimeout;
-            searchInput.addEventListener('input', function(e) {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    if (e.target.value.length === 0 || e.target.value.length >= 3) {
-                        document.getElementById('search-filter-form').submit();
-                    }
-                }, 500);
-            });
-        }
-
-        // Sortable headers
-        document.addEventListener('click', function(e) {
-            const sortable = e.target.closest('.sortable');
-            if (sortable && !sortable.classList.contains('sorting')) {
-                const field = sortable.getAttribute('data-sort');
-                if (field) {
-                    sortTable(field);
-                }
-            }
         });
     }
 
@@ -544,25 +562,6 @@ document.addEventListener('DOMContentLoaded', function () {
             selectedCountBadge.textContent = `${count} selected`;
             selectedCountBadge.className = count > 0 ? 'badge bg-primary' : 'badge bg-secondary';
         }
-    }
-
-    function sortTable(field) {
-        if (isLoading) return;
-
-        const params = new URLSearchParams(window.location.search);
-        const currentSort = params.get('sort');
-        const currentOrder = params.get('order');
-
-        let newOrder = 'asc';
-        if (currentSort === field && currentOrder === 'asc') {
-            newOrder = 'desc';
-        }
-
-        params.set('sort', field);
-        params.set('order', newOrder);
-        params.set('page', '1'); // Reset to first page
-
-        window.location.href = `${window.location.pathname}?${params.toString()}`;
     }
 
     function getSelectedUserIds() {
@@ -631,19 +630,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     title: 'Operation Failed',
                     message: data.message || `Failed to perform ${action} operation.`,
                     confirmText: 'OK',
-                    confirmClass: 'btn-danger',
                     icon: 'exclamation-triangle'
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Bulk operation error:', error);
-            showCustomConfirmation({
-                title: 'System Error',
-                message: 'An unexpected error occurred during the operation.',
-                confirmText: 'OK',
-                confirmClass: 'btn-danger',
-                icon: 'exclamation-triangle'
             });
         });
     }
@@ -653,6 +640,8 @@ document.addEventListener('DOMContentLoaded', function () {
         getSelectedUserIds: getSelectedUserIds,
         performBulkAction: performBulkAction
     };
+
+    console.log('✅ User Administration Console initialized successfully');
 });
 
 // Global functions for UI interactions
@@ -669,18 +658,6 @@ function toggleBulkOperations() {
         toggle.classList.remove('btn-info');
         toggle.classList.add('btn-outline-info');
     }
-}
-
-function clearSearch() {
-    document.getElementById('search').value = '';
-    document.getElementById('search-filter-form').submit();
-}
-
-function changePageSize(size) {
-    const params = new URLSearchParams(window.location.search);
-    params.set('per_page', size);
-    params.set('page', '1'); // Reset to first page
-    window.location.href = `${window.location.pathname}?${params.toString()}`;
 }
 
 // Bulk operation functions
@@ -785,7 +762,7 @@ function bulkDeleteUsers() {
     if (selectedIds.length === 0) {
         showCustomConfirmation({
             title: 'No Users Selected',
-            message: 'Please select users to delete.',
+            message: 'Please select users to remove configurations for.',
             confirmText: 'OK',
             confirmClass: 'btn-primary',
             icon: 'info-circle'
@@ -794,9 +771,9 @@ function bulkDeleteUsers() {
     }
 
     showCustomConfirmation({
-        title: 'CRITICAL OPERATION: Delete Users',
-        message: `PERMANENTLY DELETE ${selectedIds.length} selected user(s)? This action cannot be reversed and will remove all associated data including trades, configurations, and access credentials.`,
-        confirmText: 'DELETE USERS',
+        title: 'CRITICAL OPERATION: Remove User Configurations',
+        message: `PERMANENTLY REMOVE ${selectedIds.length} selected user configuration(s)? This action cannot be reversed and will remove all associated data including trades, configurations, and access credentials.`,
+        confirmText: 'REMOVE CONFIGURATIONS',
         cancelText: 'Cancel',
         confirmClass: 'btn-danger',
         icon: 'exclamation-triangle',
@@ -806,19 +783,20 @@ function bulkDeleteUsers() {
 
 function confirmDeleteUser(userId, username) {
     showCustomConfirmation({
-        title: 'Delete User Configuration',
+        title: 'Remove User Configuration',
         message: `CRITICAL OPERATION: Permanently remove user configuration for "${username}"? This action cannot be reversed and will remove all associated operational data.`,
-        confirmText: 'DELETE USER',
+        confirmText: 'REMOVE CONFIGURATION',
         cancelText: 'Cancel',
         confirmClass: 'btn-danger',
         icon: 'trash-alt',
         onConfirm: () => {
             const csrfToken = document.querySelector('meta[name=csrf-token]')?.content;
+            const deleteUrl = "{{ url_for('admin.admin_delete_user', user_id=0) }}".replace('0', userId);
 
             // Use a form submission instead of fetch since the endpoint expects form data
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = "{{ url_for('admin.admin_delete_user', user_id='USER_ID') }}".replace('USER_ID', userId);
+            form.action = deleteUrl;
 
             const csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';

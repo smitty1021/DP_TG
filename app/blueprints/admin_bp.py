@@ -387,27 +387,105 @@ def show_admin_dashboard():
 @login_required
 @admin_required
 def admin_users_list():
+    """Enhanced user list with search, filters, and sorting"""
+    # Get pagination parameters
     page = request.args.get('page', 1, type=int)
-    per_page = current_app.config.get('ITEMS_PER_PAGE', 10)
+    per_page = request.args.get('per_page', 25, type=int)  # Default to 25 per page
+
+    # Get search and filter parameters
+    search = request.args.get('search', '').strip()
+    role_filter = request.args.get('role', '').strip()
+    status_filter = request.args.get('status', '').strip()
+    verified_filter = request.args.get('verified', '').strip()
+
+    # Get sorting parameters
+    sort_field = request.args.get('sort', 'username')  # Default sort by username
+    sort_order = request.args.get('order', 'asc')  # Default ascending
+
     users_on_page, users_pagination, total_users_count, active_users_count, admin_users_count = [], None, 0, 0, 0
+
     try:
-        users_pagination = User.query.order_by(User.username.asc()).paginate(
-            page=page, per_page=per_page, error_out=False
+        # Start building the query
+        query = User.query
+
+        # Apply search filter
+        if search:
+            search_term = f'%{search}%'
+            query = query.filter(
+                db.or_(
+                    User.username.ilike(search_term),
+                    User.email.ilike(search_term),
+                    User.name.ilike(search_term)
+                )
+            )
+
+        # Apply role filter
+        if role_filter:
+            try:
+                role_enum = UserRole[role_filter.upper()]
+                query = query.filter(User.role == role_enum)
+            except KeyError:
+                current_app.logger.warning(f"Invalid role filter: {role_filter}")
+
+        # Apply status filter
+        if status_filter:
+            if status_filter.lower() == 'active':
+                query = query.filter(User.is_active == True)
+            elif status_filter.lower() == 'inactive':
+                query = query.filter(User.is_active == False)
+
+        # Apply verification filter
+        if verified_filter:
+            if verified_filter.lower() == 'verified':
+                query = query.filter(User.is_email_verified == True)
+            elif verified_filter.lower() == 'unverified':
+                query = query.filter(User.is_email_verified == False)
+
+        # Apply sorting
+        if sort_field and hasattr(User, sort_field):
+            sort_column = getattr(User, sort_field)
+            if sort_order.lower() == 'desc':
+                query = query.order_by(sort_column.desc())
+            else:
+                query = query.order_by(sort_column.asc())
+        else:
+            # Default sorting
+            query = query.order_by(User.username.asc())
+
+        # Execute paginated query
+        users_pagination = query.paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
         )
         users_on_page = users_pagination.items
-        total_users_count = users_pagination.total
+
+        # Get overall counts (for KPI cards)
+        total_users_count = User.query.count()
         active_users_count = User.query.filter_by(is_active=True).count()
         admin_users_count = User.query.filter_by(role=UserRole.ADMIN).count()
-        current_app.logger.info(f"Admin {current_user.username} accessed user list page {page}.")
+        verified_users_count = User.query.filter_by(is_email_verified=True).count()
+
+        # Log the admin action
+        search_info = f" with search='{search}'" if search else ""
+        filter_info = f" with filters: role={role_filter}, status={status_filter}, verified={verified_filter}" if any(
+            [role_filter, status_filter, verified_filter]) else ""
+        current_app.logger.info(
+            f"Admin {current_user.username} accessed user list page {page}{search_info}{filter_info}.")
+
     except Exception as e:
         current_app.logger.error(f"Error fetching user list for admin: {e}", exc_info=True)
         flash("Could not load user list.", "danger")
-        total_users_count = active_users_count = admin_users_count = "Error"
-    return render_template('users.html', title='User Management',
-                           users=users_on_page, pagination=users_pagination,
+        total_users_count = active_users_count = admin_users_count = verified_users_count = "Error"
+
+    return render_template('admin/users.html',
+                           title='User Administration Console',
+                           users=users_on_page,
+                           pagination=users_pagination,
                            total_users_count=total_users_count,
                            active_users_count=active_users_count,
                            admin_users_count=admin_users_count,
+                           verified_users_count=verified_users_count,
                            UserRole=UserRole)
 
 

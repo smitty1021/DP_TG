@@ -47,7 +47,6 @@ class BootstrapManager:
     def __init__(self):
         self.app = None
         self.admin_user = None
-        self.test_users = []  # Changed from self.test_user to self.test_users list
         self.instruments = {}
         self.trading_models = []
         self.tags = []
@@ -97,70 +96,34 @@ class BootstrapManager:
         print(f"✅ Admin user created: {admin.username} (ID: {admin.id})")
         print(f"🔑 Default password: admin123 (CHANGE THIS!)")
 
-    def create_test_users(self):
-        """Create 100 test user accounts."""
-        print("\n👤 Creating 100 test users...")
+    def create_test_user(self):
+        """Create the test user account."""
+        print("\n👤 Creating test user...")
 
-        created_users = []
+        test_user_data = {
+            'username': 'testuser',
+            'email': 'smitty1021@gmail.com',
+            'name': 'Test User',
+            'role': UserRole.USER,
+            'is_active': True,
+            'is_email_verified': True,
+            'bio': 'Test user account for trading journal application.'
+        }
 
-        for i in range(1, 101):  # Create testuser1 through testuser100
-            # Determine role - 5 admins (testuser1-5), rest are regular users
-            if i <= 5:
-                user_role = UserRole.ADMIN
-            else:
-                user_role = UserRole.USER
+        test_user = User(**test_user_data)
+        test_user.set_password('testuser1')
 
-            # Random is_active status
-            is_active = random.choice([True, False])
-
-            test_user_data = {
-                'username': f'testuser{i}',
-                'email': f'testuser{i}@email.com',
-                'name': f'Test User {i}',
-                'role': user_role,
-                'is_active': is_active,
-                'is_email_verified': True,
-                'bio': 'Test user account for trading journal application.'
-            }
-
-            test_user = User(**test_user_data)
-            test_user.set_password(f'testuser{i}')  # Password same as username
-
-            db.session.add(test_user)
-            created_users.append(test_user)
-
-            # Print progress every 20 users
-            if i % 20 == 0:
-                print(f"  📝 Created {i}/100 test users...")
-
-        # Commit all users at once for better performance
+        db.session.add(test_user)
         db.session.commit()
 
-        # Create default settings for all test users
-        print("  ⚙️ Creating settings for test users...")
-        for user in created_users:
-            settings = Settings(user_id=user.id)
-            db.session.add(settings)
-
+        # Create default settings for test user
+        settings = Settings(user_id=test_user.id)
+        db.session.add(settings)
         db.session.commit()
 
-        # Store reference to first test user for backward compatibility
-        self.test_user = created_users[0] if created_users else None
-
-        # Print summary
-        admin_count = sum(1 for user in created_users if user.role == UserRole.ADMIN)
-        regular_count = sum(1 for user in created_users if user.role == UserRole.USER)
-        active_count = sum(1 for user in created_users if user.is_active)
-        inactive_count = len(created_users) - active_count
-
-        print(f"✅ Created {len(created_users)} test users:")
-        print(f"   • {admin_count} admin users (testuser1-5)")
-        print(f"   • {regular_count} regular users (testuser6-100)")
-        print(f"   • {active_count} active users")
-        print(f"   • {inactive_count} inactive users")
-        print(f"   • All passwords match usernames (e.g., 'testuser1' for testuser1)")
-
-        return created_users
+        self.test_user = test_user
+        print(f"✅ Test user created: {test_user.username} (ID: {test_user.id})")
+        print(f"🔑 Password: testuser1")
 
     def create_default_tags(self):
         """Create default tags based on Random's methodology."""
@@ -888,9 +851,7 @@ class BootstrapManager:
             if i < 100:
                 assigned_user_id = self.admin_user.id
             else:
-                # Distribute remaining trades among all test users
-                test_user_index = (i - 100) % len(self.test_users)
-                assigned_user_id = self.test_users[test_user_index].id
+                assigned_user_id = self.test_user.id
 
             # Create trade
             trade = Trade(
@@ -1742,17 +1703,9 @@ class BootstrapManager:
         # User and basic setup
         print(f"\n👤 Users Created:")
         print(f"   • Admin: {self.admin_user.username} (ID: {self.admin_user.id})")
-        print(f"   • Test Users: {len(self.test_users)} users (testuser1-testuser{len(self.test_users)})")
-
-        # Count admin vs regular test users
-        admin_test_users = sum(1 for user in self.test_users if user.role == UserRole.ADMIN)
-        regular_test_users = sum(1 for user in self.test_users if user.role == UserRole.USER)
-        active_test_users = sum(1 for user in self.test_users if user.is_active)
-
-        print(f"   • Admin test users: {admin_test_users} (testuser1-5)")
-        print(f"   • Regular test users: {regular_test_users} (testuser6-100)")
-        print(f"   • Active test users: {active_test_users}")
-        print(f"   • Inactive test users: {len(self.test_users) - active_test_users}")
+        print(f"   • Test User: {self.test_user.username} (ID: {self.test_user.id})")
+        print(f"   • Email: {self.admin_user.email}")
+        print(f"   • Role: {self.admin_user.role.value}")
 
         # Instruments
         print(f"\n📊 Instruments Created: {len(self.instruments)}")
@@ -1884,7 +1837,7 @@ class BootstrapManager:
 
             with self.app.app_context():
                 self.create_admin_user()
-                self.test_users = self.create_test_users()  # Store the returned users
+                self.create_test_user()
                 self.create_default_tags()
                 self.create_instruments()
                 self.create_trading_models()
