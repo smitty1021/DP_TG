@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% from "macros/_form_helpers.html" import render_field %} {# For potential future search/filter #}
+
+{% block title %}
+    {{ title or "User Management" }} - Admin
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-5"><i class="fas fa-users-cog me-2"></i>{{ title or "User Management" }}</h1>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{{ url_for('admin.admin_create_user') }}" class="btn btn-success">
+                <i class="fas fa-user-plus me-1"></i> Create New User
+            </a>
+        </div>
+    </div>
+    <hr class="mb-4">
+
+    {# Statistics Row #}
+    <div class="row mb-4 gy-3">
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Total Users</h5>
+                    <p class="card-text fs-2 fw-bold">{{ total_users_count if total_users_count is not none and total_users_count != "Error" else 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Active Users</h5>
+                    <p class="card-text fs-2 fw-bold">{{ active_users_count if active_users_count is not none and active_users_count != "Error" else 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Admin Users</h5>
+                    <p class="card-text fs-2 fw-bold">{{ admin_users_count if admin_users_count is not none and admin_users_count != "Error" else 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Bulk Actions UI #}
+    {% if users %}
+    <div class="row mb-3">
+        <div class="col-md-auto mb-2 mb-md-0">
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="bulkActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Bulk Actions
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="bulkActionsDropdown">
+                    <li><a class="dropdown-item" href="#" id="bulk-delete-selected-action">Delete Selected</a></li>
+                    {# Add other bulk actions here if needed in the future #}
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-auto">
+            <button class="btn btn-outline-danger btn-sm" type="button" id="apply-bulk-action-button" disabled>Apply to Selected</button>
+        </div>
+    </div>
+    {% endif %}
+
+    {# User Table #}
+    {% if users %}
+    <div class="table-responsive shadow-sm rounded">
+        <table class="table table-hover align-middle" id="users-table">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col" style="width: 3%;">
+                        <input class="form-check-input" type="checkbox" value="" id="select-all-users-checkbox" title="Select all users on this page">
+                    </th>
+                    <th scope="col" style="width: 5%;">ID</th>
+                    <th scope="col">Username</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">Active</th>
+                    <th scope="col">Verified</th>
+                    <th scope="col">Joined</th>
+                    <th scope="col">Last Login</th>
+                    <th scope="col" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user_item in users %}
+                <tr>
+                    <td>
+                        <input class="form-check-input user-checkbox" type="checkbox" value="{{ user_item.id }}" name="user_ids" aria-label="Select user {{ user_item.username }}">
+                    </td>
+                    <td>{{ user_item.id }}</td>
+                    <td>
+                        {% if user_item.profile_picture and user_item.profile_picture != 'default.jpg' %}
+                            <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/' + user_item.profile_picture) }}?v={{ range(1,100000)|random }}" alt="{{ user_item.username }}'s Pic" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                        {% else %}
+                            <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/default.jpg') }}" alt="Default Pic" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                        {% endif %}
+                        {{ user_item.username }}
+                        {% if user_item.name %}<small class="d-block text-muted">{{ user_item.name }}</small>{% endif %}
+                    </td>
+                    <td>{{ user_item.email }}</td>
+                    <td>
+                        <span class="badge
+                            {% if user_item.role == UserRole.ADMIN %}bg-danger
+                            {% elif user_item.role == UserRole.EDITOR %}bg-warning text-dark
+                            {% else %}bg-secondary
+                            {% endif %}">
+                            {{ user_item.role.name.title() if user_item.role else 'N/A' }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if user_item.is_active %}
+                            <span class="badge bg-success rounded-pill">Yes</span>
+                        {% else %}
+                            <span class="badge bg-danger rounded-pill">No</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user_item.is_email_verified %}
+                            <span class="badge bg-success rounded-pill">Yes</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark rounded-pill">No</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user_item.created_at.strftime('%Y-%m-%d') if user_item.created_at else 'N/A' }}</td>
+                    <td>{{ user_item.last_login.strftime('%Y-%m-%d %H:%M') if user_item.last_login else 'Never' }}</td>
+                    <td class="text-end">
+                        <a href="{{ url_for('admin.admin_edit_user', user_id=user_item.id) }}"
+                           class="text-primary me-2"
+                           title="Edit User: {{ user_item.username }}"
+                           style="text-decoration: none; vertical-align: middle;">
+                            <i class="fas fa-edit fa-fw"></i>
+                        </a>
+
+                        {% if current_user.id != user_item.id and not (user_item.is_admin() and admin_users_count <= 1) %}
+                        <form method="POST"
+                              action="{{ url_for('admin.admin_delete_user', user_id=user_item.id) }}"
+                              style="display:inline;"
+                              class="delete-user-form"
+                              onsubmit="return confirm('Are you sure you want to PERMANENTLY DELETE user \'{{ user_item.username }}\'? This action cannot be undone and will delete associated data.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit"
+                                    class="btn btn-link text-danger p-0"
+                                    title="Delete User: {{ user_item.username }}"
+                                    style="border: none; background: none; vertical-align: middle; line-height: 1;">
+                                <i class="fas fa-trash-alt fa-fw"></i>
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted" title="Cannot delete this user" style="display: inline-block; padding: 0 0.25rem; line-height: 1; vertical-align: middle;">
+                            <i class="fas fa-trash-alt fa-fw"></i>
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info mt-3" role="alert">
+        No users found. You can <a href="{{ url_for('admin.admin_create_user') }}" class="alert-link">create one now</a>.
+    </div>
+    {% endif %}
+
+    {# Pagination #}
+    {% if pagination and pagination.pages > 1 %}
+    <nav aria-label="User pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('admin.admin_users_list', page=pagination.prev_num) if pagination.has_prev else '#' }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    {% if page_num == pagination.page %}
+                        <li class="page-item active" aria-current="page"><span class="page-link">{{ page_num }}</span></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="{{ url_for('admin.admin_users_list', page=page_num) }}">{{ page_num }}</a></li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('admin.admin_users_list', page=pagination.next_num) if pagination.has_next else '#' }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAllCheckbox = document.getElementById('select-all-users-checkbox');
+    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+    const applyBulkActionButton = document.getElementById('apply-bulk-action-button');
+    const bulkDeleteSelectedLink = document.getElementById('bulk-delete-selected-action'); // Changed ID to match HTML
+
+    function toggleApplyButtonState() {
+        if (!applyBulkActionButton) return; // Guard if button doesn't exist
+        let oneChecked = false;
+        userCheckboxes.forEach(function(checkbox) {
+            if (checkbox.checked) {
+                oneChecked = true;
+            }
+        });
+        applyBulkActionButton.disabled = !oneChecked;
+    }
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function () {
+            userCheckboxes.forEach(function(checkbox) {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            toggleApplyButtonState();
+        });
+    }
+
+    userCheckboxes.forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            if(selectAllCheckbox){ // Check if selectAllCheckbox exists
+                if (!this.checked) {
+                    selectAllCheckbox.checked = false;
+                } else {
+                    let allChecked = true;
+                    userCheckboxes.forEach(function(cb) {
+                        if (!cb.checked) {
+                            allChecked = false;
+                        }
+                    });
+                    selectAllCheckbox.checked = allChecked;
+                }
+            }
+            toggleApplyButtonState();
+        });
+    });
+
+    if(applyBulkActionButton) { // Check if button exists before adding listener
+      toggleApplyButtonState(); // Initial state
+    }
+
+    // Event listener for the "Apply to Selected" button (if using dropdown to choose action)
+    // Or directly for the "Delete Selected" link if it's meant to trigger the action
+    if (bulkDeleteSelectedLink && applyBulkActionButton) {
+        // This makes the "Apply" button trigger the delete action
+        // if "Delete Selected" is the implied action from the dropdown
+        applyBulkActionButton.addEventListener('click', function() {
+            // In a more complex scenario, you'd check which action was selected in the dropdown
+            // For now, we assume if this button is clicked (and enabled), it means "Delete Selected"
+            handleBulkDelete();
+        });
+
+        // If you want the link itself in the dropdown to trigger it:
+        // bulkDeleteSelectedLink.addEventListener('click', function(event) {
+        //     event.preventDefault(); // Prevent default link behavior
+        //     handleBulkDelete();
+        // });
+    }
+
+    function handleBulkDelete() {
+        const selectedUserIds = [];
+        userCheckboxes.forEach(function(checkbox) {
+            if (checkbox.checked) {
+                selectedUserIds.push(checkbox.value);
+            }
+        });
+
+        if (selectedUserIds.length === 0) {
+            alert('Please select at least one user to delete.');
+            return;
+        }
+
+        if (confirm('Are you sure you want to PERMANENTLY DELETE the selected ' + selectedUserIds.length + ' user(s)? This action cannot be undone and may delete associated data.')) {
+            const csrfTokenEl = document.querySelector('input[name="csrf_token"]'); // Get token from any form on page
+            const csrfToken = csrfTokenEl ? csrfTokenEl.value : "{{ csrf_token() }}"; // Fallback if not found in a form
+
+            fetch("{{ url_for('admin.admin_bulk_delete_users') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken // Flask-WTF default CSRF header name
+                },
+                body: JSON.stringify({ user_ids: selectedUserIds })
+            })
+            .then(response => {
+                if (!response.ok) { // Check for non-2xx responses
+                    return response.json().then(err => { throw new Error(err.message || `Server error: ${response.status}`) });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message || 'Selected users processed successfully.');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Could not process bulk delete.'));
+                }
+            })
+            .catch(error => {
+                console.error('Error during bulk delete:', error);
+                alert('An unexpected error occurred during bulk delete: ' + error.message);
+            });
+        }
+    }
+});
+</script>
+{% endblock %}

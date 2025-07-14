@@ -2,200 +2,316 @@
 {% from "macros/_form_helpers.html" import render_field %} {# For potential future search/filter #}
 
 {% block title %}
-    {{ title or "User Management" }} - Admin
+    {{ title or "User Administration Console" }} - Administration Center
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4 mb-5">
-    <div class="row mb-3 align-items-center">
-        <div class="col-md-8">
-            <h1 class="display-5"><i class="fas fa-users-cog me-2"></i>{{ title or "User Management" }}</h1>
-        </div>
-        <div class="col-md-4 text-md-end">
-            <a href="{{ url_for('admin.admin_create_user') }}" class="btn btn-success">
-                <i class="fas fa-user-plus me-1"></i> Create New User
-            </a>
-        </div>
-    </div>
-    <hr class="mb-4">
-
-    {# Statistics Row #}
-    <div class="row mb-4 gy-3">
-        <div class="col-md-4">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title text-muted">Total Users</h5>
-                    <p class="card-text fs-2 fw-bold">{{ total_users_count if total_users_count is not none and total_users_count != "Error" else 'N/A' }}</p>
+<div class="container-fluid">
+    <!-- Executive Header -->
+    <div class="executive-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="header-content">
+                <h1 class="executive-title">
+                    <i class="fas fa-users-cog executive-icon"></i>
+                    {{ title or "User Administration Console" }}
+                </h1>
+                <div class="executive-subtitle">
+                    Strategic User Resource Management & Access Control Framework
                 </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title text-muted">Active Users</h5>
-                    <p class="card-text fs-2 fw-bold">{{ active_users_count if active_users_count is not none and active_users_count != "Error" else 'N/A' }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title text-muted">Admin Users</h5>
-                    <p class="card-text fs-2 fw-bold">{{ admin_users_count if admin_users_count is not none and admin_users_count != "Error" else 'N/A' }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {# Bulk Actions UI #}
-    {% if users %}
-    <div class="row mb-3">
-        <div class="col-md-auto mb-2 mb-md-0">
-            <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="bulkActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    Bulk Actions
+            <div class="btn-group">
+                <a href="{{ url_for('admin.admin_create_user') }}"
+                   class="btn btn-primary btn-sm" title="New User Provisioning">
+                    <i class="fas fa-user-plus"></i>
+                </a>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Data">
+                    <i class="fas fa-sync-alt"></i>
                 </button>
-                <ul class="dropdown-menu" aria-labelledby="bulkActionsDropdown">
-                    <li><a class="dropdown-item" href="#" id="bulk-delete-selected-action">Delete Selected</a></li>
-                    {# Add other bulk actions here if needed in the future #}
-                </ul>
+                <a href="{{ url_for('admin.show_admin_dashboard') }}"
+                   class="btn btn-outline-secondary btn-sm" title="Back to Administration Center">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
             </div>
         </div>
-        <div class="col-md-auto">
-            <button class="btn btn-outline-danger btn-sm" type="button" id="apply-bulk-action-button" disabled>Apply to Selected</button>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 300px);">
+        <div class="row g-4">
+            <!-- Executive KPI Section -->
+            <div class="col-12">
+                <div class="kpi-section">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <div class="kpi-card">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <span class="kpi-label">Total Resource Pool</span>
+                                        <i class="fas fa-users kpi-icon"></i>
+                                    </div>
+                                    <div class="kpi-value">{{ total_users_count if total_users_count is not none and total_users_count != "Error" else 'N/A' }}</div>
+                                    <div class="kpi-trend">
+                                        <span class="trend-indicator">User Accounts</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="kpi-card">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <span class="kpi-label">Active Operations</span>
+                                        <i class="fas fa-check-circle kpi-icon"></i>
+                                    </div>
+                                    <div class="kpi-value">{{ active_users_count if active_users_count is not none and active_users_count != "Error" else 'N/A' }}</div>
+                                    <div class="kpi-trend">
+                                        <span class="trend-indicator positive">
+                                            <i class="fas fa-arrow-up"></i> Operational
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="kpi-card">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <span class="kpi-label">Administrative Access</span>
+                                        <i class="fas fa-shield-alt kpi-icon"></i>
+                                    </div>
+                                    <div class="kpi-value">{{ admin_users_count if admin_users_count is not none and admin_users_count != "Error" else 'N/A' }}</div>
+                                    <div class="kpi-trend">
+                                        <span class="trend-indicator">Privileged Accounts</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Operational Controls Module -->
+            {% if users %}
+            <div class="col-12">
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-tasks module-icon"></i>
+                            Bulk Operations Management
+                        </div>
+                        <div class="module-meta">
+                            Execution Criteria
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        <div class="row align-items-center">
+                            <div class="col-md-auto mb-2 mb-md-0">
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle btn-sm" type="button" id="bulkActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-cogs me-1"></i> Bulk Operations
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="bulkActionsDropdown">
+                                        <li><a class="dropdown-item" href="#" id="bulk-delete-selected-action">
+                                            <i class="fas fa-trash-alt me-2"></i>Remove Selected Configurations
+                                        </a></li>
+                                        {# Add other bulk actions here if needed in the future #}
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-auto">
+                                <button class="btn btn-outline-primary btn-sm" type="button" id="apply-bulk-action-button" disabled>
+                                    <i class="fas fa-play me-1"></i>Execute Selected Operations
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- User Resource Management Module -->
+            <div class="col-12">
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-database module-icon"></i>
+                            User Resource Database
+                        </div>
+                        <div class="module-meta">
+                            Strategic Resource Utilization Overview
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        {% if users %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle enterprise-table" id="users-table">
+                                <thead class="table-header">
+                                    <tr>
+                                        <th scope="col" style="width: 3%;">
+                                            <input class="form-check-input" type="checkbox" value="" id="select-all-users-checkbox" title="Select all user resources">
+                                        </th>
+                                        <th scope="col" style="width: 5%;">Resource ID</th>
+                                        <th scope="col">Identity Configuration</th>
+                                        <th scope="col">Contact Protocol</th>
+                                        <th scope="col">Access Classification</th>
+                                        <th scope="col">Operational Status</th>
+                                        <th scope="col">Verification Status</th>
+                                        <th scope="col">Provisioning Date</th>
+                                        <th scope="col">Last Access Event</th>
+                                        <th scope="col" class="text-end">Administrative Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user_item in users %}
+                                    <tr class="resource-row">
+                                        <td>
+                                            <input class="form-check-input user-checkbox" type="checkbox" value="{{ user_item.id }}" name="user_ids" aria-label="Select resource {{ user_item.username }}">
+                                        </td>
+                                        <td>
+                                            <span class="resource-id">{{ user_item.id }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if user_item.profile_picture and user_item.profile_picture != 'default.jpg' %}
+                                                    <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/' + user_item.profile_picture) }}?v={{ range(1,100000)|random }}" alt="{{ user_item.username }}'s Profile" class="user-avatar me-2">
+                                                {% else %}
+                                                    <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/default.jpg') }}" alt="Default Profile" class="user-avatar me-2">
+                                                {% endif %}
+                                                <div>
+                                                    <div class="resource-name">{{ user_item.username }}</div>
+                                                    {% if user_item.name %}<small class="resource-display-name">{{ user_item.name }}</small>{% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="contact-protocol">{{ user_item.email }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge
+                                                {% if user_item.role == UserRole.ADMIN %}classification-critical
+                                                {% elif user_item.role == UserRole.EDITOR %}classification-elevated
+                                                {% else %}classification-standard
+                                                {% endif %}">
+                                                {{ user_item.role.name.title() if user_item.role else 'Unclassified' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if user_item.is_active %}
+                                                <span class="status-badge operational">Operational</span>
+                                            {% else %}
+                                                <span class="status-badge suspended">Suspended</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if user_item.is_email_verified %}
+                                                <span class="status-badge verified">Verified</span>
+                                            {% else %}
+                                                <span class="status-badge pending">Pending Verification</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="operational-date">{{ user_item.created_at.strftime('%Y-%m-%d') if user_item.created_at else 'N/A' }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="operational-date">{{ user_item.last_login.strftime('%Y-%m-%d %H:%M') if user_item.last_login else 'No Access Events' }}</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('admin.admin_edit_user', user_id=user_item.id) }}"
+                                                   class="btn btn-outline-warning btn-sm"
+                                                   title="Configure Resource: {{ user_item.username }}"
+                                                   aria-label="Configure user resource {{ user_item.username }}">
+                                                    <i class="fas fa-edit" aria-hidden="true"></i>
+                                                </a>
+
+                                                {% if current_user.id != user_item.id and not (user_item.is_admin() and admin_users_count <= 1) %}
+                                                <form method="POST"
+                                                      action="{{ url_for('admin.admin_delete_user', user_id=user_item.id) }}"
+                                                      style="display:inline;"
+                                                      class="delete-user-form"
+                                                      onsubmit="return confirm('CRITICAL OPERATION: Permanently remove user configuration \'{{ user_item.username }}\'? This action cannot be reversed and will remove all associated operational data.');">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit"
+                                                            class="btn btn-outline-danger btn-sm"
+                                                            title="Remove Configuration: {{ user_item.username }}"
+                                                            aria-label="Remove user configuration {{ user_item.username }}">
+                                                        <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                                    </button>
+                                                </form>
+                                                {% else %}
+                                                <button type="button" class="btn btn-outline-danger btn-sm" disabled
+                                                        title="Cannot remove this configuration">
+                                                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="enterprise-alert">
+                            <div class="alert-content">
+                                <i class="fas fa-info-circle alert-icon"></i>
+                                <div class="alert-text">
+                                    <strong>No User Resources Found</strong>
+                                    <p>No user configurations are currently available in the system. You can <a href="{{ url_for('admin.admin_create_user') }}" class="alert-link">initiate new user provisioning</a> to begin resource allocation.</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resource Navigation Module -->
+            {% if pagination and pagination.pages > 1 %}
+            <div class="col-12">
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-arrow-circle-right module-icon"></i>
+                            Resource Navigation
+                        </div>
+                        <div class="module-meta">
+                            Operational Framework Navigation
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        <nav aria-label="User resource pagination" class="pagination-nav">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                                    <a class="page-link" href="{{ url_for('admin.admin_users_list', page=pagination.prev_num) if pagination.has_prev else '#' }}" aria-label="Previous Resource Set">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                    {% if page_num %}
+                                        {% if page_num == pagination.page %}
+                                            <li class="page-item active" aria-current="page"><span class="page-link">{{ page_num }}</span></li>
+                                        {% else %}
+                                            <li class="page-item"><a class="page-link" href="{{ url_for('admin.admin_users_list', page=page_num) }}">{{ page_num }}</a></li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    {% endif %}
+                                {% endfor %}
+                                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                                    <a class="page-link" href="{{ url_for('admin.admin_users_list', page=pagination.next_num) if pagination.has_next else '#' }}" aria-label="Next Resource Set">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
-    {% endif %}
-
-    {# User Table #}
-    {% if users %}
-    <div class="table-responsive shadow-sm rounded">
-        <table class="table table-hover align-middle" id="users-table">
-            <thead class="table-dark">
-                <tr>
-                    <th scope="col" style="width: 3%;">
-                        <input class="form-check-input" type="checkbox" value="" id="select-all-users-checkbox" title="Select all users on this page">
-                    </th>
-                    <th scope="col" style="width: 5%;">ID</th>
-                    <th scope="col">Username</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">Role</th>
-                    <th scope="col">Active</th>
-                    <th scope="col">Verified</th>
-                    <th scope="col">Joined</th>
-                    <th scope="col">Last Login</th>
-                    <th scope="col" class="text-end">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user_item in users %}
-                <tr>
-                    <td>
-                        <input class="form-check-input user-checkbox" type="checkbox" value="{{ user_item.id }}" name="user_ids" aria-label="Select user {{ user_item.username }}">
-                    </td>
-                    <td>{{ user_item.id }}</td>
-                    <td>
-                        {% if user_item.profile_picture and user_item.profile_picture != 'default.jpg' %}
-                            <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/' + user_item.profile_picture) }}?v={{ range(1,100000)|random }}" alt="{{ user_item.username }}'s Pic" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
-                        {% else %}
-                            <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/default.jpg') }}" alt="Default Pic" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
-                        {% endif %}
-                        {{ user_item.username }}
-                        {% if user_item.name %}<small class="d-block text-muted">{{ user_item.name }}</small>{% endif %}
-                    </td>
-                    <td>{{ user_item.email }}</td>
-                    <td>
-                        <span class="badge
-                            {% if user_item.role == UserRole.ADMIN %}bg-danger
-                            {% elif user_item.role == UserRole.EDITOR %}bg-warning text-dark
-                            {% else %}bg-secondary
-                            {% endif %}">
-                            {{ user_item.role.name.title() if user_item.role else 'N/A' }}
-                        </span>
-                    </td>
-                    <td>
-                        {% if user_item.is_active %}
-                            <span class="badge bg-success rounded-pill">Yes</span>
-                        {% else %}
-                            <span class="badge bg-danger rounded-pill">No</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if user_item.is_email_verified %}
-                            <span class="badge bg-success rounded-pill">Yes</span>
-                        {% else %}
-                            <span class="badge bg-warning text-dark rounded-pill">No</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ user_item.created_at.strftime('%Y-%m-%d') if user_item.created_at else 'N/A' }}</td>
-                    <td>{{ user_item.last_login.strftime('%Y-%m-%d %H:%M') if user_item.last_login else 'Never' }}</td>
-                    <td class="text-end">
-                        <a href="{{ url_for('admin.admin_edit_user', user_id=user_item.id) }}"
-                           class="text-primary me-2"
-                           title="Edit User: {{ user_item.username }}"
-                           style="text-decoration: none; vertical-align: middle;">
-                            <i class="fas fa-edit fa-fw"></i>
-                        </a>
-
-                        {% if current_user.id != user_item.id and not (user_item.is_admin() and admin_users_count <= 1) %}
-                        <form method="POST"
-                              action="{{ url_for('admin.admin_delete_user', user_id=user_item.id) }}"
-                              style="display:inline;"
-                              class="delete-user-form"
-                              onsubmit="return confirm('Are you sure you want to PERMANENTLY DELETE user \'{{ user_item.username }}\'? This action cannot be undone and will delete associated data.');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit"
-                                    class="btn btn-link text-danger p-0"
-                                    title="Delete User: {{ user_item.username }}"
-                                    style="border: none; background: none; vertical-align: middle; line-height: 1;">
-                                <i class="fas fa-trash-alt fa-fw"></i>
-                            </button>
-                        </form>
-                        {% else %}
-                        <span class="text-muted" title="Cannot delete this user" style="display: inline-block; padding: 0 0.25rem; line-height: 1; vertical-align: middle;">
-                            <i class="fas fa-trash-alt fa-fw"></i>
-                        </span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="alert alert-info mt-3" role="alert">
-        No users found. You can <a href="{{ url_for('admin.admin_create_user') }}" class="alert-link">create one now</a>.
-    </div>
-    {% endif %}
-
-    {# Pagination #}
-    {% if pagination and pagination.pages > 1 %}
-    <nav aria-label="User pagination" class="mt-4">
-        <ul class="pagination justify-content-center">
-            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('admin.admin_users_list', page=pagination.prev_num) if pagination.has_prev else '#' }}" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-            </li>
-            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-                {% if page_num %}
-                    {% if page_num == pagination.page %}
-                        <li class="page-item active" aria-current="page"><span class="page-link">{{ page_num }}</span></li>
-                    {% else %}
-                        <li class="page-item"><a class="page-link" href="{{ url_for('admin.admin_users_list', page=page_num) }}">{{ page_num }}</a></li>
-                    {% endif %}
-                {% else %}
-                    <li class="page-item disabled"><span class="page-link">...</span></li>
-                {% endif %}
-            {% endfor %}
-            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('admin.admin_users_list', page=pagination.next_num) if pagination.has_next else '#' }}" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-            </li>
-        </ul>
-    </nav>
-    {% endif %}
 </div>
 {% endblock %}
 
@@ -205,17 +321,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectAllCheckbox = document.getElementById('select-all-users-checkbox');
     const userCheckboxes = document.querySelectorAll('.user-checkbox');
     const applyBulkActionButton = document.getElementById('apply-bulk-action-button');
-    const bulkDeleteSelectedLink = document.getElementById('bulk-delete-selected-action'); // Changed ID to match HTML
+    const bulkDeleteSelectedLink = document.getElementById('bulk-delete-selected-action');
 
-    function toggleApplyButtonState() {
+    function toggleOperationalState() {
         if (!applyBulkActionButton) return; // Guard if button doesn't exist
-        let oneChecked = false;
+        let resourcesSelected = false;
         userCheckboxes.forEach(function(checkbox) {
             if (checkbox.checked) {
-                oneChecked = true;
+                resourcesSelected = true;
             }
         });
-        applyBulkActionButton.disabled = !oneChecked;
+        applyBulkActionButton.disabled = !resourcesSelected;
     }
 
     if (selectAllCheckbox) {
@@ -223,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function () {
             userCheckboxes.forEach(function(checkbox) {
                 checkbox.checked = selectAllCheckbox.checked;
             });
-            toggleApplyButtonState();
+            toggleOperationalState();
         });
     }
 
@@ -233,55 +349,44 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!this.checked) {
                     selectAllCheckbox.checked = false;
                 } else {
-                    let allChecked = true;
+                    let allResourcesSelected = true;
                     userCheckboxes.forEach(function(cb) {
                         if (!cb.checked) {
-                            allChecked = false;
+                            allResourcesSelected = false;
                         }
                     });
-                    selectAllCheckbox.checked = allChecked;
+                    selectAllCheckbox.checked = allResourcesSelected;
                 }
             }
-            toggleApplyButtonState();
+            toggleOperationalState();
         });
     });
 
     if(applyBulkActionButton) { // Check if button exists before adding listener
-      toggleApplyButtonState(); // Initial state
+      toggleOperationalState(); // Initial operational state
     }
 
-    // Event listener for the "Apply to Selected" button (if using dropdown to choose action)
-    // Or directly for the "Delete Selected" link if it's meant to trigger the action
+    // Event listener for operational execution
     if (bulkDeleteSelectedLink && applyBulkActionButton) {
-        // This makes the "Apply" button trigger the delete action
-        // if "Delete Selected" is the implied action from the dropdown
         applyBulkActionButton.addEventListener('click', function() {
-            // In a more complex scenario, you'd check which action was selected in the dropdown
-            // For now, we assume if this button is clicked (and enabled), it means "Delete Selected"
-            handleBulkDelete();
+            executeResourceRemoval();
         });
-
-        // If you want the link itself in the dropdown to trigger it:
-        // bulkDeleteSelectedLink.addEventListener('click', function(event) {
-        //     event.preventDefault(); // Prevent default link behavior
-        //     handleBulkDelete();
-        // });
     }
 
-    function handleBulkDelete() {
-        const selectedUserIds = [];
+    function executeResourceRemoval() {
+        const selectedResourceIds = [];
         userCheckboxes.forEach(function(checkbox) {
             if (checkbox.checked) {
-                selectedUserIds.push(checkbox.value);
+                selectedResourceIds.push(checkbox.value);
             }
         });
 
-        if (selectedUserIds.length === 0) {
-            alert('Please select at least one user to delete.');
+        if (selectedResourceIds.length === 0) {
+            alert('OPERATIONAL ERROR: Please select at least one user resource for configuration removal.');
             return;
         }
 
-        if (confirm('Are you sure you want to PERMANENTLY DELETE the selected ' + selectedUserIds.length + ' user(s)? This action cannot be undone and may delete associated data.')) {
+        if (confirm('CRITICAL ENTERPRISE OPERATION: Permanently remove the selected ' + selectedResourceIds.length + ' user configuration(s)? This action cannot be reversed and will remove all associated operational data and access credentials.')) {
             const csrfTokenEl = document.querySelector('input[name="csrf_token"]'); // Get token from any form on page
             const csrfToken = csrfTokenEl ? csrfTokenEl.value : "{{ csrf_token() }}"; // Fallback if not found in a form
 
@@ -291,25 +396,25 @@ document.addEventListener('DOMContentLoaded', function () {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrfToken // Flask-WTF default CSRF header name
                 },
-                body: JSON.stringify({ user_ids: selectedUserIds })
+                body: JSON.stringify({ user_ids: selectedResourceIds })
             })
             .then(response => {
                 if (!response.ok) { // Check for non-2xx responses
-                    return response.json().then(err => { throw new Error(err.message || `Server error: ${response.status}`) });
+                    return response.json().then(err => { throw new Error(err.message || `Enterprise System Error: ${response.status}`) });
                 }
                 return response.json();
             })
             .then(data => {
                 if (data.status === 'success') {
-                    alert(data.message || 'Selected users processed successfully.');
+                    alert('OPERATION COMPLETED: ' + (data.message || 'Selected user configurations processed successfully.'));
                     location.reload();
                 } else {
-                    alert('Error: ' + (data.message || 'Could not process bulk delete.'));
+                    alert('ENTERPRISE SYSTEM ERROR: ' + (data.message || 'Could not execute bulk configuration removal operation.'));
                 }
             })
             .catch(error => {
-                console.error('Error during bulk delete:', error);
-                alert('An unexpected error occurred during bulk delete: ' + error.message);
+                console.error('Enterprise operation execution error:', error);
+                alert('CRITICAL SYSTEM ERROR: An unexpected error occurred during bulk operation execution: ' + error.message);
             });
         }
     }
