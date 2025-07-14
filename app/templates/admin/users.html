@@ -517,18 +517,19 @@ function confirmDeleteUser(userId, username) {
                 confirmClass: 'btn-danger',
                 icon: 'trash-alt',
                 onConfirm: function() {
-                    const csrfToken = document.querySelector('meta[name=csrf-token]').content;
                     const deleteUrl = "{{ url_for('admin.admin_delete_user', user_id=999999) }}".replace('999999', userId);
-
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = deleteUrl;
 
-                    const csrfInput = document.createElement('input');
-                    csrfInput.type = 'hidden';
-                    csrfInput.name = 'csrf_token';
-                    csrfInput.value = csrfToken;
-                    form.appendChild(csrfInput);
+                    const csrfToken = document.querySelector('meta[name=csrf-token]')?.content;
+                    if (csrfToken) {
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = 'csrf_token';
+                        csrfInput.value = csrfToken;
+                        form.appendChild(csrfInput);
+                    }
 
                     document.body.appendChild(form);
                     form.submit();
@@ -536,18 +537,19 @@ function confirmDeleteUser(userId, username) {
             });
         } else {
             if (confirm('Permanently remove user configuration for "' + username + '"? This action cannot be reversed.')) {
-                const csrfToken = document.querySelector('meta[name=csrf-token]').content;
                 const deleteUrl = "{{ url_for('admin.admin_delete_user', user_id=999999) }}".replace('999999', userId);
-
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = deleteUrl;
 
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrf_token';
-                csrfInput.value = csrfToken;
-                form.appendChild(csrfInput);
+                const csrfToken = document.querySelector('meta[name=csrf-token]')?.content;
+                if (csrfToken) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrf_token';
+                    csrfInput.value = csrfToken;
+                    form.appendChild(csrfInput);
+                }
 
                 document.body.appendChild(form);
                 form.submit();
@@ -653,24 +655,25 @@ function checkAndExecuteBulkAction(action, title, message, buttonClass, icon) {
 
 function executeBulkAction(action, userIds) {
     try {
-        const csrfToken = document.querySelector('meta[name=csrf-token]').content;
+        console.log('🚀 Executing bulk action:', action);
+        console.log('User IDs:', userIds);
 
         let endpoint;
         switch(action) {
             case 'delete':
-                endpoint = "{{ url_for('admin.admin_bulk_delete_users') }}";
+                endpoint = "/admin/users/bulk_delete";
                 break;
             case 'activate':
-                endpoint = "{{ url_for('admin.admin_bulk_activate_users') }}";
+                endpoint = "/admin/users/bulk_activate";
                 break;
             case 'deactivate':
-                endpoint = "{{ url_for('admin.admin_bulk_deactivate_users') }}";
+                endpoint = "/admin/users/bulk_deactivate";
                 break;
             case 'reset-passwords':
-                endpoint = "{{ url_for('admin.admin_bulk_reset_passwords') }}";
+                endpoint = "/admin/users/bulk_reset_passwords";
                 break;
             case 'verify-emails':
-                endpoint = "{{ url_for('admin.admin_bulk_verify_emails') }}";
+                endpoint = "/admin/users/bulk_verify_emails";
                 break;
             default:
                 if (typeof showCustomConfirmation === 'function') {
@@ -687,22 +690,31 @@ function executeBulkAction(action, userIds) {
                 return;
         }
 
+        console.log('Making request to:', endpoint);
+
         fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({ user_ids: userIds })
         })
         .then(function(response) {
+            console.log('Response status:', response.status);
+
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+            }
+
             return response.json();
         })
         .then(function(data) {
+            console.log('Response data:', data);
+
             if (data.status === 'success') {
                 let message = data.message;
 
-                // Add detailed info for certain actions
                 if (action === 'reset-passwords' && data.reset_count) {
                     message += '\n\nNew passwords have been sent via email.';
                 }
@@ -745,13 +757,13 @@ function executeBulkAction(action, userIds) {
             if (typeof showCustomConfirmation === 'function') {
                 showCustomConfirmation({
                     title: 'System Error',
-                    message: 'An unexpected error occurred during the operation. Please check the console for details.',
+                    message: 'An unexpected error occurred during the operation. Please check the console for details.\n\nError: ' + error.message,
                     confirmText: 'OK',
                     confirmClass: 'btn-danger',
                     icon: 'exclamation-triangle'
                 });
             } else {
-                alert('System error occurred during the operation.');
+                alert('System error occurred during the operation.\n\nError: ' + error.message);
             }
         });
     } catch (error) {

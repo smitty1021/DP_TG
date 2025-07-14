@@ -1,29 +1,38 @@
-
-
 from flask import (Blueprint, render_template, current_app, request,
-                   redirect, url_for, flash, abort, jsonify)  # Added abort
+                   redirect, url_for, flash, abort, jsonify)
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.utils import admin_required, record_activity, generate_token, send_email, smart_flash  # Added generate_token, send_email
-from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory  # Add TagCategory here
+from app.utils import admin_required, record_activity, generate_token, send_email, smart_flash
+from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel
 from datetime import datetime
 
-from app.forms import AdminCreateUserForm, AdminEditUserForm, InstrumentForm, InstrumentFilterForm  # Add Instrument forms
-from app.models import Tag, TagCategory  # Add to existing imports
-from app.forms import AdminDefaultTagForm
-from app.models import Instrument  # Add to existing imports
-from app.forms import InstrumentForm, InstrumentFilterForm  # Add to existing imports
-from app.models import TradingModel
-from app.forms import TradingModelForm
+#from flask import (Blueprint, render_template, current_app, request,
+#                   redirect, url_for, flash, abort, jsonify)  # Added abort
+#from flask_login import login_required, current_user
+
+#from app.extensions import db
+#from app.utils import admin_required, record_activity, generate_token, send_email, smart_flash  # Added generate_token, send_email
+#from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory  # Add TagCategory here
+#from datetime import datetime
+#from app.forms import AdminCreateUserForm, AdminEditUserForm, InstrumentForm, InstrumentFilterForm  # Add Instrument forms
+#from app.models import Tag, TagCategory  # Add to existing imports
+#from app.forms import AdminDefaultTagForm
+#from app.models import Instrument  # Add to existing imports
+#from app.forms import InstrumentForm, InstrumentFilterForm  # Add to existing imports
+#from app.models import TradingModel
+#from app.forms import TradingModelForm
+#from app.forms import TradingModelForm
+#from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel
+
+
 admin_bp = Blueprint('admin', __name__,
                      template_folder='../templates/admin',
                      url_prefix='/admin')
 
 
 
-from app.forms import TradingModelForm
-from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel
+
 
 
 @admin_bp.route('/default-trading-models')
