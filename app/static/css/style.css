@@ -221,6 +221,10 @@ img {
     margin-left: auto;
 }
 
+.dashboard-container .enterprise-container {
+    padding: 0;
+}
+
 .enterprise-container-fluid {
     width: 100%;
     padding-right: var(--enterprise-spacing-lg);
@@ -495,10 +499,21 @@ Add after section 3 (Enterprise Layout System)
     font-size: var(--enterprise-font-size-sm);
     color: var(--enterprise-text-muted);
     font-weight: 500;
+    transition: all 0.3s ease;
 }
 
 .module-content {
     padding: var(--enterprise-spacing-lg);
+}
+
+.module-content.p-0 {
+    padding: 0 !important;
+}
+
+.enterprise-module .module-content.p-0 .calendar-grid {
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid var(--enterprise-border);
 }
 
 /* Module Variants */
@@ -520,6 +535,7 @@ Add after section 3 (Enterprise Layout System)
 .kpi-section {
     background: var(--enterprise-white);
     border-bottom: 1px solid var(--enterprise-border);
+    margin-bottom: var(--enterprise-spacing-lg);
     padding: 0;
 }
 
@@ -543,6 +559,7 @@ Add after section 3 (Enterprise Layout System)
 .kpi-card:hover {
     background: var(--enterprise-gray-50);
     box-shadow: inset 0 0 0 1px var(--enterprise-primary);
+    transform: translateY(-2px);
 }
 
 .kpi-header {
@@ -585,31 +602,52 @@ Add after section 3 (Enterprise Layout System)
 }
 
 .metric-item {
-    padding: var(--enterprise-spacing-lg);
+    text-align: center;
     border-right: 1px solid var(--enterprise-border);
-    min-height: 100px;
+    padding: var(--enterprise-spacing-lg);
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius);
+    background: var(--enterprise-white);
+    transition: all var(--enterprise-transition-base);
+    min-height: 80px;
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+.metric-item:hover {
+    background: var(--enterprise-gray-50);
+    transform: translateY(-1px);
+    box-shadow: var(--enterprise-shadow-sm);
 }
 
 .metric-item:last-child {
     border-right: none;
 }
 
+html[data-bs-theme="dark"] .metric-item {
+    background: var(--enterprise-card-bg);
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="dark"] .metric-item:hover {
+    background: var(--enterprise-gray-200);
+}
+
 .metric-label {
     font-size: var(--enterprise-font-size-xs);
-    font-weight: 500;
     color: var(--enterprise-text-secondary);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 0.5rem;
 }
 
 .metric-value {
     font-size: var(--enterprise-font-size-lg);
     font-weight: 600;
     color: var(--enterprise-text-primary);
+    line-height: 1.1;
 }
 
 /* Stats Cards */
@@ -716,6 +754,11 @@ Add after section 3 (Enterprise Layout System)
     outline: 2px solid var(--enterprise-primary);
     outline-offset: 2px;
     box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
 }
 
 .btn:disabled,
@@ -775,6 +818,7 @@ Add after section 3 (Enterprise Layout System)
     color: var(--enterprise-white);
     background-color: var(--enterprise-gray-600);
     border-color: var(--enterprise-gray-600);
+    transform: translateY(-1px);
 }
 
 .btn-success {
@@ -1042,6 +1086,10 @@ html[data-bs-theme="dark"] .btn-dark-outline-success {
     line-height: 1;
 }
 
+.metric-value, .kpi-value {
+    transition: all var(--enterprise-transition-fast);
+}
+
 .metric-label {
     font-size: var(--enterprise-font-size-xs);
     color: var(--enterprise-text-muted);
@@ -1254,7 +1302,7 @@ html[data-bs-theme="dark"] .btn-dark-outline-success {
 /* Badge System */
 .badge {
     padding: 0.35em 0.65em;
-    font-size: .8em;
+    font-size: .75em;
     font-weight: 500;
     line-height: 1;
     border-radius: var(--enterprise-radius-sm);
@@ -1955,6 +2003,7 @@ html[data-bs-theme="dark"] .form-select:focus {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    border-radius: var(--enterprise-radius);
 }
 
 /* Enterprise Table Variants */
@@ -1962,6 +2011,12 @@ html[data-bs-theme="dark"] .form-select:focus {
     border-radius: var(--enterprise-radius);
     overflow: hidden;
     box-shadow: var(--enterprise-shadow);
+}
+
+.table-responsive .enterprise-table {
+    margin-bottom: 0;
+    border-radius: var(--enterprise-radius);
+    overflow: hidden;
 }
 
 .table-enterprise thead th {
@@ -2881,6 +2936,12 @@ html[data-bs-theme="dark"] .pagination-control-bar {
 .pagination-summary {
     color: var(--enterprise-text-muted);
     font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    padding: 1rem;
+    background: var(--enterprise-gray-50);
+    border-top: 1px solid var(--enterprise-border);
+    margin-top: 1rem;
 }
 
 .pagination-summary strong {
@@ -2889,7 +2950,8 @@ html[data-bs-theme="dark"] .pagination-control-bar {
 }
 
 html[data-bs-theme="dark"] .pagination-summary {
-    color: var(--enterprise-gray-300);
+    background: var(--enterprise-gray-200);
+    color: var(--enterprise-text-primary);
 }
 
 html[data-bs-theme="dark"] .pagination-summary strong {
@@ -4205,11 +4267,13 @@ Add after section 20 (Visual Analysis Components)
 .chart-container {
     position: relative;
     width: 100%;
+    height: 200px;
     background: var(--enterprise-white);
     border-radius: var(--enterprise-radius);
     padding: var(--enterprise-spacing-lg);
     box-shadow: var(--enterprise-shadow);
     border: 1px solid var(--enterprise-border);
+    overflow: hidden;
 }
 
 .chart-header {
@@ -4494,6 +4558,73 @@ Add after section 20 (Visual Analysis Components)
     margin-bottom: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+/*
+===============================================================================
+22. MODEL PERFORMANCE COMPONENTS
+===============================================================================
+*/
+
+.model-performance-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--enterprise-border);
+    transition: background-color 0.2s ease;
+    min-height: 60px;
+    position: relative;
+    overflow: hidden;
+}
+
+.model-performance-item::before {
+    content: '';
+    position: absolute;
+    left: -100%;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.model-performance-item:hover::before {
+    left: 100%;
+}
+
+.model-performance-item:hover {
+    background: var(--enterprise-gray-50);
+    border-left: 3px solid var(--enterprise-primary);
+    padding-left: calc(0.75rem - 3px);
+}
+
+.model-performance-item:last-child {
+    border-bottom: none;
+}
+
+html[data-bs-theme="dark"] .model-performance-item:hover {
+    background: var(--enterprise-gray-200);
+}
+
+.model-name {
+    font-weight: 600;
+    color: var(--enterprise-text-primary);
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.model-stats {
+    font-size: 0.8rem;
+    color: var(--enterprise-text-secondary);
+    line-height: 1.2;
+}
+
+.model-pnl {
+    font-weight: 700;
+    text-align: right;
+    font-size: 0.95rem;
+    line-height: 1.2;
 }
 
 .model-tags {
@@ -4967,6 +5098,117 @@ Add after section 21 (Grid & Layout Components)
         margin-bottom: 1rem;
     }
 }
+@media (max-width: 768px) {
+    .calendar-grid {
+        font-size: 0.8rem;
+    }
+
+    .calendar-day {
+        min-height: 50px;
+        padding: 0.25rem;
+    }
+
+    .calendar-pnl {
+        font-size: 0.6rem;
+    }
+
+    .calendar-trades {
+        font-size: 0.55rem;
+    }
+
+    .metric-item {
+        padding: 0.5rem;
+        min-height: 70px;
+    }
+
+    .metric-value {
+        font-size: 1.1rem;
+    }
+
+    .model-performance-item {
+        padding: 0.5rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .enterprise-table {
+        font-size: 0.8rem;
+        width: 100%;
+        margin-bottom: 0;
+        color: var(--enterprise-text-primary);
+        border-collapse: collapse;
+    }
+
+    .enterprise-table td,
+    .enterprise-table th {
+        padding: 0.5rem 0.25rem;
+    }
+}
+
+.enterprise-table thead th {
+    background: var(--enterprise-gray-50);
+    color: var(--enterprise-text-primary);
+    border-bottom: 2px solid var(--enterprise-border);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.8rem;
+    padding: 1rem 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.enterprise-table tbody tr {
+    transition: all var(--enterprise-transition-fast);
+}
+
+.enterprise-table tbody tr:hover {
+    background-color: rgba(0, 102, 204, 0.05);
+    transform: translateX(2px);
+    box-shadow: 2px 0 8px rgba(0, 102, 204, 0.1);
+}
+
+.enterprise-table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--enterprise-border);
+    font-size: 0.85rem;
+}
+
+.enterprise-table .sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.enterprise-table .sortable:hover {
+    background: rgba(0, 102, 204, 0.1);
+    color: var(--enterprise-primary);
+}
+
+.enterprise-table .sortable::after {
+    content: ' ↕';
+    opacity: 0.5;
+    font-size: 0.7rem;
+}
+
+@media (max-width: 576px) {
+    .calendar-day {
+        min-height: 40px;
+        font-size: 0.75rem;
+    }
+
+    .metric-value {
+        font-size: 1rem;
+    }
+
+    .metric-label {
+        font-size: 0.7rem;
+    }
+}
 
 @media (min-width: 992px) and (max-width: 1199.98px) {
     /* Large devices */
@@ -5064,6 +5306,7 @@ Add after section 21 (Grid & Layout Components)
 
 .hover-glow:hover {
     box-shadow: var(--enterprise-shadow-lg), 0 0 20px rgba(0, 102, 204, 0.3);
+    transition: all 0.3s ease;
 }
 
 /*
@@ -5937,7 +6180,7 @@ Add after section 24 (Accessibility Features)
 
 /* Enterprise Tables */
 .table-enterprise thead th {
-    background: linear-gradient(135deg, var(--enterprise-gray-100) 0%, var(--enterprise-gray-50) 100%);
+    background: var(--enterprise-gray-50)
     color: var(--enterprise-text-primary);
     border-bottom: 1px solid var(--enterprise-border);
     font-weight: 600;
@@ -6316,6 +6559,114 @@ Add after section 40 (List Group Enhancements)
     filter: invert(1) grayscale(100%) brightness(200%);
 }
 
+/*
+===============================================================================
+27. CALENDAR GRID SYSTEM
+===============================================================================
+*/
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: var(--enterprise-border);
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.calendar-day-header {
+    background: var(--enterprise-gray-100);
+    padding: 0.5rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--enterprise-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.calendar-day {
+    background: var(--enterprise-white);
+    padding: 0.5rem;
+    min-height: 60px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 0.85rem;
+}
+
+.calendar-day:hover {
+    background: var(--enterprise-gray-50);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 102, 204, 0.15);
+}
+
+.calendar-day.has-trades {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f9ff 100%);
+    border-left: 3px solid var(--enterprise-primary);
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+}
+
+.calendar-day.other-month {
+    background: var(--enterprise-gray-50);
+    color: var(--enterprise-text-light);
+    opacity: 0.6;
+}
+
+/* Calendar Day Click Animation */
+.calendar-day:active {
+    transform: translateY(-1px) scale(0.98);
+    transition: transform 0.1s ease;
+}
+
+html[data-bs-theme="dark"] .calendar-day {
+    background: var(--enterprise-card-bg);
+    color: var(--enterprise-text-primary);
+}
+
+html[data-bs-theme="dark"] .calendar-day:hover {
+    background: var(--enterprise-gray-200);
+}
+
+html[data-bs-theme="dark"] .calendar-day-header {
+    background: var(--enterprise-gray-200);
+    color: var(--enterprise-text-primary);
+}
+
+html[data-bs-theme="dark"] .calendar-day.has-trades {
+    background: linear-gradient(135deg, rgba(0, 112, 192, 0.15) 0%, rgba(0, 102, 204, 0.1) 100%);
+    border-left-color: var(--enterprise-primary);
+}
+
+.calendar-pnl {
+    font-size: 0.65rem;
+    font-weight: 600;
+    margin-top: 2px;
+    padding: 1px 3px;
+    border-radius: 2px;
+}
+
+.calendar-pnl.positive {
+    color: var(--enterprise-success);
+    background: rgba(0, 112, 192, 0.1);
+}
+
+.calendar-pnl.negative {
+    color: var(--enterprise-danger);
+    background: rgba(209, 52, 56, 0.1);
+}
+
+.calendar-trades {
+    font-size: 0.6rem;
+    color: var(--enterprise-text-muted);
+    margin-top: 1px;
+}
 
 /*
 ===============================================================================
@@ -6468,6 +6819,8 @@ Add after section 40 (List Group Enhancements)
 .slide-in-right {
     backface-visibility: hidden;
     perspective: 1000px;
+    animation: fadeInUp 0.6s ease-out forwards;
+
 }
 
 /*
@@ -6597,21 +6950,16 @@ button:disabled {
 }
 
 /* ============================================================================
-   DASHBOARD-SPECIFIC ADDITIONS FOR STYLE.CSS
-   Add these sections to your existing style.css file
+   KPI Structure
    ============================================================================ */
 
-/* ---------------------------------------------------------------------------
-   MISSING KPI STRUCTURE ADDITIONS
-   Add this after your existing KPI section
-   --------------------------------------------------------------------------- */
-
-/* KPI Content Wrapper - MISSING FROM YOUR CURRENT CSS */
+/* KPI Content Wrapper */
 .kpi-content {
     width: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    padding: 0;
 }
 
 /* Enhanced KPI Card Structure */
@@ -6646,6 +6994,14 @@ button:disabled {
 
 .trend-indicator.negative {
     color: var(--enterprise-danger);
+}
+
+.kpi-card:last-child {
+    border-right: none;
+}
+.kpi-card:hover {
+    background: var(--enterprise-gray-50);
+    box-shadow: inset 0 0 0 1px var(--enterprise-primary);
 }
 
 /* ---------------------------------------------------------------------------
