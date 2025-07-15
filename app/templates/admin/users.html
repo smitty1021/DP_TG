@@ -7,6 +7,7 @@
 
 {% block head_extra %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 <script src="{{ url_for('static', filename='js/enterprise-search.js') }}"></script>
 <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
@@ -29,17 +30,14 @@
             </div>
             <div class="btn-group">
                 <a href="{{ url_for('admin.admin_create_user') }}"
-                   class="btn btn-primary btn-sm" title="New User Provisioning">
+                   class="btn btn-outline-primary btn-sm" title="New User Provisioning">
                     <i class="fas fa-user-plus"></i>
                 </a>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="location.reload()" title="Refresh Data">
                     <i class="fas fa-sync-alt"></i>
                 </button>
-                <button type="button" class="btn btn-outline-info btn-sm"
-                        onclick="toggleBulkOperations()" title="Bulk Operations" id="bulk-ops-toggle">
-                    <i class="fas fa-tasks"></i>
-                </button>
+
                 <a href="{{ url_for('admin.show_admin_dashboard') }}"
                    class="btn btn-outline-secondary btn-sm" title="Back to Administration Center">
                     <i class="fas fa-arrow-left"></i>
@@ -126,74 +124,6 @@
                 </div>
             </div>
 
-            <!-- Search and Filter Bar -->
-            <div class="col-12">
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-search module-icon"></i>
-                            Search & Filter Operations
-                        </div>
-                        <div class="module-meta">
-                            Resource Discovery Framework
-                        </div>
-                    </div>
-                    <div class="module-content">
-                        <form method="GET" action="{{ url_for('admin.admin_users_list') }}" id="search-filter-form">
-                            <div class="row align-items-end g-3">
-                                <div class="col-md-4">
-                                    <label for="search" class="form-label">Global Search</label>
-                                    <div class="search-container">
-                                        <i class="fas fa-search search-icon"></i>
-                                        <input type="text" class="search-input form-control" id="search" name="search"
-                                               placeholder="Search users, emails, names..."
-                                               value="{{ request.args.get('search', '') }}">
-                                        {% if request.args.get('search') %}
-                                        <button type="button" class="search-clear" onclick="clearSearch()">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <label for="role_filter" class="form-label">Access Level</label>
-                                    <select class="form-select" id="role_filter" name="role">
-                                        <option value="">All Roles</option>
-                                        <option value="admin" {{ 'selected' if request.args.get('role') == 'admin' else '' }}>Administrator</option>
-                                        <option value="editor" {{ 'selected' if request.args.get('role') == 'editor' else '' }}>Editor</option>
-                                        <option value="user" {{ 'selected' if request.args.get('role') == 'user' else '' }}>User</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label for="status_filter" class="form-label">Status</label>
-                                    <select class="form-select" id="status_filter" name="status">
-                                        <option value="">All Status</option>
-                                        <option value="active" {{ 'selected' if request.args.get('status') == 'active' else '' }}>Active</option>
-                                        <option value="inactive" {{ 'selected' if request.args.get('status') == 'inactive' else '' }}>Inactive</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label for="verified_filter" class="form-label">Verification</label>
-                                    <select class="form-select" id="verified_filter" name="verified">
-                                        <option value="">All</option>
-                                        <option value="verified" {{ 'selected' if request.args.get('verified') == 'verified' else '' }}>Verified</option>
-                                        <option value="unverified" {{ 'selected' if request.args.get('verified') == 'unverified' else '' }}>Unverified</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <button type="submit" class="btn btn-primary btn-sm w-100">
-                                        <i class="fas fa-search me-1"></i> Apply Filters
-                                    </button>
-                                    <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary btn-sm w-100 mt-1">
-                                        <i class="fas fa-times me-1"></i> Clear
-                                    </a>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
             <!-- Bulk Operations Module (Hidden by default) -->
             <div class="col-12" id="bulk-operations-module" style="display: none;">
                 <div class="enterprise-module">
@@ -241,6 +171,201 @@
                 </div>
             </div>
 
+            <!-- Search and Filter Module (Hidden by default) -->
+            <div class="col-12" id="search-filter-module" style="display: none;">
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-filter module-icon"></i>
+                            Search & Filter Operations
+                        </div>
+                        <div class="module-meta">
+                            Resource Query Interface
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        <form method="GET" action="{{ url_for('admin.admin_users_list') }}" id="search-filter-form">
+                            <div class="row align-items-end g-3">
+                                <!-- Search Input -->
+                                <div class="col-md-4">
+                                    <label for="search" class="form-label">Search Users</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-search"></i>
+                                        </span>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="search"
+                                               name="search"
+                                               value="{{ request.args.get('search', '') }}"
+                                               placeholder="Search by username, name, or email..."
+                                               title="Press Enter to search">
+                                    </div>
+                                    <small class="text-muted">Press Enter to search</small>
+                                </div>
+
+                                <!-- Role Filter -->
+                                <div class="col-md-2">
+                                    <label for="role_filter" class="form-label">Access Level</label>
+                                    <select class="form-select" id="role_filter" name="role">
+                                        <option value="">All Roles</option>
+                                        <option value="admin" {{ 'selected' if request.args.get('role') == 'admin' else '' }}>Administrator</option>
+                                        <option value="user" {{ 'selected' if request.args.get('role') == 'user' else '' }}>Standard User</option>
+                                    </select>
+                                </div>
+
+                                <!-- Status Filter -->
+                                <div class="col-md-2">
+                                    <label for="status_filter" class="form-label">Status</label>
+                                    <select class="form-select" id="status_filter" name="status">
+                                        <option value="">All</option>
+                                        <option value="active" {{ 'selected' if request.args.get('status') == 'active' else '' }}>Active</option>
+                                        <option value="inactive" {{ 'selected' if request.args.get('status') == 'inactive' else '' }}>Inactive</option>
+                                    </select>
+                                </div>
+
+                                <!-- Verification Filter -->
+                                <div class="col-md-2">
+                                    <label for="verified_filter" class="form-label">Verification</label>
+                                    <select class="form-select" id="verified_filter" name="verified">
+                                        <option value="">All</option>
+                                        <option value="verified" {{ 'selected' if request.args.get('verified') == 'verified' else '' }}>Verified</option>
+                                        <option value="unverified" {{ 'selected' if request.args.get('verified') == 'unverified' else '' }}>Unverified</option>
+                                    </select>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary btn-sm w-100 mb-2">
+                                        <i class="fas fa-search me-1"></i> Apply Filters
+                                    </button>
+                                    <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary btn-sm w-100">
+                                        <i class="fas fa-times me-1"></i> Clear All
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- Pagination and Actions Control Bar -->
+            <div class="col-12">
+                <div class="pagination-control-bar">
+
+                    <!-- Left Side: Pagination Information and Controls -->
+                    <div class="d-flex align-items-center gap-5">
+                        <!-- Results Summary -->
+                        <div class="pagination-summary">
+                            <strong>Showing {{ ((pagination.page - 1) * pagination.per_page + 1) }} - {{ (pagination.page * pagination.per_page if pagination.page < pagination.pages else pagination.total) }} of {{ pagination.total }} users</strong>
+                        </div>
+
+                        <!-- Page Size Selector -->
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="pagination-label">Page Size:</span>
+                            <select class="pagination-page-size"
+                                    id="page-size"
+                                    onchange="changePageSize(this.value)">
+                                <option value="10" {{ 'selected' if request.args.get('per_page', '10')|string == '10' else '' }}>10</option>
+                                <option value="25" {{ 'selected' if request.args.get('per_page', '10')|string == '25' else '' }}>25</option>
+                                <option value="50" {{ 'selected' if request.args.get('per_page', '10')|string == '50' else '' }}>50</option>
+                                <option value="100" {{ 'selected' if request.args.get('per_page', '10')|string == '100' else '' }}>100</option>
+                            </select>
+                        </div>
+
+                        <!-- Navigation Controls -->
+                        {% if pagination and pagination.pages > 1 %}
+                        <div class="d-flex align-items-center gap-1">
+                            <!-- First Page -->
+                            {% if pagination.page > 1 %}
+                                {% set first_args = request.args.copy() %}
+                                {% set _ = first_args.pop('page', None) %}
+                                <a href="{{ url_for('admin.admin_users_list', page=1, **first_args) }}"
+                                   class="pagination-nav-btn"
+                                   title="First Page">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            {% else %}
+                                <span class="pagination-nav-btn disabled">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </span>
+                            {% endif %}
+
+                            <!-- Previous Page -->
+                            {% if pagination.has_prev %}
+                                {% set prev_args = request.args.copy() %}
+                                {% set _ = prev_args.pop('page', None) %}
+                                <a href="{{ url_for('admin.admin_users_list', page=pagination.prev_num, **prev_args) }}"
+                                   class="pagination-nav-btn"
+                                   title="Previous Page">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            {% else %}
+                                <span class="pagination-nav-btn disabled">
+                                    <i class="fas fa-angle-left"></i>
+                                </span>
+                            {% endif %}
+
+                            <!-- Page Information -->
+                            <span class="pagination-info">
+                                <strong>Page {{ pagination.page }} of {{ pagination.pages }}</strong>
+                            </span>
+
+                            <!-- Next Page -->
+                            {% if pagination.has_next %}
+                                {% set next_args = request.args.copy() %}
+                                {% set _ = next_args.pop('page', None) %}
+                                <a href="{{ url_for('admin.admin_users_list', page=pagination.next_num, **next_args) }}"
+                                   class="pagination-nav-btn"
+                                   title="Next Page">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            {% else %}
+                                <span class="pagination-nav-btn disabled">
+                                    <i class="fas fa-angle-right"></i>
+                                </span>
+                            {% endif %}
+
+                            <!-- Last Page -->
+                            {% if pagination.page < pagination.pages %}
+                                {% set last_args = request.args.copy() %}
+                                {% set _ = last_args.pop('page', None) %}
+                                <a href="{{ url_for('admin.admin_users_list', page=pagination.pages, **last_args) }}"
+                                   class="pagination-nav-btn"
+                                   title="Last Page">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            {% else %}
+                                <span class="pagination-nav-btn disabled">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Right Side: Action Button Group -->
+                    <div class="btn-group" role="group" aria-label="User actions">
+                        <!-- Search & Filter Toggle Button -->
+                        <button type="button"
+                                id="search-filter-toggle"
+                                class="btn btn-outline-secondary btn-sm action-btn"
+                                onclick="toggleSearchFilters()"
+                                title="Toggle Search & Filter Options">
+                            <i class="fas fa-search me-1"></i>
+                        </button>
+
+                        <!-- Bulk Operations Toggle Button -->
+                        <button type="button"
+                                id="bulk-ops-toggle"
+                                class="btn btn-outline-secondary btn-sm action-btn"
+                                onclick="toggleBulkOperations()"
+                                title="Toggle Bulk Operations">
+                            <i class="fas fa-tasks me-1"></i>
+
+                        </button>
+                    </div>
+                </div>
+            </div>
             <!-- User Resource Management Module -->
             <div class="col-12">
                 <div class="enterprise-module">
@@ -283,7 +408,7 @@
                                         <th scope="col" class="sortable" data-sort="last_login" role="columnheader" tabindex="0" aria-label="Sort by Last Login">
                                             Last Access Event <i class="fas fa-sort sort-icon"></i>
                                         </th>
-                                        <th scope="col" class="text-end">Administrative Actions</th>
+                                        <th scope="col" class="text-end"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -381,99 +506,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Enhanced Pagination Module -->
-            {% if pagination and pagination.pages > 1 %}
-            <div class="col-12">
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-arrow-circle-right module-icon"></i>
-                            Resource Navigation
-                        </div>
-                        <div class="module-meta">
-                            Operational Framework Navigation
-                        </div>
-                    </div>
-                    <div class="module-content">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <!-- Page Size Selector -->
-                            <div class="d-flex align-items-center">
-                                <label for="page-size" class="form-label me-2 mb-0">Page Size:</label>
-                                <select class="form-select form-select-sm" id="page-size" onchange="changePageSize(this.value)" style="width: auto;">
-                                    <option value="10" {{ 'selected' if request.args.get('per_page', '25')|string == '10' else '' }}>10</option>
-                                    <option value="25" {{ 'selected' if request.args.get('per_page', '25')|string == '25' else '' }}>25</option>
-                                    <option value="50" {{ 'selected' if request.args.get('per_page', '25')|string == '50' else '' }}>50</option>
-                                    <option value="100" {{ 'selected' if request.args.get('per_page', '25')|string == '100' else '' }}>100</option>
-                                </select>
-                            </div>
-
-                            <!-- Results Info -->
-                            <div class="text-muted small">
-                                Showing {{ ((pagination.page - 1) * pagination.per_page + 1) }} - {{ (pagination.page * pagination.per_page if pagination.page < pagination.pages else pagination.total) }} of {{ pagination.total }} users
-                            </div>
-                        </div>
-
-                        <!-- Standard Pagination -->
-                        <nav aria-label="User resource pagination">
-                            <ul class="pagination justify-content-center">
-                                {% if pagination.has_prev %}
-                                    {% set prev_args = request.args.copy() %}
-                                    {% if prev_args.update({'page': pagination.prev_num}) %}{% endif %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="{{ url_for('admin.admin_users_list', **prev_args) }}" aria-label="Previous">
-                                            <span aria-hidden="true">&laquo;</span>
-                                        </a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link" aria-label="Previous">
-                                            <span aria-hidden="true">&laquo;</span>
-                                        </span>
-                                    </li>
-                                {% endif %}
-
-                                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-                                    {% if page_num %}
-                                        {% if page_num == pagination.page %}
-                                            <li class="page-item active" aria-current="page">
-                                                <span class="page-link">{{ page_num }}</span>
-                                            </li>
-                                        {% else %}
-                                            {% set page_args = request.args.copy() %}
-                                            {% if page_args.update({'page': page_num}) %}{% endif %}
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ url_for('admin.admin_users_list', **page_args) }}">{{ page_num }}</a>
-                                            </li>
-                                        {% endif %}
-                                    {% else %}
-                                        <li class="page-item disabled">
-                                            <span class="page-link">...</span>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-
-                                {% if pagination.has_next %}
-                                    {% set next_args = request.args.copy() %}
-                                    {% if next_args.update({'page': pagination.next_num}) %}{% endif %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="{{ url_for('admin.admin_users_list', **next_args) }}" aria-label="Next">
-                                            <span aria-hidden="true">&raquo;</span>
-                                        </a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link" aria-label="Next">
-                                            <span aria-hidden="true">&raquo;</span>
-                                        </span>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>
@@ -481,6 +513,11 @@
 
 {% block scripts_extra %}
 <script>
+// =============================================================================
+// GLOBAL VARIABLES AND STATE MANAGEMENT
+// =============================================================================
+let selectedUsers = new Set();
+
 // =============================================================================
 // GLOBAL FUNCTIONS - AVAILABLE IMMEDIATELY FOR ONCLICK HANDLERS
 // =============================================================================
@@ -517,46 +554,58 @@ function confirmDeleteUser(userId, username) {
                 confirmClass: 'btn-danger',
                 icon: 'trash-alt',
                 onConfirm: function() {
-                    const deleteUrl = "{{ url_for('admin.admin_delete_user', user_id=999999) }}".replace('999999', userId);
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = deleteUrl;
-
-                    const csrfToken = document.querySelector('meta[name=csrf-token]')?.content;
-                    if (csrfToken) {
-                        const csrfInput = document.createElement('input');
-                        csrfInput.type = 'hidden';
-                        csrfInput.name = 'csrf_token';
-                        csrfInput.value = csrfToken;
-                        form.appendChild(csrfInput);
-                    }
-
-                    document.body.appendChild(form);
-                    form.submit();
+                    performSingleUserDelete(userId);
                 }
             });
         } else {
             if (confirm('Permanently remove user configuration for "' + username + '"? This action cannot be reversed.')) {
-                const deleteUrl = "{{ url_for('admin.admin_delete_user', user_id=999999) }}".replace('999999', userId);
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = deleteUrl;
-
-                const csrfToken = document.querySelector('meta[name=csrf-token]')?.content;
-                if (csrfToken) {
-                    const csrfInput = document.createElement('input');
-                    csrfInput.type = 'hidden';
-                    csrfInput.name = 'csrf_token';
-                    csrfInput.value = csrfToken;
-                    form.appendChild(csrfInput);
-                }
-
-                document.body.appendChild(form);
-                form.submit();
+                performSingleUserDelete(userId);
             }
         }
     } catch (error) {
         console.error('Error in confirmDeleteUser:', error);
+        alert('Error: Could not delete user. Please refresh the page and try again.');
+    }
+}
+
+function performSingleUserDelete(userId) {
+    try {
+        const deleteUrl = "{{ url_for('admin.admin_delete_user', user_id=999999) }}".replace('999999', userId);
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = deleteUrl;
+
+        // Get CSRF token
+        const csrfToken = getCSRFToken();
+        if (!csrfToken) {
+            console.error('❌ No CSRF token found for single user delete!');
+            if (typeof showCustomConfirmation === 'function') {
+                showCustomConfirmation({
+                    title: 'Security Error',
+                    message: 'Security token not found. Please refresh the page and try again.',
+                    confirmText: 'Refresh Page',
+                    confirmClass: 'btn-warning',
+                    icon: 'exclamation-triangle',
+                    onConfirm: function() { location.reload(); }
+                });
+            } else {
+                alert('Security token not found. Please refresh the page and try again.');
+            }
+            return;
+        }
+
+        // Add CSRF token to form
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+
+        console.log('🗑️ Submitting single user delete form with CSRF token');
+        document.body.appendChild(form);
+        form.submit();
+    } catch (error) {
+        console.error('Error in performSingleUserDelete:', error);
         alert('Error: Could not delete user. Please refresh the page and try again.');
     }
 }
@@ -610,8 +659,11 @@ function bulkDeleteUsers() {
 
 function checkAndExecuteBulkAction(action, title, message, buttonClass, icon) {
     try {
-        const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
-        const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        // UPDATED: Use the selectedUsers Set instead of querying DOM directly
+        const selectedIds = Array.from(selectedUsers);
+
+        console.log(`🎯 Bulk action '${action}' requested`);
+        console.log(`📋 Selected IDs from Set:`, selectedIds);
 
         if (selectedIds.length === 0) {
             if (typeof showCustomConfirmation === 'function') {
@@ -653,6 +705,41 @@ function checkAndExecuteBulkAction(action, title, message, buttonClass, icon) {
     }
 }
 
+// =====================================
+// CSRF TOKEN UTILITY FUNCTION
+// =====================================
+function getCSRFToken() {
+    let csrfToken = null;
+
+    // Try to get from direct input
+    const directInput = document.getElementById('js-csrf-token');
+    if (directInput && directInput.value) {
+        csrfToken = directInput.value;
+    }
+
+    // Try to get from meta tag
+    if (!csrfToken) {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag && metaTag.getAttribute('content')) {
+            csrfToken = metaTag.getAttribute('content');
+        }
+    }
+
+    // Try to get from hidden input
+    if (!csrfToken) {
+        const hiddenInput = document.querySelector('input[name="csrf_token"]');
+        if (hiddenInput && hiddenInput.value) {
+            csrfToken = hiddenInput.value;
+        }
+    }
+
+    console.log('🔐 CSRF Token retrieved:', csrfToken ? 'Yes' : 'No');
+    return csrfToken;
+}
+
+// =====================================
+// FIXED BULK ACTION FUNCTION
+// =====================================
 function executeBulkAction(action, userIds) {
     try {
         console.log('🚀 Executing bulk action:', action);
@@ -692,11 +779,32 @@ function executeBulkAction(action, userIds) {
 
         console.log('Making request to:', endpoint);
 
+        // Get CSRF token
+        const csrfToken = getCSRFToken();
+        if (!csrfToken) {
+            console.error('❌ No CSRF token found!');
+            if (typeof showCustomConfirmation === 'function') {
+                showCustomConfirmation({
+                    title: 'Security Error',
+                    message: 'Security token not found. Please refresh the page and try again.',
+                    confirmText: 'Refresh Page',
+                    confirmClass: 'btn-warning',
+                    icon: 'exclamation-triangle',
+                    onConfirm: function() { location.reload(); }
+                });
+            } else {
+                alert('Security token not found. Please refresh the page and try again.');
+            }
+            return;
+        }
+
+        // Make the request with CSRF token
         fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken  // Add CSRF token header
             },
             body: JSON.stringify({ user_ids: userIds })
         })
@@ -710,16 +818,25 @@ function executeBulkAction(action, userIds) {
             return response.json();
         })
         .then(function(data) {
-            console.log('Response data:', data);
+            console.log('🔍 Full response data:', data);
 
             if (data.status === 'success') {
                 let message = data.message;
 
+                // Add specific information for different actions
                 if (action === 'reset-passwords' && data.reset_count) {
                     message += '\n\nNew passwords have been sent via email.';
                 }
 
-                if (data.skipped_count && data.skipped_count > 0) {
+                if (action === 'delete' && data.deleted_count !== undefined) {
+                    message = `Successfully deleted ${data.deleted_count} user(s).`;
+                    if (data.skipped_count > 0) {
+                        message += `\nSkipped ${data.skipped_count} user(s): ${data.skipped_info.join(', ')}`;
+                    }
+                    console.log(`✅ Bulk delete completed: ${data.deleted_count} deleted, ${data.skipped_count} skipped`);
+                }
+
+                if (data.skipped_count && data.skipped_count > 0 && action !== 'delete') {
                     message += '\n\nSkipped users: ' + data.skipped_info.join(', ');
                 }
 
@@ -731,6 +848,7 @@ function executeBulkAction(action, userIds) {
                         confirmClass: 'btn-success',
                         icon: 'check-circle',
                         onConfirm: function() {
+                            console.log('🔄 Reloading page after successful operation');
                             location.reload();
                         }
                     });
@@ -739,6 +857,7 @@ function executeBulkAction(action, userIds) {
                     location.reload();
                 }
             } else {
+                console.error('❌ Operation failed:', data);
                 if (typeof showCustomConfirmation === 'function') {
                     showCustomConfirmation({
                         title: 'Operation Failed',
@@ -753,7 +872,7 @@ function executeBulkAction(action, userIds) {
             }
         })
         .catch(function(error) {
-            console.error('Bulk operation error:', error);
+            console.error('💥 Bulk operation error:', error);
             if (typeof showCustomConfirmation === 'function') {
                 showCustomConfirmation({
                     title: 'System Error',
@@ -773,86 +892,226 @@ function executeBulkAction(action, userIds) {
 }
 
 // =============================================================================
-// INITIALIZATION - RUNS AFTER DOM IS LOADED
+// SELECTION MANAGEMENT FUNCTIONS (ADDED)
 // =============================================================================
 
-document.addEventListener('DOMContentLoaded', function () {
-    console.log('🎯 User Administration Console: Enterprise Search handling search/filter/sort automatically');
+function updateSelectedCount() {
+    const selectedCountBadge = document.getElementById('selected-count');
+    if (selectedCountBadge) {
+        const count = selectedUsers.size;
+        selectedCountBadge.textContent = count + ' selected';
+        selectedCountBadge.className = count > 0 ?
+            'badge bg-primary' : 'badge bg-secondary';
 
-    try {
-        // Initialize selection tracking
-        let selectedUsers = new Set();
-
-        // Get DOM elements
-        const selectAllCheckbox = document.getElementById('select-all-users-checkbox');
-        const userCheckboxes = document.querySelectorAll('.user-checkbox');
-        const selectedCountBadge = document.getElementById('selected-count');
-
-        // Initialize user selection functionality
-        setupUserSelectionListeners();
-        updateSelectedCount();
-
-        function setupUserSelectionListeners() {
-            // Master checkbox functionality
-            if (selectAllCheckbox) {
-                selectAllCheckbox.addEventListener('change', function(e) {
-                    const isChecked = e.target.checked;
-                    userCheckboxes.forEach(function(checkbox) {
-                        checkbox.checked = isChecked;
-                        toggleUser(checkbox.value, isChecked);
-                    });
-                });
-            }
-
-            // Individual user checkboxes
-            userCheckboxes.forEach(function(checkbox) {
-                checkbox.addEventListener('change', function(e) {
-                    toggleUser(e.target.value, e.target.checked);
-                    updateMasterCheckbox();
-                });
-            });
-        }
-
-        function toggleUser(userId, checked) {
-            if (checked) {
-                selectedUsers.add(userId);
-            } else {
-                selectedUsers.delete(userId);
-            }
-            updateSelectedCount();
-        }
-
-        function updateMasterCheckbox() {
-            if (!selectAllCheckbox) return;
-
-            const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
-            const totalBoxes = document.querySelectorAll('.user-checkbox');
-
-            if (checkedBoxes.length === 0) {
-                selectAllCheckbox.checked = false;
-                selectAllCheckbox.indeterminate = false;
-            } else if (checkedBoxes.length === totalBoxes.length) {
-                selectAllCheckbox.checked = true;
-                selectAllCheckbox.indeterminate = false;
-            } else {
-                selectAllCheckbox.checked = false;
-                selectAllCheckbox.indeterminate = true;
-            }
-        }
-
-        function updateSelectedCount() {
-            if (selectedCountBadge) {
-                const count = selectedUsers.size;
-                selectedCountBadge.textContent = count + ' selected';
-                selectedCountBadge.className = count > 0 ? 'badge bg-primary' : 'badge bg-secondary';
-            }
-        }
-
-        console.log('✅ User Administration Console initialized successfully');
-
-    } catch (error) {
-        console.error('Error initializing User Administration Console:', error);
+        console.log(`📊 Selection count updated: ${count} users selected`);
     }
+}
+
+function toggleUser(userId, checked) {
+    if (checked) {
+        selectedUsers.add(userId);
+        console.log(`✅ Added user ${userId} to selection`);
+    } else {
+        selectedUsers.delete(userId);
+        console.log(`❌ Removed user ${userId} from selection`);
+    }
+    updateSelectedCount();
+    updateMasterCheckbox();
+}
+
+function updateMasterCheckbox() {
+    const selectAllCheckbox = document.getElementById('select-all-users-checkbox');
+    if (!selectAllCheckbox) return;
+
+    const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+    const totalBoxes = document.querySelectorAll('.user-checkbox');
+
+    if (checkedBoxes.length === 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    } else if (checkedBoxes.length === totalBoxes.length) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+    }
+}
+
+function setupUserSelectionListeners() {
+    const selectAllCheckbox = document.getElementById('select-all-users-checkbox');
+    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+
+    console.log(`🔧 Setting up selection listeners for ${userCheckboxes.length} user checkboxes`);
+
+    // Master checkbox functionality
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function(e) {
+            const isChecked = e.target.checked;
+            console.log(`🔄 Master checkbox ${isChecked ? 'checked' : 'unchecked'}`);
+
+            userCheckboxes.forEach(function(checkbox) {
+                checkbox.checked = isChecked;
+                toggleUser(checkbox.value, isChecked);
+            });
+        });
+        console.log('✅ Master checkbox listener set up');
+    }
+
+    // Individual user checkboxes
+    userCheckboxes.forEach(function(checkbox) {
+        checkbox.addEventListener('change', function(e) {
+            console.log(`🔄 User checkbox ${e.target.value} ${e.target.checked ? 'checked' : 'unchecked'}`);
+            toggleUser(e.target.value, e.target.checked);
+        });
+    });
+
+    console.log('✅ Individual checkbox listeners set up');
+}
+
+function toggleSearchFilters() {
+    try {
+        const module = document.getElementById('search-filter-module');
+        const toggle = document.getElementById('search-filter-toggle');
+
+        if (module && toggle) {
+            if (module.style.display === 'none' || module.style.display === '') {
+                module.style.display = 'block';
+                toggle.classList.remove('btn-outline-secondary');
+                toggle.classList.add('btn-secondary');
+            } else {
+                module.style.display = 'none';
+                toggle.classList.remove('btn-secondary');
+                toggle.classList.add('btn-outline-secondary');
+            }
+        }
+    } catch (error) {
+        console.error('Error in toggleSearchFilters:', error);
+    }
+}
+
+function overrideAutoSubmitBehavior() {
+    // Override the auto-submit behavior from enterprise-search.js
+    console.log('🔧 Overriding auto-submit behavior for manual control');
+
+    // Remove auto-submit from search input
+    const searchInput = document.getElementById('search');
+    if (searchInput) {
+        // Clone the input to remove all existing event listeners
+        const newSearchInput = searchInput.cloneNode(true);
+        searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+
+        // Add only Enter key submit
+        newSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const form = newSearchInput.closest('form');
+                if (form) {
+                    console.log('🔍 Manual search submitted via Enter key');
+                    form.submit();
+                }
+            }
+        });
+        console.log('✅ Search input configured for Enter-only submission');
+    }
+
+    // Remove auto-submit from filter dropdowns
+    const filterSelects = ['role_filter', 'status_filter', 'verified_filter'];
+    filterSelects.forEach(filterId => {
+        const filterElement = document.getElementById(filterId);
+        if (filterElement) {
+            // Clone to remove existing event listeners
+            const newFilterElement = filterElement.cloneNode(true);
+            filterElement.parentNode.replaceChild(newFilterElement, filterElement);
+            console.log(`✅ Removed auto-submit from ${filterId}`);
+        }
+    });
+}
+
+function initializeKPIAnimations() {
+    console.log('🎨 Initializing KPI animations');
+
+    // Animate KPI cards with staggered entrance
+    const kpiCards = document.querySelectorAll('.kpi-card');
+    kpiCards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in');
+    });
+
+    // Animate KPI values with count-up effect
+    const kpiValues = document.querySelectorAll('.kpi-value');
+    kpiValues.forEach(kpiElement => {
+        const text = kpiElement.textContent.trim();
+
+        // Only animate if it's a number and not 'N/A'
+        if (text !== 'N/A' && !isNaN(text) && text !== '') {
+            const finalValue = parseInt(text);
+            if (finalValue > 0) {
+                let currentValue = 0;
+                const increment = Math.max(1, Math.ceil(finalValue / 30));
+
+                // Start from 0
+                kpiElement.textContent = '0';
+
+                const timer = setInterval(() => {
+                    currentValue += increment;
+                    if (currentValue >= finalValue) {
+                        kpiElement.textContent = finalValue;
+                        clearInterval(timer);
+                    } else {
+                        kpiElement.textContent = currentValue;
+                    }
+                }, 50);
+            }
+        }
+    });
+
+    console.log('✅ KPI animations initialized');
+}
+
+// =====================================
+// PAGE INITIALIZATION
+// =====================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🏢 User Administration Console: Enterprise Search handling search/filter/sort automatically');
+
+    // Clear any existing selections
+    selectedUsers.clear();
+
+    // Set up selection event listeners
+    setupUserSelectionListeners();
+
+    // Initialize the count display
+    updateSelectedCount();
+
+    // === NEW: Override enterprise-search.js auto-submit behavior ===
+    overrideAutoSubmitBehavior();
+
+    // === NEW: Add KPI animations ===
+    initializeKPIAnimations();
+
+    // Check for CSRF token on page load
+    const csrfToken = getCSRFToken();
+    if (!csrfToken) {
+        console.warn('⚠️ No CSRF token found on page load - bulk operations may fail');
+    } else {
+        console.log('✅ CSRF token found and ready for all operations');
+    }
+
+    // Add CSRF token to meta tag if not already present (for consistency)
+    if (!document.querySelector('meta[name=csrf-token]')) {
+        const csrfInput = document.querySelector('input[name=csrf_token]');
+        if (csrfInput) {
+            const metaTag = document.createElement('meta');
+            metaTag.name = 'csrf-token';
+            metaTag.content = csrfInput.value;
+            document.head.appendChild(metaTag);
+            console.log('✅ Added CSRF meta tag for consistency');
+        }
+    }
+
+    console.log('✅ User Administration Console initialized successfully');
 });
+
 </script>
 {% endblock %}

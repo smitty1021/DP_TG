@@ -1,5 +1,3 @@
-
-
 from flask import (Blueprint, render_template, current_app, request,
                    redirect, url_for, flash, abort, jsonify)  # Added abort
 from flask_login import login_required, current_user
@@ -392,7 +390,7 @@ def admin_users_list():
     """Enhanced user list with search, filters, and sorting"""
     # Get pagination parameters
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 25, type=int)  # Default to 25 per page
+    per_page = request.args.get('per_page', 10, type=int)
 
     # Get search and filter parameters
     search = request.args.get('search', '').strip()
@@ -653,6 +651,9 @@ from datetime import datetime
 
 # REPLACE THE BULK ROUTES SECTION IN YOUR admin_bp.py WITH THIS CLEAN VERSION
 
+# REPLACE YOUR EXISTING admin_bulk_delete_users FUNCTION WITH THIS FIXED VERSION
+# File: app/blueprints/admin_bp.py
+
 @admin_bp.route('/users/bulk_delete', methods=['POST'])
 @login_required
 @admin_required
@@ -690,64 +691,110 @@ def admin_bulk_delete_users():
         if not user_ids_to_delete:
             return jsonify({'status': 'error', 'message': 'No valid user IDs provided for deletion.'}), 400
 
+        # Get current admin count
         admin_users_total_in_db = User.query.filter_by(role=UserRole.ADMIN).count()
+        current_app.logger.info(f"Current admin count: {admin_users_total_in_db}")
 
+        # Process each user for deletion
         for user_id in user_ids_to_delete:
+            current_app.logger.info(f"Processing user ID: {user_id}")
+
+            # Check if trying to delete self
             if user_id == current_user.id:
                 skipped_count += 1
                 skipped_users_info.append(f"User ID {user_id} (cannot delete self)")
+                current_app.logger.warning(f"User {current_user.username} tried to delete themselves")
                 continue
 
+            # Get the user
             user_to_delete = User.query.get(user_id)
             if not user_to_delete:
                 skipped_count += 1
                 skipped_users_info.append(f"User ID {user_id} (not found)")
+                current_app.logger.warning(f"User ID {user_id} not found")
                 continue
 
+            # Check if it's the last admin
             if user_to_delete.is_admin() and admin_users_total_in_db <= 1:
                 skipped_count += 1
                 skipped_users_info.append(f"{user_to_delete.username} (cannot delete last admin)")
+                current_app.logger.warning(f"Cannot delete last admin: {user_to_delete.username}")
                 continue
 
             username_for_log = user_to_delete.username
+            current_app.logger.info(f"Attempting to delete user: {username_for_log} (ID: {user_id})")
+
             try:
+                # Delete related records first (avoid foreign key constraints)
+                current_app.logger.info(f"Deleting activities for user {user_id}")
                 Activity.query.filter_by(user_id=user_id).delete()
+
+                # Add any other related data cleanup here if needed
+                # For example, if you have other models with foreign keys to User:
+                # TradingModel.query.filter_by(user_id=user_id).delete()
+                # Trade.query.filter_by(user_id=user_id).delete()
+                # DailyJournal.query.filter_by(user_id=user_id).delete()
+
+                # Delete the user
+                current_app.logger.info(f"Deleting user record: {username_for_log}")
                 db.session.delete(user_to_delete)
 
+                # Update admin count if this was an admin
                 if user_to_delete.is_admin():
                     admin_users_total_in_db -= 1
+                    current_app.logger.info(f"Admin count reduced to: {admin_users_total_in_db}")
 
+                # Log the activity (but don't commit yet)
                 record_activity('admin_bulk_user_delete',
                                 f"Admin {current_user.username} bulk deleted user: {username_for_log} (ID: {user_id})",
                                 user_id_for_activity=current_user.id)
+
                 deleted_count += 1
+                current_app.logger.info(f"Successfully processed deletion for: {username_for_log}")
+
             except Exception as e:
+                current_app.logger.error(f"Error deleting user {username_for_log}: {str(e)}", exc_info=True)
                 skipped_count += 1
                 skipped_users_info.append(f"{username_for_log} (error: {str(e)})")
+                # Continue processing other users
 
+        # Commit all changes at once
         try:
-            db.session.commit()
-            message = f"Successfully deleted {deleted_count} user(s)."
-            status = 'success'
+            if deleted_count > 0:
+                current_app.logger.info(f"Committing deletion of {deleted_count} users")
+                db.session.commit()
+                message = f"Successfully deleted {deleted_count} user(s)."
+                status = 'success'
+                current_app.logger.info(f"Bulk delete successful: {deleted_count} users deleted")
+            else:
+                current_app.logger.info("No users were deleted")
+                message = "No users were deleted."
+                status = 'success'
+
         except Exception as e:
+            current_app.logger.error(f"Error committing bulk delete: {str(e)}", exc_info=True)
             db.session.rollback()
             message = f'Error during deletion: {str(e)}'
             status = 'error'
 
+        # Add skipped info to message
         if skipped_count > 0:
             message += f" Skipped {skipped_count} user(s)."
 
-        return jsonify({
+        response_data = {
             'status': status,
             'message': message,
             'deleted_count': deleted_count,
             'skipped_count': skipped_count,
             'skipped_info': skipped_users_info
-        })
+        }
+
+        current_app.logger.info(f"Bulk delete response: {response_data}")
+        return jsonify(response_data)
 
     except Exception as e:
-        db.session.rollback()
         current_app.logger.error(f"Unexpected error in bulk delete: {e}", exc_info=True)
+        db.session.rollback()
         return jsonify({'status': 'error', 'message': f'Unexpected error: {str(e)}'}), 500
 
 

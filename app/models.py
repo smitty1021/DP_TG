@@ -53,16 +53,44 @@ class User(db.Model, UserMixin):
     files = db.relationship('File', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     settings = db.relationship('Settings', backref='user', uselist=False, cascade='all, delete-orphan')
     api_keys = db.relationship('ApiKey', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+
+    # Trading-related relationships with proper cascades
     trading_models = db.relationship('TradingModel',
                                      foreign_keys='TradingModel.user_id',
                                      backref='user',
-                                     lazy='dynamic')
-    trades = db.relationship('Trade', backref='user', lazy='dynamic')
-    daily_journals = db.relationship('DailyJournal', backref='user', lazy='dynamic')
-    weekly_journals = db.relationship('WeeklyJournal', backref='user', lazy='dynamic')
-    monthly_journals = db.relationship('MonthlyJournal', backref='user', lazy='dynamic')
-    quarterly_journals = db.relationship('QuarterlyJournal', backref='user', lazy='dynamic')
-    yearly_journals = db.relationship('YearlyJournal', backref='user', lazy='dynamic')
+                                     lazy='dynamic',
+                                     cascade='all, delete-orphan')  # ADDED CASCADE
+
+    trades = db.relationship('Trade',
+                             backref='user',
+                             lazy='dynamic',
+                             cascade='all, delete-orphan')  # ADDED CASCADE
+
+    # Journal relationships with proper cascades (THIS WAS THE MAIN ISSUE)
+    daily_journals = db.relationship('DailyJournal',
+                                     backref='user',
+                                     lazy='dynamic',
+                                     cascade='all, delete-orphan')  # ADDED CASCADE
+
+    weekly_journals = db.relationship('WeeklyJournal',
+                                      backref='user',
+                                      lazy='dynamic',
+                                      cascade='all, delete-orphan')  # ADDED CASCADE
+
+    monthly_journals = db.relationship('MonthlyJournal',
+                                       backref='user',
+                                       lazy='dynamic',
+                                       cascade='all, delete-orphan')  # ADDED CASCADE
+
+    quarterly_journals = db.relationship('QuarterlyJournal',
+                                         backref='user',
+                                         lazy='dynamic',
+                                         cascade='all, delete-orphan')  # ADDED CASCADE
+
+    yearly_journals = db.relationship('YearlyJournal',
+                                      backref='user',
+                                      lazy='dynamic',
+                                      cascade='all, delete-orphan')  # ADDED CASCADE
 
     selected_default_tags = db.relationship(
         'Tag',
