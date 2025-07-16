@@ -3625,6 +3625,22 @@ Add after section 16 (Alert System)
     z-index: var(--enterprise-z-tooltip);
 }
 
+.toast-top-center {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--enterprise-z-tooltip);
+}
+
+.toast-bottom-center {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--enterprise-z-tooltip);
+}
+
 .toast-bottom-right {
     position: fixed;
     bottom: 1rem;

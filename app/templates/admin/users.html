@@ -25,7 +25,7 @@
                     {{ title or "User Administration Console" }}
                 </h1>
                 <div class="executive-subtitle">
-                    Strategic User Resource Management & Access Control Framework
+                    User Resource Management & Access Control Framework
                 </div>
             </div>
             <div class="btn-group">
@@ -48,7 +48,7 @@
 
     <!-- Main Content Grid -->
     <div class="container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 300px);">
-        <div class="row g-4">
+        <div class="row g-0">
             <!-- Executive KPI Section -->
             <div class="col-12">
                 <div class="kpi-section">
@@ -57,7 +57,7 @@
                             <div class="kpi-card">
                                 <div class="kpi-content">
                                     <div class="kpi-header">
-                                        <span class="kpi-label">Total Resource Pool</span>
+                                        <span class="kpi-label">Total Account Pool</span>
                                         <i class="fas fa-users kpi-icon"></i>
                                     </div>
                                     <div class="kpi-value">{{ total_users_count if total_users_count is not none and total_users_count != "Error" else 'N/A' }}</div>
@@ -71,7 +71,7 @@
                             <div class="kpi-card">
                                 <div class="kpi-content">
                                     <div class="kpi-header">
-                                        <span class="kpi-label">Active Operations</span>
+                                        <span class="kpi-label">Active Accounts</span>
                                         <i class="fas fa-check-circle kpi-icon"></i>
                                     </div>
                                     <div class="kpi-value">{{ active_users_count if active_users_count is not none and active_users_count != "Error" else 'N/A' }}</div>
@@ -123,145 +123,14 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Bulk Operations Module (Hidden by default) -->
-            <div class="col-12" id="bulk-operations-module" style="display: none;">
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-tasks module-icon"></i>
-                            Bulk Operations Management
-                        </div>
-                        <div class="module-meta">
-                            Execution Criteria
-                        </div>
-                    </div>
-                    <div class="module-content">
-                        <div class="row align-items-center g-3">
-                            <div class="col-md-auto">
-                                <button class="btn btn-outline-warning btn-sm" onclick="bulkResetPasswords()">
-                                    <i class="fas fa-key me-1"></i>Reset Passwords
-                                </button>
-                            </div>
-                            <div class="col-md-auto">
-                                <button class="btn btn-outline-success btn-sm" onclick="bulkActivateUsers()">
-                                    <i class="fas fa-user-check me-1"></i>Activate Users
-                                </button>
-                            </div>
-                            <div class="col-md-auto">
-                                <button class="btn btn-outline-secondary btn-sm" onclick="bulkDeactivateUsers()">
-                                    <i class="fas fa-user-times me-1"></i>Deactivate Users
-                                </button>
-                            </div>
-                            <div class="col-md-auto">
-                                <button class="btn btn-outline-info btn-sm" onclick="bulkVerifyEmails()">
-                                    <i class="fas fa-envelope-circle-check me-1"></i>Verify Emails
-                                </button>
-                            </div>
-                            <div class="col-md-auto">
-                                <button class="btn btn-outline-danger btn-sm" onclick="bulkDeleteUsers()">
-                                    <i class="fas fa-trash-alt me-1"></i>Remove Configurations
-                                </button>
-                            </div>
-                            <div class="col-md-auto ms-auto">
-                                <span id="selected-count" class="badge bg-primary">0 selected</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Search and Filter Module (Hidden by default) -->
-            <div class="col-12" id="search-filter-module" style="display: none;">
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-filter module-icon"></i>
-                            Search & Filter Operations
-                        </div>
-                        <div class="module-meta">
-                            Resource Query Interface
-                        </div>
-                    </div>
-                    <div class="module-content">
-                        <form method="GET" action="{{ url_for('admin.admin_users_list') }}" id="search-filter-form">
-                            <div class="row align-items-end g-3">
-                                <!-- Search Input -->
-                                <div class="col-md-4">
-                                    <label for="search" class="form-label">Search Users</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-search"></i>
-                                        </span>
-                                        <input type="text"
-                                               class="form-control"
-                                               id="search"
-                                               name="search"
-                                               value="{{ request.args.get('search', '') }}"
-                                               placeholder="Search by username, name, or email..."
-                                               title="Press Enter to search">
-                                    </div>
-                                    <small class="text-muted">Press Enter to search</small>
-                                </div>
-
-                                <!-- Role Filter -->
-                                <div class="col-md-2">
-                                    <label for="role_filter" class="form-label">Access Level</label>
-                                    <select class="form-select" id="role_filter" name="role">
-                                        <option value="">All Roles</option>
-                                        <option value="admin" {{ 'selected' if request.args.get('role') == 'admin' else '' }}>Administrator</option>
-                                        <option value="user" {{ 'selected' if request.args.get('role') == 'user' else '' }}>Standard User</option>
-                                    </select>
-                                </div>
-
-                                <!-- Status Filter -->
-                                <div class="col-md-2">
-                                    <label for="status_filter" class="form-label">Status</label>
-                                    <select class="form-select" id="status_filter" name="status">
-                                        <option value="">All</option>
-                                        <option value="active" {{ 'selected' if request.args.get('status') == 'active' else '' }}>Active</option>
-                                        <option value="inactive" {{ 'selected' if request.args.get('status') == 'inactive' else '' }}>Inactive</option>
-                                    </select>
-                                </div>
-
-                                <!-- Verification Filter -->
-                                <div class="col-md-2">
-                                    <label for="verified_filter" class="form-label">Verification</label>
-                                    <select class="form-select" id="verified_filter" name="verified">
-                                        <option value="">All</option>
-                                        <option value="verified" {{ 'selected' if request.args.get('verified') == 'verified' else '' }}>Verified</option>
-                                        <option value="unverified" {{ 'selected' if request.args.get('verified') == 'unverified' else '' }}>Unverified</option>
-                                    </select>
-                                </div>
-
-                                <!-- Action Buttons -->
-                                <div class="col-md-2">
-                                    <button type="submit" class="btn btn-primary btn-sm w-100 mb-2">
-                                        <i class="fas fa-search me-1"></i> Apply Filters
-                                    </button>
-                                    <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary btn-sm w-100">
-                                        <i class="fas fa-times me-1"></i> Clear All
-                                    </a>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            <!-- Pagination and Actions Control Bar -->
+            <!-- Pagination and Controls Bar -->
             <div class="col-12">
-                <div class="pagination-control-bar">
-
-                    <!-- Left Side: Pagination Information and Controls -->
-                    <div class="d-flex align-items-center gap-5">
-                        <!-- Results Summary -->
-                        <div class="pagination-summary">
-                            <strong>Showing {{ ((pagination.page - 1) * pagination.per_page + 1) }} - {{ (pagination.page * pagination.per_page if pagination.page < pagination.pages else pagination.total) }} of {{ pagination.total }} users</strong>
-                        </div>
-
+                <div class="d-flex justify-content-between align-items-center p-3">
+                    <!-- Left Side: Page Size, Summary, and Navigation -->
+                    <div class="d-flex align-items-center gap-4">
                         <!-- Page Size Selector -->
                         <div class="d-flex align-items-center gap-2">
-                            <span class="pagination-label">Page Size:</span>
+                            <span class="pagination-label">Table Size:</span>
                             <select class="pagination-page-size"
                                     id="page-size"
                                     onchange="changePageSize(this.value)">
@@ -271,6 +140,9 @@
                                 <option value="100" {{ 'selected' if request.args.get('per_page', '10')|string == '100' else '' }}>100</option>
                             </select>
                         </div>
+
+                        <!-- Results Summary -->
+                        <strong>{{ ((pagination.page - 1) * pagination.per_page + 1) }} - {{ (pagination.page * pagination.per_page if pagination.page < pagination.pages else pagination.total) }} of {{ pagination.total }}</strong>
 
                         <!-- Navigation Controls -->
                         {% if pagination and pagination.pages > 1 %}
@@ -361,11 +233,171 @@
                                 onclick="toggleBulkOperations()"
                                 title="Toggle Bulk Operations">
                             <i class="fas fa-tasks me-1"></i>
-
                         </button>
                     </div>
                 </div>
             </div>
+            <!-- Bulk Operations Module (Hidden by default) -->
+            <div class="col-12" id="bulk-operations-module" style="display: none;">
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-tasks module-icon"></i>
+                            Bulk Operations Management
+                        </div>
+                        <div class="module-meta">
+                            Execution Criteria
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-auto">
+                                <button class="btn btn-outline-warning btn-sm" onclick="bulkResetPasswords()">
+                                    <i class="fas fa-key me-1"></i>Reset Passwords
+                                </button>
+                            </div>
+                            <div class="col-md-auto">
+                                <button class="btn btn-outline-success btn-sm" onclick="bulkActivateUsers()">
+                                    <i class="fas fa-user-check me-1"></i>Activate Users
+                                </button>
+                            </div>
+                            <div class="col-md-auto">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="bulkDeactivateUsers()">
+                                    <i class="fas fa-user-times me-1"></i>Deactivate Users
+                                </button>
+                            </div>
+                            <div class="col-md-auto">
+                                <button class="btn btn-outline-info btn-sm" onclick="bulkVerifyEmails()">
+                                    <i class="fas fa-envelope-circle-check me-1"></i>Verify Emails
+                                </button>
+                            </div>
+                            <div class="col-md-auto">
+                                <button class="btn btn-outline-danger btn-sm" onclick="bulkDeleteUsers()">
+                                    <i class="fas fa-trash-alt me-1"></i>Remove Configurations
+                                </button>
+                            </div>
+                            <div class="col-md-auto ms-auto">
+                                <span id="selected-count" class="badge bg-primary">0 selected</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filter Module (Hidden by default) -->
+            <div class="col-12" id="search-filter-module" style="display: none;">
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-filter module-icon"></i>
+                            Search & Filter Operations
+                        </div>
+                        <div class="module-meta">
+                            Resource Query Interface
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        <form method="GET" action="{{ url_for('admin.admin_users_list') }}" id="search-filter-form">
+                            <div class="d-flex justify-content-center align-items-start gap-3 flex-wrap">
+                                <!-- Search Input -->
+                                <div style="min-width: 750px;">
+                                    <label for="search" class="form-label">Search Users</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-search"></i>
+                                        </span>
+                                        <input type="text" class="form-control" id="search" name="search"
+                                               value="{{ request.args.get('search', '') }}"
+                                               placeholder="Search by username, name, or email..."
+                                               title="Press Enter to search">
+                                    </div>
+                                    <small class="text-muted">Press Enter to search</small>
+                                </div>
+
+                                <!-- Access Level -->
+                                <div style="min-width: 140px;">
+                                    <label for="role_filter" class="form-label">Access Level</label>
+                                    <select class="form-select" id="role_filter" name="role">
+                                        <option value="">All Roles</option>
+                                        <option value="admin" {{ 'selected' if request.args.get('role') == 'admin' else '' }}>Administrator</option>
+                                        <option value="user" {{ 'selected' if request.args.get('role') == 'user' else '' }}>Standard User</option>
+                                    </select>
+                                </div>
+
+                                <!-- Status -->
+                                <div style="min-width: 120px;">
+                                    <label for="status_filter" class="form-label">Status</label>
+                                    <select class="form-select" id="status_filter" name="status">
+                                        <option value="">All</option>
+                                        <option value="active" {{ 'selected' if request.args.get('status') == 'active' else '' }}>Active</option>
+                                        <option value="inactive" {{ 'selected' if request.args.get('status') == 'inactive' else '' }}>Inactive</option>
+                                    </select>
+                                </div>
+
+                                <!-- Verification -->
+                                <div style="min-width: 120px;">
+                                    <label for="verified_filter" class="form-label">Verification</label>
+                                    <select class="form-select" id="verified_filter" name="verified">
+                                        <option value="">All</option>
+                                        <option value="verified" {{ 'selected' if request.args.get('verified') == 'verified' else '' }}>Verified</option>
+                                        <option value="unverified" {{ 'selected' if request.args.get('verified') == 'unverified' else '' }}>Unverified</option>
+                                    </select>
+                                </div>
+                                <!-- Action Buttons -->
+                                <div class="d-flex gap-2 mt-5">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-search me-1"></i> Apply Filters
+                                    </button>
+                                    <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-times me-1"></i> Clear All
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Filters Indicator (Outside Module) -->
+            {% set has_search = request.args.get('search', '') %}
+            {% set has_role_filter = request.args.get('role', '') %}
+            {% set has_status_filter = request.args.get('status', '') %}
+            {% set has_verified_filter = request.args.get('verified', '') %}
+            {% set active_filters = [] %}
+
+            {% if has_search %}
+                {% set _ = active_filters.append('Search: "' + has_search + '"') %}
+            {% endif %}
+            {% if has_role_filter %}
+                {% set role_name = 'Administrator' if has_role_filter == 'admin' else 'Standard User' %}
+                {% set _ = active_filters.append('Role: ' + role_name) %}
+            {% endif %}
+            {% if has_status_filter %}
+                {% set status_name = 'Active' if has_status_filter == 'active' else 'Inactive' %}
+                {% set _ = active_filters.append('Status: ' + status_name) %}
+            {% endif %}
+            {% if has_verified_filter %}
+                {% set verified_name = 'Verified' if has_verified_filter == 'verified' else 'Unverified' %}
+                {% set _ = active_filters.append('Verification: ' + verified_name) %}
+            {% endif %}
+
+            {% if active_filters %}
+            <div class="col-12">
+                <div class="d-flex align-items-center justify-content-between py-2 px-3 mb-2" style="background-color: rgba(13, 110, 253, 0.08); border: 1px solid rgba(13, 110, 253, 0.2); border-radius: 0.375rem; font-size: 0.875rem;">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <i class="fas fa-filter text-primary"></i>
+                        <span class="fw-semibold text-primary">Resource Database Filtered by:</span>
+                        {% for filter in active_filters %}
+                            <span class="badge bg-primary text-white" style="font-size: 0.75rem;">{{ filter }}</span>
+                        {% endfor %}
+                    </div>
+                    <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-primary btn-sm py-1 px-2" title="Clear all filters" style="font-size: 0.75rem;">
+                        <i class="fas fa-times me-1"></i>Clear Filters
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- User Resource Management Module -->
             <div class="col-12">
                 <div class="enterprise-module">
@@ -375,10 +407,11 @@
                             User Resource Database
                         </div>
                         <div class="module-meta">
-                            Strategic Resource Utilization Overview
+                            User Resource Management Overview
                         </div>
                     </div>
                     <div class="module-content">
+
                         {% if users %}
                         <div class="table-responsive">
                             <table class="table table-hover align-middle enterprise-table" id="data-table">
@@ -388,25 +421,25 @@
                                             <input class="form-check-input" type="checkbox" value="" id="select-all-users-checkbox" title="Select all user resources">
                                         </th>
                                         <th scope="col" class="sortable" data-sort="username" role="columnheader" tabindex="0" aria-label="Sort by Username">
-                                            Identity Configuration <i class="fas fa-sort sort-icon"></i>
+                                            Identity Configuration
                                         </th>
                                         <th scope="col" class="sortable" data-sort="email" role="columnheader" tabindex="0" aria-label="Sort by Email">
-                                            Contact Protocol <i class="fas fa-sort sort-icon"></i>
+                                            Contact Protocol
                                         </th>
                                         <th scope="col" class="sortable" data-sort="role" role="columnheader" tabindex="0" aria-label="Sort by Role">
-                                            Access Classification <i class="fas fa-sort sort-icon"></i>
+                                            Access Classification
                                         </th>
                                         <th scope="col" class="sortable" data-sort="is_active" role="columnheader" tabindex="0" aria-label="Sort by Status">
-                                            Operational Status <i class="fas fa-sort sort-icon"></i>
+                                            Operational Status
                                         </th>
                                         <th scope="col" class="sortable" data-sort="is_email_verified" role="columnheader" tabindex="0" aria-label="Sort by Verification">
-                                            Verification Status <i class="fas fa-sort sort-icon"></i>
+                                            Verification Status
                                         </th>
                                         <th scope="col" class="sortable" data-sort="created_at" role="columnheader" tabindex="0" aria-label="Sort by Date Created">
-                                            Provisioning Date <i class="fas fa-sort sort-icon"></i>
+                                            Provisioning Date
                                         </th>
                                         <th scope="col" class="sortable" data-sort="last_login" role="columnheader" tabindex="0" aria-label="Sort by Last Login">
-                                            Last Access Event <i class="fas fa-sort sort-icon"></i>
+                                            Last Access Event
                                         </th>
                                         <th scope="col" class="text-end"></th>
                                     </tr>
@@ -444,7 +477,7 @@
                                         </td>
                                         <td>
                                             {% if user_item.is_active %}
-                                                <span class="status-badge operational">Operational</span>
+                                                <span class="status-badge operational">Enabled</span>
                                             {% else %}
                                                 <span class="status-badge suspended">Suspended</span>
                                             {% endif %}

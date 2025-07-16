@@ -14,15 +14,19 @@ from app.models import Instrument  # Add to existing imports
 from app.forms import InstrumentForm, InstrumentFilterForm  # Add to existing imports
 from app.models import TradingModel
 from app.forms import TradingModelForm
+from flask import (Blueprint, render_template, current_app, request,
+                   redirect, url_for, flash, abort, jsonify)
+from flask_login import login_required, current_user
+
+from app.extensions import db
+from app.utils import admin_required, record_activity, generate_token, send_email, smart_flash
+from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel
+from datetime import datetime
+from app.forms import TradingModelForm
+from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel
 admin_bp = Blueprint('admin', __name__,
                      template_folder='../templates/admin',
                      url_prefix='/admin')
-
-
-
-from app.forms import TradingModelForm
-from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel
-
 
 @admin_bp.route('/default-trading-models')
 @login_required
@@ -609,50 +613,18 @@ def admin_delete_user(user_id):
 
     try:
         username_for_log = user_to_delete.username
-        # Handle related data (e.g., reassign or delete user's files, models, trades, journals)
-        # This example only deletes activities. Ensure cascade settings or manual deletion for other models.
         Activity.query.filter_by(user_id=user_id).delete()
-        # If File model has user_id and cascade is not set to delete orphans, you might need:
-        # File.query.filter_by(user_id=user_id).delete() (after deleting actual files from disk)
-        # Similar logic for TradingModel, Trade, DailyJournal etc. if not cascaded from User model.
 
         db.session.delete(user_to_delete)
         db.session.commit()
         record_activity('admin_user_delete', f"Admin {current_user.username} deleted user: {username_for_log}",
                         user_id_for_activity=current_user.id)
-        flash(f'User "{username_for_log}" has been deleted.', 'success')
+        flash('User resource ' + username_for_log + ' has been successfully deprovisioned.', 'success')
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error deleting user {user_id} by admin {current_user.username}: {e}", exc_info=True)
         flash(f'Error deleting user: {str(e)}', 'danger')
     return redirect(url_for('admin.admin_users_list'))
-
-# ... (after admin_delete_user route) ...
-
-# REPLACE YOUR BULK ROUTES WITH THESE CSRF-PROTECTED VERSIONS
-
-# SIMPLE SOLUTION: Remove the problematic import and use this approach instead
-
-# Remove this line from your imports:
-# from flask_wtf.csrf import validate_csrf, ValidationError, exempt  # ❌ REMOVE THIS
-
-# Keep only these imports at the top of admin_bp.py:
-from flask import (Blueprint, render_template, current_app, request,
-                   redirect, url_for, flash, abort, jsonify)
-from flask_login import login_required, current_user
-
-from app.extensions import db
-from app.utils import admin_required, record_activity, generate_token, send_email, smart_flash
-from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel
-from datetime import datetime
-
-
-# ... rest of your existing imports (no CSRF imports needed)
-
-# REPLACE THE BULK ROUTES SECTION IN YOUR admin_bp.py WITH THIS CLEAN VERSION
-
-# REPLACE YOUR EXISTING admin_bulk_delete_users FUNCTION WITH THIS FIXED VERSION
-# File: app/blueprints/admin_bp.py
 
 @admin_bp.route('/users/bulk_delete', methods=['POST'])
 @login_required
