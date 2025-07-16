@@ -2,82 +2,205 @@
 {% from "macros/_form_helpers.html" import render_field, render_checkbox %}
 
 {% block title %}
-    {{ title or "Create New User" }} - Admin
+    {{ title or "User Resource Provisioning" }} - Administration Center
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4 mb-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-7">
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h3 class="mb-0"><i class="fas fa-user-plus me-2"></i>{{ title or "Create New User" }}</h3>
+<div class="container-fluid">
+    <!-- Executive Header -->
+    <div class="executive-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="header-content">
+                <h1 class="executive-title">
+                    <i class="fas fa-user-plus executive-icon"></i>
+                    {{ title or "User Resource Provisioning" }}
+                </h1>
+                <div class="executive-subtitle">
+                    Strategic User Onboarding & Resource Allocation Framework
                 </div>
-                <div class="card-body p-4">
-                    {# Display flashed messages #}
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                    {{ message|safe }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div class="btn-group">
+                <a href="{{ url_for('admin.admin_users_list') }}"
+                   class="btn btn-outline-secondary btn-sm"
+                   title="Return to User Administration Console">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Console
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 200px);">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-7">
+                <!-- User Provisioning Module -->
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-user-cog module-icon"></i>
+                            New User Resource Provisioning
+                        </div>
+                        <div class="module-meta">
+                            Resource Utilization Framework
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        <!-- Flash Messages -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                        {{ message|safe }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <!-- Provisioning Form -->
+                        <form method="POST" action="{{ url_for('admin.admin_create_user') }}" novalidate>
+                            {{ form.hidden_tag() }}
+
+                            <!-- Identity Provisioning Section -->
+                            <div class="mb-4">
+                                <h5 class="module-title">
+                                    <i class="fas fa-id-card module-icon"></i>Identity Provisioning
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ render_field(form.username,
+                                                        label_visible=true,
+                                                        input_class="form-control",
+                                                        placeholder="Enter unique identifier (3-25 characters)") }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ render_field(form.email,
+                                                        label_visible=true,
+                                                        input_class="form-control",
+                                                        placeholder="Corporate communication address",
+                                                        type="email") }}
+                                    </div>
                                 </div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        {{ render_field(form.name,
+                                                        label_visible=true,
+                                                        input_class="form-control",
+                                                        placeholder="Full resource identification (optional)") }}
+                                    </div>
+                                </div>
+                            </div>
 
-                    <form method="POST" action="{{ url_for('admin.admin_create_user') }}" novalidate>
-                        {{ form.hidden_tag() }} {# CSRF token #}
+                            <!-- Security Framework Section -->
+                            <div class="mb-4">
+                                <h5 class="module-title">
+                                    <i class="fas fa-shield-alt module-icon"></i>Security Framework Configuration
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ render_field(form.password,
+                                                        label_visible=true,
+                                                        input_class="form-control",
+                                                        placeholder="Initial authentication credentials (min 8 chars)",
+                                                        type="password") }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ render_field(form.confirm_password,
+                                                        label_visible=true,
+                                                        input_class="form-control",
+                                                        placeholder="Confirm authentication credentials",
+                                                        type="password") }}
+                                    </div>
+                                </div>
+                            </div>
 
-                        {{ render_field(form.username,
-                                        label_visible=true,
-                                        input_class="form-control",
-                                        placeholder="Enter username (3-25 characters)") }}
+                            <!-- Access Control Section -->
+                            <div class="mb-4">
+                                <h5 class="module-title">
+                                    <i class="fas fa-user-shield module-icon"></i>Access Control Framework
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ render_field(form.role,
+                                                        label_visible=true,
+                                                        input_class="form-select") }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ render_checkbox(form.is_active,
+                                                               label_visible=true,
+                                                               input_class="form-check-input") }}
+                                        </div>
+                                        <div class="mb-3">
+                                            {{ render_checkbox(form.is_email_verified,
+                                                               label_visible=true,
+                                                               input_class="form-check-input") }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                        {{ render_field(form.email,
-                                        label_visible=true,
-                                        input_class="form-control",
-                                        placeholder="Enter user's email address",
-                                        type="email") }}
+                            <!-- Provisioning Controls -->
+                            <div class="mt-4">
+                                <div class="d-grid gap-2">
+                                    {{ form.submit(class="btn btn-primary btn-lg") }}
+                                    <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-1"></i>Cancel Provisioning
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
-                        {{ render_field(form.name,
-                                        label_visible=true,
-                                        input_class="form-control",
-                                        placeholder="Enter full name (optional)") }}
-
-                        {{ render_field(form.password,
-                                        label_visible=true,
-                                        input_class="form-control",
-                                        placeholder="Enter password (min 8 characters)",
-                                        type="password") }}
-
-                        {{ render_field(form.confirm_password,
-                                        label_visible=true,
-                                        input_class="form-control",
-                                        placeholder="Confirm password",
-                                        type="password") }}
-
-                        {{ render_field(form.role,
-                                        label_visible=true,
-                                        input_class="form-select") }} {# form.role is a SelectField #}
-
-                        <div class="mt-3">
-                            {{ render_checkbox(form.is_active,
-                                               label_visible=true,
-                                               input_class="form-check-input-lg") }}
+                <!-- Provisioning Guidelines Module -->
+                <div class="enterprise-module mt-4">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-info-circle module-icon"></i>
+                            Provisioning Guidelines
                         </div>
-
-                        <div class="mt-3 mb-3">
-                            {{ render_checkbox(form.is_email_verified,
-                                               label_visible=true,
-                                               input_class="form-check-input-lg") }}
+                        <div class="module-meta">
+                            Strategic Overview
                         </div>
-
-                        <div class="d-grid gap-2 mt-4">
-                            {{ form.submit(class="btn btn-success btn-lg") }}
-                            <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                    <div class="module-content">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="bg-primary-soft me-3 p-2 rounded">
+                                        <i class="fas fa-user-check"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Identity Standards</h6>
+                                        <p class="text-muted small mb-0">Username must be unique, 3-25 characters, alphanumeric with underscores permitted</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="bg-primary-soft me-3 p-2 rounded">
+                                        <i class="fas fa-lock"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Security Requirements</h6>
+                                        <p class="text-muted small mb-0">Password minimum 8 characters with complexity requirements for enterprise security</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="bg-primary-soft me-3 p-2 rounded">
+                                        <i class="fas fa-shield-alt"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Access Classification</h6>
+                                        <p class="text-muted small mb-0">Role assignment determines system access levels and operational capabilities</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
