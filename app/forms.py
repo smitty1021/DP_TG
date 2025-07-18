@@ -933,7 +933,7 @@ class InstrumentForm(FlaskForm):
                              render_kw={"placeholder": "e.g., 5.0, 12.5, 1.0", "step": "0.01"})
 
     tick_size = FloatField('Tick Size',
-                           validators=[Optional(), NumberRange(min=0.0001)],
+                           validators=[DataRequired(), NumberRange(min=0.0001)],
                            render_kw={"placeholder": "e.g., 0.25, 0.1, 0.0001", "step": "0.0001"})
 
     currency = SelectField('Currency',

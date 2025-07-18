@@ -1387,7 +1387,7 @@ def create_instrument():
             # Check if symbol already exists
             existing_instrument = Instrument.query.filter_by(symbol=form.symbol.data.upper()).first()
             if existing_instrument:
-                flash(f'Instrument with symbol "{form.symbol.data.upper()}" already exists.', 'danger')
+                flash(f'Instrument with symbol \'{form.symbol.data.upper()}\' already exists.', 'danger')
                 return render_template('create_instrument.html', title='Create Instrument', form=form)
 
             # Create new instrument
@@ -1406,7 +1406,7 @@ def create_instrument():
             db.session.add(instrument)
             db.session.commit()
 
-            flash(f'Instrument "{instrument.symbol}" created successfully!', 'success')
+            flash(f'Instrument \'{instrument.symbol}\' created successfully!', 'success')
             current_app.logger.info(f"Admin {current_user.username} created instrument {instrument.symbol}.")
 
             return redirect(url_for('admin.instruments_list'))
@@ -1458,7 +1458,7 @@ def edit_instrument(instrument_id):
 
             db.session.commit()
 
-            flash(f'Instrument "{instrument.symbol}" updated successfully!', 'success')
+            flash(f"Instrument '{instrument.symbol}' updated successfully!", 'success')
             current_app.logger.info(f"Admin {current_user.username} updated instrument {instrument.symbol}.")
 
             return redirect(url_for('admin.instruments_list'))
@@ -1491,7 +1491,7 @@ def toggle_instrument_status(instrument_id):
         db.session.commit()
 
         new_status = "active" if instrument.is_active else "inactive"
-        flash(f'Instrument "{instrument.symbol}" changed from {old_status} to {new_status}!', 'success')
+        flash(f"Instrument '{instrument.symbol}' changed from {old_status} to {new_status}!", 'success')
         current_app.logger.info(
             f"Admin {current_user.username} toggled instrument {instrument.symbol} status to {new_status}.")
 
@@ -1516,7 +1516,7 @@ def delete_instrument(instrument_id):
         # Check if any trades exist for this instrument
         trades_count = instrument.trades.count()
         if trades_count > 0:
-            flash(f'Cannot delete instrument "{instrument.symbol}". It has {trades_count} associated trades. '
+            flash(f'Cannot delete instrument \'{instrument.symbol}\'. It has {trades_count} associated trades. '
                   f'Deactivate it instead if you want to stop using it.', 'warning')
             return redirect(url_for('admin.instruments_list'))
 
@@ -1524,7 +1524,7 @@ def delete_instrument(instrument_id):
         db.session.delete(instrument)
         db.session.commit()
 
-        flash(f'Instrument "{symbol}" deleted successfully!', 'success')
+        flash(f'Instrument \'{symbol}\' deleted successfully!', 'success')
         current_app.logger.info(f"Admin {current_user.username} deleted instrument {symbol}.")
 
     except Exception as e:
