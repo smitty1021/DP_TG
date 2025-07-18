@@ -91,6 +91,77 @@ def create_default_trading_model():
                            title='Create Default Trading Model',
                            form=form)
 
+
+@admin_bp.route('/default-trading-models/<int:model_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_default_trading_model(model_id):
+    """Delete a default trading model."""
+    model = TradingModel.query.get_or_404(model_id)
+
+    # Verify it's actually a default model
+    if not model.is_default:
+        flash('This is not a default model and cannot be deleted through this interface.', 'warning')
+        return redirect(url_for('admin.manage_default_trading_models'))
+
+    try:
+        model_name = model.name
+        db.session.delete(model)
+        db.session.commit()
+
+        # Log the deletion
+        record_activity(f'Deleted default trading model: {model_name}')
+        current_app.logger.info(f"Admin {current_user.username} deleted default trading model {model_name}.")
+
+        flash(f'Strategic framework "{model_name}" has been removed successfully.', 'success')
+
+        # Check if request wants JSON response (for AJAX calls)
+        if request.headers.get('Content-Type') == 'application/json' or request.is_json:
+            return jsonify({
+                'success': True,
+                'message': f'Strategic framework "{model_name}" has been removed successfully.'
+            })
+
+    except Exception as e:
+        db.session.rollback()
+        error_msg = f'Error removing configuration: {str(e)}'
+        current_app.logger.error(f"Error deleting default trading model {model_id}: {e}", exc_info=True)
+        flash(error_msg, 'danger')
+
+        # Check if request wants JSON response (for AJAX calls)
+        if request.headers.get('Content-Type') == 'application/json' or request.is_json:
+            return jsonify({
+                'success': False,
+                'message': error_msg
+            }), 500
+
+    return redirect(url_for('admin.manage_default_trading_models'))
+
+
+@admin_bp.route('/default-trading-models/<int:model_id>/toggle-status', methods=['POST'])
+@login_required
+@admin_required
+def toggle_default_trading_model_status(model_id):
+    """Toggle the active status of a default trading model."""
+    model = TradingModel.query.get_or_404(model_id)
+
+    if not model.is_default:
+        flash('This is not a default model.', 'warning')
+        return redirect(url_for('admin.manage_default_trading_models'))
+
+    try:
+        model.is_active = not model.is_active
+        status_text = "activated" if model.is_active else "deactivated"
+
+        db.session.commit()
+        flash(f'Strategic framework "{model.name}" has been {status_text} successfully.', 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating status: {str(e)}', 'danger')
+
+    return redirect(url_for('admin.manage_default_trading_models'))
+
 @admin_bp.route('/default-tags/create', methods=['POST'])
 @login_required
 @admin_required

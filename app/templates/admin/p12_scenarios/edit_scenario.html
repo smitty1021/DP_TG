@@ -4,6 +4,8 @@
 {% block head_extra %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/p12-images.js') }}"></script>
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 {% endblock %}
 
 {% block content %}

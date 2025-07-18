@@ -461,7 +461,7 @@ Add after section 3 (Enterprise Layout System)
     background: var(--enterprise-card-bg);
     border: 1px solid var(--enterprise-border);
     border-radius: var(--enterprise-radius);
-    margin-bottom: var(--enterprise-spacing-lg);
+    /*margin-bottom: var(--enterprise-spacing-lg);*/
     box-shadow: var(--enterprise-shadow);
     overflow: hidden;
     transition: all var(--enterprise-transition-base);
@@ -1706,7 +1706,6 @@ html[data-bs-theme="dark"] textarea.form-control {
     color: var(--bs-secondary-text-emphasis);
     opacity: 0.6;
 }
-
 
 .tag-actions {
     margin-left: 0.5rem;

@@ -1,53 +1,325 @@
 {% extends "base.html" %}
+
+{% block title %}Strategic Model Administration - Trading Models{% endblock %}
+
+{% block head_extra %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Default Trading Models</h2>
-        <a href="{{ url_for('admin.create_default_trading_model') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Create Default Model
-        </a>
-    </div>
-    
-    <div class="card">
-        <div class="card-body">
-            {% if models %}
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Version</th>
-                            <th>Active</th>
-                            <th>Created By</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for model in models %}
-                        <tr>
-                            <td>{{ model.name }}</td>
-                            <td>{{ model.version or 'N/A' }}</td>
-                            <td>
-                                <span class="badge bg-{{ 'success' if model.is_active else 'secondary' }}">
-                                    {{ 'Active' if model.is_active else 'Inactive' }}
-                                </span>
-                            </td>
-                            <td>{{ model.user.username if model.user else 'System' }}</td>
-                            <td>
-                                <a href="{{ url_for('admin.edit_default_trading_model', model_id=model.id) }}" 
-                                   class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-edit"></i> Edit
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<!-- Executive Header -->
+<div class="executive-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="header-content">
+            <h1 class="executive-title">
+                <i class="fas fa-chart-line executive-icon"></i>
+                Strategic Trading Model Administration
+            </h1>
+            <div class="executive-subtitle">
+                Default Trading Model Configuration & Management Model
             </div>
-            {% else %}
-            <p class="text-muted">No default trading models found.</p>
-            {% endif %}
+        </div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    onclick="window.location.href='{{ url_for('main.index') }}'"
+                    title="Go to Main Dashboard">
+                <i class="fas fa-home"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    onclick="window.location.href='{{ url_for('admin.create_default_trading_model') }}'"
+                    title="New Trading Model Configuration">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    onclick="location.reload()" title="Refresh Data">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    onclick="window.location.href='{{ url_for('admin.show_admin_dashboard') }}'"
+                    title="Back to Administration Center">
+                <i class="fas fa-tachometer-alt"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    onclick="history.back();"
+                    title="Go Back">
+                <i class="fas fa-arrow-left"></i>
+            </button>
         </div>
     </div>
 </div>
+
+<!-- Main Content Grid -->
+<div class="container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 300px);">
+        <div class="row g-4">
+
+
+            <!-- Strategic Model Configuration Module -->
+            <div class="col-12">
+                <div class="enterprise-module fade-in">
+                    <div class="module-header">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <div>
+                                <div class="module-title">
+                                    <i class="fas fa-cogs module-icon"></i>
+                                    Strategic Trading Model Registry
+                                </div>
+                                <div class="module-meta">
+                                    Enterprise Default Trading Model Configuration
+                                </div>
+                            </div>
+                            <div class="btn-group">
+                                <a href="{{ url_for('admin.create_default_trading_model') }}"
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus me-1"></i>
+                                    Create Strategic Model
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="module-content p-0">
+                        {% if models %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3">Model Name</th>
+                                        <th scope="col" class="px-4 py-3">Version</th>
+                                        <th scope="col" class="px-4 py-3">Operational Status</th>
+                                        <th scope="col" class="px-4 py-3">Created By</th>
+                                        <th scope="col" class="px-4 py-3 text-center"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for model in models %}
+                                    <tr class="operation-item-row">
+                                        <td class="px-4 py-3">
+                                            <div class="d-flex align-items-center">
+
+                                                <div>
+                                                    <div class="operation-name">{{ model.name }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="version-badge">
+                                                {{ model.version or 'v1.0' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="status-indicator {{ 'active' if model.is_active else 'inactive' }}">
+                                                {{ 'Operational' if model.is_active else 'Inactive' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="user-info">
+                                                <i class="fas fa-user-circle me-2 text-muted"></i>
+                                                {{ model.user.username if model.user else 'System Administrator' }}
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{{ url_for('admin.edit_default_trading_model', model_id=model.id) }}"
+                                                   class="btn btn-outline-secondary btn-sm"
+                                                   title="Modify Configuration">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+
+                                                <button type="button"
+                                                        class="btn btn-outline-secondary btn-sm toggle-status-btn"
+                                                        title="{{ 'Suspend Operations' if model.is_active else 'Activate Operations' }}"
+                                                        data-model-id="{{ model.id }}"
+                                                        data-model-name="{{ model.name }}"
+                                                        data-csrf-token="{{ csrf_token() }}">
+                                                    <i class="fas {{ 'fa-pause' if model.is_active else 'fa-play' }}"></i>
+                                                </button>
+
+                                                <button type="button"
+                                                        class="btn btn-outline-secondary btn-sm delete-btn"
+                                                        title="Remove Configuration"
+                                                        data-model-id="{{ model.id }}"
+                                                        data-model-name="{{ model.name }}"
+                                                        data-csrf-token="{{ csrf_token() }}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="module-content">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="empty-state-title">No Strategic Models Configured</div>
+                                <div class="empty-state-description">
+                                    No default trading models have been configured for this system.
+                                    Create your first strategic Model to begin operational trading analysis.
+                                </div>
+                                <div class="empty-state-actions mt-4">
+                                    <a href="{{ url_for('admin.create_default_trading_model') }}"
+                                       class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i>
+                                        Create Strategic Model
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize enterprise animations
+    const modules = document.querySelectorAll('.enterprise-module');
+    modules.forEach((module, index) => {
+        module.style.animationDelay = `${index * 0.1}s`;
+    });
+
+    // Handle toggle status button clicks
+    document.querySelectorAll('.toggle-status-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const modelId = this.dataset.modelId;
+            const modelName = this.dataset.modelName;
+            const csrfToken = this.dataset.csrfToken;
+
+            showCustomConfirmation({
+                title: 'Confirm Operational Status Change',
+                message: `Are you sure you want to modify the operational status for strategic Model "<strong>${modelName}</strong>"?`,
+                confirmText: 'Confirm Execution',
+                confirmClass: 'btn-warning',
+                icon: 'question-circle',
+                onConfirm: () => {
+                    executeStatusToggle(modelId, modelName, csrfToken);
+                }
+            });
+        });
+    });
+
+    // Handle delete button clicks
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const modelId = this.dataset.modelId;
+            const modelName = this.dataset.modelName;
+
+            confirmRemoveConfiguration(modelId, modelName);
+        });
+    });
+});
+
+// Function to execute status toggle
+function executeStatusToggle(modelId, modelName, csrfToken) {
+    showNotification('Processing status change...', 'info', 'System Operation');
+
+    const url = `/admin/default-trading-models/${modelId}/toggle-status`;
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            } else {
+                return { success: true, message: 'Status updated successfully' };
+            }
+        } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+    })
+    .then(data => {
+        if (data.success !== false) {
+            showSuccess(`Strategic Model "${modelName}" operational status has been updated successfully.`, 'Configuration Updated');
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            showError(data.message || 'Failed to update operational status.', 'System Error');
+        }
+    })
+    .catch(error => {
+        console.error('Status toggle error:', error);
+        showError('An unexpected system error occurred during status update.', 'System Error');
+    });
+}
+
+// Enterprise confirmation for removing configurations
+function confirmRemoveConfiguration(modelId, modelName) {
+    showCustomConfirmation({
+        title: 'Confirm Operational Change',
+        message: `Are you sure you want to remove the strategic Model configuration "<strong>${modelName}</strong>"? This operational change cannot be undone.`,
+        confirmText: 'Remove Configuration',
+        cancelText: 'Cancel',
+        confirmClass: 'btn-danger',
+        icon: 'exclamation-triangle',
+        onConfirm: () => {
+            executeRemoveConfiguration(modelId, modelName);
+        }
+    });
+}
+
+// Execute configuration removal
+function executeRemoveConfiguration(modelId, modelName) {
+    // Show loading state
+    showNotification('Processing configuration removal...', 'info', 'System Operation');
+
+    // Create proper delete URL - note this endpoint needs to be created in admin_bp.py
+    const url = `/admin/default-trading-models/${modelId}/delete`;
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            // Check if response is JSON or HTML redirect
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            } else {
+                // Flask flash message and redirect - treat as success
+                return { success: true, message: 'Configuration removed successfully' };
+            }
+        } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+    })
+    .then(data => {
+        if (data.success !== false) {
+            showSuccess(`Strategic Model "${modelName}" configuration has been removed successfully.`, 'Configuration Updated');
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            showError(data.message || 'Failed to remove configuration.', 'System Error');
+        }
+    })
+    .catch(error => {
+        console.error('Configuration removal error:', error);
+        showError('An unexpected system error occurred during configuration removal.', 'System Error');
+    });
+}
+</script>
 {% endblock %}
