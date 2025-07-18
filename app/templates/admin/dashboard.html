@@ -6,6 +6,35 @@
 
 {% block head_extra %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<style>
+/* Real-time health indicator animations */
+.health-indicator.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.status-operational { background: #10b981; }
+.status-maintenance { background: #f59e0b; }
+.status-error { background: #ef4444; }
+.status-degraded { background: #f97316; }
+
+/* Loading states */
+.loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -21,14 +50,18 @@
                 <div class="executive-subtitle">
                     Strategic Overview & Operational Framework
                     <span class="user-context">• Logged in as <strong>{{ current_user.username }}</strong></span>
+                    <span class="system-status-indicator ms-3" id="overall-status">
+                        <i class="fas fa-circle text-success"></i>
+                        <span id="status-text">{{ system_health.overall_status|title }}</span>
+                    </span>
                 </div>
             </div>
             <div class="btn-group">
                 <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-home"></i>
                 </a>
-                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
-                    <i class="fas fa-sync-alt"></i>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshSystemHealth()">
+                    <i class="fas fa-sync-alt" id="refresh-icon"></i>
                 </button>
                 <a href="#" onclick="history.back();" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-arrow-left"></i>
@@ -141,18 +174,7 @@
                                     <i class="fas fa-chevron-right"></i>
                                 </div>
                             </a>
-                            <a href="{{ url_for('admin.admin_create_user') }}" class="operation-item">
-                                <div class="operation-icon">
-                                    <i class="fas fa-user-plus"></i>
-                                </div>
-                                <div class="operation-details">
-                                    <div class="operation-name">New User Provisioning</div>
-                                    <div class="operation-description">Create and configure new user accounts</div>
-                                </div>
-                                <div class="operation-action">
-                                    <i class="fas fa-chevron-right"></i>
-                                </div>
-                            </a>
+
                         </div>
                     </div>
                 </div>
@@ -211,7 +233,7 @@
                                     <div class="operation-description">Configure the P12 Scenarios and execution criteria</div>
                                 </div>
                                 <div class="operation-metrics">
-                                    <span class="metric-value">5</span>
+                                    <span class="metric-value" id="p12-count">{{ p12_active_count or 0 }}</span>
                                     <span class="metric-label">Scenarios</span>
                                 </div>
                                 <div class="operation-action">
@@ -301,35 +323,74 @@
                             <i class="fas fa-heartbeat module-icon"></i>
                             System Health
                         </div>
+                        <div class="module-meta">
+                            <small class="text-muted" id="last-updated">
+                                Last updated: <span id="health-timestamp">{{ system_health.last_updated_est or 'Now' }}</span>
+                            </small>
+                        </div>
                     </div>
                     <div class="module-content">
-                        <div class="health-grid">
-                            <div class="health-item">
-                                <div class="health-indicator status-operational"></div>
+                        <div class="health-grid" id="health-grid">
+                            <!-- Application Status -->
+                            <div class="health-item" id="health-application">
+                                <div class="health-indicator {{ formatted_health.application.display.class if formatted_health.application else 'status-operational' }}"
+                                     id="app-indicator"></div>
                                 <div class="health-details">
                                     <div class="health-name">Application Status</div>
-                                    <div class="health-value">Operational</div>
+                                    <div class="health-value" id="app-status">
+                                        {{ formatted_health.application.data.details if formatted_health.application else 'Operational' }}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="health-item">
-                                <div class="health-indicator status-operational"></div>
+
+                            <!-- Database Connection -->
+                            <div class="health-item" id="health-database">
+                                <div class="health-indicator {{ formatted_health.database.display.class if formatted_health.database else 'status-operational' }}"
+                                     id="db-indicator"></div>
                                 <div class="health-details">
                                     <div class="health-name">Database Connection</div>
-                                    <div class="health-value">Connected</div>
+                                    <div class="health-value" id="db-status">
+                                        {% if formatted_health.database %}
+                                            {{ formatted_health.database.data.details }}
+                                            {% if formatted_health.database.data.response_time_ms %}
+                                                ({{ formatted_health.database.data.response_time_ms }}ms)
+                                            {% endif %}
+                                        {% else %}
+                                            Connected
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="health-item">
-                                <div class="health-indicator status-operational"></div>
+
+                            <!-- P12 Engine -->
+                            <div class="health-item" id="health-p12">
+                                <div class="health-indicator {{ formatted_health.p12_engine.display.class if formatted_health.p12_engine else 'status-operational' }}"
+                                     id="p12-indicator"></div>
                                 <div class="health-details">
                                     <div class="health-name">P12 Engine</div>
-                                    <div class="health-value">5 Scenarios Active</div>
+                                    <div class="health-value" id="p12-status">
+                                        {% if formatted_health.p12_engine %}
+                                            {{ formatted_health.p12_engine.data.active_scenarios or 0 }} Scenarios Active
+                                        {% else %}
+                                            {{ p12_active_count or 0 }} Scenarios Active
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="health-item">
-                                <div class="health-indicator status-maintenance"></div>
+
+                            <!-- Analytics Engine -->
+                            <div class="health-item" id="health-analytics">
+                                <div class="health-indicator {{ formatted_health.analytics_engine.display.class if formatted_health.analytics_engine else 'status-maintenance' }}"
+                                     id="analytics-indicator"></div>
                                 <div class="health-details">
                                     <div class="health-name">Analytics Engine</div>
-                                    <div class="health-value">Scheduled Deployment</div>
+                                    <div class="health-value" id="analytics-status">
+                                        {% if formatted_health.analytics_engine %}
+                                            {{ formatted_health.analytics_engine.data.details }}
+                                        {% else %}
+                                            Scheduled Deployment
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -345,27 +406,36 @@
                         </div>
                     </div>
                     <div class="module-content">
-                        <div class="resource-metrics">
+                        <div class="resource-metrics" id="resource-metrics">
                             <div class="resource-item">
                                 <div class="resource-label">Active Instruments</div>
                                 <div class="resource-progress">
-                                    <div class="progress-bar" style="width: 85%"></div>
+                                    <div class="progress-bar" id="instruments-progress"
+                                         style="width: {{ resources.instruments.percentage if resources.instruments else 85 }}%"></div>
                                 </div>
-                                <div class="resource-value">{{ active_instruments or 0 }}/{{ total_instruments or 0 }}</div>
+                                <div class="resource-value" id="instruments-value">
+                                    {{ resources.instruments.active if resources.instruments else active_instruments or 0 }}/{{ resources.instruments.total if resources.instruments else total_instruments or 0 }}
+                                </div>
                             </div>
                             <div class="resource-item">
                                 <div class="resource-label">Configured Tags</div>
                                 <div class="resource-progress">
-                                    <div class="progress-bar" style="width: 92%"></div>
+                                    <div class="progress-bar" id="tags-progress"
+                                         style="width: {{ resources.tags.percentage if resources.tags else 92 }}%"></div>
                                 </div>
-                                <div class="resource-value">{{ active_tags or 0 }}/{{ total_tags or 0 }}</div>
+                                <div class="resource-value" id="tags-value">
+                                    {{ resources.tags.active if resources.tags else active_tags or 0 }}/{{ resources.tags.total if resources.tags else total_tags or 0 }}
+                                </div>
                             </div>
                             <div class="resource-item">
                                 <div class="resource-label">User Capacity</div>
                                 <div class="resource-progress">
-                                    <div class="progress-bar" style="width: 23%"></div>
+                                    <div class="progress-bar" id="users-progress"
+                                         style="width: {{ resources.users.percentage if resources.users else 23 }}%"></div>
                                 </div>
-                                <div class="resource-value">{{ total_users if total_users is not none else 'N/A' }}/100</div>
+                                <div class="resource-value" id="users-value">
+                                    {{ resources.users.current if resources.users else total_users if total_users is not none else 'N/A' }}/{{ resources.users.capacity if resources.users else 100 }}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -419,17 +489,22 @@
                         <div class="info-grid">
                             <div class="info-item">
                                 <span class="info-label">Version</span>
-                                <span class="info-value">v2.1.0</span>
+                                <span class="info-value">{{ system_info.version if system_info else 'v2.1.0' }}</span>
                             </div>
                             <div class="info-item">
                                 <span class="info-label">Environment</span>
-                                <span class="info-value">Production</span>
+                                <span class="info-value">{{ system_info.environment if system_info else 'Production' }}</span>
                             </div>
                             <div class="info-item">
                                 <span class="info-label">Last Updated</span>
-                                <span class="info-value">{{ current_timestamp.strftime('%b %d, %Y') if current_timestamp else 'Today' }}</span>
+                                <span class="info-value">{{ system_info.last_updated if system_info else current_timestamp.strftime('%b %d, %Y') if current_timestamp else 'Today' }}</span>
                             </div>
-
+                            {% if system_info and system_info.uptime_hours and system_info.uptime_hours != 'N/A' %}
+                            <div class="info-item">
+                                <span class="info-label">Uptime</span>
+                                <span class="info-value">{{ system_info.uptime_hours }}h</span>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -440,6 +515,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Set initial timestamp to current EST time
+    updateLastUpdatedTimeEST(new Date().toISOString());
+
     // Professional hover effects for operation items
     const operationItems = document.querySelectorAll('.operation-item:not(.disabled)');
     operationItems.forEach(item => {
@@ -485,8 +563,219 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Auto-refresh system health every 30 seconds
+    setInterval(refreshSystemHealth, 30000);
+
     console.log('Enterprise Administration Center initialized');
 });
+
+// Global function for manual refresh with EST timestamp handling
+function refreshSystemHealth() {
+    const refreshIcon = document.getElementById('refresh-icon');
+    if (refreshIcon) {
+        refreshIcon.classList.add('fa-spin');
+    }
+
+    fetch('{{ url_for("admin.api_system_health") }}', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateSystemHealthDisplay(data);
+            updateResourceUtilization(data);
+
+            // Update timestamp with EST conversion
+            updateLastUpdatedTimeEST(data.last_updated || data.timestamp);
+        } else {
+            console.error('Failed to refresh system health:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error refreshing system health:', error);
+    })
+    .finally(() => {
+        if (refreshIcon) {
+            refreshIcon.classList.remove('fa-spin');
+        }
+    });
+}
+
+// New function to handle EST timestamp conversion
+function updateLastUpdatedTimeEST(timestamp) {
+    const healthTimestamp = document.getElementById('health-timestamp');
+    if (healthTimestamp && timestamp) {
+        // Create date object from timestamp
+        const date = new Date(timestamp);
+
+        // Format as 24-hour EST/EDT time
+        const timeString = date.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZone: 'America/New_York'
+        });
+
+        // Determine if we're in EST or EDT based on the date
+        const january = new Date(date.getFullYear(), 0, 1);
+        const july = new Date(date.getFullYear(), 6, 1);
+        const stdTimezoneOffset = Math.max(january.getTimezoneOffset(), july.getTimezoneOffset());
+        const isDST = date.getTimezoneOffset() < stdTimezoneOffset;
+        const timeZoneLabel = isDST ? 'EDT' : 'EST';
+
+        healthTimestamp.textContent = `${timeString} ${timeZoneLabel}`;
+    }
+}
+
+function updateSystemHealthDisplay(data) {
+    // Update overall status
+    const statusText = document.getElementById('status-text');
+    const overallStatus = document.getElementById('overall-status');
+    if (statusText && overallStatus) {
+        statusText.textContent = data.overall_status.charAt(0).toUpperCase() + data.overall_status.slice(1);
+
+        // Update status indicator color
+        const statusIcon = overallStatus.querySelector('i');
+        if (statusIcon) {
+            statusIcon.className = 'fas fa-circle';
+            switch(data.overall_status) {
+                case 'operational':
+                    statusIcon.classList.add('text-success');
+                    break;
+                case 'maintenance':
+                    statusIcon.classList.add('text-warning');
+                    break;
+                case 'degraded':
+                case 'error':
+                    statusIcon.classList.add('text-danger');
+                    break;
+                default:
+                    statusIcon.classList.add('text-secondary');
+            }
+        }
+    }
+
+    // Update individual component statuses
+    Object.keys(data.components).forEach(componentName => {
+        const component = data.components[componentName];
+        const indicator = document.getElementById(`${componentName.replace('_', '-')}-indicator`);
+        const status = document.getElementById(`${componentName.replace('_', '-')}-status`);
+
+        if (indicator) {
+            indicator.className = `health-indicator ${component.display_class}`;
+            if (component.status === 'operational') {
+                indicator.classList.add('pulse');
+            }
+        }
+
+        if (status) {
+            if (componentName === 'p12_engine') {
+                status.textContent = data.p12_scenarios ? data.p12_scenarios.display_text : component.details;
+            } else if (componentName === 'database' && component.raw_data.response_time_ms) {
+                status.textContent = `${component.details} (${component.raw_data.response_time_ms}ms)`;
+            } else {
+                status.textContent = component.details;
+            }
+        }
+    });
+
+    // Update P12 count in the operation list
+    const p12Count = document.getElementById('p12-count');
+    if (p12Count && data.p12_scenarios) {
+        p12Count.textContent = data.p12_scenarios.active_count;
+    }
+}
+
+function updateResourceUtilization(data) {
+    if (!data.resources) return;
+
+    // Update instruments utilization
+    if (data.resources.instruments) {
+        const instrumentsProgress = document.getElementById('instruments-progress');
+        const instrumentsValue = document.getElementById('instruments-value');
+        if (instrumentsProgress) {
+            instrumentsProgress.style.width = `${data.resources.instruments.percentage}%`;
+        }
+        if (instrumentsValue) {
+            instrumentsValue.textContent = `${data.resources.instruments.active}/${data.resources.instruments.total}`;
+        }
+    }
+
+    // Update tags utilization
+    if (data.resources.tags) {
+        const tagsProgress = document.getElementById('tags-progress');
+        const tagsValue = document.getElementById('tags-value');
+        if (tagsProgress) {
+            tagsProgress.style.width = `${data.resources.tags.percentage}%`;
+        }
+        if (tagsValue) {
+            tagsValue.textContent = `${data.resources.tags.active}/${data.resources.tags.total}`;
+        }
+    }
+
+    // Update users utilization
+    if (data.resources.users) {
+        const usersProgress = document.getElementById('users-progress');
+        const usersValue = document.getElementById('users-value');
+        if (usersProgress) {
+            usersProgress.style.width = `${data.resources.users.percentage}%`;
+        }
+        if (usersValue) {
+            usersValue.textContent = `${data.resources.users.current}/${data.resources.users.capacity}`;
+        }
+    }
+}
+
+function updateLastUpdatedTime(timestamp) {
+    const healthTimestamp = document.getElementById('health-timestamp');
+    if (healthTimestamp && timestamp) {
+        // Create date object from UTC timestamp
+        const date = new Date(timestamp);
+
+        // Convert to EST (UTC-5) or EDT (UTC-4) depending on daylight saving time
+        const estTime = new Date(date.toLocaleString("en-US", {timeZone: "America/New_York"}));
+
+        // Format as 24-hour time
+        const timeString = estTime.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZone: 'America/New_York'
+        });
+
+        healthTimestamp.textContent = timeString + ' EST';
+    }
+}
+
+function updateLastUpdatedTimeEST(timestamp) {
+    const healthTimestamp = document.getElementById('health-timestamp');
+    if (healthTimestamp && timestamp) {
+        // Create date object from timestamp
+        const date = new Date(timestamp);
+
+        // Format as 24-hour EST/EDT time
+        const timeString = date.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZone: 'America/New_York'
+        });
+
+        // Determine if we're in EST or EDT
+        const timeZoneOffset = date.getTimezoneOffset();
+        const isDST = timeZoneOffset < 300; // Standard EST is UTC-5 (300 minutes)
+        const timeZoneLabel = isDST ? 'EDT' : 'EST';
+
+        healthTimestamp.textContent = `${timeString} ${timeZoneLabel}`;
+    }
+}
 </script>
 
 {% endblock %}

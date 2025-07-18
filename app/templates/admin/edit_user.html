@@ -16,14 +16,13 @@
                     {{ title or "User Configuration Management" }}: {{ username }}
                 </h1>
                 <div class="executive-subtitle">
-                    Strategic User Resource Administration & Access Control Framework
+                    User Resource Administration & Access Control Framework
                 </div>
             </div>
             <div class="btn-group">
                 <a href="{{ url_for('admin.admin_users_list') }}"
-                   class="btn btn-outline-secondary btn-sm"
-                   title="Return to User Administration Console">
-                    <i class="fas fa-arrow-left me-1"></i>Back to Console
+                   class="btn btn-outline-secondary btn-sm" title="Return to User Administration Console">
+                    <i class="fas fa-arrow-left"></i>
                 </a>
             </div>
         </div>
@@ -39,9 +38,6 @@
                         <div class="module-title">
                             <i class="fas fa-cog module-icon"></i>
                             User Resource Configuration
-                        </div>
-                        <div class="module-meta">
-                            Operational Framework Management
                         </div>
                     </div>
                     <div class="module-content">
@@ -121,8 +117,8 @@
                             <div class="mt-4">
                                 <div class="d-grid gap-2">
                                     {{ form.submit(class="btn btn-primary btn-lg") }}
-                                    <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary">
-                                        <i class="fas fa-times me-1"></i>Cancel Configuration
+                                    <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary btn-lg">
+                                        Cancel Configuration
                                     </a>
                                 </div>
                             </div>

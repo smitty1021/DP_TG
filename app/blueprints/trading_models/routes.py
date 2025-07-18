@@ -709,5 +709,3 @@ def delete_trading_model(model_id):
         flash(f'Error deleting model: {str(e)}', 'danger')
 
     return redirect(url_for('trading_models.models_list'))
-
-

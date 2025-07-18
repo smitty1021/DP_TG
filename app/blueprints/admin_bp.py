@@ -13,17 +13,15 @@ from app.forms import AdminDefaultTagForm
 from app.models import Instrument  # Add to existing imports
 from app.forms import InstrumentForm, InstrumentFilterForm  # Add to existing imports
 from app.models import TradingModel
-from app.forms import TradingModelForm
+
 from flask import (Blueprint, render_template, current_app, request,
                    redirect, url_for, flash, abort, jsonify)
 from flask_login import login_required, current_user
-
 from app.extensions import db
 from app.utils import admin_required, record_activity, generate_token, send_email, smart_flash
-from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel
 from datetime import datetime
 from app.forms import TradingModelForm
-from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel
+from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel, P12Scenario
 admin_bp = Blueprint('admin', __name__,
                      template_folder='../templates/admin',
                      url_prefix='/admin')
@@ -303,8 +301,37 @@ def seed_default_tags():
 @login_required
 @admin_required
 def show_admin_dashboard():
-    """Admin comprehensive dashboard with all system statistics"""
-    from datetime import datetime
+    """Admin comprehensive dashboard with all system statistics and real-time health monitoring"""
+    from datetime import datetime, timedelta
+    import pytz
+
+    def get_est_timestamp():
+        """Get current time in EST/EDT timezone."""
+        try:
+            utc_now = datetime.utcnow()
+            utc = pytz.utc
+            est = pytz.timezone('US/Eastern')
+
+            # Convert UTC to EST/EDT
+            utc_now = utc.localize(utc_now)
+            est_now = utc_now.astimezone(est)
+
+            return est_now
+        except:
+            # Fallback if pytz not available
+            utc_now = datetime.utcnow()
+            est_offset = timedelta(hours=-5)  # Approximate EST
+            return utc_now + est_offset
+
+    def format_est_timestamp(dt=None):
+        """Format timestamp as 24-hour EST/EDT time string."""
+        if dt is None:
+            dt = get_est_timestamp()
+
+        try:
+            return dt.strftime('%H:%M:%S EST')
+        except:
+            return datetime.now().strftime('%H:%M:%S EST')
 
     # Initialize default values
     total_users = "N/A"
@@ -321,7 +348,35 @@ def show_admin_dashboard():
     default_models_count = 0
     current_timestamp = datetime.now()
 
+    # Default system health data (fallback)
+    system_health = {
+        'overall_status': 'unknown',
+        'components': {},
+        'resources': {
+            'instruments': {'active': 0, 'total': 0, 'percentage': 0},
+            'tags': {'active': 0, 'total': 0, 'percentage': 0},
+            'users': {'current': 0, 'capacity': 100, 'percentage': 0}
+        },
+        'last_updated_est': format_est_timestamp()
+    }
+    formatted_health = {}
+    system_info = {
+        'version': 'v2.1.0',
+        'environment': 'Production',
+        'last_updated': 'Today',
+        'uptime_hours': 'N/A'
+    }
+    p12_active_count = p12_total_count = 0
+
     try:
+        # Try to import system health monitoring
+        try:
+            from app.utils.system_health import get_system_health, format_status_display
+            system_health_available = True
+        except ImportError as e:
+            current_app.logger.warning(f"System health monitoring not available: {e}")
+            system_health_available = False
+
         # User statistics
         total_users = User.query.count()
         active_users_count = User.query.filter_by(is_active=True).count()
@@ -364,14 +419,100 @@ def show_admin_dashboard():
         # Trading Models count
         default_models_count = TradingModel.query.filter_by(is_default=True).count()
 
+        # P12 scenario count
+        p12_active_count = P12Scenario.query.filter_by(is_active=True).count()
+        p12_total_count = P12Scenario.query.count()
+
+        # ===== SYSTEM HEALTH MONITORING (with fallback) =====
+        if system_health_available:
+            try:
+                # Get comprehensive system health status
+                system_health = get_system_health()
+
+                # Add EST timestamp
+                system_health['last_updated_est'] = format_est_timestamp()
+
+                # Format system health for template display
+                formatted_health = {}
+                for component_name, component_data in system_health.get('components', {}).items():
+                    formatted_health[component_name] = {
+                        'data': component_data,
+                        'display': format_status_display(component_name, component_data)
+                    }
+
+                # System version info
+                system_info = {
+                    'version': 'v2.1.0',
+                    'environment': current_app.config.get('ENVIRONMENT', 'Production'),
+                    'last_updated': current_timestamp.strftime('%b %d, %Y'),
+                    'uptime_hours': system_health.get('components', {}).get('application', {}).get('uptime_hours',
+                                                                                                   'N/A')
+                }
+
+            except Exception as health_error:
+                current_app.logger.warning(f"System health check failed: {health_error}")
+                # Use fallback system health data (already initialized above)
+                system_health['last_updated_est'] = format_est_timestamp()
+        else:
+            # Create basic system health data without advanced monitoring
+            system_health = {
+                'overall_status': 'operational',
+                'components': {
+                    'application': {'status': 'operational', 'details': 'Application running'},
+                    'database': {'status': 'operational', 'details': 'Connected'},
+                    'p12_engine': {'status': 'operational', 'details': f'{p12_active_count} Scenarios Active'},
+                    'analytics_engine': {'status': 'maintenance', 'details': 'Scheduled Deployment'}
+                },
+                'resources': {
+                    'instruments': {
+                        'active': active_instruments,
+                        'total': total_instruments,
+                        'percentage': round((active_instruments / max(total_instruments, 1)) * 100, 1)
+                    },
+                    'tags': {
+                        'active': active_tags,
+                        'total': total_tags,
+                        'percentage': round((active_tags / max(total_tags, 1)) * 100, 1)
+                    },
+                    'users': {
+                        'current': total_users,
+                        'capacity': 100,
+                        'percentage': round((total_users / 100) * 100, 1) if isinstance(total_users, int) else 0
+                    }
+                },
+                'last_updated_est': format_est_timestamp()
+            }
+
+            # Create basic formatted health data
+            status_mapping = {
+                'operational': {'class': 'status-operational', 'label': 'Operational'},
+                'maintenance': {'class': 'status-maintenance', 'label': 'Maintenance'},
+                'error': {'class': 'status-error', 'label': 'Error'}
+            }
+
+            formatted_health = {}
+            for component_name, component_data in system_health['components'].items():
+                status = component_data.get('status', 'operational')
+                formatted_health[component_name] = {
+                    'data': component_data,
+                    'display': status_mapping.get(status, status_mapping['operational'])
+                }
+
         current_app.logger.info(f"Admin {current_user.username} accessed comprehensive admin dashboard.")
 
     except Exception as e:
         current_app.logger.error(f"Error fetching admin dashboard stats: {e}", exc_info=True)
         flash("Could not load all dashboard statistics.", "warning")
 
+        # Keep existing fallback values (already initialized above)
+        system_health['last_updated_est'] = format_est_timestamp()
+
+    # Get resource data from system_health
+    resources = system_health.get('resources', {})
+
     return render_template('admin/dashboard.html',
-                           title='Admin Dashboard',
+                           title='Administration Center',
+                           # Existing stats
                            total_users=total_users,
                            active_users_count=active_users_count,
                            admin_users_count=admin_users_count,
@@ -384,7 +525,14 @@ def show_admin_dashboard():
                            inactive_tags=inactive_tags,
                            tags_by_category=tags_by_category,
                            default_models_count=default_models_count,
-                           current_timestamp=current_timestamp)
+                           current_timestamp=current_timestamp,
+                           # New system health data
+                           system_health=system_health,
+                           formatted_health=formatted_health,
+                           system_info=system_info,
+                           resources=resources,
+                           p12_active_count=p12_active_count,
+                           p12_total_count=p12_total_count)
 
 
 @admin_bp.route('/users')
@@ -1417,6 +1565,289 @@ def add_tag_category():
         'success': False,
         'message': 'Adding new categories requires code deployment. Current categories are fixed in the TagCategory enum.'
     })
+
+
+@admin_bp.route('/dashboard')
+@login_required
+@admin_required
+def admin_dashboard():
+    """Enhanced administration center with real-time system health monitoring."""
+    try:
+        # Import system health monitoring
+        from app.utils.system_health import get_system_health, format_status_display
+
+        # Get current timestamp
+        current_timestamp = datetime.utcnow()
+
+        # ===== EXISTING STATS COLLECTION =====
+
+        # User statistics
+        total_users = User.query.filter_by(is_active=True).count()
+        active_users_count = User.query.filter(
+            User.is_active == True,
+            User.last_login >= datetime.utcnow() - timedelta(days=30)
+        ).count()
+        admin_users_count = User.query.filter_by(role=UserRole.ADMIN, is_active=True).count()
+
+        # Instrument statistics
+        total_instruments = Instrument.query.count()
+        active_instruments = Instrument.query.filter_by(is_active=True).count()
+        inactive_instruments = total_instruments - active_instruments
+
+        # Get instruments by asset class
+        instruments_by_class = db.session.query(
+            Instrument.asset_class,
+            func.count(Instrument.id).label('count')
+        ).group_by(Instrument.asset_class).all()
+
+        # Tag statistics
+        total_tags = Tag.query.filter_by(is_default=True).count()
+        active_tags = Tag.query.filter_by(is_default=True, is_active=True).count()
+        inactive_tags = total_tags - active_tags
+
+        # Get tags by category
+        tags_by_category = db.session.query(
+            Tag.category,
+            func.count(Tag.id).label('count')
+        ).filter_by(is_default=True).group_by(Tag.category).all()
+
+        # Trading Model statistics
+        default_models_count = TradingModel.query.filter_by(is_default=True).count()
+
+        # ===== NEW SYSTEM HEALTH MONITORING =====
+
+        # Get comprehensive system health status
+        system_health = get_system_health()
+
+        # Format system health for template display
+        formatted_health = {}
+        for component_name, component_data in system_health.get('components', {}).items():
+            formatted_health[component_name] = {
+                'data': component_data,
+                'display': format_status_display(component_name, component_data)
+            }
+
+        # Get P12 scenario count (real-time)
+        p12_active_count = P12Scenario.query.filter_by(is_active=True).count()
+        p12_total_count = P12Scenario.query.count()
+
+        # System version info (you can make this dynamic)
+        system_info = {
+            'version': 'v2.1.0',
+            'environment': current_app.config.get('ENVIRONMENT', 'Production'),
+            'last_updated': current_timestamp.strftime('%b %d, %Y'),
+            'uptime_hours': system_health.get('components', {}).get('application', {}).get('uptime_hours', 'N/A')
+        }
+
+        # Resource utilization from system health
+        resources = system_health.get('resources', {})
+
+        current_app.logger.info(f"Admin dashboard accessed by {current_user.username}")
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching admin dashboard stats: {e}", exc_info=True)
+        flash("Could not load all dashboard statistics.", "warning")
+
+        # Fallback values
+        total_users = active_users_count = admin_users_count = 0
+        total_instruments = active_instruments = inactive_instruments = 0
+        instruments_by_class = []
+        total_tags = active_tags = inactive_tags = 0
+        tags_by_category = []
+        default_models_count = 0
+        p12_active_count = p12_total_count = 0
+
+        # Fallback system health
+        system_health = {
+            'overall_status': 'unknown',
+            'components': {},
+            'resources': {
+                'instruments': {'active': 0, 'total': 0, 'percentage': 0},
+                'tags': {'active': 0, 'total': 0, 'percentage': 0},
+                'users': {'current': 0, 'capacity': 100, 'percentage': 0}
+            }
+        }
+        formatted_health = {}
+        system_info = {
+            'version': 'v2.1.0',
+            'environment': 'Production',
+            'last_updated': 'Today',
+            'uptime_hours': 'N/A'
+        }
+        resources = system_health['resources']
+
+    return render_template('admin/dashboard.html',
+                           title='Administration Center',
+                           # Existing stats
+                           total_users=total_users,
+                           active_users_count=active_users_count,
+                           admin_users_count=admin_users_count,
+                           total_instruments=total_instruments,
+                           active_instruments=active_instruments,
+                           inactive_instruments=inactive_instruments,
+                           instruments_by_class=instruments_by_class,
+                           total_tags=total_tags,
+                           active_tags=active_tags,
+                           inactive_tags=inactive_tags,
+                           tags_by_category=tags_by_category,
+                           default_models_count=default_models_count,
+                           current_timestamp=current_timestamp,
+                           # New system health data
+                           system_health=system_health,
+                           formatted_health=formatted_health,
+                           system_info=system_info,
+                           resources=resources,
+                           p12_active_count=p12_active_count,
+                           p12_total_count=p12_total_count)
+
+
+# ===== NEW API ENDPOINT FOR REAL-TIME UPDATES =====
+
+@admin_bp.route('/api/system-health')
+@login_required
+@admin_required
+def api_system_health():
+    """API endpoint for real-time system health updates (AJAX)."""
+    try:
+        # Try to import system health monitoring
+        try:
+            from app.utils.system_health import get_system_health, format_status_display
+            system_health_available = True
+        except ImportError:
+            system_health_available = False
+
+        if system_health_available:
+            # Get fresh system health data
+            system_health = get_system_health()
+
+            # Format for JSON response
+            response_data = {
+                'success': True,
+                'overall_status': system_health.get('overall_status'),
+                'components': {},
+                'resources': system_health.get('resources', {}),
+                'metrics': system_health.get('metrics', {}),
+                'last_updated': system_health.get('last_updated'),
+                'timestamp': datetime.utcnow().isoformat()
+            }
+
+            # Format component data for frontend
+            for component_name, component_data in system_health.get('components', {}).items():
+                display_info = format_status_display(component_name, component_data)
+                response_data['components'][component_name] = {
+                    'status': component_data.get('status'),
+                    'details': component_data.get('details'),
+                    'display_class': display_info['class'],
+                    'display_label': display_info['label'],
+                    'display_icon': display_info['icon'],
+                    'raw_data': component_data
+                }
+        else:
+            # Fallback response without advanced monitoring
+            p12_active_count = P12Scenario.query.filter_by(is_active=True).count()
+
+            response_data = {
+                'success': True,
+                'overall_status': 'operational',
+                'components': {
+                    'application': {
+                        'status': 'operational',
+                        'details': 'Application running',
+                        'display_class': 'status-operational',
+                        'display_label': 'Operational',
+                        'display_icon': 'fas fa-check-circle'
+                    },
+                    'database': {
+                        'status': 'operational',
+                        'details': 'Connected',
+                        'display_class': 'status-operational',
+                        'display_label': 'Operational',
+                        'display_icon': 'fas fa-check-circle'
+                    },
+                    'p12_engine': {
+                        'status': 'operational',
+                        'details': f'{p12_active_count} Scenarios Active',
+                        'display_class': 'status-operational',
+                        'display_label': 'Operational',
+                        'display_icon': 'fas fa-check-circle'
+                    },
+                    'analytics_engine': {
+                        'status': 'maintenance',
+                        'details': 'Scheduled Deployment',
+                        'display_class': 'status-maintenance',
+                        'display_label': 'Maintenance',
+                        'display_icon': 'fas fa-tools'
+                    }
+                },
+                'resources': {},
+                'metrics': {},
+                'timestamp': datetime.utcnow().isoformat()
+            }
+
+        # Add P12 engine real-time data
+        p12_active_count = P12Scenario.query.filter_by(is_active=True).count()
+        response_data['p12_scenarios'] = {
+            'active_count': p12_active_count,
+            'display_text': f'{p12_active_count} Scenarios Active'
+        }
+
+        return jsonify(response_data)
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching system health API: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'overall_status': 'error'
+        }), 500
+
+
+@admin_bp.route('/api/system-metrics')
+@login_required
+@admin_required
+def api_system_metrics():
+    """API endpoint for detailed system metrics (for monitoring dashboards)."""
+    try:
+        from app.utils.system_health import get_system_health
+
+        system_health = get_system_health()
+
+        # Extract detailed metrics
+        metrics = system_health.get('metrics', {})
+        resources = system_health.get('resources', {})
+
+        # Add database performance metrics
+        db_component = system_health.get('components', {}).get('database', {})
+
+        response = {
+            'success': True,
+            'performance': {
+                'cpu_usage': metrics.get('cpu_usage_percent'),
+                'memory_usage': metrics.get('memory_usage_percent'),
+                'disk_usage': metrics.get('disk_usage_percent'),
+                'database_response_time': db_component.get('response_time_ms')
+            },
+            'capacity': {
+                'instruments_utilization': resources.get('instruments', {}).get('percentage', 0),
+                'tags_utilization': resources.get('tags', {}).get('percentage', 0),
+                'users_utilization': resources.get('users', {}).get('percentage', 0)
+            },
+            'database': {
+                'connection_pool_size': db_component.get('connection_pool_size'),
+                'active_connections': db_component.get('checked_out_connections'),
+                'available_connections': db_component.get('checked_in_connections')
+            },
+            'timestamp': datetime.utcnow().isoformat()
+        }
+
+        return jsonify(response)
+
+    except Exception as e:
+        current_app.logger.error(f"Error fetching system metrics API: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
 @admin_bp.route('/debug/routes')

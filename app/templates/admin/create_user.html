@@ -16,14 +16,13 @@
                     {{ title or "User Resource Provisioning" }}
                 </h1>
                 <div class="executive-subtitle">
-                    Strategic User Onboarding & Resource Allocation Framework
+                    User Onboarding & Resource Allocation Framework
                 </div>
             </div>
             <div class="btn-group">
                 <a href="{{ url_for('admin.admin_users_list') }}"
-                   class="btn btn-outline-secondary btn-sm"
-                   title="Return to User Administration Console">
-                    <i class="fas fa-arrow-left me-1"></i>Back to Console
+                   class="btn btn-outline-secondary btn-sm" title="Return to User Administration Console">
+                    <i class="fas fa-arrow-left"></i>
                 </a>
             </div>
         </div>
@@ -39,9 +38,6 @@
                         <div class="module-title">
                             <i class="fas fa-user-cog module-icon"></i>
                             New User Resource Provisioning
-                        </div>
-                        <div class="module-meta">
-                            Resource Utilization Framework
                         </div>
                     </div>
                     <div class="module-content">
@@ -77,7 +73,7 @@
                                         {{ render_field(form.email,
                                                         label_visible=true,
                                                         input_class="form-control",
-                                                        placeholder="Corporate communication address",
+                                                        placeholder="E-Mail address",
                                                         type="email") }}
                                     </div>
                                 </div>
@@ -86,7 +82,7 @@
                                         {{ render_field(form.name,
                                                         label_visible=true,
                                                         input_class="form-control",
-                                                        placeholder="Full resource identification (optional)") }}
+                                                        placeholder="Full Name (optional)") }}
                                     </div>
                                 </div>
                             </div>
@@ -144,8 +140,8 @@
                             <div class="mt-4">
                                 <div class="d-grid gap-2">
                                     {{ form.submit(class="btn btn-primary btn-lg") }}
-                                    <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary">
-                                        <i class="fas fa-times me-1"></i>Cancel Provisioning
+                                    <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary btn-lg">
+                                        Cancel Provisioning
                                     </a>
                                 </div>
                             </div>
