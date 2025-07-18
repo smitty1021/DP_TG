@@ -49,6 +49,13 @@
         </div>
     </div>
 
+    <!-- Unsaved Changes Indicator -->
+    <div id="unsaved-indicator" class="alert alert-warning alert-dismissible fade show" role="alert" style="display: none;">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Unsaved Changes:</strong> You have made changes that have not been saved yet.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
     <form method="POST" enctype="multipart/form-data" novalidate id="scenario-form" class="mt-4">
         {{ form.hidden_tag() }}
 
@@ -387,11 +394,20 @@ document.addEventListener('DOMContentLoaded', function() {
         return data;
     }
 
-    // Check if form has changes
+    // Check if form has changes - updated to show/hide indicator
     function checkForChanges() {
         const currentData = captureFormState();
         const changed = compareFormData(originalFormData, currentData);
         hasChanges = changed || window.imageChanged;
+
+        // Show/hide unsaved changes indicator
+        const indicator = document.getElementById('unsaved-indicator');
+        if (hasChanges) {
+            indicator.style.display = 'block';
+        } else {
+            indicator.style.display = 'none';
+        }
+
         return hasChanges;
     }
 
@@ -649,6 +665,10 @@ function previewNewImage(input) {
         };
         reader.readAsDataURL(input.files[0]);
         window.imageChanged = true;
+
+        // Trigger change detection when image is changed
+        const event = new Event('change');
+        document.getElementById('scenario-form').dispatchEvent(event);
     }
 }
 

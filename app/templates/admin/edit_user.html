@@ -5,6 +5,109 @@
     {{ title or "User Configuration Management" }} - {{ username }} - Administration Center
 {% endblock %}
 
+{% block head_extra %}
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+<script>
+// Unsaved changes detection
+let hasUnsavedChanges = false;
+let originalFormData = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, select, textarea');
+
+    // Store original form data
+    inputs.forEach(input => {
+        if (input.type === 'checkbox') {
+            originalFormData[input.name] = input.checked;
+        } else {
+            originalFormData[input.name] = input.value;
+        }
+    });
+
+    // Monitor form changes
+    inputs.forEach(input => {
+        input.addEventListener('change', function() {
+            checkForChanges();
+        });
+
+        input.addEventListener('input', function() {
+            checkForChanges();
+        });
+    });
+
+    // Check if form has changes
+    function checkForChanges() {
+        hasUnsavedChanges = false;
+
+        inputs.forEach(input => {
+            let currentValue;
+            let originalValue;
+
+            if (input.type === 'checkbox') {
+                currentValue = input.checked;
+                originalValue = originalFormData[input.name];
+            } else {
+                currentValue = input.value;
+                originalValue = originalFormData[input.name] || '';
+            }
+
+            if (currentValue !== originalValue) {
+                hasUnsavedChanges = true;
+            }
+        });
+
+        // Show/hide unsaved changes indicator
+        const indicator = document.getElementById('unsaved-indicator');
+        if (hasUnsavedChanges) {
+            indicator.style.display = 'block';
+        } else {
+            indicator.style.display = 'none';
+        }
+    }
+
+    // Warn before leaving page with unsaved changes
+    window.addEventListener('beforeunload', function(e) {
+        if (hasUnsavedChanges) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+            return 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+
+    // Clear unsaved changes flag when form is submitted
+    form.addEventListener('submit', function() {
+        hasUnsavedChanges = false;
+    });
+
+    // Handle navigation links with custom modal
+    document.querySelectorAll('a[href]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (hasUnsavedChanges && !link.href.includes('#')) {
+                e.preventDefault();
+
+                showCustomConfirmation({
+                    title: 'Unsaved Changes Detected',
+                    message: 'You have unsaved configuration changes that will be lost. Are you sure you want to leave this page?',
+                    confirmText: 'Leave Page',
+                    cancelText: 'Stay Here',
+                    confirmClass: 'btn-warning',
+                    icon: 'exclamation-triangle',
+                    onConfirm: function() {
+                        hasUnsavedChanges = false; // Prevent double confirmation
+                        window.location.href = link.href;
+                    },
+                    onCancel: function() {
+                        // Stay on page - no action needed
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <!-- Executive Header -->
@@ -30,6 +133,14 @@
 
     <!-- Main Content Grid -->
     <div class="container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 200px);">
+
+        <!-- Unsaved Changes Indicator -->
+        <div id="unsaved-indicator" class="alert alert-warning alert-dismissible fade show" role="alert" style="display: none;">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Unsaved Changes:</strong> You have made changes that have not been saved yet.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-7">
                 <!-- User Configuration Module -->
