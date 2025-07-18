@@ -6,11 +6,14 @@
 {% endblock %}
 
 {% block head_extra %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 <script>
 // Unsaved changes detection
 let hasUnsavedChanges = false;
 let originalFormData = {};
+let isSubmitting = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
@@ -66,44 +69,146 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Warn before leaving page with unsaved changes
+    // Get list of changed fields for better user feedback
+    function getChangedFields() {
+        const changes = [];
+        const fieldMappings = {
+            'username': 'Username',
+            'email': 'Email Address',
+            'name': 'Full Name',
+            'role': 'User Role',
+            'is_active': 'Account Status',
+            'is_email_verified': 'Email Verification',
+            'new_password': 'Password',
+            'confirm_new_password': 'Password Confirmation'
+        };
+
+        inputs.forEach(input => {
+            let currentValue;
+            let originalValue;
+
+            if (input.type === 'checkbox') {
+                currentValue = input.checked;
+                originalValue = originalFormData[input.name];
+            } else {
+                currentValue = input.value;
+                originalValue = originalFormData[input.name] || '';
+            }
+
+            if (currentValue !== originalValue && fieldMappings[input.name]) {
+                changes.push(fieldMappings[input.name]);
+            }
+        });
+
+        return changes;
+    }
+
+    // Enhanced beforeunload handler
     window.addEventListener('beforeunload', function(e) {
-        if (hasUnsavedChanges) {
+        if (hasUnsavedChanges && !isSubmitting) {
+            const message = 'Configuration changes are pending. Proceed without saving?';
             e.preventDefault();
-            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-            return 'You have unsaved changes. Are you sure you want to leave?';
+            e.returnValue = message;
+            return message;
         }
     });
 
     // Clear unsaved changes flag when form is submitted
-    form.addEventListener('submit', function() {
+    form.addEventListener('submit', function(e) {
+        isSubmitting = true;
         hasUnsavedChanges = false;
+
+        // Show saving notification
+        showInfo('Saving user configuration changes...', 'Configuration Update');
     });
 
-    // Handle navigation links with custom modal
-    document.querySelectorAll('a[href]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            if (hasUnsavedChanges && !link.href.includes('#')) {
+    // Enhanced navigation handler with custom modal
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[href]');
+        if (link && hasUnsavedChanges && !isSubmitting) {
+            const href = link.getAttribute('href');
+            if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
                 e.preventDefault();
+                e.stopPropagation();
+
+                const changedFields = getChangedFields();
+                const changesText = changedFields.length > 0
+                    ? `<br><br><strong>Modified parameters:</strong><br>• ${changedFields.join('<br>• ')}`
+                    : '';
 
                 showCustomConfirmation({
-                    title: 'Unsaved Changes Detected',
-                    message: 'You have unsaved configuration changes that will be lost. Are you sure you want to leave this page?',
+                    title: 'Unsaved Configuration Changes',
+                    message: `User configuration changes are pending and will be lost if you navigate away.${changesText}<br><br>Proceed without saving?`,
                     confirmText: 'Leave Page',
-                    cancelText: 'Stay Here',
+                    cancelText: 'Continue Editing',
                     confirmClass: 'btn-warning',
                     icon: 'exclamation-triangle',
                     onConfirm: function() {
-                        hasUnsavedChanges = false; // Prevent double confirmation
-                        window.location.href = link.href;
-                    },
-                    onCancel: function() {
-                        // Stay on page - no action needed
+                        isSubmitting = true;
+                        hasUnsavedChanges = false;
+                        window.location.href = href;
                     }
                 });
+                return false;
             }
-        });
+        }
     });
+
+    // Handle button clicks that navigate
+    document.querySelectorAll('button[onclick]').forEach(button => {
+        const originalOnclick = button.onclick;
+        button.onclick = function(e) {
+            if (hasUnsavedChanges && !isSubmitting) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const changedFields = getChangedFields();
+                const changesText = changedFields.length > 0
+                    ? `<br><br><strong>Modified parameters:</strong><br>• ${changedFields.join('<br>• ')}`
+                    : '';
+
+                showCustomConfirmation({
+                    title: 'Unsaved Configuration Changes',
+                    message: `User configuration changes are pending and will be lost if you navigate away.${changesText}<br><br>Proceed without saving?`,
+                    confirmText: 'Leave Page',
+                    cancelText: 'Continue Editing',
+                    confirmClass: 'btn-warning',
+                    icon: 'exclamation-triangle',
+                    onConfirm: function() {
+                        isSubmitting = true;
+                        hasUnsavedChanges = false;
+                        originalOnclick.call(button, e);
+                    }
+                });
+                return false;
+            } else {
+                return originalOnclick.call(button, e);
+            }
+        };
+    });
+
+    // Convert any existing flash messages to notifications
+    const flashMessages = document.querySelectorAll('.alert:not(#unsaved-indicator)');
+    flashMessages.forEach(alert => {
+        const message = alert.textContent.trim();
+        if (message) {
+            // Determine notification type based on alert class
+            if (alert.classList.contains('alert-success')) {
+                showSuccess(message, 'Configuration Updated');
+            } else if (alert.classList.contains('alert-danger')) {
+                showError(message, 'Configuration Error');
+            } else if (alert.classList.contains('alert-warning')) {
+                showWarning(message, 'Configuration Warning');
+            } else if (alert.classList.contains('alert-info')) {
+                showInfo(message, 'Configuration Info');
+            }
+
+            // Hide the original alert
+            alert.style.display = 'none';
+        }
+    });
+
+    console.log('Enterprise User Configuration Management initialized');
 });
 </script>
 {% endblock %}
@@ -123,10 +228,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
             <div class="btn-group">
-                <a href="{{ url_for('admin.admin_users_list') }}"
-                   class="btn btn-outline-secondary btn-sm" title="Return to User Administration Console">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Data">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.show_admin_dashboard') }}'"
+                        title="Back to Administration Center">
+                    <i class="fas fa-tachometer-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();"
+                        title="Go Back">
                     <i class="fas fa-arrow-left"></i>
-                </a>
+                </button>
             </div>
         </div>
     </div>
@@ -152,11 +272,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     <div class="module-content">
-                        <!-- Flash Messages -->
+                        <!-- Flash Messages (Hidden - converted to notifications) -->
                         {% with messages = get_flashed_messages(with_categories=true) %}
                             {% if messages %}
                                 {% for category, message in messages %}
-                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert" style="display: none;">
                                         {{ message|safe }}
                                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                     </div>

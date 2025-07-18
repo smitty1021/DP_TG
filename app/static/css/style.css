@@ -1654,12 +1654,187 @@ html[data-bs-theme="dark"] textarea.form-control {
     background-color: var(--enterprise-gray-200) !important;
     color: var(--enterprise-text-primary) !important;
 }
+/*
+===============================================================================
+49. TAG COLOR CLASSIFICATIONS
+===============================================================================
+*/
+
+.tag-category-section {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    margin-bottom: 1.5rem;
+}
+
+.tag-category-header {
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+    border-bottom: 1px solid var(--bs-border-color);
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tag-category-body {
+    padding: 1rem;
+}
+
+.tag-item {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--bs-primary-bg-subtle);
+    border: 1px solid var(--bs-primary-border-subtle);
+    border-radius: 1rem;
+    padding: 0.25rem 0.75rem;
+    margin: 0.25rem;
+    font-size: 0.875rem;
+    position: relative;
+    color: var(--bs-primary-text-emphasis);
+    transition: all 0.2s ease;
+}
+
+.tag-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.tag-item.inactive {
+    background-color: var(--bs-secondary-bg);
+    border-color: var(--bs-secondary-border-subtle);
+    color: var(--bs-secondary-text-emphasis);
+    opacity: 0.6;
+}
+
+
+.tag-actions {
+    margin-left: 0.5rem;
+    display: none;
+}
+
+.tag-item:hover .tag-actions {
+    display: inline-flex;
+}
+
+/* Updated action button styling - using the same classes as trades list */
+.tag-actions .action-btn {
+    background: none !important;
+    border: none !important;
+    padding: 0.125rem !important;
+    margin: 0 0.125rem !important;
+    cursor: pointer !important;
+    opacity: 0.7 !important;
+    font-size: 0.75rem !important;
+    transition: all 0.15s ease-in-out !important;
+    background-color: transparent !important;
+    border-radius: 0.25rem !important;
+    min-height: auto !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+.tag-actions .action-btn:hover {
+    opacity: 1 !important;
+    transform: translateY(-1px) !important;
+    background-color: var(--bs-secondary-bg-subtle) !important;
+}
+
+.tag-actions .action-btn.btn-outline-warning {
+    color: #ffc107 !important;
+}
+
+.tag-actions .action-btn.btn-outline-warning:hover {
+    color: #000 !important;
+    background-color: #ffc107 !important;
+}
+
+.tag-actions .action-btn.btn-outline-danger {
+    color: #dc3545 !important;
+}
+
+.tag-actions .action-btn.btn-outline-danger:hover {
+    color: #fff !important;
+    background-color: #dc3545 !important;
+}
+
+/* Dark theme adjustments */
+html[data-bs-theme="dark"] .tag-actions .action-btn.btn-outline-warning {
+    color: #ffda6a !important;
+}
+html[data-bs-theme="dark"] .tag-actions .action-btn.btn-outline-warning:hover {
+    color: #000 !important;
+    background-color: #ffda6a !important;
+}
+
+html[data-bs-theme="dark"] .tag-actions .action-btn.btn-outline-danger {
+    color: #ea868f !important;
+}
+html[data-bs-theme="dark"] .tag-actions .action-btn.btn-outline-danger:hover {
+    color: #000 !important;
+    background-color: #ea868f !important;
+}
+
+.add-tag-form {
+    background: linear-gradient(135deg, var(--bs-light-bg-subtle), var(--bs-secondary-bg-subtle));
+    border: 2px dashed var(--bs-border-color);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    display: none;
+}
+
+.add-tag-form.show {
+    display: block;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.tag-item.tag-neutral {
+    background-color: var(--bs-primary-bg-subtle);
+    border-color: var(--enterprise-primary);
+    color: var(--bs-primary-text-emphasis);
+}
+
+.tag-item.tag-good {
+    background-color: var(--bs-success-bg-subtle);
+    border-color: var(--bs-success-border-subtle);
+    color: var(--bs-success-text-emphasis);
+}
+
+.tag-bad {
+    background-color: var(--bs-danger-bg-subtle);
+    border-color: var(--bs-danger-border-subtle);
+    color: var(--bs-danger-text-emphasis);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.bulk-actions-toolbar {
+    background-color: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    display: none;
+}
+
+.bulk-actions-toolbar.show {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
 /*
 ===============================================================================
 49. ENTERPRISE SEARCH & FILTER COMPONENTS
 ===============================================================================
-Add after section 10 (Form System)
 */
 
 /* Search Components */

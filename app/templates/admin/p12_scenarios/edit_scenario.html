@@ -28,21 +28,36 @@
                 </div>
             </div>
             <div class="btn-group">
-                <a href="{{ url_for('p12_scenarios.list_scenarios') }}"
-                   class="btn btn-outline-secondary btn-sm" title="Back to Strategic Frameworks">
-                    <i class="fas fa-arrow-left"></i>
-                </a>
-                <button type="submit" class="btn btn-primary btn-sm" title="Save Configuration" form="scenario-form">
+                <button type="submit" class="btn btn-outline-secondary btn-sm" title="Save Configuration" form="scenario-form">
                     <i class="fas fa-save"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Data">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.show_admin_dashboard') }}'"
+                        title="Back to Administration Center">
+                    <i class="fas fa-tachometer-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();"
+                        title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
                 </button>
                 {% if scenario %}
                 <a href="{{ url_for('p12_scenarios.view_scenario', scenario_id=scenario.id) }}"
-                   class="btn btn-info btn-sm" title="View Configuration">
+                   class="btn btn-outline-secondary btn-sm" title="View Configuration">
                     <i class="fas fa-eye"></i>
                 </a>
-                <button type="button" class="btn btn-danger btn-sm" title="Remove Configuration"
+                <button type="button" class="btn btn-outline-secondary btn-sm" title="Remove Configuration"
                         onclick="confirmDeleteScenario({{ scenario.id }}, '{{ scenario.scenario_name }}')">
-                    <i class="fas fa-trash"></i>
+                    <i class="fas fa-trash-alt"></i>
                 </button>
                 {% endif %}
             </div>
@@ -54,6 +69,18 @@
         <i class="fas fa-exclamation-triangle me-2"></i>
         <strong>Unsaved Changes:</strong> You have made changes that have not been saved yet.
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div class="row">
+        <div class="col-12 text-end pt-3" style="border-top: 1px solid var(--enterprise-border);">
+            <div class="btn-group">
+                <a href="{{ url_for('p12_scenarios.list_scenarios') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i>Cancel Configuration
+                </a>
+                <button type="submit" class="btn btn-primary" title="Save Configuration" form="scenario-form">
+                    <i class="fas fa-save me-2"></i>Save Configuration
+                </button>
+            </div>
+        </div>
     </div>
 
     <form method="POST" enctype="multipart/form-data" novalidate id="scenario-form" class="mt-4">
@@ -505,8 +532,8 @@ document.addEventListener('DOMContentLoaded', function() {
         options.forEach(option => {
             const tag = document.createElement('span');
             tag.className = selectedValues.includes(option) ?
-                'badge bg-primary me-1 mb-1' :
-                'badge bg-secondary me-1 mb-1';
+                'badge bg-primary me-1 mb-1 fs-5' :
+                'badge bg-secondary me-1 mb-1 fs-5';
             tag.textContent = option;
             tag.style.cursor = 'pointer';
             tag.dataset.value = option;
@@ -530,8 +557,8 @@ document.addEventListener('DOMContentLoaded', function() {
         options.forEach(option => {
             const tag = document.createElement('span');
             tag.className = selectedValue === option ?
-                'badge bg-primary me-1 mb-1' :
-                'badge bg-secondary me-1 mb-1';
+                'badge bg-primary me-1 mb-1 fs-5' :
+                'badge bg-secondary me-1 mb-1 fs-5';
             tag.textContent = option.charAt(0).toUpperCase() + option.slice(1);
             tag.style.cursor = 'pointer';
             tag.dataset.value = option;

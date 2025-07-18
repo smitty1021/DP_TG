@@ -23,15 +23,32 @@
                 </div>
             </div>
             <div class="btn-group">
-                <a href="{{ url_for('p12_scenarios.list_scenarios') }}"
-                   class="btn btn-outline-secondary btn-sm" title="Refresh">
-                    <i class="fas fa-sync-alt"></i>
-                </a>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
                 <a href="{{ url_for('p12_scenarios.create_scenario') }}"
-                   class="btn btn-primary btn-sm" title="Create New Strategic Framework">
+                   class="btn btn-outline-secondary btn-sm" title="Create New Strategic Framework">
                     <i class="fas fa-plus"></i>
                 </a>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Data">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.show_admin_dashboard') }}'"
+                        title="Back to Administration Center">
+                    <i class="fas fa-tachometer-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();"
+                        title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
             </div>
+
+
         </div>
     </div>
 
@@ -56,7 +73,7 @@
                         <table class="table table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th width="80" class="text-center">Config ID</th>
+                                    <th width="80" class="text-center">Scenario</th>
                                     <th>Strategic Framework</th>
                                     <th width="120" class="text-center">Directional Bias</th>
                                     <th width="100" class="text-center">Image</th>
@@ -118,28 +135,24 @@
                                     </td>
                                     <td class="text-center">
                                         {% if scenario.is_active %}
-                                            <span class="status-indicator active">
-                                                <i class="fas fa-circle"></i>Operational
-                                            </span>
+                                            <span class="status-indicator active">Operational</span>
                                         {% else %}
-                                            <span class="status-indicator inactive">
-                                                <i class="fas fa-pause-circle"></i>Standby
-                                            </span>
+                                            <span class="status-indicator inactive">Standby</span>
                                         {% endif %}
                                     </td>
                                     <td class="text-end" onclick="event.stopPropagation();" role="gridcell">
                                         <div class="btn-group" role="group">
                                             <a href="{{ url_for('p12_scenarios.view_scenario', scenario_id=scenario.id) }}"
-                                                class="btn btn-outline-info btn-sm" title="View Framework"
+                                                class="btn btn-outline-secondary btn-sm" title="View Framework"
                                                 aria-label="View Strategic Framework">
                                                 <i class="fas fa-eye" aria-hidden="true"></i>
                                             </a>
                                             <a href="{{ url_for('p12_scenarios.edit_scenario', scenario_id=scenario.id) }}"
-                                                class="btn btn-outline-warning btn-sm" title="Edit Framework"
+                                                class="btn btn-outline-secondary btn-sm" title="Edit Framework"
                                                 aria-label="Edit Strategic Framework">
                                                 <i class="fas fa-edit" aria-hidden="true"></i>
                                             </a>
-                                            <button type="button" class="btn btn-outline-danger btn-sm" title="Decommission Framework"
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" title="Decommission Framework"
                                                     aria-label="Decommission Strategic Framework"
                                                     onclick="confirmDelete({{ scenario.id }}, '{{ scenario.scenario_name }}')">
                                                     <i class="fas fa-trash-alt" aria-hidden="true"></i>
@@ -179,11 +192,11 @@
                         {% if current_user.is_admin() %}
                         <div class="mb-2">
                             <div class="btn-group" role="group">
-                                <button class="btn btn-outline-primary btn-sm" title="Upload Overview Analysis" onclick="showMainImageUploadDialog()">
+                                <button class="btn btn-outline-secondary btn-sm" title="Upload Overview Analysis" onclick="showMainImageUploadDialog()">
                                     <i class="fas fa-upload"></i>
                                 </button>
                                 {% if main_image %}
-                                <button class="btn btn-outline-danger btn-sm" title="Remove Overview Analysis" onclick="deleteMainP12Image()">
+                                <button class="btn btn-outline-secondary btn-sm" title="Remove Overview Analysis" onclick="deleteMainP12Image()">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                                 {% endif %}

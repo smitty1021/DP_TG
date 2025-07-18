@@ -29,18 +29,30 @@
                 </div>
             </div>
             <div class="btn-group">
-                <a href="{{ url_for('admin.admin_create_user') }}"
-                   class="btn btn-outline-secondary btn-sm" title="New User Provisioning">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.admin_create_user') }}'"
+                        title="New User Provisioning">
                     <i class="fas fa-user-plus"></i>
-                </a>
+                </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="location.reload()" title="Refresh Data">
                     <i class="fas fa-sync-alt"></i>
                 </button>
-                <a href="{{ url_for('admin.show_admin_dashboard') }}"
-                   class="btn btn-outline-secondary btn-sm" title="Back to Administration Center">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.show_admin_dashboard') }}'"
+                        title="Back to Administration Center">
+                    <i class="fas fa-tachometer-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();"
+                        title="Go Back">
                     <i class="fas fa-arrow-left"></i>
-                </a>
+                </button>
             </div>
         </div>
     </div>
@@ -222,7 +234,7 @@
                                 class="btn btn-outline-secondary btn-sm action-btn"
                                 onclick="toggleSearchFilters()"
                                 title="Toggle Search & Filter Options">
-                            <i class="fas fa-search me-1"></i>
+                            <i class="fas fa-search"></i>
                         </button>
 
                         <!-- Bulk Operations Toggle Button -->
@@ -231,7 +243,7 @@
                                 class="btn btn-outline-secondary btn-sm action-btn"
                                 onclick="toggleBulkOperations()"
                                 title="Toggle Bulk Operations">
-                            <i class="fas fa-tasks me-1"></i>
+                            <i class="fas fa-tasks"></i>
                         </button>
                     </div>
                 </div>
@@ -497,7 +509,7 @@
                                         <td class="text-end">
                                             <div class="btn-group" role="group">
                                                 <a href="{{ url_for('admin.admin_edit_user', user_id=user_item.id) }}"
-                                                   class="btn btn-outline-warning btn-sm"
+                                                   class="btn btn-outline-secondary btn-sm"
                                                    title="Configure Resource: {{ user_item.username }}"
                                                    aria-label="Configure user resource {{ user_item.username }}">
                                                     <i class="fas fa-edit" aria-hidden="true"></i>
@@ -505,14 +517,14 @@
 
                                                 {% if current_user.id != user_item.id and not (user_item.is_admin() and admin_users_count <= 1) %}
                                                 <button type="button"
-                                                        class="btn btn-outline-danger btn-sm"
+                                                        class="btn btn-outline-secondary btn-sm"
                                                         title="Remove Configuration: {{ user_item.username }}"
                                                         aria-label="Remove user configuration {{ user_item.username }}"
                                                         onclick="confirmDeleteUser({{ user_item.id }}, '{{ user_item.username }}')">
                                                     <i class="fas fa-trash-alt" aria-hidden="true"></i>
                                                 </button>
                                                 {% else %}
-                                                <button type="button" class="btn btn-outline-danger btn-sm" disabled
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" disabled
                                                         title="Cannot remove this configuration">
                                                     <i class="fas fa-trash-alt" aria-hidden="true"></i>
                                                 </button>

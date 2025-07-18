@@ -19,18 +19,30 @@
                 </div>
             </div>
             <div class="btn-group">
-                <a href="{{ url_for('admin.create_instrument') }}" class="btn btn-outline-secondary btn-sm" title="New Instrument Configuration">
-                    <i class="fas fa-plus me-1"></i>
-                </a>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.create_instrument') }}'"
+                        title="New Instrument Configuration">
+                    <i class="fas fa-plus"></i>
+                </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="location.reload()" title="Refresh Data">
                     <i class="fas fa-sync-alt"></i>
                 </button>
-                <a href="{{ url_for('admin.show_admin_dashboard') }}"
-                   class="btn btn-outline-secondary btn-sm" title="Back to Administration Center">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.show_admin_dashboard') }}'"
+                        title="Back to Administration Center">
+                    <i class="fas fa-tachometer-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();"
+                        title="Go Back">
                     <i class="fas fa-arrow-left"></i>
-                </a>
-
+                </button>
             </div>
         </div>
     </div>
@@ -87,10 +99,10 @@
 
                                 <!-- Action Buttons -->
                                 <div class="d-flex gap-2 mt-5">
-                                    <button type="submit" class="btn btn-primary btn-sm">
+                                    <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-search me-1"></i> Apply Filters
                                     </button>
-                                    <a href="{{ url_for('admin.instruments_list') }}" class="btn btn-outline-secondary btn-sm">
+                                    <a href="{{ url_for('admin.instruments_list') }}" class="btn btn-outline-secondary">
                                         <i class="fas fa-times me-1"></i> Clear All
                                     </a>
                                 </div>
@@ -202,7 +214,7 @@
                                 class="btn btn-outline-secondary btn-sm action-btn"
                                 onclick="toggleSearchFilters()"
                                 title="Toggle Search & Filter Options">
-                            <i class="fas fa-search me-1"></i>
+                            <i class="fas fa-search"></i>
                         </button>
                     </div>
                 </div>
@@ -239,7 +251,7 @@
                             <span class="badge bg-primary text-white" style="font-size: 0.75rem;">{{ filter }}</span>
                         {% endfor %}
                     </div>
-                    <a href="{{ url_for('admin.instruments_list') }}" class="btn btn-outline-primary btn-sm py-1 px-2" title="Clear all filters" style="font-size: 0.75rem;">
+                    <a href="{{ url_for('admin.instruments_list') }}" class="btn btn-outline-primary btn-sm" title="Clear all filters" style="font-size: 0.75rem;">
                         <i class="fas fa-times me-1"></i>Clear Filters
                     </a>
                 </div>
@@ -287,9 +299,9 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <a href="{{ url_for('admin.edit_instrument', instrument_id=instrument.id) }}" class="btn btn-outline-primary btn-sm" title="Modify Configuration"><i class="fas fa-edit"></i></a>
+                                                <a href="{{ url_for('admin.edit_instrument', instrument_id=instrument.id) }}" class="btn btn-outline-secondary btn-sm" title="Modify Configuration"><i class="fas fa-edit"></i></a>
 
-                                                <button type="submit" class="btn btn-outline-{{ 'warning' if instrument.is_active else 'success' }} btn-sm toggle-status-btn"
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm-{{ 'warning' if instrument.is_active else 'success' }} btn-sm toggle-status-btn"
                                                         title="{{ 'Suspend Operations' if instrument.is_active else 'Activate Operations' }}"
                                                         data-instrument-id="{{ instrument.id }}"
                                                         data-instrument-name="{{ instrument.symbol }}"
@@ -297,7 +309,7 @@
                                                     <i class="fas {{ 'fa-pause' if instrument.is_active else 'fa-play' }}"></i>
                                                 </button>
 
-                                                <button type="submit" class="btn btn-outline-danger btn-sm delete-btn"
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm delete-btn"
                                                         title="Remove Configuration"
                                                         data-instrument-id="{{ instrument.id }}"
                                                         data-instrument-name="{{ instrument.symbol }}"

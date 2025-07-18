@@ -4,11 +4,16 @@
 {% block title %}Instrument Configuration Management - {{ instrument.symbol }} - Administration Center{% endblock %}
 
 {% block head_extra %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 <script>
+
+
 // Unsaved changes detection
 let hasUnsavedChanges = false;
 let originalFormData = {};
+let isSubmitting = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
@@ -66,16 +71,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Warn before leaving page with unsaved changes
     window.addEventListener('beforeunload', function(e) {
-        if (hasUnsavedChanges) {
+        if (hasUnsavedChanges && !isSubmitting) {
+            const message = 'Instrument configuration changes are pending. Proceed without saving?';
             e.preventDefault();
-            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-            return 'You have unsaved changes. Are you sure you want to leave?';
+            e.returnValue = message;
+            return message;
         }
     });
 
     // Clear unsaved changes flag when form is submitted
     form.addEventListener('submit', function() {
+        isSubmitting = true;
         hasUnsavedChanges = false;
+
+        // Show saving notification
+        showInfo('Saving instrument configuration changes...', 'Configuration Update');
     });
 
     // Handle navigation links with custom modal
@@ -102,6 +112,52 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    document.querySelectorAll('button[onclick]').forEach(button => {
+        const originalOnclick = button.onclick;
+        button.onclick = function(e) {
+            if (hasUnsavedChanges && !isSubmitting) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                showCustomConfirmation({
+                    title: 'Unsaved Configuration Changes',
+                    message: 'Instrument configuration changes are pending and will be lost if you navigate away.<br><br>Proceed without saving?',
+                    confirmText: 'Leave Page',
+                    cancelText: 'Continue Editing',
+                    confirmClass: 'btn-warning',
+                    icon: 'exclamation-triangle',
+                    onConfirm: function() {
+                        isSubmitting = true;
+                        hasUnsavedChanges = false;
+                        originalOnclick.call(button, e);
+                    }
+                });
+                return false;
+            } else {
+                return originalOnclick.call(button, e);
+            }
+        };
+    });
+    const flashMessages = document.querySelectorAll('.alert:not(#unsaved-indicator)');
+    flashMessages.forEach(alert => {
+        const message = alert.textContent.trim();
+        if (message) {
+            if (alert.classList.contains('alert-success')) {
+                showSuccess(message, 'Configuration Updated');
+            } else if (alert.classList.contains('alert-danger')) {
+                showError(message, 'Configuration Error');
+            } else if (alert.classList.contains('alert-warning')) {
+                showWarning(message, 'Configuration Warning');
+            } else if (alert.classList.contains('alert-info')) {
+                showInfo(message, 'Configuration Info');
+            }
+
+            // Hide the original alert
+            alert.style.display = 'none';
+        }
+    });
+
+    console.log('Enterprise Instrument Configuration Management initialized');
 });
 </script>
 {% endblock %}
@@ -121,9 +177,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
             <div class="btn-group">
-                <a href="{{ url_for('admin.instruments_list') }}" class="btn btn-outline-secondary btn-sm" title="Return to Instrument Administration">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Data">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.show_admin_dashboard') }}'"
+                        title="Back to Administration Center">
+                    <i class="fas fa-tachometer-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();"
+                        title="Go Back">
                     <i class="fas fa-arrow-left"></i>
-                </a>
+                </button>
             </div>
         </div>
     </div>

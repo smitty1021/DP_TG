@@ -286,8 +286,8 @@ def seed_default_tags():
         created_count = Tag.create_default_tags()
 
         db.session.commit()
-        flash(f'Successfully created {created_count} Random trading system tags!', 'success')
-        current_app.logger.info(f"Admin {current_user.username} seeded Random's default tags")
+        flash(f'Successfully created {created_count} trading tags!', 'success')
+        current_app.logger.info(f"Admin {current_user.username} seeded default tags")
 
     except Exception as e:
         db.session.rollback()
