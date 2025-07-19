@@ -6618,7 +6618,7 @@ Add after section 24 (Accessibility Features)
 
 /* Enterprise Tables */
 .table-enterprise thead th {
-    background: var(--enterprise-gray-50)
+    background: var(--enterprise-gray-50);
     color: var(--enterprise-text-primary);
     border-bottom: 1px solid var(--enterprise-border);
     font-weight: 600;
@@ -7869,6 +7869,736 @@ html[data-bs-theme="dark"] .executive-header {
     .operation-description {
         font-size: var(--enterprise-font-size-xs);
     }
+}
+
+/* ===============================================================================
+   ENTERPRISE TABLE CSS FIXES - Add to style.css
+   Fixes for Trading Operations Center table styling issues
+   =============================================================================== */
+
+/* Fix missing semicolon in existing CSS */
+.table-enterprise thead th {
+    background: var(--enterprise-gray-50); /* Added missing semicolon */
+    color: var(--enterprise-text-primary);
+    border-bottom: 1px solid var(--enterprise-border);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: var(--enterprise-font-size-sm);
+    padding: 1rem;
+}
+
+/* Enhanced Enterprise Table Styles */
+.enterprise-table {
+    width: 100%;
+    margin-bottom: 0;
+    color: var(--enterprise-text-primary);
+    border-collapse: collapse;
+    table-layout: auto;
+    min-width: 100%;
+}
+
+.enterprise-table thead {
+    background: linear-gradient(135deg, var(--enterprise-gray-100) 0%, var(--enterprise-gray-50) 100%);
+}
+
+.enterprise-table thead th {
+    background: linear-gradient(135deg, var(--enterprise-gray-100) 0%, var(--enterprise-gray-50) 100%);
+    color: var(--enterprise-text-primary);
+    border-bottom: 2px solid var(--enterprise-border);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: var(--enterprise-font-size-sm);
+    padding: 1rem 0.75rem;
+    text-align: left;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-right: 1px solid var(--enterprise-border-light);
+}
+
+.enterprise-table thead th:last-child {
+    border-right: none;
+}
+
+.enterprise-table tbody tr {
+    transition: all var(--enterprise-transition-fast);
+    border-bottom: 1px solid var(--enterprise-border);
+}
+
+.enterprise-table tbody tr:hover {
+    background-color: rgba(0, 102, 204, 0.05);
+    transform: translateX(2px);
+    box-shadow: 2px 0 8px rgba(0, 102, 204, 0.1);
+}
+
+.enterprise-table tbody tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.enterprise-table tbody tr:nth-child(odd) {
+    background-color: var(--enterprise-white);
+}
+
+.enterprise-table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--enterprise-border);
+    border-right: 1px solid var(--enterprise-border-light);
+    font-size: var(--enterprise-font-size-sm);
+    line-height: 1.4;
+}
+
+.enterprise-table td:last-child {
+    border-right: none;
+}
+
+/* Sortable Column Enhancements */
+.enterprise-table .sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+    position: relative;
+    padding-right: 1.5rem;
+}
+
+.enterprise-table .sortable:hover {
+    background: rgba(0, 102, 204, 0.1);
+    color: var(--enterprise-primary);
+}
+
+.enterprise-table .sortable i {
+    margin-left: 0.5rem;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.enterprise-table .sortable:hover i {
+    opacity: 1;
+}
+
+/* Chevron Icon Styling */
+.chevron-icon {
+    transition: transform var(--enterprise-transition-base);
+    color: var(--enterprise-text-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.chevron-icon:hover {
+    color: var(--enterprise-primary);
+    transform: scale(1.1);
+}
+
+/* Status Badge Improvements */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--enterprise-radius-sm);
+    font-size: var(--enterprise-font-size-xs);
+    font-weight: 500;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.status-badge.system-status {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Action Grid Improvements */
+.action-grid {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+}
+
+.action-grid .btn {
+    padding: 0.375rem 0.5rem;
+    font-size: var(--enterprise-font-size-xs);
+    min-width: auto;
+    flex-shrink: 0;
+}
+
+/* Rating Display Improvements */
+.rating-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.rating-display .fa-star {
+    font-size: 0.75rem;
+    margin: 0 1px;
+}
+
+.rating-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+}
+
+.rating-inline .fa-star {
+    font-size: 0.7rem;
+}
+
+/* Trade Details Row Styling */
+.trade-details-row {
+    background-color: var(--enterprise-bg-secondary);
+}
+
+.trade-details-row td {
+    padding: 0;
+    border: none;
+}
+
+.trade-details-row .enterprise-module {
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    background: var(--enterprise-bg-secondary);
+}
+
+/* Table Responsive Wrapper */
+.table-responsive {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--enterprise-radius);
+    box-shadow: var(--enterprise-shadow);
+    background: var(--enterprise-white);
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: var(--enterprise-gray-100);
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: var(--enterprise-gray-400);
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: var(--enterprise-gray-500);
+}
+
+/* Success/Danger Row Coloring */
+.table-success {
+    background-color: rgba(25, 135, 84, 0.1) !important;
+    border-left: 4px solid var(--enterprise-success);
+}
+
+.table-danger {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+    border-left: 4px solid var(--enterprise-danger);
+}
+
+.table-success:hover,
+.table-danger:hover {
+    transform: translateX(2px);
+}
+
+/* Mobile Responsive Fixes */
+@media (max-width: 768px) {
+    .enterprise-table {
+        font-size: var(--enterprise-font-size-xs);
+    }
+
+    .enterprise-table th,
+    .enterprise-table td {
+        padding: 0.5rem 0.25rem;
+    }
+
+    .action-grid {
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    .action-grid .btn {
+        padding: 0.25rem;
+        font-size: 0.7rem;
+    }
+
+    .status-badge {
+        font-size: 0.65rem;
+        padding: 0.125rem 0.25rem;
+    }
+}
+
+/* Column Width Fixes */
+.enterprise-table th:nth-child(1),
+.enterprise-table td:nth-child(1) {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    text-align: center;
+}
+
+.enterprise-table th:nth-child(2),
+.enterprise-table td:nth-child(2) {
+    width: 100px;
+    min-width: 100px;
+}
+
+.enterprise-table th:nth-child(3),
+.enterprise-table td:nth-child(3) {
+    width: 80px;
+    min-width: 80px;
+}
+
+.enterprise-table th:nth-child(4),
+.enterprise-table td:nth-child(4) {
+    width: 140px;
+    min-width: 140px;
+}
+
+.enterprise-table th:nth-child(5),
+.enterprise-table td:nth-child(5) {
+    width: 90px;
+    min-width: 90px;
+}
+
+.enterprise-table th:nth-child(6),
+.enterprise-table td:nth-child(6) {
+    width: 80px;
+    min-width: 80px;
+    text-align: right;
+}
+
+.enterprise-table th:nth-child(7),
+.enterprise-table td:nth-child(7) {
+    width: 90px;
+    min-width: 90px;
+    text-align: right;
+}
+
+.enterprise-table th:nth-child(8),
+.enterprise-table td:nth-child(8) {
+    width: 90px;
+    min-width: 90px;
+    text-align: right;
+}
+
+.enterprise-table th:nth-child(9),
+.enterprise-table td:nth-child(9) {
+    width: 90px;
+    min-width: 90px;
+}
+
+.enterprise-table th:nth-child(10),
+.enterprise-table td:nth-child(10) {
+    width: 110px;
+    min-width: 110px;
+}
+
+.enterprise-table th:nth-child(11),
+.enterprise-table td:nth-child(11) {
+    width: 80px;
+    min-width: 80px;
+    text-align: center;
+}
+
+.enterprise-table th:nth-child(12),
+.enterprise-table td:nth-child(12) {
+    width: 100px;
+    min-width: 100px;
+    text-align: right;
+}
+
+.enterprise-table th:nth-child(13),
+.enterprise-table td:nth-child(13) {
+    width: 140px;
+    min-width: 140px;
+    text-align: center;
+}
+
+/* Text Alignment Utilities */
+.text-end {
+    text-align: right !important;
+}
+
+.text-center {
+    text-align: center !important;
+}
+
+.text-start {
+    text-align: left !important;
+}
+
+/* Dark Theme Support */
+[data-bs-theme="dark"] .enterprise-table {
+    background-color: var(--enterprise-bg-secondary);
+}
+
+[data-bs-theme="dark"] .enterprise-table thead th {
+    background: linear-gradient(135deg, var(--enterprise-gray-200) 0%, var(--enterprise-gray-100) 100%);
+    color: var(--enterprise-text-primary);
+}
+
+[data-bs-theme="dark"] .enterprise-table tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+[data-bs-theme="dark"] .enterprise-table tbody tr:hover {
+    background-color: rgba(77, 166, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .table-success {
+    background-color: rgba(74, 222, 128, 0.1) !important;
+}
+
+[data-bs-theme="dark"] .table-danger {
+    background-color: rgba(248, 113, 113, 0.1) !important;
+}
+
+/* Performance Optimizations */
+.enterprise-table * {
+    will-change: auto;
+}
+
+.enterprise-table tbody tr {
+    contain: layout style;
+}
+
+/* Loading States */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: var(--enterprise-z-modal);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+[data-bs-theme="dark"] .loading-overlay {
+    background-color: rgba(26, 29, 32, 0.9);
+}
+
+/* ===============================================================================
+   CRITICAL CSS FIXES - Add to top of style.css or in a separate CSS file
+   Fixes for missing headers, dropdown functionality, and full-width layout
+   =============================================================================== */
+
+/* URGENT: Override Bootstrap table-dark header visibility */
+.table-dark th {
+    background-color: #343a40 !important;
+    color: #ffffff !important;
+    border-bottom: 2px solid #454d55 !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    font-size: 0.85rem !important;
+    padding: 1rem 0.75rem !important;
+    vertical-align: middle !important;
+    visibility: visible !important;
+    display: table-cell !important;
+}
+
+/* Force table headers to be visible */
+.table thead th {
+    background-color: #343a40 !important;
+    color: #ffffff !important;
+    border-bottom: 2px solid #454d55 !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    font-size: 0.85rem !important;
+    padding: 1rem 0.75rem !important;
+    vertical-align: middle !important;
+    visibility: visible !important;
+    display: table-cell !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* Force table visibility */
+.table {
+    width: 100% !important;
+    margin-bottom: 1rem !important;
+    color: var(--enterprise-text-primary, #212529) !important;
+    border-collapse: collapse !important;
+    display: table !important;
+    visibility: visible !important;
+}
+
+/* Fix table head visibility */
+.table thead {
+    display: table-header-group !important;
+    visibility: visible !important;
+    background-color: #343a40 !important;
+}
+
+/* Fix table body visibility */
+.table tbody {
+    display: table-row-group !important;
+    visibility: visible !important;
+}
+
+/* Fix table rows */
+.table tr {
+    display: table-row !important;
+    visibility: visible !important;
+}
+
+/* Fix table cells */
+.table td,
+.table th {
+    display: table-cell !important;
+    visibility: visible !important;
+    padding: 0.75rem !important;
+    vertical-align: middle !important;
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+/* Remove colored row backgrounds */
+.table-success {
+    background-color: transparent !important;
+    border-left: none !important;
+}
+
+.table-danger {
+    background-color: transparent !important;
+    border-left: none !important;
+}
+
+.table-success:hover,
+.table-danger:hover {
+    background-color: rgba(0, 102, 204, 0.05) !important;
+    transform: none !important;
+}
+
+/* Container full width fixes */
+.enterprise-container {
+    width: 100% !important;
+    max-width: none !important;
+    padding-right: 1rem !important;
+    padding-left: 1rem !important;
+    margin-right: auto !important;
+    margin-left: auto !important;
+}
+
+/* Module content full width */
+.enterprise-module .module-content {
+    padding: 0 !important;
+    width: 100% !important;
+}
+
+/* Table responsive wrapper */
+.table-responsive {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    visibility: visible !important;
+}
+
+/* Enhanced Chevron icon functionality */
+.chevron-icon {
+    transition: transform 0.2s ease !important;
+    color: #6c757d !important;
+    cursor: pointer !important;
+    font-size: 0.8rem !important;
+    display: inline-block !important;
+    visibility: visible !important;
+    width: 16px !important;
+    height: 16px !important;
+    text-align: center !important;
+    line-height: 16px !important;
+}
+
+.chevron-icon:hover {
+    color: #0066cc !important;
+    transform: scale(1.2) !important;
+}
+
+/* Make entire trade row clickable for dropdown */
+.trade-row {
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.trade-row:hover {
+    background-color: rgba(0, 102, 204, 0.05) !important;
+}
+
+/* Don't make action buttons trigger row click */
+.btn-group {
+    pointer-events: auto !important;
+    z-index: 10 !important;
+    position: relative !important;
+}
+
+.btn-group .btn {
+    pointer-events: auto !important;
+}
+
+/* Sortable column styling */
+.sortable {
+    cursor: pointer !important;
+    user-select: none !important;
+    transition: all 0.2s ease !important;
+    position: relative !important;
+    display: table-cell !important;
+    visibility: visible !important;
+}
+
+.sortable:hover {
+    background-color: rgba(0, 102, 204, 0.1) !important;
+    color: #0066cc !important;
+}
+
+.sortable i {
+    margin-left: 0.5rem !important;
+    opacity: 0.6 !important;
+    transition: opacity 0.2s ease !important;
+}
+
+.sortable:hover i {
+    opacity: 1 !important;
+}
+
+/* Button group fixes */
+.btn-group {
+    display: inline-flex !important;
+    vertical-align: middle !important;
+    gap: 0.25rem !important;
+}
+
+.btn-group .btn {
+    padding: 0.375rem 0.5rem !important;
+    font-size: 0.75rem !important;
+    border-radius: 0.375rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Badge fixes */
+.badge {
+    display: inline-block !important;
+    padding: 0.35em 0.65em !important;
+    font-size: 0.75em !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    color: #fff !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    vertical-align: baseline !important;
+    border-radius: 0.375rem !important;
+}
+
+/* Rating display fixes */
+.rating-display {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 0.25rem !important;
+}
+
+.rating-display .fa-star {
+    font-size: 0.75rem !important;
+    margin: 0 1px !important;
+}
+
+/* Text alignment utilities */
+.text-center {
+    text-align: center !important;
+}
+
+.text-end {
+    text-align: right !important;
+}
+
+.text-start {
+    text-align: left !important;
+}
+
+/* Force visibility for all table elements */
+.table *,
+.table-responsive *,
+.enterprise-module * {
+    visibility: visible !important;
+}
+
+/* Force display for table structure */
+table {
+    display: table !important;
+}
+
+thead {
+    display: table-header-group !important;
+}
+
+tbody {
+    display: table-row-group !important;
+}
+
+tr {
+    display: table-row !important;
+}
+
+td, th {
+    display: table-cell !important;
+}
+
+/* Ensure content wrapper doesn't interfere */
+.content-wrapper,
+.main-content {
+    width: 100% !important;
+}
+
+/* Bootstrap override for dark theme tables */
+[data-bs-theme="dark"] .table-dark th,
+[data-bs-theme="dark"] .table thead th {
+    background-color: #2d3339 !important;
+    color: #ffffff !important;
+    border-color: #454d55 !important;
+}
+
+/* Critical: Override any CSS that might be hiding elements */
+.d-none {
+    display: none !important;
+}
+
+/* But NOT the d-none for trade details rows initially */
+.trade-details-row.d-none {
+    display: none !important;
+}
+
+/* Ensure the trade details row shows when expanded */
+.trade-details-row:not(.d-none) {
+    display: table-row !important;
 }
 
 /*
