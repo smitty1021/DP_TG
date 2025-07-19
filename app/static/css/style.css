@@ -2198,6 +2198,28 @@ html[data-bs-theme="dark"] .form-select:focus {
     border-bottom: 1px solid var(--enterprise-border);
 }
 
+.table-fixed {
+    table-layout: fixed;
+    width: 100%;
+    margin-bottom: 0;
+    transform: translateZ(0);
+    will-change: scroll-position;
+}
+
+.table-fixed th,
+.table-fixed td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 8px 6px !important;
+    font-size: var(--enterprise-font-size-sm) !important;
+    font-weight: normal !important;
+    line-height: 1.2 !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    color: var(--enterprise-text-primary) !important;
+}
+
 /*
 ===============================================================================
 12. CARD SYSTEM
@@ -3944,6 +3966,8 @@ Add after section 16 (Alert System)
     background-size: 200px 100%;
     animation: shimmer 1.5s infinite;
 }
+
+
 
 @keyframes shimmer {
     0% { background-position: -200px 0; }
@@ -6969,6 +6993,24 @@ html[data-bs-theme="dark"] .calendar-day.has-trades {
     justify-content: center;
     padding: var(--enterprise-spacing-xxl);
     color: var(--enterprise-text-muted);
+}
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.loading-overlay.show {
+    opacity: 1;
 }
 
 .loading-spinner {
