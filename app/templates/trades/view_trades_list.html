@@ -53,7 +53,7 @@
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <div class="ms-3">
-                        <div class="kpi-label">Total Operations</div>
+                        <div class="kpi-label">Total Trades</div>
                         <div class="kpi-value">{{ trades|length }}</div>
                     </div>
                 </div>
@@ -64,7 +64,7 @@
                         <i class="fas fa-trending-up"></i>
                     </div>
                     <div class="ms-3">
-                        <div class="kpi-label">Profitable Operations</div>
+                        <div class="kpi-label">Profitable Trades</div>
                         <div class="kpi-value">{{ trades|selectattr('pnl', 'greaterthan', 0)|list|length }}</div>
                     </div>
                 </div>
@@ -75,7 +75,7 @@
                         <i class="fas fa-percentage"></i>
                     </div>
                     <div class="ms-3">
-                        <div class="kpi-label">Success Rate</div>
+                        <div class="kpi-label">Strike Rate</div>
                         <div class="kpi-value">
                             {% set profitable = trades|selectattr('pnl', 'greaterthan', 0)|list|length %}
                             {% set total = trades|length %}
@@ -90,7 +90,7 @@
                         <i class="fas fa-dollar-sign"></i>
                     </div>
                     <div class="ms-3">
-                        <div class="kpi-label">Total P&L</div>
+                        <div class="kpi-label">Cumulative P&L</div>
                         <div class="kpi-value">
                             {% set total_pnl = 0 %}
                             {% for trade in trades %}
@@ -171,7 +171,7 @@
                 <i class="fas fa-database module-icon"></i>
                 Trading Operations Data Repository
             </span>
-            <span class="module-meta">{{ trades|length }} operational records</span>
+            <span class="module-meta">{{ trades|length }} Trades Displayed</span>
         </div>
         <div class="module-content p-0">
             <div class="table-responsive">
@@ -182,25 +182,25 @@
                                 <i class="fas fa-angle-down"></i>
                             </th>
                             <th class="sortable" data-sort="date" style="width: 100px;" role="columnheader" tabindex="0">
-                                Execution Date <i class="fas fa-sort"></i>
+                                Date <i class="fas fa-sort"></i>
                             </th>
                             <th class="sortable" data-sort="instrument" style="width: 80px;" role="columnheader" tabindex="0">
-                                Asset Symbol <i class="fas fa-sort"></i>
+                                SYM <i class="fas fa-sort"></i>
                             </th>
                             <th class="sortable" data-sort="model" style="width: 140px;" role="columnheader" tabindex="0">
-                                Strategic Framework <i class="fas fa-sort"></i>
+                                Model <i class="fas fa-sort"></i>
                             </th>
                             <th class="sortable" data-sort="direction" style="width: 90px;" role="columnheader" tabindex="0">
-                                Position Type <i class="fas fa-sort"></i>
+                                Dir <i class="fas fa-sort"></i>
                             </th>
                             <th class="sortable" data-sort="contracts" style="width: 80px;" role="columnheader" tabindex="0">
-                                Volume <i class="fas fa-sort"></i>
+                                Contracts <i class="fas fa-sort"></i>
                             </th>
                             <th class="sortable" data-sort="entry" style="width: 90px;" role="columnheader" tabindex="0">
-                                Entry Price <i class="fas fa-sort"></i>
+                                Avg Entry <i class="fas fa-sort"></i>
                             </th>
                             <th class="sortable" data-sort="exit" style="width: 90px;" role="columnheader" tabindex="0">
-                                Exit Price <i class="fas fa-sort"></i>
+                                Avg Exit <i class="fas fa-sort"></i>
                             </th>
                             <th class="sortable" data-sort="duration" style="width: 90px;" role="columnheader" tabindex="0">
                                 Duration <i class="fas fa-sort"></i>
@@ -209,10 +209,10 @@
                                 Closure Method <i class="fas fa-sort"></i>
                             </th>
                             <th class="sortable" data-sort="rating" style="width: 80px;" role="columnheader" tabindex="0">
-                                Performance Rating <i class="fas fa-sort"></i>
+                                Performance <i class="fas fa-sort"></i>
                             </th>
                             <th class="sortable" data-sort="pnl" style="width: 100px;" role="columnheader" tabindex="0">
-                                P&L Performance <i class="fas fa-sort"></i>
+                                P&L <i class="fas fa-sort"></i>
                             </th>
                             <th style="width: 140px;" role="columnheader"></th>
                         </tr>
@@ -244,7 +244,7 @@
                             <!-- Strategic Framework -->
                             <td role="gridcell" title="Strategic Trading Model Configuration">
                                 {% if trade.trading_model %}
-                                    <span class="badge bg-info">{{ trade.trading_model.name }}</span>
+                                    {{ trade.trading_model.name }}
                                 {% else %}
                                     <span class="text-muted">No Framework</span>
                                 {% endif %}
@@ -302,7 +302,7 @@
                             <!-- Closure Method -->
                             <td role="gridcell">
                                 {% if trade.how_closed %}
-                                    <span class="badge bg-secondary">{{ trade.how_closed }}</span>
+                                    {{ trade.how_closed }}
                                 {% else %}
                                     <span class="text-muted">N/A</span>
                                 {% endif %}
@@ -315,10 +315,7 @@
                                 {% if valid_ratings %}
                                     {% set avg_rating = (valid_ratings|sum / valid_ratings|length) %}
                                     <div class="rating-display" title="Average Performance Rating">
-                                        {% for i in range(1, 6) %}
-                                            <i class="fa{% if i <= avg_rating %}s{% else %}r{% endif %} fa-star text-warning"></i>
-                                        {% endfor %}
-                                        <small class="d-block text-muted">{{ "%.1f"|format(avg_rating) }}/5</small>
+                                        {{ "%.1f"|format(avg_rating) }}
                                     </div>
                                 {% else %}
                                     <span class="text-muted">Not Rated</span>
