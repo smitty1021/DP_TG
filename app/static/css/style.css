@@ -2181,21 +2181,245 @@ html[data-bs-theme="dark"] .form-select:focus {
 }
 
 /* Enterprise Table Variants */
+/*
+===============================================================================
+TABLE ENTERPRISE CSS FIX - ADD TO YOUR STYLE.CSS
+===============================================================================
+This fixes ONLY the table display issues - pagination left untouched
+*/
+
+/* Complete Table Enterprise Implementation */
 .table-enterprise {
-    border-radius: var(--enterprise-radius);
-    overflow: hidden;
-    box-shadow: var(--enterprise-shadow);
+    width: 100%;
+    margin-bottom: 0;
+    color: var(--enterprise-text-primary);
+    border-collapse: collapse;
+    font-size: var(--enterprise-font-size-sm);
 }
 
-.table-responsive .enterprise-table {
-    margin-bottom: 0;
-    border-radius: var(--enterprise-radius);
-    overflow: hidden;
+.table-enterprise th,
+.table-enterprise td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--enterprise-border);
+    text-align: left;
+}
+
+.table-enterprise thead {
+    background: linear-gradient(135deg, var(--enterprise-gray-100) 0%, var(--enterprise-gray-50) 100%);
 }
 
 .table-enterprise thead th {
     background: linear-gradient(135deg, var(--enterprise-gray-100) 0%, var(--enterprise-gray-50) 100%);
+    color: var(--enterprise-text-primary);
+    border-bottom: 2px solid var(--enterprise-border);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: var(--enterprise-font-size-sm);
+    padding: 1rem 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    white-space: nowrap;
+}
+
+.table-enterprise tbody tr {
+    transition: all var(--enterprise-transition-fast);
     border-bottom: 1px solid var(--enterprise-border);
+}
+
+.table-enterprise tbody tr:hover {
+    background-color: rgba(0, 102, 204, 0.05);
+    transform: translateX(2px);
+    box-shadow: 2px 0 8px rgba(0, 102, 204, 0.1);
+}
+
+.table-enterprise tbody tr:nth-child(even) {
+    background-color: rgba(108, 117, 125, 0.02);
+}
+
+.table-enterprise td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--enterprise-border);
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+/* Sortable column styling */
+.table-enterprise .sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.table-enterprise .sortable:hover {
+    background: rgba(0, 102, 204, 0.1);
+    color: var(--enterprise-primary);
+}
+
+.table-enterprise .sortable::after {
+    content: ' ↕';
+    opacity: 0.5;
+    font-size: 0.7rem;
+    margin-left: 0.25rem;
+}
+
+/* Chevron icon styling */
+.table-enterprise .chevron-icon {
+    transition: transform 0.2s ease;
+    cursor: pointer;
+    color: var(--enterprise-text-muted);
+}
+
+.table-enterprise .chevron-icon.rotated {
+    transform: rotate(90deg);
+}
+
+.table-enterprise .chevron-icon:hover {
+    color: var(--enterprise-primary);
+}
+
+/* Action grid styling */
+.table-enterprise .action-grid {
+    display: flex;
+    gap: 0.25rem;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+}
+
+.table-enterprise .action-grid .btn {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+    min-width: auto;
+}
+
+/* Performance indicator styling */
+.table-enterprise .performance-indicator {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+/* Status badge styling */
+.table-enterprise .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: var(--enterprise-radius-sm);
+    background-color: var(--enterprise-gray-100);
+    color: var(--enterprise-text-primary);
+}
+
+.table-enterprise .system-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--enterprise-radius);
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+/* Operation status styling */
+.table-enterprise .operation-status {
+    font-weight: 500;
+    color: var(--enterprise-text-secondary);
+}
+
+/* Trade details row styling */
+.table-enterprise .trade-details-row {
+    background-color: var(--enterprise-gray-50) !important;
+}
+
+.table-enterprise .trade-details-row td {
+    border-bottom: none;
+    padding: 0;
+}
+
+.table-enterprise .trade-details-row:hover {
+    background-color: var(--enterprise-gray-50) !important;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Success/Danger row coloring for P&L */
+.table-enterprise tr.table-success {
+    background-color: rgba(0, 112, 192, 0.05) !important;
+}
+
+.table-enterprise tr.table-danger {
+    background-color: rgba(209, 52, 56, 0.05) !important;
+}
+
+.table-enterprise tr.table-success:hover {
+    background-color: rgba(0, 112, 192, 0.1) !important;
+}
+
+.table-enterprise tr.table-danger:hover {
+    background-color: rgba(209, 52, 56, 0.1) !important;
+}
+
+/* Text alignment fixes */
+.table-enterprise .text-center {
+    text-align: center !important;
+}
+
+.table-enterprise .text-end {
+    text-align: right !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .table-enterprise th,
+    .table-enterprise td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.75rem;
+    }
+
+    .table-enterprise .action-grid {
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    .table-enterprise .action-grid .btn {
+        padding: 0.25rem 0.375rem;
+        font-size: 0.7rem;
+    }
+}
+
+/* Dark theme support */
+html[data-bs-theme="dark"] .table-enterprise {
+    background: var(--enterprise-gray-100);
+    border-color: var(--enterprise-border);
+    color: var(--enterprise-white);
+}
+
+html[data-bs-theme="dark"] .table-enterprise thead th {
+    background: linear-gradient(135deg, var(--enterprise-gray-200) 0%, var(--enterprise-gray-100) 100%);
+    color: var(--enterprise-white);
+    border-bottom-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="dark"] .table-enterprise tbody tr:hover {
+    background-color: rgba(0, 102, 204, 0.1);
+}
+
+html[data-bs-theme="dark"] .table-enterprise tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+html[data-bs-theme="dark"] .table-enterprise .trade-details-row {
+    background-color: var(--enterprise-gray-200) !important;
+}
+
+html[data-bs-theme="dark"] .table-enterprise td,
+html[data-bs-theme="dark"] .table-enterprise th {
+    border-bottom-color: var(--enterprise-border);
+    color: var(--enterprise-white);
 }
 
 .table-fixed {
@@ -6404,9 +6628,14 @@ Add after section 24 (Accessibility Features)
     padding: 1rem;
 }
 
+.table-enterprise tbody tr {
+    transition: all var(--enterprise-transition-fast);
+}
+
 .table-enterprise tbody tr:hover {
     background-color: rgba(0, 102, 204, 0.05);
     transform: translateX(2px);
+    box-shadow: 2px 0 8px rgba(0, 102, 204, 0.1);
 }
 
 .table-enterprise tbody tr:nth-child(even) {
