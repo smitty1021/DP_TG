@@ -3224,7 +3224,7 @@ html[data-bs-theme="dark"] .pagination-nav-btn:hover {
 /* Page information */
 .pagination-info {
     margin: 0 0.75rem;
-    color: var(--enterprise-text-muted);
+    color: var(--enterprise-text-secondary);
     font-size: 0.875rem;
     min-width: 90px;
     text-align: center;
@@ -3236,11 +3236,38 @@ html[data-bs-theme="dark"] .pagination-nav-btn:hover {
 }
 
 html[data-bs-theme="dark"] .pagination-info {
-    color: var(--enterprise-gray-300);
+    color: var(--enterprise-text-secondary);
 }
 
 html[data-bs-theme="dark"] .pagination-info strong {
     color: var(--enterprise-white);
+}
+
+.pagination-arrow-borderless {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none !important;
+    background: transparent;
+    color: var(--enterprise-text-secondary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.pagination-arrow-borderless:hover {
+    color: white;
+    transform: translateY(-1px);
+    background: var(--enterprise-primary);
+}
+
+.pagination-arrow-borderless.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 /*
