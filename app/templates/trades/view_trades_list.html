@@ -117,243 +117,241 @@
         </div>
     </div>
     {% endif %}
+    <!-- Compact Filter Notification Bar (Single Line) -->
+    {% set active_filters = [] %}
+    {% if request.args.get('start_date') %}
+        {% set _ = active_filters.append('Start Date: ' + request.args.get('start_date')) %}
+    {% endif %}
+    {% if request.args.get('end_date') %}
+        {% set _ = active_filters.append('End Date: ' + request.args.get('end_date')) %}
+    {% endif %}
+    {% if request.args.get('instrument') and request.args.get('instrument') != '' %}
+        {% set instrument_id = request.args.get('instrument') %}
+        {% set instrument_dict = dict(filter_form.instrument.choices) %}
+        {% set instrument_label = instrument_dict.get(instrument_id, instrument_id) %}
+        {% set _ = active_filters.append('Instrument: ' + instrument_label) %}
+    {% endif %}
+    {% if request.args.get('direction') %}
+        {% set _ = active_filters.append('Direction: ' + request.args.get('direction')) %}
+    {% endif %}
+    {% if request.args.get('trading_model_id') and request.args.get('trading_model_id') != '0' %}
+        {% set model_id = request.args.get('trading_model_id') %}
+        {% set model_dict = dict(filter_form.trading_model_id.choices) %}
+        {% set model_label = model_dict.get(model_id|int, model_id) %}
+        {% set _ = active_filters.append('Model: ' + model_label) %}
+    {% endif %}
+    {% if request.args.get('how_closed') %}
+        {% set _ = active_filters.append('How Closed: ' + request.args.get('how_closed')) %}
+    {% endif %}
+    {% if request.args.get('pnl_filter') %}
+        {% if request.args.get('pnl_filter') == 'winners' %}
+            {% set _ = active_filters.append('P&L: Winners Only') %}
+        {% elif request.args.get('pnl_filter') == 'losers' %}
+            {% set _ = active_filters.append('P&L: Losers Only') %}
+        {% elif request.args.get('pnl_filter') == 'breakeven' %}
+            {% set _ = active_filters.append('P&L: Breakeven') %}
+        {% endif %}
+    {% endif %}
+    {% if request.args.get('is_dca') %}
+        {% if request.args.get('is_dca') == 'true' %}
+            {% set _ = active_filters.append('DCA: Yes') %}
+        {% elif request.args.get('is_dca') == 'false' %}
+            {% set _ = active_filters.append('DCA: No') %}
+        {% endif %}
+    {% endif %}
+    {% if request.args.get('min_contracts') %}
+        {% set _ = active_filters.append('Min Contracts: ' + request.args.get('min_contracts')) %}
+    {% endif %}
+    {% if request.args.get('max_contracts') %}
+        {% set _ = active_filters.append('Max Contracts: ' + request.args.get('max_contracts')) %}
+    {% endif %}
+    {% if request.args.get('min_rating') %}
+        {% set _ = active_filters.append('Min Rating: ' + request.args.get('min_rating') + '+') %}
+    {% endif %}
+    {% if request.args.get('min_pnl') %}
+        {% set _ = active_filters.append('Min P&L: $' + request.args.get('min_pnl')) %}
+    {% endif %}
+    {% if request.args.get('max_pnl') %}
+        {% set _ = active_filters.append('Max P&L: $' + request.args.get('max_pnl')) %}
+    {% endif %}
 
+    {% if request.args.get('tags') or request.args.getlist('tags') %}
+        {% set selected_tag_ids = request.args.getlist('tags') if request.args.getlist('tags') else [request.args.get('tags')] %}
+        {% for tag_id in selected_tag_ids %}
+            {% if tag_id and tag_id.strip() %}
+                {% set ns = namespace(tag_label=tag_id, tag_color='neutral') %}
 
-        <!-- Compact Filter Notification Bar (Single Line) -->
-        {% set active_filters = [] %}
-        {% if request.args.get('start_date') %}
-            {% set _ = active_filters.append('Start Date: ' + request.args.get('start_date')) %}
-        {% endif %}
-        {% if request.args.get('end_date') %}
-            {% set _ = active_filters.append('End Date: ' + request.args.get('end_date')) %}
-        {% endif %}
-        {% if request.args.get('instrument') and request.args.get('instrument') != '' %}
-            {% set instrument_id = request.args.get('instrument') %}
-            {% set instrument_dict = dict(filter_form.instrument.choices) %}
-            {% set instrument_label = instrument_dict.get(instrument_id, instrument_id) %}
-            {% set _ = active_filters.append('Instrument: ' + instrument_label) %}
-        {% endif %}
-        {% if request.args.get('direction') %}
-            {% set _ = active_filters.append('Direction: ' + request.args.get('direction')) %}
-        {% endif %}
-        {% if request.args.get('trading_model_id') and request.args.get('trading_model_id') != '0' %}
-            {% set model_id = request.args.get('trading_model_id') %}
-            {% set model_dict = dict(filter_form.trading_model_id.choices) %}
-            {% set model_label = model_dict.get(model_id|int, model_id) %}
-            {% set _ = active_filters.append('Model: ' + model_label) %}
-        {% endif %}
-        {% if request.args.get('how_closed') %}
-            {% set _ = active_filters.append('How Closed: ' + request.args.get('how_closed')) %}
-        {% endif %}
-        {% if request.args.get('pnl_filter') %}
-            {% if request.args.get('pnl_filter') == 'winners' %}
-                {% set _ = active_filters.append('P&L: Winners Only') %}
-            {% elif request.args.get('pnl_filter') == 'losers' %}
-                {% set _ = active_filters.append('P&L: Losers Only') %}
-            {% elif request.args.get('pnl_filter') == 'breakeven' %}
-                {% set _ = active_filters.append('P&L: Breakeven') %}
-            {% endif %}
-        {% endif %}
-        {% if request.args.get('is_dca') %}
-            {% if request.args.get('is_dca') == 'true' %}
-                {% set _ = active_filters.append('DCA: Yes') %}
-            {% elif request.args.get('is_dca') == 'false' %}
-                {% set _ = active_filters.append('DCA: No') %}
-            {% endif %}
-        {% endif %}
-        {% if request.args.get('min_contracts') %}
-            {% set _ = active_filters.append('Min Contracts: ' + request.args.get('min_contracts')) %}
-        {% endif %}
-        {% if request.args.get('max_contracts') %}
-            {% set _ = active_filters.append('Max Contracts: ' + request.args.get('max_contracts')) %}
-        {% endif %}
-        {% if request.args.get('min_rating') %}
-            {% set _ = active_filters.append('Min Rating: ' + request.args.get('min_rating') + '+') %}
-        {% endif %}
-        {% if request.args.get('min_pnl') %}
-            {% set _ = active_filters.append('Min P&L: $' + request.args.get('min_pnl')) %}
-        {% endif %}
-        {% if request.args.get('max_pnl') %}
-            {% set _ = active_filters.append('Max P&L: $' + request.args.get('max_pnl')) %}
-        {% endif %}
-
-        {% if request.args.get('tags') or request.args.getlist('tags') %}
-            {% set selected_tag_ids = request.args.getlist('tags') if request.args.getlist('tags') else [request.args.get('tags')] %}
-            {% for tag_id in selected_tag_ids %}
-                {% if tag_id and tag_id.strip() %}
-                    {% set ns = namespace(tag_label=tag_id, tag_color='neutral') %}
-
-                    {% if categorized_tags %}
-                        {% for category_name, tag_options in categorized_tags %}
-                            {% for tag_option_id, tag_option_name, tag_option_color in tag_options %}
-                                {% if tag_option_id == tag_id %}
-                                    {% set ns.tag_label = tag_option_name %}
-                                    {% set ns.tag_color = tag_option_color or 'neutral' %}
-                                {% endif %}
-                            {% endfor %}
+                {% if categorized_tags %}
+                    {% for category_name, tag_options in categorized_tags %}
+                        {% for tag_option_id, tag_option_name, tag_option_color in tag_options %}
+                            {% if tag_option_id == tag_id %}
+                                {% set ns.tag_label = tag_option_name %}
+                                {% set ns.tag_color = tag_option_color or 'neutral' %}
+                            {% endif %}
                         {% endfor %}
-                    {% endif %}
+                    {% endfor %}
+                {% endif %}
 
-                    {% set _ = active_filters.append(('Tag', ns.tag_label, ns.tag_color)) %}
+                {% set _ = active_filters.append(('Tag', ns.tag_label, ns.tag_color)) %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+</div>
+<div class="enterprise-container.p-0">
+    <!-- Pagination and Action Buttons Row -->
+    <div class="d-flex justify-content-between align-items-center">
+        <!-- Enhanced Pagination Controls -->
+        <div class="d-flex align-items-center gap-2">
+            <!-- Results Summary with better formatting -->
+            <div class="text-muted small">
+                Trades {{ pagination.per_page * (pagination.page - 1) + 1 }} - {{ pagination.per_page * (pagination.page - 1) + trades|length }} of {{ pagination.total }}
+            </div>
+
+            <!-- Enhanced Page Size Dropdown -->
+            <span class="text-muted small me-2">Page Size:</span>
+            <select id="pageSizeDropdown" class="form-select form-select-sm" style="width: 70px;"
+                    onchange="changePageSize(this.value)" title="Items per page">
+                <option value="25" {{ 'selected' if request.args.get('per_page', '25')|string == '25' else '' }}>25</option>
+                <option value="50" {{ 'selected' if request.args.get('per_page', '25')|string == '50' else '' }}>50</option>
+                <option value="100" {{ 'selected' if request.args.get('per_page', '25')|string == '100' else '' }}>100</option>
+                <option value="250" {{ 'selected' if request.args.get('per_page', '25')|string == '250' else '' }}>250</option>
+            </select>
+
+            <!-- Enhanced Navigation Arrows with no borders -->
+            <div class="d-flex align-items-center gap-1">
+                <!-- First Page Arrow -->
+                {% if pagination.page > 1 %}
+                {% set args_without_page = request.args.copy() %}
+                {% set _ = args_without_page.pop('page', None) %}
+                <a href="{{ url_for('trades.view_trades_list', page=1, **args_without_page) }}"
+                   class="pagination-arrow-borderless" title="First Page (Ctrl+Home)">
+                    <i class="fas fa-angle-double-left"></i>
+                </a>
+                {% else %}
+                <span class="pagination-arrow-borderless disabled" title="First Page">
+                    <i class="fas fa-angle-double-left"></i>
+                </span>
+                {% endif %}
+
+                <!-- Previous Page Arrow -->
+                {% if pagination.has_prev %}
+                {% set args_without_page = request.args.copy() %}
+                {% set _ = args_without_page.pop('page', None) %}
+                <a href="{{ url_for('trades.view_trades_list', page=pagination.prev_num, **args_without_page) }}"
+                   class="pagination-arrow-borderless" title="Previous Page (Ctrl+Left)">
+                    <i class="fas fa-angle-left"></i>
+                </a>
+                {% else %}
+                <span class="pagination-arrow-borderless disabled" title="Previous Page">
+                    <i class="fas fa-angle-left"></i>
+                </span>
+                {% endif %}
+
+                <!-- Enhanced Page Info -->
+                <span class="pagination-info small">
+                    Page {{ pagination.page }} of {{ pagination.pages }}
+                </span>
+
+                <!-- Next Page Arrow -->
+                {% if pagination.has_next %}
+                {% set args_without_page = request.args.copy() %}
+                {% set _ = args_without_page.pop('page', None) %}
+                <a href="{{ url_for('trades.view_trades_list', page=pagination.next_num, **args_without_page) }}"
+                   class="pagination-arrow-borderless" title="Next Page (Ctrl+Right)">
+                    <i class="fas fa-angle-right"></i>
+                </a>
+                {% else %}
+                <span class="pagination-arrow-borderless disabled" title="Next Page">
+                    <i class="fas fa-angle-right"></i>
+                </span>
+                {% endif %}
+
+                <!-- Last Page Arrow -->
+                {% if pagination.page < pagination.pages %}
+                {% set args_without_page = request.args.copy() %}
+                {% set _ = args_without_page.pop('page', None) %}
+                <a href="{{ url_for('trades.view_trades_list', page=pagination.pages, **args_without_page) }}"
+                   class="pagination-arrow-borderless" title="Last Page (Ctrl+End)">
+                    <i class="fas fa-angle-double-right"></i>
+                </a>
+                {% else %}
+                <span class="pagination-arrow-borderless disabled" title="Last Page">
+                    <i class="fas fa-angle-double-right"></i>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Enhanced Action Buttons with proper spacing -->
+        <div class="d-flex align-items-center gap-2">
+                <!-- Clear Filters Button - Only show when filters are active -->
+                {% if active_filters %}
+                <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-warning btn-sm" title="Clear all active filters">
+                    <i class="fas fa-times-circle me-1"></i> Clear Filters
+                </a>
+                {% endif %}
+
+                <a href="{{ url_for('trades.add_trade') }}" class="btn btn-success-borderonly btn-sm" title="Log New Trade (Ctrl+N)">
+                    <i class="fas fa-plus me-1"></i> Log New Trade
+                </a>
+                <button class="btn btn-primary-borderonly btn-sm" type="button" data-bs-toggle="modal"
+                        data-bs-target="#filterModal" title="Filter Trades (Ctrl+F)">
+                    <i class="fas fa-filter me-1"></i> Filter Trades
+                </button>
+                <a href="{{ url_for('trades.import_trades') }}" class="btn btn-outline-secondary btn-sm" title="Import Trades">
+                    <i class="fas fa-upload me-1"></i> Import
+                </a>
+                <a href="{{ url_for('trades.export_trades_csv') }}" class="btn btn-outline-secondary btn-sm" title="Export Trades">
+                    <i class="fas fa-download me-1"></i> Export
+                </a>
+            </div>
+        </div>
+    </div>
+    <!-- Compact Single-Line Filter Notification -->
+    {% if active_filters %}
+    <div class="d-flex align-items-center justify-content-between py-2 px-3 mt-2 mb-1" style="background-color: var(--bs-info-bg-subtle); border: 1px solid var(--bs-info-border-subtle); border-radius: 0.375rem; font-size: 0.875rem;">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <i class="fas fa-filter text-info"></i>
+            <span class="fw-semibold text-info">Filtered by:</span>
+            {% for filter in active_filters %}
+                {% if filter is sequence and filter|length == 3 and filter[0] == 'Tag' %}
+                    <!-- Tag with color coding -->
+                    <span class="badge tag-{{ filter[2] }}" style="
+                        background-color: var(--bs-{{
+                            'success' if filter[2] == 'good' else
+                            'danger' if filter[2] == 'bad' else
+                            'primary'
+                        }}-bg-subtle) !important;
+                        border-color: var(--bs-{{
+                            'success' if filter[2] == 'good' else
+                            'danger' if filter[2] == 'bad' else
+                            'primary'
+                        }}-border-subtle) !important;
+                        color: var(--bs-{{
+                            'success' if filter[2] == 'good' else
+                            'danger' if filter[2] == 'bad' else
+                            'primary'
+                        }}-text-emphasis) !important;
+                        border: 1px solid;
+                        font-size: 0.75rem;
+                    ">
+                        {{ filter[0] }}: {{ filter[1] }}
+                    </span>
+                {% else %}
+                    <!-- Regular filter badge -->
+                    <span class="badge bg-info text-dark" style="font-size: 0.75rem;">{{ filter }}</span>
                 {% endif %}
             {% endfor %}
-        {% endif %}
-
-
-        <!-- Pagination and Action Buttons Row -->
-        <div class="d-flex justify-content-between align-items-center">
-            <!-- Enhanced Pagination Controls -->
-            <div class="d-flex align-items-center gap-2">
-                <!-- Results Summary with better formatting -->
-                <div class="text-muted small">
-                    Trades {{ pagination.per_page * (pagination.page - 1) + 1 }} - {{ pagination.per_page * (pagination.page - 1) + trades|length }} of {{ pagination.total }}
-                </div>
-
-                <!-- Enhanced Page Size Dropdown -->
-                <span class="text-muted small me-2">Page Size:</span>
-                <select id="pageSizeDropdown" class="form-select form-select-sm" style="width: 70px;"
-                        onchange="changePageSize(this.value)" title="Items per page">
-                    <option value="25" {{ 'selected' if request.args.get('per_page', '25')|string == '25' else '' }}>25</option>
-                    <option value="50" {{ 'selected' if request.args.get('per_page', '25')|string == '50' else '' }}>50</option>
-                    <option value="100" {{ 'selected' if request.args.get('per_page', '25')|string == '100' else '' }}>100</option>
-                    <option value="250" {{ 'selected' if request.args.get('per_page', '25')|string == '250' else '' }}>250</option>
-                </select>
-
-                <!-- Enhanced Navigation Arrows with no borders -->
-                <div class="d-flex align-items-center gap-1">
-                    <!-- First Page Arrow -->
-                    {% if pagination.page > 1 %}
-                    {% set args_without_page = request.args.copy() %}
-                    {% set _ = args_without_page.pop('page', None) %}
-                    <a href="{{ url_for('trades.view_trades_list', page=1, **args_without_page) }}"
-                       class="pagination-arrow-borderless" title="First Page (Ctrl+Home)">
-                        <i class="fas fa-angle-double-left"></i>
-                    </a>
-                    {% else %}
-                    <span class="pagination-arrow-borderless disabled" title="First Page">
-                        <i class="fas fa-angle-double-left"></i>
-                    </span>
-                    {% endif %}
-
-                    <!-- Previous Page Arrow -->
-                    {% if pagination.has_prev %}
-                    {% set args_without_page = request.args.copy() %}
-                    {% set _ = args_without_page.pop('page', None) %}
-                    <a href="{{ url_for('trades.view_trades_list', page=pagination.prev_num, **args_without_page) }}"
-                       class="pagination-arrow-borderless" title="Previous Page (Ctrl+Left)">
-                        <i class="fas fa-angle-left"></i>
-                    </a>
-                    {% else %}
-                    <span class="pagination-arrow-borderless disabled" title="Previous Page">
-                        <i class="fas fa-angle-left"></i>
-                    </span>
-                    {% endif %}
-
-                    <!-- Enhanced Page Info -->
-                    <span class="pagination-info small">
-                        Page {{ pagination.page }} of {{ pagination.pages }}
-                    </span>
-
-                    <!-- Next Page Arrow -->
-                    {% if pagination.has_next %}
-                    {% set args_without_page = request.args.copy() %}
-                    {% set _ = args_without_page.pop('page', None) %}
-                    <a href="{{ url_for('trades.view_trades_list', page=pagination.next_num, **args_without_page) }}"
-                       class="pagination-arrow-borderless" title="Next Page (Ctrl+Right)">
-                        <i class="fas fa-angle-right"></i>
-                    </a>
-                    {% else %}
-                    <span class="pagination-arrow-borderless disabled" title="Next Page">
-                        <i class="fas fa-angle-right"></i>
-                    </span>
-                    {% endif %}
-
-                    <!-- Last Page Arrow -->
-                    {% if pagination.page < pagination.pages %}
-                    {% set args_without_page = request.args.copy() %}
-                    {% set _ = args_without_page.pop('page', None) %}
-                    <a href="{{ url_for('trades.view_trades_list', page=pagination.pages, **args_without_page) }}"
-                       class="pagination-arrow-borderless" title="Last Page (Ctrl+End)">
-                        <i class="fas fa-angle-double-right"></i>
-                    </a>
-                    {% else %}
-                    <span class="pagination-arrow-borderless disabled" title="Last Page">
-                        <i class="fas fa-angle-double-right"></i>
-                    </span>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Enhanced Action Buttons with proper spacing -->
-            <div class="d-flex align-items-center gap-2">
-                    <!-- Clear Filters Button - Only show when filters are active -->
-                    {% if active_filters %}
-                    <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-warning btn-sm" title="Clear all active filters">
-                        <i class="fas fa-times-circle me-1"></i> Clear Filters
-                    </a>
-                    {% endif %}
-
-                    <a href="{{ url_for('trades.add_trade') }}" class="btn btn-success-borderonly btn-sm" title="Log New Trade (Ctrl+N)">
-                        <i class="fas fa-plus me-1"></i> Log New Trade
-                    </a>
-                    <button class="btn btn-primary-borderonly btn-sm" type="button" data-bs-toggle="modal"
-                            data-bs-target="#filterModal" title="Filter Trades (Ctrl+F)">
-                        <i class="fas fa-filter me-1"></i> Filter Trades
-                    </button>
-                    <a href="{{ url_for('trades.import_trades') }}" class="btn btn-outline-secondary btn-sm" title="Import Trades">
-                        <i class="fas fa-upload me-1"></i> Import
-                    </a>
-                    <a href="{{ url_for('trades.export_trades_csv') }}" class="btn btn-outline-secondary btn-sm" title="Export Trades">
-                        <i class="fas fa-download me-1"></i> Export
-                    </a>
-                </div>
-            </div>
         </div>
-        <!-- Compact Single-Line Filter Notification -->
-        {% if active_filters %}
-        <div class="d-flex align-items-center justify-content-between py-2 px-3 mt-2 mb-1" style="background-color: var(--bs-info-bg-subtle); border: 1px solid var(--bs-info-border-subtle); border-radius: 0.375rem; font-size: 0.875rem;">
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <i class="fas fa-filter text-info"></i>
-                <span class="fw-semibold text-info">Filtered by:</span>
-                {% for filter in active_filters %}
-                    {% if filter is sequence and filter|length == 3 and filter[0] == 'Tag' %}
-                        <!-- Tag with color coding -->
-                        <span class="badge tag-{{ filter[2] }}" style="
-                            background-color: var(--bs-{{
-                                'success' if filter[2] == 'good' else
-                                'danger' if filter[2] == 'bad' else
-                                'primary'
-                            }}-bg-subtle) !important;
-                            border-color: var(--bs-{{
-                                'success' if filter[2] == 'good' else
-                                'danger' if filter[2] == 'bad' else
-                                'primary'
-                            }}-border-subtle) !important;
-                            color: var(--bs-{{
-                                'success' if filter[2] == 'good' else
-                                'danger' if filter[2] == 'bad' else
-                                'primary'
-                            }}-text-emphasis) !important;
-                            border: 1px solid;
-                            font-size: 0.75rem;
-                        ">
-                            {{ filter[0] }}: {{ filter[1] }}
-                        </span>
-                    {% else %}
-                        <!-- Regular filter badge -->
-                        <span class="badge bg-info text-dark" style="font-size: 0.75rem;">{{ filter }}</span>
-                    {% endif %}
-                {% endfor %}
-            </div>
-            <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-outline-info btn-sm py-1 px-2" title="Clear all filters" style="font-size: 0.75rem;">
-                <i class="fas fa-times me-1"></i>Clear
-            </a>
-        </div>
-        {% endif %}
+        <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-outline-info btn-sm py-1 px-2" title="Clear all filters" style="font-size: 0.75rem;">
+            <i class="fas fa-times me-1"></i>Clear
+        </a>
+    </div>
+    {% endif %}
 
     <!-- Trade Operations Data Table -->
     {% if trades %}
-    <div class="enterprise-module mb-4">
+    <div class="enterprise-module mb-4 mt-1">
         <div class="module-header">
             <span class="module-title">
                 <i class="fas fa-database module-icon"></i>
@@ -361,7 +359,7 @@
             </span>
             <span class="module-meta">{{ trades|length }} Trades Displayed</span>
         </div>
-        <div class="module-content">
+        <div class="module-content.p-0">
             <div class="table-container" role="region" aria-label="Trades List">
             <table class="table table-hover table-striped mb-0 table-fixed" role="table">
                 <thead class="sticky-header">

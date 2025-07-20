@@ -221,6 +221,11 @@ img {
     margin-left: auto;
 }
 
+.enterprise-container.p-0 {
+    padding-left: 0;
+    padding-right: 0;
+}
+
 .dashboard-container .enterprise-container {
     padding: 0;
 }
@@ -458,6 +463,7 @@ Add after section 3 (Enterprise Layout System)
 */
 
 .enterprise-module {
+    width: 100%;
     background: var(--enterprise-card-bg);
     border: 1px solid var(--enterprise-border);
     border-radius: var(--enterprise-radius);
@@ -465,6 +471,8 @@ Add after section 3 (Enterprise Layout System)
     box-shadow: var(--enterprise-shadow);
     overflow: hidden;
     transition: all var(--enterprise-transition-base);
+    margin-right: auto;
+    margin-left: auto;
 }
 
 .enterprise-module:hover {
@@ -7550,10 +7558,6 @@ html[data-bs-theme="dark"] .executive-header {
     background: linear-gradient(135deg, var(--enterprise-gray-100) 0%, var(--enterprise-gray-50) 100%);
     border-bottom: 1px solid var(--enterprise-border);
 }
-
-/* ---------------------------------------------------------------------------
-   ANIMATIONS - MISSING FROM YOUR CSS
-   --------------------------------------------------------------------------- */
 
 @keyframes fadeIn {
     from {
