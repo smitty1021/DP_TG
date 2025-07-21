@@ -2,135 +2,354 @@
 
 {% block title %}{{ title }} - {{ trade.instrument }} on {{ trade.trade_date|format_date('%d-%b-%Y') }}{% endblock %}
 
+{% block head_extra %}
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+{% endblock %}
+
 {% block page_header %}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>{{ title }}</h1>
-        <div>
-            <a href="{{ url_for('trades.edit_trade', trade_id=trade.id) }}" class="btn btn-warning"><i class="fas fa-edit me-1"></i> Edit Trade</a>
-            <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-secondary"><i class="fas fa-list me-1"></i> Back to List</a>
+    <div class="executive-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="header-content">
+                <h1 class="executive-title">
+                    <i class="fas fa-chart-area executive-icon"></i>
+                    {{ title }}
+                </h1>
+                <div class="executive-subtitle">
+                    Strategic Trading Analysis: {{ trade.instrument }} ({{ trade.direction }}) on {{ trade.trade_date|format_date('%d-%b-%Y') }}
+                </div>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('trades.edit_trade', trade_id=trade.id) }}'"
+                        title="Edit Trade Configuration">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Data">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('trades.view_trades_list') }}'"
+                        title="Back to Trading Operations">
+                    <i class="fas fa-list"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();"
+                        title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
         </div>
     </div>
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h4>Trade ID: {{ trade.id }} - {{ trade.instrument }} ({{ trade.direction }}) on {{ trade.trade_date|format_date('%d-%b-%Y') }}</h4>
-    </div>
-    <div class="card-body">
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <h5>Key Details</h5>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item"><strong>Instrument:</strong> {{ trade.instrument }}</li>
-                    <li class="list-group-item"><strong>Date:</strong> {{ trade.trade_date|format_date('%d-%b-%Y') }}</li>
-                    <li class="list-group-item"><strong>Direction:</strong> <span class="badge {% if trade.direction == 'Long' %}bg-success{% elif trade.direction == 'Short' %}bg-danger{% else %}bg-secondary{% endif %}">{{ trade.direction }}</span></li>
-                    <li class="list-group-item"><strong>Trading Model:</strong> {{ trade.trading_model.name if trade.trading_model else 'N/A' }}</li>
-                    <li class="list-group-item">
-                        <strong>Tags:</strong>
-                        {% if trade.tags %}
-                            {% for tag in trade.tags %}
-                                <span class="badge me-1 mb-1 {{ tag|tag_color }}">
-                                    {{ tag.name }}
-                                </span>
-                            {% endfor %}
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </li>
-                    <li class="list-group-item"><strong>News Event:</strong> {{ trade.news_event if trade.news_event else 'N/A' }}</li>
-                    <li class="list-group-item"><strong>How Closed:</strong> {{ trade.how_closed if trade.how_closed else 'N/A' }}</li>
-                </ul>
+<div class="enterprise-container">
+    <div class="enterprise-module">
+        <div class="module-header">
+            <div class="module-title">
+                <i class="fas fa-analytics module-icon"></i>
+                Trade Configuration Overview: {{ trade.id }} - {{ trade.instrument }} ({{ trade.direction }})
             </div>
-            <div class="col-md-6">
-                <h5>Performance</h5>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item"><strong>Gross P&L:</strong> <span class="{{ 'text-success' if trade.pnl > 0 else ('text-danger' if trade.pnl < 0 else '') }}">{{ "$%.2f"|format(trade.pnl) if trade.pnl is not none else '$0.00' }}</span></li>
-                    <li class="list-group-item"><strong>R-Value:</strong> 
-                        {% if trade.pnl_in_r is not none %}<span class="{{ 'text-success' if trade.pnl_in_r > 0 else ('text-danger' if trade.pnl_in_r < 0 else '') }}">{{ "%.2f"|format(trade.pnl_in_r) }}R</span>
-                        {% else %}N/A{% endif %}
-                    </li>
-                    <li class="list-group-item"><strong>Initial SL:</strong> {{ trade.initial_stop_loss if trade.initial_stop_loss is not none else 'N/A' }}</li>
-                    <li class="list-group-item"><strong>Terminus Target:</strong> {{ trade.terminus_target if trade.terminus_target is not none else 'N/A' }}</li>
-                    <li class="list-group-item"><strong>MAE (Points):</strong> {{ trade.mae if trade.mae is not none else 'N/A' }}</li>
-                    <li class="list-group-item"><strong>MFE (Points):</strong> {{ trade.mfe if trade.mfe is not none else 'N/A' }}</li>
-                    <li class="list-group-item"><strong>Time in Trade:</strong> {{ trade.time_in_trade }}</li>
-                </ul>
+            <div class="status-badge">
+                {{ trade.trade_date|format_date('%d-%b-%Y') }}
             </div>
         </div>
-
-        <hr>
-        <h5>Entries & Exits</h5>
-        <div class="row">
-            <div class="col-md-6">
-                <h6>Entry Points ({{ trade.total_contracts_entered }} total contracts @ avg {{ "%.2f"|format(trade.average_entry_price) if trade.average_entry_price is not none else 'N/A' }})</h6>
-                {% if trade.entries.count() > 0 %}
-                    <ul class="list-group">
-                    {% for entry in trade.entries %}
-                        <li class="list-group-item">#{{ loop.index }}: {{ entry.contracts }} contracts @ {{ "%.2f"|format(entry.entry_price) }} (Time: {{ entry.entry_time.strftime('%H:%M') if entry.entry_time else 'N/A' }})</li>
-                    {% endfor %}
-                    </ul>
-                {% else %}
-                    <p>No entry points logged.</p>
-                {% endif %}
-            </div>
-            <div class="col-md-6">
-                <h6>Exit Points ({{ trade.total_contracts_exited }} total contracts @ avg {{ "%.2f"|format(trade.average_exit_price) if trade.average_exit_price is not none else 'N/A' }})</h6>
-                 {% if trade.exits.count() > 0 %}
-                    <ul class="list-group">
-                    {% for exit_item in trade.exits %}
-                        <li class="list-group-item">#{{ loop.index }}: {{ exit_item.contracts }} contracts @ {{ "%.2f"|format(exit_item.exit_price) }} (Time: {{ exit_item.exit_time.strftime('%H:%M') if exit_item.exit_time else 'N/A' }})</li>
-                    {% endfor %}
-                    </ul>
-                {% else %}
-                    <p>No exit points logged or trade still open.</p>
-                {% endif %}
-            </div>
-        </div>
-
-        <hr>
-        <h5>Ratings (1-5)</h5>
-        <div class="row">
-            <div class="col"><strong>Rules:</strong> {{ trade.rules_rating if trade.rules_rating is not none else 'N/A' }}</div>
-            <div class="col"><strong>Management:</strong> {{ trade.management_rating if trade.management_rating is not none else 'N/A' }}</div>
-            <div class="col"><strong>Target:</strong> {{ trade.target_rating if trade.target_rating is not none else 'N/A' }}</div>
-            <div class="col"><strong>Entry:</strong> {{ trade.entry_rating if trade.entry_rating is not none else 'N/A' }}</div>
-            <div class="col"><strong>Preparation:</strong> {{ trade.preparation_rating if trade.preparation_rating is not none else 'N/A' }}</div>
-        </div>
-        
-        <hr>
-        <h5>Notes & Analysis</h5>
-        <div class="mb-3"><strong>Trade Setup & Execution Notes:</strong><div class="p-2 border rounded bg-light">{{ trade.trade_notes|safe if trade.trade_notes else 'N/A' }}</div></div>
-        <div class="mb-3"><strong>Overall Trade Analysis:</strong><div class="p-2 border rounded bg-light">{{ trade.overall_analysis_notes|safe if trade.overall_analysis_notes else 'N/A' }}</div></div>
-        <div class="mb-3"><strong>Trade Management Notes:</strong><div class="p-2 border rounded bg-light">{{ trade.trade_management_notes|safe if trade.trade_management_notes else 'N/A' }}</div></div>
-        <div class="mb-3"><strong>Psych - Scored Highest / Sustain:</strong><div class="p-2 border rounded bg-light">{{ trade.psych_scored_highest if trade.psych_scored_highest else 'N/A' }}</div></div>
-        <div class="mb-3"><strong>Psych - Scored Lowest / Improve:</strong><div class="p-2 border rounded bg-light">{{ trade.psych_scored_lowest if trade.psych_scored_lowest else 'N/A' }}</div></div>
-        <div class="mb-3"><strong>Errors Noted:</strong><div class="p-2 border rounded bg-light">{{ trade.errors_notes if trade.errors_notes else 'N/A' }}</div></div>
-        <div class="mb-3"><strong>Improvements Noted:</strong><div class="p-2 border rounded bg-light">{{ trade.improvements_notes if trade.improvements_notes else 'N/A' }}</div></div>
-        
-        {% if trade.screenshot_link %}
-        <hr>
-        <h5>External Screenshot Link</h5>
-        <p><a href="{{ trade.screenshot_link }}" target="_blank">{{ trade.screenshot_link }}</a></p>
-        {% endif %}
-
-        {% if trade.images.count() > 0 %}
-        <hr>
-        <h5>Associated Images/Screenshots</h5>
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-            {% for image in trade.images %}
-            <div class="col">
-                <div class="card h-100">
-                    <img src="{{ url_for('static', filename=current_app.config['UPLOAD_FOLDER'].split('/')[-1] + '/' + image.filepath if '/' in current_app.config['UPLOAD_FOLDER'] else current_app.config['UPLOAD_FOLDER'] + '/' + image.filepath) }}" class="card-img-top" alt="{{ image.filename }}" style="max-height: 200px; object-fit: contain;">
-                    <div class="card-body">
-                        <p class="card-text small">{{ image.filename }}</p>
-                        {% if image.caption %}<p class="card-text"><small class="text-muted">{{ image.caption }}</small></p>{% endif %}
+        <div class="module-content">
+            <div class="grid grid-cols-2">
+                <div class="kpi-section">
+                    <h5 class="section-title">Strategic Details</h5>
+                    <div class="operation-list">
+                        <div class="operation-item">
+                            <span class="operation-label">Instrument:</span>
+                            <span class="operation-value">{{ trade.instrument }}</span>
+                        </div>
+                        <div class="operation-item">
+                            <span class="operation-label">Execution Date:</span>
+                            <span class="operation-value">{{ trade.trade_date|format_date('%d-%b-%Y') }}</span>
+                        </div>
+                        <div class="operation-item">
+                            <span class="operation-label">Strategic Direction:</span>
+                            <span class="status-badge {% if trade.direction == 'Long' %}bg-success{% elif trade.direction == 'Short' %}bg-danger{% else %}bg-secondary{% endif %}">{{ trade.direction }}</span>
+                        </div>
+                        <div class="operation-item">
+                            <span class="operation-label">Trading Model:</span>
+                            <span class="operation-value">{{ trade.trading_model.name if trade.trading_model else 'N/A' }}</span>
+                        </div>
+                        <div class="operation-item">
+                            <span class="operation-label">Classification Tags:</span>
+                            <div class="tag-container">
+                                {% if trade.tags %}
+                                    {% for tag in trade.tags %}
+                                        <span class="status-badge me-1 mb-1 {{ tag|tag_color }}">
+                                            {{ tag.name }}
+                                        </span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="operation-item">
+                            <span class="operation-label">Market Event:</span>
+                            <span class="operation-value">{{ trade.news_event if trade.news_event else 'N/A' }}</span>
+                        </div>
+                        <div class="operation-item">
+                            <span class="operation-label">Exit Method:</span>
+                            <span class="operation-value">{{ trade.how_closed if trade.how_closed else 'N/A' }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="kpi-section">
+                    <h5 class="section-title">Performance Metrics</h5>
+                    <div class="metrics-bar">
+                        <div class="kpi-card">
+                            <div class="kpi-label">Gross P&L</div>
+                            <div class="kpi-value {{ 'text-success' if trade.pnl > 0 else ('text-danger' if trade.pnl < 0 else '') }}">
+                                {{ "$%.2f"|format(trade.pnl) if trade.pnl is not none else '$0.00' }}
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">R-Value</div>
+                            <div class="kpi-value">
+                                {% if trade.pnl_in_r is not none %}
+                                    <span class="{{ 'text-success' if trade.pnl_in_r > 0 else ('text-danger' if trade.pnl_in_r < 0 else '') }}">{{ "%.2f"|format(trade.pnl_in_r) }}R</span>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Initial Stop Loss</div>
+                            <div class="kpi-value">{{ trade.initial_stop_loss if trade.initial_stop_loss is not none else 'N/A' }}</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Target Level</div>
+                            <div class="kpi-value">{{ trade.terminus_target if trade.terminus_target is not none else 'N/A' }}</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">MAE (Points)</div>
+                            <div class="kpi-value">{{ trade.mae if trade.mae is not none else 'N/A' }}</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">MFE (Points)</div>
+                            <div class="kpi-value">{{ trade.mfe if trade.mfe is not none else 'N/A' }}</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Duration</div>
+                            <div class="kpi-value">{{ trade.time_in_trade }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
-            {% endfor %}
+
+            <hr class="section-divider">
+
+            <h5 class="section-title">Execution Analysis</h5>
+            <div class="grid grid-cols-2">
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">Entry Points</div>
+                        <div class="performance-indicator">
+                            {{ trade.total_contracts_entered }} contracts @ avg {{ "%.2f"|format(trade.average_entry_price) if trade.average_entry_price is not none else 'N/A' }}
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        {% if trade.entries.count() > 0 %}
+                            <div class="operation-list">
+                            {% for entry in trade.entries %}
+                                <div class="operation-item">
+                                    <span class="operation-label">#{{ loop.index }}:</span>
+                                    <span class="operation-value">{{ entry.contracts }} contracts @ {{ "%.2f"|format(entry.entry_price) }}</span>
+                                    <span class="operation-time">({{ entry.entry_time.strftime('%H:%M') if entry.entry_time else 'N/A' }})</span>
+                                </div>
+                            {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No entry points logged.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">Exit Points</div>
+                        <div class="performance-indicator">
+                            {{ trade.total_contracts_exited }} contracts @ avg {{ "%.2f"|format(trade.average_exit_price) if trade.average_exit_price is not none else 'N/A' }}
+                        </div>
+                    </div>
+                    <div class="module-content">
+                         {% if trade.exits.count() > 0 %}
+                            <div class="operation-list">
+                            {% for exit_item in trade.exits %}
+                                <div class="operation-item">
+                                    <span class="operation-label">#{{ loop.index }}:</span>
+                                    <span class="operation-value">{{ exit_item.contracts }} contracts @ {{ "%.2f"|format(exit_item.exit_price) }}</span>
+                                    <span class="operation-time">({{ exit_item.exit_time.strftime('%H:%M') if exit_item.exit_time else 'N/A' }})</span>
+                                </div>
+                            {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No exit points logged or trade still open.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <hr class="section-divider">
+
+            <h5 class="section-title">Performance Assessment (1-5 Scale)</h5>
+            <div class="metrics-bar">
+                <div class="kpi-card">
+                    <div class="kpi-label">Rules</div>
+                    <div class="kpi-value">{{ trade.rules_rating if trade.rules_rating is not none else 'N/A' }}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Management</div>
+                    <div class="kpi-value">{{ trade.management_rating if trade.management_rating is not none else 'N/A' }}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Target</div>
+                    <div class="kpi-value">{{ trade.target_rating if trade.target_rating is not none else 'N/A' }}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Entry</div>
+                    <div class="kpi-value">{{ trade.entry_rating if trade.entry_rating is not none else 'N/A' }}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Preparation</div>
+                    <div class="kpi-value">{{ trade.preparation_rating if trade.preparation_rating is not none else 'N/A' }}</div>
+                </div>
+            </div>
+
+            <hr class="section-divider">
+
+            <h5 class="section-title">Strategic Analysis & Documentation</h5>
+            <div class="grid grid-cols-1 gap-4">
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">Setup & Execution Analysis</div>
+                    </div>
+                    <div class="module-content analysis-content">
+                        {{ trade.trade_notes|safe if trade.trade_notes else 'N/A' }}
+                    </div>
+                </div>
+
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">Comprehensive Trade Review</div>
+                    </div>
+                    <div class="module-content analysis-content">
+                        {{ trade.overall_analysis_notes|safe if trade.overall_analysis_notes else 'N/A' }}
+                    </div>
+                </div>
+
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">Management Decisions</div>
+                    </div>
+                    <div class="module-content analysis-content">
+                        {{ trade.trade_management_notes if trade.trade_management_notes else 'N/A' }}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2">
+                    <div class="enterprise-module">
+                        <div class="module-header">
+                            <div class="module-title">Performance Strengths</div>
+                        </div>
+                        <div class="module-content analysis-content">
+                            {{ trade.psych_scored_highest if trade.psych_scored_highest else 'N/A' }}
+                        </div>
+                    </div>
+
+                    <div class="enterprise-module">
+                        <div class="module-header">
+                            <div class="module-title">Improvement Areas</div>
+                        </div>
+                        <div class="module-content analysis-content">
+                            {{ trade.psych_scored_lowest if trade.psych_scored_lowest else 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2">
+                    <div class="enterprise-module">
+                        <div class="module-header">
+                            <div class="module-title">Execution Issues</div>
+                        </div>
+                        <div class="module-content analysis-content">
+                            {{ trade.errors_notes if trade.errors_notes else 'N/A' }}
+                        </div>
+                    </div>
+
+                    <div class="enterprise-module">
+                        <div class="module-header">
+                            <div class="module-title">Enhancement Opportunities</div>
+                        </div>
+                        <div class="module-content analysis-content">
+                            {{ trade.improvements_notes if trade.improvements_notes else 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if trade.screenshot_link %}
+            <hr class="section-divider">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">External Documentation</div>
+                </div>
+                <div class="module-content">
+                    <a href="{{ trade.screenshot_link }}" target="_blank" class="btn btn-outline-primary">
+                        <i class="fas fa-external-link-alt me-2"></i>View External Analysis
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if trade.images.count() > 0 %}
+            <hr class="section-divider">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">Visual Documentation</div>
+                </div>
+                <div class="module-content">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+                        {% for image in trade.images %}
+                        <div class="col">
+                            <div class="card h-100">
+                                <img src="{{ url_for('static', filename=current_app.config['UPLOAD_FOLDER'].split('/')[-1] + '/' + image.filepath if '/' in current_app.config['UPLOAD_FOLDER'] else current_app.config['UPLOAD_FOLDER'] + '/' + image.filepath) }}" class="card-img-top" alt="{{ image.filename }}" style="max-height: 200px; object-fit: contain;">
+                                <div class="card-body">
+                                    <p class="card-text small">{{ image.filename }}</p>
+                                    {% if image.caption %}<p class="card-text"><small class="text-muted">{{ image.caption }}</small></p>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Enterprise trade detail view initialized');
+
+    // Add smooth transitions for module elements
+    const modules = document.querySelectorAll('.enterprise-module');
+    modules.forEach((module, index) => {
+        module.style.animationDelay = `${index * 0.1}s`;
+        module.classList.add('fade-in');
+    });
+});
+</script>
 {% endblock %}

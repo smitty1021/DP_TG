@@ -8258,11 +8258,11 @@ html[data-bs-theme="dark"] .executive-header {
     transition: all 0.2s ease;
 }
 
-.rating-dot.filled-1 { background: #dc3545; }
-.rating-dot.filled-2 { background: #fd7e14; }
-.rating-dot.filled-3 { background: #ffc107; }
-.rating-dot.filled-4 { background: #20c997; }
-.rating-dot.filled-5 { background: #0d6efd; }
+.rating-dot.filled-1 { background: red; }
+.rating-dot.filled-2 { background: orange; }
+.rating-dot.filled-3 { background: yellow; }
+.rating-dot.filled-4 { background: yellowgreen; }
+.rating-dot.filled-5 { background: lawngreen; }
 
 /* Radar Chart Container */
 .radar-chart-container {
@@ -8380,6 +8380,7 @@ html[data-bs-theme="dark"] .executive-header {
     cursor: pointer;
     user-select: none;
     transition: all var(--enterprise-transition-base);
+    position: relative;
 }
 
 .sortable:hover {
@@ -8388,14 +8389,24 @@ html[data-bs-theme="dark"] .executive-header {
 }
 
 .sort-icon {
+    font-size: 0.7rem;
+    margin-left: 0.2rem;
     opacity: 0.5;
-    margin-left: 0.5rem;
-    transition: all var(--enterprise-transition-base);
+    vertical-align: middle;
+    transition: all 0.2s ease;
 }
 
 .sortable:hover .sort-icon {
     opacity: 1;
     color: var(--enterprise-primary);
+    font-size: 0.8rem;
+}
+
+@media (max-width: 767.98px) {
+    .sort-icon {
+        font-size: 0.6rem;
+        margin-left: 0.2rem;
+    }
 }
 
 .sticky-header {
@@ -8583,7 +8594,7 @@ html[data-bs-theme="dark"] .tag-neutral {
 
 /* Arrow direction fix */
 .chevron-icon.fa-chevron-down {
-    transform: rotate(90deg);
+    transform: rotate(0deg);
 }
 
 .chevron-icon.fa-chevron-right {
@@ -8744,6 +8755,252 @@ html[data-bs-theme="dark"] .tag-neutral {
     .kpi-card .ms-3 {
         margin-left: 0 !important;
     }
+}
+
+/* ============================================================================
+   ROUNDED CORNER CARDS - Add to your style.css
+   Makes trade details cards look like Image 2 with rounded corners
+   ============================================================================ */
+
+/* Enhanced enterprise module styling for trade details */
+.trade-details-container .enterprise-module {
+    border-radius: 12px !important; /* Rounded corners like Image 2 */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(45, 45, 45, 0.95) !important; /* Slightly lighter than background */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    overflow: hidden;
+    transition: all 0.3s ease !important;
+}
+
+.trade-details-container .enterprise-module:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Module header styling for rounded cards */
+.trade-details-container .module-header {
+    background: rgba(55, 55, 55, 0.8) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px 12px 0 0 !important; /* Only top corners rounded */
+    padding: 1rem 1.25rem !important;
+}
+
+.trade-details-container .module-title {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+}
+
+.trade-details-container .module-icon {
+    color: #0d6efd !important;
+    margin-right: 0.5rem !important;
+}
+
+/* Module content styling */
+.trade-details-container .module-content {
+    background: rgba(50, 50, 50, 0.9) !important;
+    padding: 1.25rem !important;
+    color: #ffffff !important;
+}
+
+/* Enhanced spacing and typography */
+.trade-details-container .fw-500 {
+    color: #adb5bd !important;
+    font-size: 0.8rem !important;
+}
+
+.trade-details-container .fw-600 {
+    color: #ffffff !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+}
+
+/* Section headers styling */
+.trade-details-container .fw-semibold.text-primary,
+.trade-details-container .fw-semibold.text-danger {
+    font-size: 0.75rem !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 0.75rem !important;
+}
+
+/* Enhanced gap styling */
+.trade-details-container .d-flex.flex-column.gap-3 > * {
+    margin-bottom: 0.75rem;
+}
+
+.trade-details-container .d-flex.flex-column.gap-3 > *:last-child {
+    margin-bottom: 0;
+}
+
+/* Border styling for sections */
+.trade-details-container .border-top {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    padding-top: 1rem !important;
+}
+
+/* Button styling */
+.trade-details-container .btn-outline-primary {
+    border-color: #0d6efd !important;
+    color: #0d6efd !important;
+    background: rgba(13, 110, 253, 0.1) !important;
+    border-radius: 6px !important;
+    font-size: 0.8rem !important;
+}
+
+.trade-details-container .btn-outline-primary:hover {
+    background: #0d6efd !important;
+    color: #ffffff !important;
+    border-color: #0d6efd !important;
+}
+
+/* Enhanced badge styling */
+.trade-details-container .badge {
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    font-size: 0.7rem !important;
+    padding: 0.3rem 0.6rem !important;
+}
+
+/* Enhanced tag colors for dark background */
+.trade-details-container .tag-good {
+    background-color: rgba(25, 135, 84, 0.2) !important;
+    border: 1px solid rgba(25, 135, 84, 0.4) !important;
+    color: #75b798 !important;
+}
+
+.trade-details-container .tag-bad {
+    background-color: rgba(220, 53, 69, 0.2) !important;
+    border: 1px solid rgba(220, 53, 69, 0.4) !important;
+    color: #e8a4af !important;
+}
+
+.trade-details-container .tag-neutral {
+    background-color: rgba(13, 110, 253, 0.2) !important;
+    border: 1px solid rgba(13, 110, 253, 0.4) !important;
+    color: #9ec5fe !important;
+}
+
+/* Rating dots enhancement */
+.trade-details-container .rating-dot {
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    transition: all 0.2s ease !important;
+}
+
+.trade-details-container .rating-dot.filled-1 { background: #dc3545 !important; }
+.trade-details-container .rating-dot.filled-2 { background: #fd7e14 !important; }
+.trade-details-container .rating-dot.filled-3 { background: #ffc107 !important; }
+.trade-details-container .rating-dot.filled-4 { background: #20c997 !important; }
+.trade-details-container .rating-dot.filled-5 { background: #198754 !important; }
+
+/* Trade details container background */
+.trade-details-container {
+    background: #2a2a2a !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 1.5rem !important;
+}
+
+/* Direction badge enhancement */
+.trade-details-container .bg-success {
+    background-color: rgba(25, 135, 84, 0.8) !important;
+}
+
+.trade-details-container .bg-danger {
+    background-color: rgba(220, 53, 69, 0.8) !important;
+}
+
+.trade-details-container .bg-secondary {
+    background-color: rgba(108, 117, 125, 0.8) !important;
+}
+
+/* Text color enhancements for better contrast */
+.trade-details-container .text-success {
+    color: #75b798 !important;
+}
+
+.trade-details-container .text-danger {
+    color: #e8a4af !important;
+}
+
+.trade-details-container .text-muted {
+    color: #adb5bd !important;
+}
+
+/* Radar chart container enhancement */
+.trade-details-container .radar-chart-container-large {
+    background: rgba(40, 40, 40, 0.5) !important;
+    border-radius: 8px !important;
+    padding: 1rem !important;
+}
+
+/* Entry/Exit transaction styling */
+.trade-details-container .d-flex.justify-content-between.align-items-center.small {
+    padding: 0.25rem 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.trade-details-container .d-flex.justify-content-between.align-items-center.small:last-child {
+    border-bottom: none !important;
+}
+
+/* Enhanced module meta styling */
+.trade-details-container .module-meta {
+    color: #6c757d !important;
+    font-size: 0.75rem !important;
+}
+
+/* Responsive adjustments for rounded cards */
+@media (max-width: 1199.98px) {
+    .trade-details-container .enterprise-module {
+        margin-bottom: 1rem !important;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .trade-details-container {
+        padding: 1rem !important;
+    }
+
+    .trade-details-container .enterprise-module {
+        border-radius: 8px !important;
+    }
+
+    .trade-details-container .module-header {
+        border-radius: 8px 8px 0 0 !important;
+        padding: 0.875rem 1rem !important;
+    }
+}
+
+/* Light theme overrides (if needed) */
+html[data-bs-theme="light"] .trade-details-container .enterprise-module {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+html[data-bs-theme="light"] .trade-details-container .module-header {
+    background: rgba(248, 249, 250, 0.9) !important;
+    border-bottom-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+html[data-bs-theme="light"] .trade-details-container .module-content {
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #212529 !important;
+}
+
+html[data-bs-theme="light"] .trade-details-container .module-title {
+    color: #212529 !important;
+}
+
+html[data-bs-theme="light"] .trade-details-container .fw-500 {
+    color: #6c757d !important;
+}
+
+html[data-bs-theme="light"] .trade-details-container .fw-600 {
+    color: #212529 !important;
 }
 
 /*
