@@ -8491,6 +8491,165 @@ html[data-bs-theme="dark"] .sticky-header {
         font-size: 0.875rem;
     }
 }
+
+/* Header size increase */
+.table-header-larger th {
+    font-size: 1rem !important; /* Increase from default 0.875rem */
+    font-weight: 600 !important;
+    padding: 1rem 0.75rem !important; /* Increase vertical padding */
+}
+
+/* Chevron column spacing */
+.chevron-column {
+    width: 50px !important; /* Increased from 1 */
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+
+.chevron-icon {
+    font-size: 1rem !important; /* Slightly larger chevron */
+}
+
+/* Trade details card spacing */
+.trade-details-container .row {
+    margin: 0 !important;
+}
+
+.trade-details-container .row > [class*="col-"] {
+    padding: 0.75rem !important; /* Add spacing between cards */
+}
+
+.trade-details-container {
+    padding: 1rem !important; /* Add overall padding */
+}
+
+/* Larger radar chart container */
+.radar-chart-container-large {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    min-height: 220px;
+    padding-left: 1rem; /* Space between labels and chart */
+}
+
+.radar-chart-canvas-large {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Rating item spacing increase */
+.ratings-section .rating-item {
+    margin-bottom: 1rem !important; /* Increased spacing between rating items */
+}
+
+/* Tag color system */
+.tag-good {
+    background-color: var(--bs-success-bg-subtle) !important;
+    border-color: var(--bs-success-border-subtle) !important;
+    color: var(--bs-success-text-emphasis) !important;
+}
+
+.tag-bad {
+    background-color: var(--bs-danger-bg-subtle) !important;
+    border-color: var(--bs-danger-border-subtle) !important;
+    color: var(--bs-danger-text-emphasis) !important;
+}
+
+.tag-neutral {
+    background-color: var(--bs-primary-bg-subtle) !important;
+    border-color: var(--bs-primary-border-subtle) !important;
+    color: var(--bs-primary-text-emphasis) !important;
+}
+
+/* Dark theme tag colors */
+html[data-bs-theme="dark"] .tag-good {
+    background-color: rgba(25, 135, 84, 0.2) !important;
+    border-color: rgba(25, 135, 84, 0.4) !important;
+    color: #75b798 !important;
+}
+
+html[data-bs-theme="dark"] .tag-bad {
+    background-color: rgba(220, 53, 69, 0.2) !important;
+    border-color: rgba(220, 53, 69, 0.4) !important;
+    color: #e8a4af !important;
+}
+
+html[data-bs-theme="dark"] .tag-neutral {
+    background-color: rgba(13, 110, 253, 0.2) !important;
+    border-color: rgba(13, 110, 253, 0.4) !important;
+    color: #9ec5fe !important;
+}
+
+/* Arrow direction fix */
+.chevron-icon.fa-chevron-down {
+    transform: rotate(90deg);
+}
+
+.chevron-icon.fa-chevron-right {
+    transform: rotate(0deg);
+}
+
+/* Compact detail styling for narrower cards */
+.details-list-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.detail-item-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+.detail-label-compact {
+    color: #aaa;
+    font-weight: 500;
+    min-width: 60px;
+    font-size: 0.75rem;
+}
+
+.detail-value-compact {
+    color: #fff;
+    text-align: right;
+    flex: 1;
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.tag-badge-compact {
+    font-size: 0.6rem;
+    padding: 0.125rem 0.375rem;
+}
+
+/* Responsive adjustments for 4-card layout */
+@media (max-width: 1199.98px) {
+    .trade-details-container .col-lg-2 {
+        flex: 0 0 auto;
+        width: 23%;
+    }
+
+    .trade-details-container .col-lg-6 {
+        flex: 0 0 auto;
+        width: 31%;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .trade-details-container .row {
+        flex-direction: column;
+    }
+
+    .trade-details-container .col-lg-2,
+    .trade-details-container .col-lg-6 {
+        width: 100%;
+        margin-bottom: 0.75rem;
+    }
+}
+
 /*
 ===============================================================================
 END OF FRAMEWORK

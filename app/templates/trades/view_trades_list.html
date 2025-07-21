@@ -72,25 +72,47 @@
                     <div class="ms-3">
                         <div class="kpi-label">Win/Loss Distribution</div>
                         <div class="kpi-value">
-                            {% set profitable = trades|selectattr('pnl', 'greaterthan', 0)|list|length %}
-                            {% set losing = trades|selectattr('pnl', 'lessthan', 0)|list|length %}
-                            {% set breakeven = trades|selectattr('pnl', 'equalto', 0)|list|length %}
-                            <small>W: {{ profitable }} | L: {{ losing }} | BE: {{ breakeven }}</small>
+                            <!-- Calculate from all user trades, not just current page -->
+                            {% set all_profitable = 0 %}
+                            {% set all_losing = 0 %}
+                            {% set all_breakeven = 0 %}
+                            {% for trade in current_user.trades %}
+                                {% if trade.pnl is not none %}
+                                    {% if trade.pnl > 0 %}
+                                        {% set all_profitable = all_profitable + 1 %}
+                                    {% elif trade.pnl < 0 %}
+                                        {% set all_losing = all_losing + 1 %}
+                                    {% else %}
+                                        {% set all_breakeven = all_breakeven + 1 %}
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            <small data-win-loss-data="{{ all_profitable }},{{ all_losing }},{{ all_breakeven }}">W: {{ all_profitable }} | L: {{ all_losing }} | BE: {{ all_breakeven }}</small>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="kpi-card">
                 <div class="d-flex align-items-center">
-                    <div class="performance-indicator bg-warning">
-                        <i class="fas fa-percentage"></i>
+                    <div class="performance-indicator bg-warning position-relative">
+                        <canvas id="strikeRateChart" width="60" height="35"></canvas>
                     </div>
                     <div class="ms-3">
                         <div class="kpi-label">Strike Rate</div>
                         <div class="kpi-value">
-                            {% set profitable = trades|selectattr('pnl', 'greaterthan', 0)|list|length %}
-                            {% set total_with_pnl = trades|selectattr('pnl', 'number')|list|length %}
-                            {{ "%.1f"|format((profitable / total_with_pnl * 100) if total_with_pnl > 0 else 0) }}%
+                            <!-- Calculate strike rate from all user trades -->
+                            {% set all_profitable = 0 %}
+                            {% set all_total = 0 %}
+                            {% for trade in current_user.trades %}
+                                {% if trade.pnl is not none %}
+                                    {% set all_total = all_total + 1 %}
+                                    {% if trade.pnl > 0 %}
+                                        {% set all_profitable = all_profitable + 1 %}
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            {% set strike_rate = (all_profitable / all_total * 100) if all_total > 0 else 0 %}
+                            <span data-strike-rate="{{ strike_rate }}">{{ "%.1f"|format(strike_rate) }}%</span>
                         </div>
                     </div>
                 </div>
@@ -103,18 +125,19 @@
                     <div class="ms-3">
                         <div class="kpi-label">Cumulative P&L</div>
                         <div class="kpi-value">
-                            {% set total_pnl = 0 %}
-                            {% for trade in trades %}
-                                {% if trade.pnl %}
-                                    {% set total_pnl = total_pnl + trade.pnl %}
+                            <!-- Calculate cumulative P&L from all user trades -->
+                            {% set cumulative_pnl = 0 %}
+                            {% for trade in current_user.trades %}
+                                {% if trade.pnl is not none %}
+                                    {% set cumulative_pnl = cumulative_pnl + trade.pnl %}
                                 {% endif %}
                             {% endfor %}
-                            {% if total_pnl > 0 %}
-                                <span class="text-success">${{ "{:,.2f}".format(total_pnl) }}</span>
-                            {% elif total_pnl < 0 %}
-                                <span class="text-danger">${{ "{:,.2f}".format(total_pnl) }}</span>
+                            {% if cumulative_pnl > 0 %}
+                                <span class="text-success">${{ "{:,.2f}".format(cumulative_pnl) }}</span>
+                            {% elif cumulative_pnl < 0 %}
+                                <span class="text-danger">${{ "{:,.2f}".format(cumulative_pnl) }}</span>
                             {% else %}
-                                <span class="text-muted">${{ "{:,.2f}".format(total_pnl) }}</span>
+                                <span class="text-muted">${{ "{:,.2f}".format(cumulative_pnl) }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -337,7 +360,7 @@
         <div class="module-content p-0">
             <div class="table-container" role="region" aria-label="Trades List">
             <table class="table table-hover table-striped mb-0 table-fixed" role="table">
-                <thead class="sticky-header">
+                <thead class="sticky-header table-header-larger">
                     <tr role="row">
                         <th width="1" class="text-center table-header-clean" role="columnheader"></th>
                         <th width="65" class="sortable" data-sort="date" role="columnheader" tabindex="0"
@@ -565,8 +588,8 @@
                     <td colspan="14" class="p-0" role="gridcell">
                         <div class="trade-details-container">
                             <div class="row g-0">
-                                <!-- Entries & Exits Card -->
-                                <div class="col-lg-3">
+                                <!-- Entries & Exits Card (Narrower) -->
+                                <div class="col-lg-2 col-md-3">
                                     <div class="enterprise-module h-100">
                                         <div class="module-header">
                                             <div class="module-title">
@@ -576,17 +599,17 @@
                                         </div>
                                         <div class="module-content">
                                             <!-- Entry Operations Section -->
-                                            <div class="trade-section mb-4">
+                                            <div class="trade-section mb-3">
                                                 <div class="section-header">
                                                     <span class="section-label text-success fw-bold">ENTRIES</span>
-                                                    <span class="section-summary">({{ trade.total_contracts_entered or 0 }} total contracts @ avg {{ "{:.2f}".format(trade.average_entry_price) if trade.average_entry_price else 'N/A' }})</span>
+                                                    <span class="section-summary">({{ trade.total_contracts_entered or 0 }} @ avg {{ "{:.2f}".format(trade.average_entry_price) if trade.average_entry_price else 'N/A' }})</span>
                                                 </div>
                                                 <div class="transaction-list">
                                                     {% for entry in trade.entries %}
                                                     <div class="transaction-item">
                                                         <span class="transaction-number">#{{ loop.index }}:</span>
-                                                        <span class="transaction-details">{{ entry.contracts or 0 }} contracts @ {{ "{:.2f}".format(entry.entry_price) if entry.entry_price else 'N/A' }}</span>
-                                                        <span class="transaction-time">(Time: {{ entry.entry_time.strftime('%H:%M') if entry.entry_time else 'N/A' }})</span>
+                                                        <span class="transaction-details">{{ entry.contracts or 0 }} @ {{ "{:.2f}".format(entry.entry_price) if entry.entry_price else 'N/A' }}</span>
+                                                        <span class="transaction-time">({{ entry.entry_time.strftime('%H:%M') if entry.entry_time else 'N/A' }})</span>
                                                     </div>
                                                     {% endfor %}
                                                 </div>
@@ -596,14 +619,14 @@
                                             <div class="trade-section">
                                                 <div class="section-header">
                                                     <span class="section-label text-danger fw-bold">EXITS</span>
-                                                    <span class="section-summary">({{ trade.total_contracts_exited or 0 }} total contracts @ avg {{ "{:.2f}".format(trade.average_exit_price) if trade.average_exit_price else 'N/A' }})</span>
+                                                    <span class="section-summary">({{ trade.total_contracts_exited or 0 }} @ avg {{ "{:.2f}".format(trade.average_exit_price) if trade.average_exit_price else 'N/A' }})</span>
                                                 </div>
                                                 <div class="transaction-list">
                                                     {% for exit in trade.exits %}
                                                     <div class="transaction-item">
                                                         <span class="transaction-number">#{{ loop.index }}:</span>
-                                                        <span class="transaction-details">{{ exit.contracts or 0 }} contracts @ {{ "{:.2f}".format(exit.exit_price) if exit.exit_price else 'N/A' }}</span>
-                                                        <span class="transaction-time">(Time: {{ exit.exit_time.strftime('%H:%M') if exit.exit_time else 'N/A' }})</span>
+                                                        <span class="transaction-details">{{ exit.contracts or 0 }} @ {{ "{:.2f}".format(exit.exit_price) if exit.exit_price else 'N/A' }}</span>
+                                                        <span class="transaction-time">({{ exit.exit_time.strftime('%H:%M') if exit.exit_time else 'N/A' }})</span>
                                                     </div>
                                                     {% endfor %}
                                                 </div>
@@ -612,8 +635,8 @@
                                     </div>
                                 </div>
 
-                                <!-- Key Details Card -->
-                                <div class="col-lg-3">
+                                <!-- Key Details Card (Narrower) -->
+                                <div class="col-lg-2 col-md-3">
                                     <div class="enterprise-module h-100">
                                         <div class="module-header">
                                             <div class="module-title">
@@ -622,48 +645,48 @@
                                             </div>
                                         </div>
                                         <div class="module-content">
-                                            <div class="details-list">
-                                                <div class="detail-item">
-                                                    <span class="detail-label">Date:</span>
-                                                    <span class="detail-value">{{ trade.trade_date.strftime('%d-%b-%Y') }}</span>
+                                            <div class="details-list-compact">
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">Date:</span>
+                                                    <span class="detail-value-compact">{{ trade.trade_date.strftime('%d-%b-%Y') }}</span>
                                                 </div>
-                                                <div class="detail-item">
-                                                    <span class="detail-label">Instrument:</span>
-                                                    <span class="detail-value">{{ trade.instrument or 'N/A' }}</span>
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">Instrument:</span>
+                                                    <span class="detail-value-compact">{{ trade.instrument or 'N/A' }}</span>
                                                 </div>
-                                                <div class="detail-item">
-                                                    <span class="detail-label">Direction:</span>
-                                                    <span class="detail-value">
-                                                        <span class="direction-badge {% if trade.direction == 'Long' %}bg-success text-white{% elif trade.direction == 'Short' %}bg-danger text-white{% endif %} px-2 py-1 rounded">
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">Direction:</span>
+                                                    <span class="detail-value-compact">
+                                                        <span class="direction-badge {% if trade.direction == 'Long' %}bg-success text-white{% elif trade.direction == 'Short' %}bg-danger text-white{% endif %} px-1 py-0 rounded">
                                                             {{ trade.direction or 'N/A' }}
                                                         </span>
                                                     </span>
                                                 </div>
-                                                <div class="detail-item">
-                                                    <span class="detail-label">Trading Model:</span>
-                                                    <span class="detail-value">{{ trade.trading_model.name if trade.trading_model else 'N/A' }}</span>
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">Model:</span>
+                                                    <span class="detail-value-compact">{{ trade.trading_model.name if trade.trading_model else 'N/A' }}</span>
                                                 </div>
-                                                <div class="detail-item">
-                                                    <span class="detail-label">How Closed:</span>
-                                                    <span class="detail-value">{{ trade.how_closed or 'N/A' }}</span>
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">Closed:</span>
+                                                    <span class="detail-value-compact">{{ trade.how_closed or 'N/A' }}</span>
                                                 </div>
-                                                <div class="detail-item">
-                                                    <span class="detail-label">Tags:</span>
-                                                    <div class="detail-value">
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">Tags:</span>
+                                                    <div class="detail-value-compact">
                                                         {% if trade.tags %}
                                                             {% for tag in trade.tags %}
-                                                                <span class="tag-badge badge bg-secondary me-1">{{ tag.name }}</span>
+                                                                <span class="tag-badge-compact badge me-1 mb-1 {{ 'tag-' + (tag.color_category or 'neutral') }}">{{ tag.name }}</span>
                                                             {% endfor %}
                                                         {% else %}
                                                             N/A
                                                         {% endif %}
                                                     </div>
                                                 </div>
-                                                <div class="detail-item">
-                                                    <span class="detail-label">Screenshot:</span>
-                                                    <span class="detail-value">
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">Screenshot:</span>
+                                                    <span class="detail-value-compact">
                                                         {% if trade.screenshot_link %}
-                                                            <a href="{{ trade.screenshot_link }}" target="_blank" class="text-primary">View Screenshot</a>
+                                                            <a href="{{ trade.screenshot_link }}" target="_blank" class="text-primary">View</a>
                                                         {% else %}
                                                             N/A
                                                         {% endif %}
@@ -674,8 +697,8 @@
                                     </div>
                                 </div>
 
-                                <!-- Performance Card -->
-                                <div class="col-lg-3">
+                                <!-- Performance Card (Narrower) -->
+                                <div class="col-lg-2 col-md-3">
                                     <div class="enterprise-module h-100">
                                         <div class="module-header">
                                             <div class="module-title">
@@ -684,10 +707,10 @@
                                             </div>
                                         </div>
                                         <div class="module-content">
-                                            <div class="details-list">
-                                                <div class="detail-item">
-                                                    <span class="detail-label">Gross P&L:</span>
-                                                    <span class="detail-value {% if trade.pnl %}{% if trade.pnl > 0 %}text-success{% elif trade.pnl < 0 %}text-danger{% endif %}{% endif %}">
+                                            <div class="details-list-compact">
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">Gross P&L:</span>
+                                                    <span class="detail-value-compact {% if trade.pnl %}{% if trade.pnl > 0 %}text-success{% elif trade.pnl < 0 %}text-danger{% endif %}{% endif %}">
                                                         {% if trade.pnl is not none %}
                                                             ${{ "{:,.2f}".format(trade.pnl) }}
                                                         {% else %}
@@ -695,9 +718,9 @@
                                                         {% endif %}
                                                     </span>
                                                 </div>
-                                                <div class="detail-item">
-                                                    <span class="detail-label">R-Value:</span>
-                                                    <span class="detail-value {% if trade.pnl_in_r %}{% if trade.pnl_in_r > 0 %}text-success{% elif trade.pnl_in_r < 0 %}text-danger{% endif %}{% endif %}">
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">R-Value:</span>
+                                                    <span class="detail-value-compact {% if trade.pnl_in_r %}{% if trade.pnl_in_r > 0 %}text-success{% elif trade.pnl_in_r < 0 %}text-danger{% endif %}{% endif %}">
                                                         {% if trade.pnl_in_r is not none %}
                                                             {{ "{:+.2f}".format(trade.pnl_in_r) }}R
                                                         {% else %}
@@ -705,9 +728,9 @@
                                                         {% endif %}
                                                     </span>
                                                 </div>
-                                                <div class="detail-item">
-                                                    <span class="detail-label">Initial SL:</span>
-                                                    <span class="detail-value">
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">Initial SL:</span>
+                                                    <span class="detail-value-compact">
                                                         {% if trade.initial_stop_loss is not none %}
                                                             {{ "{:.1f}".format(trade.initial_stop_loss) }}
                                                         {% else %}
@@ -715,9 +738,9 @@
                                                         {% endif %}
                                                     </span>
                                                 </div>
-                                                <div class="detail-item">
-                                                    <span class="detail-label">Terminus Target:</span>
-                                                    <span class="detail-value">
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">Target:</span>
+                                                    <span class="detail-value-compact">
                                                         {% if trade.terminus_target is not none %}
                                                             {{ "{:.1f}".format(trade.terminus_target) }}
                                                         {% else %}
@@ -725,13 +748,12 @@
                                                         {% endif %}
                                                     </span>
                                                 </div>
-                                                <div class="detail-item">
-                                                    <span class="detail-label">MAE:</span>
-                                                    <span class="detail-value text-danger">
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">MAE:</span>
+                                                    <span class="detail-value-compact text-danger">
                                                         {% if trade.mae is not none and trade.average_entry_price %}
                                                             {% set mae_percent = ((trade.mae / trade.average_entry_price) * 100) %}
-                                                            {% set mae_dollar = (trade.mae * (trade.total_contracts_entered or 0)) %}
-                                                            {{ "{:.1f}".format(trade.mae) }} pts / {{ "{:.2f}".format(mae_percent) }}% / ${{ "{:.0f}".format(mae_dollar) }}
+                                                            {{ "{:.1f}".format(trade.mae) }}pts / {{ "{:.1f}".format(mae_percent) }}%
                                                         {% elif trade.mae is not none %}
                                                             {{ "{:.1f}".format(trade.mae) }} pts
                                                         {% else %}
@@ -739,13 +761,12 @@
                                                         {% endif %}
                                                     </span>
                                                 </div>
-                                                <div class="detail-item">
-                                                    <span class="detail-label">MFE:</span>
-                                                    <span class="detail-value text-success">
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">MFE:</span>
+                                                    <span class="detail-value-compact text-success">
                                                         {% if trade.mfe is not none and trade.average_entry_price %}
                                                             {% set mfe_percent = ((trade.mfe / trade.average_entry_price) * 100) %}
-                                                            {% set mfe_dollar = (trade.mfe * (trade.total_contracts_entered or 0)) %}
-                                                            {{ "{:.1f}".format(trade.mfe) }} pts / {{ "{:.2f}".format(mfe_percent) }}% / ${{ "{:.0f}".format(mfe_dollar) }}
+                                                            {{ "{:.1f}".format(trade.mfe) }}pts / {{ "{:.1f}".format(mfe_percent) }}%
                                                         {% elif trade.mfe is not none %}
                                                             {{ "{:.1f}".format(trade.mfe) }} pts
                                                         {% else %}
@@ -753,9 +774,9 @@
                                                         {% endif %}
                                                     </span>
                                                 </div>
-                                                <div class="detail-item">
-                                                    <span class="detail-label">Time in Trade:</span>
-                                                    <span class="detail-value">
+                                                <div class="detail-item-compact">
+                                                    <span class="detail-label-compact">Duration:</span>
+                                                    <span class="detail-value-compact">
                                                         {% if trade.entries.first() and trade.exits.first() and trade.entries.first().entry_time and trade.exits.first().exit_time %}
                                                             {% set time_diff = (trade.exits.first().exit_time.hour * 60 + trade.exits.first().exit_time.minute) - (trade.entries.first().entry_time.hour * 60 + trade.entries.first().entry_time.minute) %}
                                                             {% if time_diff >= 0 %}
@@ -773,8 +794,8 @@
                                     </div>
                                 </div>
 
-                                <!-- Trade Ratings Card -->
-                                <div class="col-lg-3">
+                                <!-- Trade Ratings Card (Keep current size) -->
+                                <div class="col-lg-6 col-md-3">
                                     <div class="enterprise-module h-100">
                                         <div class="module-header">
                                             <div class="module-title">
@@ -784,7 +805,7 @@
                                         </div>
                                         <div class="module-content">
                                             <div class="row h-100">
-                                                <div class="col-md-6">
+                                                <div class="col-md-5">
                                                     <div class="ratings-section">
                                                         {% for rating_name, rating_value in [
                                                             ('Preparation', trade.preparation_rating),
@@ -793,7 +814,7 @@
                                                             ('Target', trade.target_rating),
                                                             ('Entry', trade.entry_rating)
                                                         ] %}
-                                                        <div class="rating-item mb-2" data-rating-category="{{ rating_name.lower() }}" data-rating-value="{{ rating_value or 0 }}">
+                                                        <div class="rating-item mb-3" data-rating-category="{{ rating_name.lower() }}" data-rating-value="{{ rating_value or 0 }}">
                                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                                                 <span class="rating-name small">{{ rating_name }}</span>
                                                                 <div class="rating-dots">
@@ -806,9 +827,9 @@
                                                         {% endfor %}
                                                     </div>
                                                 </div>
-                                                <div class="col-md-6 d-flex align-items-center justify-content-center">
-                                                    <div class="radar-chart-container">
-                                                        <canvas id="radarChart-{{ trade.id }}" class="radar-chart-canvas" width="180" height="180"></canvas>
+                                                <div class="col-md-7 d-flex align-items-center justify-content-center">
+                                                    <div class="radar-chart-container-large">
+                                                        <canvas id="radarChart-{{ trade.id }}" class="radar-chart-canvas-large" width="220" height="220"></canvas>
                                                     </div>
                                                 </div>
                                             </div>
