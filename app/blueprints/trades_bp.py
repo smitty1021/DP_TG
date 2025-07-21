@@ -182,6 +182,24 @@ def view_trades_list():
 
     query = Trade.query.filter_by(user_id=current_user.id)
 
+    # Get ALL user trades for KPI calculations (not just filtered ones)
+    all_user_trades = Trade.query.filter_by(user_id=current_user.id).all()
+
+    # Calculate KPI data
+    kpi_data = {
+        'total_trades': len(all_user_trades),
+        'profitable_trades': len([t for t in all_user_trades if t.pnl and t.pnl > 0]),
+        'losing_trades': len([t for t in all_user_trades if t.pnl and t.pnl < 0]),
+        'breakeven_trades': len([t for t in all_user_trades if t.pnl and t.pnl == 0]),
+        'cumulative_pnl': sum([t.pnl for t in all_user_trades if t.pnl is not None]),
+        'strike_rate': 0
+    }
+
+    # Calculate strike rate
+    trades_with_pnl = [t for t in all_user_trades if t.pnl is not None]
+    if trades_with_pnl:
+        kpi_data['strike_rate'] = (kpi_data['profitable_trades'] / len(trades_with_pnl)) * 100
+
     # Apply filters
     if filter_form.start_date.data:
         query = query.filter(Trade.trade_date >= filter_form.start_date.data)
@@ -361,6 +379,7 @@ def view_trades_list():
                            filter_form=filter_form,
                            categorized_tags=categorized_tags,
                            selected_tag_details=selected_tag_details,
+                           kpi_data=kpi_data,
                            csrf_token=generate_csrf())
 
 # --- ADD TRADE ---
@@ -864,11 +883,6 @@ def export_trades_csv():
     return Response(output, mimetype="text/csv",
                     headers={"Content-Disposition": "attachment;filename=trades_export.csv"})
 
-
-# --- IMPORT TRADES ---
-# In app/blueprints/trades_bp.py
-
-# ... (other imports and routes as before) ...
 
 @trades_bp.route('/import', methods=['GET', 'POST'])
 @login_required

@@ -470,136 +470,27 @@ window.executeBulkDelete = executeBulkDelete;
 
 console.log('✅ Enterprise trades script loaded successfully');
 
-// ============================================================================
-// ARCH/SEMI-CIRCLE CHART FOR WIN/LOSS AND STRIKE RATE
-// ============================================================================
 
-function initializeArchChart(canvasId, percentage, label) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) {
-        console.log(`Canvas ${canvasId} not found`);
-        return;
-    }
-
-    const ctx = canvas.getContext('2d');
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height - 3; // Bottom of canvas
-    const radius = Math.min(centerX, centerY) - 3;
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Background arc (gray)
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, Math.PI, 0); // Semi-circle from 180° to 0°
-    ctx.strokeStyle = '#e9ecef';
-    ctx.lineWidth = 6;
-    ctx.stroke();
-
-    // Progress arc (colored based on percentage)
-    const startAngle = Math.PI; // Start at 180°
-    const endAngle = Math.PI - (Math.PI * (percentage / 100)); // End based on percentage
-
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, startAngle, endAngle, true);
-
-    // Color based on percentage
-    if (percentage >= 70) {
-        ctx.strokeStyle = '#28a745'; // Green
-    } else if (percentage >= 50) {
-        ctx.strokeStyle = '#ffc107'; // Yellow
-    } else {
-        ctx.strokeStyle = '#dc3545'; // Red
-    }
-
-    ctx.lineWidth = 6;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-
-    // Add percentage text
-    ctx.fillStyle = '#495057';
-    ctx.font = 'bold 10px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(`${percentage.toFixed(1)}%`, centerX, centerY - 8);
-}
 
 // ============================================================================
-// UPDATED WIN/LOSS CHART INITIALIZATION
-// ============================================================================
-
-function initializeWinLossChart() {
-    const canvas = document.getElementById('winLossChart');
-    if (!canvas) {
-        console.log('Win/Loss chart canvas not found');
-        return;
-    }
-
-    const ctx = canvas.getContext('2d');
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = Math.min(centerX, centerY) - 2;
-
-    // Get data from the data attribute
-    const kpiCard = canvas.closest('.kpi-card');
-    const dataElement = kpiCard?.querySelector('[data-win-loss-data]');
-
-    if (!dataElement) {
-        console.log('Win/Loss data not found');
-        return;
-    }
-
-    const dataStr = dataElement.getAttribute('data-win-loss-data');
-    const [wins, losses, breakeven] = dataStr.split(',').map(Number);
-    const total = wins + losses + breakeven;
-
-    console.log('Win/Loss data:', { wins, losses, breakeven, total });
-
-    if (total > 0) {
-        const colors = ['#28a745', '#dc3545', '#ffc107']; // Green, Red, Yellow
-        const data = [wins, losses, breakeven];
-
-        let currentAngle = -Math.PI / 2;
-
-        data.forEach((value, index) => {
-            if (value > 0) {
-                const sliceAngle = (value / total) * 2 * Math.PI;
-
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
-                ctx.closePath();
-                ctx.fillStyle = colors[index];
-                ctx.fill();
-
-                currentAngle += sliceAngle;
-            }
-        });
-    }
-}
-
-// ============================================================================
-// UPDATED DOM READY EVENT
+// UPDATED EVENT LISTENERS
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎯 Setting up enterprise trades event listeners...');
+    console.log('🎯 DOM Content Loaded - setting up charts...');
+    initializeAllCharts();
 
-    // Initialize win/loss chart
-    setTimeout(() => {
-        initializeWinLossChart();
-    }, 100);
-
-    // Initialize strike rate arch chart
-    setTimeout(() => {
-        const strikeRateElement = document.querySelector('[data-strike-rate]');
-        if (strikeRateElement) {
-            const strikeRate = parseFloat(strikeRateElement.getAttribute('data-strike-rate'));
-            console.log('Strike rate:', strikeRate);
-            initializeArchChart('strikeRateChart', strikeRate, 'Strike Rate');
-        } else {
-            console.log('Strike rate element not found');
-        }
-    }, 200);
-
+    // Setup other event listeners
+    setupEventListeners();
 });
+
+// If DOMContentLoaded already fired
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🎯 DOM Content Loaded (late) - setting up charts...');
+        initializeAllCharts();
+    });
+} else {
+    console.log('🎯 DOM already loaded - setting up charts immediately...');
+    initializeAllCharts();
+}

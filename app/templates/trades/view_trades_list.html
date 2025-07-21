@@ -53,6 +53,7 @@
     {% if trades %}
     <div class="kpi-section mb-4">
         <div class="grid grid-cols-4 gap-3">
+            <!-- Total Trades -->
             <div class="kpi-card">
                 <div class="d-flex align-items-center">
                     <div class="performance-indicator bg-primary">
@@ -60,63 +61,74 @@
                     </div>
                     <div class="ms-3">
                         <div class="kpi-label">Total Trades</div>
-                        <div class="kpi-value">{{ pagination.total if pagination else trades|length }}</div>
+                        <div class="kpi-value">{{ kpi_data.total_trades if kpi_data else (pagination.total if pagination else trades|length) }}</div>
                     </div>
                 </div>
             </div>
+
+            <!-- Win/Loss Distribution -->
             <div class="kpi-card">
                 <div class="d-flex align-items-center">
-                    <div class="performance-indicator bg-success position-relative">
-                        <canvas id="winLossChart" width="40" height="40"></canvas>
+                    <div class="performance-indicator bg-success">
+                        <i class="fas fa-chart-pie"></i>
                     </div>
                     <div class="ms-3">
                         <div class="kpi-label">Win/Loss Distribution</div>
                         <div class="kpi-value">
-                            <!-- Calculate from all user trades, not just current page -->
-                            {% set all_profitable = 0 %}
-                            {% set all_losing = 0 %}
-                            {% set all_breakeven = 0 %}
-                            {% for trade in current_user.trades %}
-                                {% if trade.pnl is not none %}
-                                    {% if trade.pnl > 0 %}
-                                        {% set all_profitable = all_profitable + 1 %}
-                                    {% elif trade.pnl < 0 %}
-                                        {% set all_losing = all_losing + 1 %}
-                                    {% else %}
-                                        {% set all_breakeven = all_breakeven + 1 %}
+                            {% if kpi_data %}
+                                <div class="win-loss-stats">
+                                    <span class="text-success fw-bold">W: {{ kpi_data.profitable_trades }}</span>
+                                    <span class="text-muted mx-1">|</span>
+                                    <span class="text-danger fw-bold">L: {{ kpi_data.losing_trades }}</span>
+                                    {% if kpi_data.breakeven_trades > 0 %}
+                                        <span class="text-muted mx-1">|</span>
+                                        <span class="text-warning fw-bold">BE: {{ kpi_data.breakeven_trades }}</span>
                                     {% endif %}
-                                {% endif %}
-                            {% endfor %}
-                            <small data-win-loss-data="{{ all_profitable }},{{ all_losing }},{{ all_breakeven }}">W: {{ all_profitable }} | L: {{ all_losing }} | BE: {{ all_breakeven }}</small>
+                                </div>
+                            {% else %}
+                                {% set profitable = trades|selectattr('pnl', 'greaterthan', 0)|list|length %}
+                                {% set losing = trades|selectattr('pnl', 'lessthan', 0)|list|length %}
+                                {% set breakeven = trades|selectattr('pnl', 'equalto', 0)|list|length %}
+                                <div class="win-loss-stats">
+                                    <span class="text-success fw-bold">W: {{ profitable }}</span>
+                                    <span class="text-muted mx-1">|</span>
+                                    <span class="text-danger fw-bold">L: {{ losing }}</span>
+                                    {% if breakeven > 0 %}
+                                        <span class="text-muted mx-1">|</span>
+                                        <span class="text-warning fw-bold">BE: {{ breakeven }}</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Strike Rate -->
             <div class="kpi-card">
                 <div class="d-flex align-items-center">
-                    <div class="performance-indicator bg-warning position-relative">
-                        <canvas id="strikeRateChart" width="60" height="35"></canvas>
+                    <div class="performance-indicator bg-warning">
+                        <i class="fas fa-percentage"></i>
                     </div>
                     <div class="ms-3">
                         <div class="kpi-label">Strike Rate</div>
                         <div class="kpi-value">
-                            <!-- Calculate strike rate from all user trades -->
-                            {% set all_profitable = 0 %}
-                            {% set all_total = 0 %}
-                            {% for trade in current_user.trades %}
-                                {% if trade.pnl is not none %}
-                                    {% set all_total = all_total + 1 %}
-                                    {% if trade.pnl > 0 %}
-                                        {% set all_profitable = all_profitable + 1 %}
-                                    {% endif %}
-                                {% endif %}
-                            {% endfor %}
-                            {% set strike_rate = (all_profitable / all_total * 100) if all_total > 0 else 0 %}
-                            <span data-strike-rate="{{ strike_rate }}">{{ "%.1f"|format(strike_rate) }}%</span>
+                            {% if kpi_data %}
+                                {% set strike_rate = kpi_data.strike_rate %}
+                            {% else %}
+                                {% set profitable = trades|selectattr('pnl', 'greaterthan', 0)|list|length %}
+                                {% set total_with_pnl = trades|selectattr('pnl', 'number')|list|length %}
+                                {% set strike_rate = (profitable / total_with_pnl * 100) if total_with_pnl > 0 else 0 %}
+                            {% endif %}
+                            <span class="strike-rate-value {% if strike_rate >= 70 %}text-success{% elif strike_rate >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                                {{ "%.1f"|format(strike_rate) }}%
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Cumulative P&L -->
             <div class="kpi-card">
                 <div class="d-flex align-items-center">
                     <div class="performance-indicator bg-info">
@@ -125,19 +137,22 @@
                     <div class="ms-3">
                         <div class="kpi-label">Cumulative P&L</div>
                         <div class="kpi-value">
-                            <!-- Calculate cumulative P&L from all user trades -->
-                            {% set cumulative_pnl = 0 %}
-                            {% for trade in current_user.trades %}
-                                {% if trade.pnl is not none %}
-                                    {% set cumulative_pnl = cumulative_pnl + trade.pnl %}
-                                {% endif %}
-                            {% endfor %}
-                            {% if cumulative_pnl > 0 %}
-                                <span class="text-success">${{ "{:,.2f}".format(cumulative_pnl) }}</span>
-                            {% elif cumulative_pnl < 0 %}
-                                <span class="text-danger">${{ "{:,.2f}".format(cumulative_pnl) }}</span>
+                            {% if kpi_data %}
+                                {% set total_pnl = kpi_data.cumulative_pnl %}
                             {% else %}
-                                <span class="text-muted">${{ "{:,.2f}".format(cumulative_pnl) }}</span>
+                                {% set total_pnl = 0 %}
+                                {% for trade in trades %}
+                                    {% if trade.pnl %}
+                                        {% set total_pnl = total_pnl + trade.pnl %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            {% if total_pnl > 0 %}
+                                <span class="text-success fw-bold">${{ "{:,.2f}".format(total_pnl) }}</span>
+                            {% elif total_pnl < 0 %}
+                                <span class="text-danger fw-bold">${{ "{:,.2f}".format(total_pnl) }}</span>
+                            {% else %}
+                                <span class="text-muted fw-bold">${{ "{:,.2f}".format(total_pnl) }}</span>
                             {% endif %}
                         </div>
                     </div>
