@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Analytics - Enterprise Dashboard</title>
+
+    <!-- Fortune 500 Enterprise CSS Framework -->
+    <link rel="stylesheet" href="css/enterprise-core.css">
+    <link rel="stylesheet" href="css/enterprise-layout.css">
+    <link rel="stylesheet" href="css/enterprise-components.css">
+    <link rel="stylesheet" href="css/enterprise-specialized.css">
+
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/date-fns/1.30.1/date_fns.min.js"></script>
+</head>
+<body class="enterprise-layout">
+
+    <!-- Executive Header -->
+    <header class="executive-header">
+        <div class="header-brand">
+            <h1 class="corporate-title">Portfolio Analytics</h1>
+            <span class="division-subtitle">Investment Performance Intelligence</span>
+        </div>
+        <div class="header-actions">
+            <button class="btn-executive btn-primary">Generate Report</button>
+            <button class="btn-executive btn-secondary">Export Data</button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="enterprise-container">
+
+        <!-- Filter Controls -->
+        <section class="enterprise-module filter-controls">
+            <div class="module-header">
+                <h2 class="section-title">Performance Parameters</h2>
+            </div>
+            <div class="control-grid">
+                <div class="control-group">
+                    <label class="control-label">Reporting Period</label>
+                    <select class="form-select enterprise-select" id="dateRange">
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d" selected>Last 30 Days</option>
+                        <option value="90d">Last 90 Days</option>
+                        <option value="1y">Year to Date</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Asset Classification</label>
+                    <select class="form-select enterprise-select" id="assetFilter">
+                        <option value="all">All Assets</option>
+                        <option value="equity">Equity Positions</option>
+                        <option value="fixed">Fixed Income</option>
+                        <option value="alternatives">Alternative Investments</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Performance Metric</label>
+                    <select class="form-select enterprise-select" id="metricFilter">
+                        <option value="total">Total Return</option>
+                        <option value="risk-adjusted">Risk-Adjusted Return</option>
+                        <option value="benchmark">vs Benchmark</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <button class="btn-enterprise btn-primary full-width" onclick="refreshDashboard()">
+                        Refresh Analytics
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- KPI Cards Section -->
+        <section class="enterprise-module kpi-section">
+            <div class="kpi-grid four-column">
+                <div class="kpi-card performance-positive">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Portfolio Value</span>
+                        <span class="trend-indicator positive">↗</span>
+                    </div>
+                    <div class="kpi-value" id="portfolioValue">$2,847,392</div>
+                    <div class="kpi-change">+$127,485 (4.69%)</div>
+                </div>
+
+                <div class="kpi-card performance-neutral">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Monthly Return</span>
+                        <span class="trend-indicator neutral">→</span>
+                    </div>
+                    <div class="kpi-value" id="monthlyReturn">2.34%</div>
+                    <div class="kpi-change">vs 2.1% benchmark</div>
+                </div>
+
+                <div class="kpi-card performance-positive">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Sharpe Ratio</span>
+                        <span class="trend-indicator positive">↗</span>
+                    </div>
+                    <div class="kpi-value" id="sharpeRatio">1.87</div>
+                    <div class="kpi-change">+0.23 improvement</div>
+                </div>
+
+                <div class="kpi-card performance-negative">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Max Drawdown</span>
+                        <span class="trend-indicator negative">↘</span>
+                    </div>
+                    <div class="kpi-value" id="maxDrawdown">-8.45%</div>
+                    <div class="kpi-change">Within risk tolerance</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content Grid -->
+        <div class="content-grid two-column">
+
+            <!-- Charts Section -->
+            <section class="enterprise-module chart-section">
+                <div class="module-header">
+                    <h2 class="section-title">Performance Visualization</h2>
+                    <div class="header-actions">
+                        <button class="btn-secondary btn-sm" onclick="toggleChartType()">Toggle View</button>
+                    </div>
+                </div>
+
+                <!-- Performance Chart -->
+                <div class="chart-container">
+                    <canvas id="performanceChart" class="enterprise-chart"></canvas>
+                </div>
+
+                <!-- Asset Allocation Chart -->
+                <div class="chart-container secondary-chart">
+                    <h3 class="chart-title">Asset Allocation</h3>
+                    <canvas id="allocationChart" class="enterprise-chart"></canvas>
+                </div>
+            </section>
+
+            <!-- Data Table Section -->
+            <section class="enterprise-module table-section">
+                <div class="module-header">
+                    <h2 class="section-title">Holdings Analysis</h2>
+                    <div class="header-actions">
+                        <button class="btn-secondary btn-sm" onclick="exportToCSV()">Export CSV</button>
+                        <button class="btn-secondary btn-sm" onclick="refreshHoldings()">Refresh</button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="enterprise-table sortable-table" id="holdingsTable">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="symbol">Symbol</th>
+                                <th class="sortable" data-sort="value">Market Value</th>
+                                <th class="sortable" data-sort="weight">Weight %</th>
+                                <th class="sortable" data-sort="return">30D Return</th>
+                                <th class="sortable" data-sort="risk">Risk Score</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="holdingsTableBody">
+                            <tr>
+                                <td class="symbol-cell">AAPL</td>
+                                <td class="currency-cell">$428,650</td>
+                                <td class="percentage-cell">15.05%</td>
+                                <td class="return-positive">+5.67%</td>
+                                <td class="risk-medium">Medium</td>
+                                <td class="actions-cell">
+                                    <button class="btn-sm btn-outline">Details</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="symbol-cell">MSFT</td>
+                                <td class="currency-cell">$385,920</td>
+                                <td class="percentage-cell">13.55%</td>
+                                <td class="return-positive">+3.24%</td>
+                                <td class="risk-low">Low</td>
+                                <td class="actions-cell">
+                                    <button class="btn-sm btn-outline">Details</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="symbol-cell">GOOGL</td>
+                                <td class="currency-cell">$312,480</td>
+                                <td class="percentage-cell">10.98%</td>
+                                <td class="return-negative">-1.23%</td>
+                                <td class="risk-medium">Medium</td>
+                                <td class="actions-cell">
+                                    <button class="btn-sm btn-outline">Details</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="symbol-cell">TSLA</td>
+                                <td class="currency-cell">$198,750</td>
+                                <td class="percentage-cell">6.98%</td>
+                                <td class="return-positive">+12.45%</td>
+                                <td class="risk-high">High</td>
+                                <td class="actions-cell">
+                                    <button class="btn-sm btn-outline">Details</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="symbol-cell">VTI</td>
+                                <td class="currency-cell">$567,890</td>
+                                <td class="percentage-cell">19.94%</td>
+                                <td class="return-positive">+2.89%</td>
+                                <td class="risk-low">Low</td>
+                                <td class="actions-cell">
+                                    <button class="btn-sm btn-outline">Details</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        Showing 1-5 of 23 holdings
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="btn-pagination" disabled>Previous</button>
+                        <span class="page-numbers">
+                            <button class="page-btn active">1</button>
+                            <button class="page-btn">2</button>
+                            <button class="page-btn">3</button>
+                            <span class="page-ellipsis">...</span>
+                            <button class="page-btn">5</button>
+                        </span>
+                        <button class="btn-pagination">Next</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Navigation Button Group -->
+        <section class="enterprise-module navigation-section">
+            <div class="button-group-standard">
+                <button class="btn-enterprise btn-primary" onclick="generateReport()">
+                    Generate Executive Report
+                </button>
+                <button class="btn-enterprise btn-secondary" onclick="scheduleUpdate()">
+                    Schedule Updates
+                </button>
+                <button class="btn-enterprise btn-outline" onclick="configureAlerts()">
+                    Configure Alerts
+                </button>
+                <button class="btn-enterprise btn-outline" onclick="exportPortfolio()">
+                    Export Portfolio
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Custom Modals -->
+    <div id="customModal" class="enterprise-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Portfolio Details</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamic content -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-enterprise btn-secondary" onclick="closeModal()">Close</button>
+                <button class="btn-enterprise btn-primary" id="modalAction">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <!-- Enterprise Framework Scripts -->
+    <script src="js/custom-modals.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/unsaved-changes.js"></script>
+
+    <script>
+        // Portfolio Dashboard Functionality
+        let performanceChart, allocationChart;
+        let chartType = 'line';
+
+        // Initialize Dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            initializeTableSorting();
+            startRealTimeUpdates();
+        });
+
+        // Chart Initialization
+        function initializeCharts() {
+            // Performance Chart
+            const perfCtx = document.getElementById('performanceChart').getContext('2d');
+            performanceChart = new Chart(perfCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                    datasets: [{
+                        label: 'Portfolio Performance',
+                        data: [100000, 105000, 103000, 112000, 118000, 115000, 127485],
+                        borderColor: '#0066cc',
+                        backgroundColor: 'rgba(0, 102, 204, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Benchmark',
+                        data: [100000, 103000, 101000, 108000, 112000, 110000, 121000],
+                        borderColor: '#666666',
+                        backgroundColor: 'transparent',
+                        tension: 0.4,
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Allocation Chart
+            const allocCtx = document.getElementById('allocationChart').getContext('2d');
+            allocationChart = new Chart(allocCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Equities', 'Fixed Income', 'Alternatives', 'Cash'],
+                    datasets: [{
+                        data: [65, 25, 8, 2],
+                        backgroundColor: ['#0066cc', '#28a745', '#ffc107', '#6c757d'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Table Sorting
+        function initializeTableSorting() {
+            const table = document.getElementById('holdingsTable');
+            const headers = table.querySelectorAll('th.sortable');
+
+            headers.forEach(header => {
+                header.addEventListener('click', function() {
+                    sortTable(this.dataset.sort);
+                });
+            });
+        }
+
+        function sortTable(column) {
+            // Table sorting logic
+            console.log('Sorting by:', column);
+            // Implementation would go here
+        }
+
+        // Dashboard Functions
+        function refreshDashboard() {
+            showNotification('Refreshing portfolio analytics...', 'info');
+
+            // Simulate API call
+            setTimeout(() => {
+                updateKPIs();
+                performanceChart.update();
+                allocationChart.update();
+                showNotification('Dashboard updated successfully', 'success');
+            }, 1500);
+        }
+
+        function updateKPIs() {
+            // Simulate real-time KPI updates
+            const portfolioValue = document.getElementById('portfolioValue');
+            const currentValue = 2847392 + (Math.random() - 0.5) * 50000;
+            portfolioValue.textContent = '$' + Math.round(currentValue).toLocaleString();
+        }
+
+        function toggleChartType() {
+            chartType = chartType === 'line' ? 'bar' : 'line';
+            performanceChart.config.type = chartType;
+            performanceChart.update();
+        }
+
+        function exportToCSV() {
+            showNotification('Preparing CSV export...', 'info');
+
+            // Simulate export process
+            setTimeout(() => {
+                const csvContent = generateCSVContent();
+                downloadCSV(csvContent, 'portfolio-holdings.csv');
+                showNotification('Export completed successfully', 'success');
+            }, 1000);
+        }
+
+        function generateCSVContent() {
+            // Generate CSV from table data
+            return "Symbol,Market Value,Weight %,30D Return,Risk Score\nAAPL,$428650,15.05%,+5.67%,Medium\nMSFT,$385920,13.55%,+3.24%,Low";
+        }
+
+        function downloadCSV(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function refreshHoldings() {
+            showNotification('Refreshing holdings data...', 'info');
+            // Simulate data refresh
+            setTimeout(() => {
+                showNotification('Holdings data updated', 'success');
+            }, 800);
+        }
+
+        function generateReport() {
+            showModal('Executive Report', 'Generating comprehensive portfolio analysis report. This process may take a few minutes.');
+        }
+
+        function scheduleUpdate() {
+            showModal('Schedule Updates', 'Configure automatic portfolio updates and notifications.');
+        }
+
+        function configureAlerts() {
+            showModal('Configure Alerts', 'Set up performance alerts and risk notifications.');
+        }
+
+        function exportPortfolio() {
+            showNotification('Preparing full portfolio export...', 'info');
+            setTimeout(() => {
+                showNotification('Portfolio exported successfully', 'success');
+            }, 2000);
+        }
+
+        // Real-time Updates
+        function startRealTimeUpdates() {
+            setInterval(() => {
+                updateKPIs();
+            }, 30000); // Update every 30 seconds
+        }
+
+        // Modal Functions
+        function showModal(title, content) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').innerHTML = '<p>' + content + '</p>';
+            document.getElementById('customModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').style.display = 'none';
+        }
+
+        // Notification Functions
+        function showNotification(message, type) {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <span class="notification-message">${message}</span>
+                <button class="notification-close" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(notification);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Click outside modal to close
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('customModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    </script>
+
+</body>
+</html>

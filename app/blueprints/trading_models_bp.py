@@ -10,7 +10,7 @@ from collections import defaultdict
 
 from flask import Blueprint
 bp = Blueprint('trading_models', __name__, url_prefix='/trading-models')
-app.register_blueprint(trading_models_bp, url_prefix='/trading-models')
+
 from app.models import TradingModel, Trade, EntryPoint, ExitPoint, db
 from app.utils.calculations import calculate_trade_pnl, calculate_risk_reward_ratio
 

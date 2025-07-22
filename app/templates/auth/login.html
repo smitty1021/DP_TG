@@ -83,6 +83,36 @@
                             </div>
                         </form>
                     </div>
+                    <div class="enterprise-module mt-4">
+                        <div class="module-header">
+                            <div class="module-title">
+                                <i class="fab fa-discord module-icon" style="color: #5865F2;"></i>
+                                Discord Authentication
+                            </div>
+                            <div class="module-meta">Recommended for trading community members</div>
+                        </div>
+                        <div class="module-content">
+                            <div class="text-center mb-3">
+                                <p class="text-muted">
+                                    Join Random's trading community with Discord authentication.<br>
+                                    <small>Get instant access based on your Discord server roles.</small>
+                                </p>
+                            </div>
+
+                            <a href="{{ url_for('auth.discord_login') }}"
+                               class="btn btn-discord btn-lg w-100 d-flex align-items-center justify-content-center">
+                                <i class="fab fa-discord me-2"></i>
+                                Continue with Discord
+                            </a>
+
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    Discord login automatically syncs your server permissions<br>
+                                    and provides access to premium features.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -158,3 +188,62 @@
 </body>
 </html>
 {% endblock %}
+
+<style>
+.btn-discord {
+    background-color: #5865F2;
+    border-color: #5865F2;
+    color: white;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-discord:hover {
+    background-color: #4752C4;
+    border-color: #4752C4;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(88, 101, 242, 0.3);
+}
+
+.btn-discord:focus,
+.btn-discord:active {
+    background-color: #4752C4;
+    border-color: #4752C4;
+    color: white;
+    box-shadow: 0 0 0 0.2rem rgba(88, 101, 242, 0.25);
+}
+
+.module-icon {
+    font-size: 1.2em;
+}
+
+/* Alternative divider between login methods */
+.login-divider {
+    position: relative;
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.login-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: #dee2e6;
+}
+
+.login-divider span {
+    background-color: white;
+    padding: 0 1rem;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+</style>
+
+<!-- Optional: Add a divider between traditional login and Discord login -->
+<div class="login-divider">
+    <span>or</span>
+</div>

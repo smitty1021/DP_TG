@@ -18,6 +18,8 @@ from datetime import datetime, date as py_date
 from functools import lru_cache
 from datetime import datetime, timedelta
 from sqlalchemy.orm import joinedload
+from app.utils.discord_decorators import require_discord_permission, sync_discord_roles_if_needed
+from app.utils import record_activity
 
 # Define the blueprint
 main_bp = Blueprint('main', __name__)
@@ -1000,3 +1002,102 @@ def prepare_simplified_trades_data(trades):
             continue
 
     return trades_data
+
+
+# Add these imports to the top of your app/blueprints/main_bp.py file
+# (if they're not already there):
+
+from app.utils.discord_decorators import require_discord_permission, sync_discord_roles_if_needed
+from app.utils import record_activity
+
+
+# Then add these routes at the end of your main_bp.py file, before the last line:
+
+@main_bp.route('/portfolio-analytics')
+@login_required
+@sync_discord_roles_if_needed
+@require_discord_permission('can_access_portfolio')
+def portfolio_analytics():
+    """Portfolio performance analysis dashboard - Premium feature."""
+    try:
+        # Log access for audit trail
+        record_activity('portfolio_access', 'Accessed portfolio analytics dashboard')
+
+        # Get user's permission level for template context
+        permissions = current_user.get_discord_permissions()
+
+        # You can add any portfolio-specific data here
+        # For now, we'll just render the template
+
+        return render_template('portfolio_analytics.html',
+                               title='Portfolio Analytics - Trading Journal',
+                               user=current_user,
+                               permissions=permissions)
+
+    except Exception as e:
+        current_app.logger.error(f"Error loading portfolio analytics for {current_user.username}: {e}", exc_info=True)
+        flash('Failed to load portfolio analytics. Please try again.', 'danger')
+        return redirect(url_for('main.index'))
+
+
+@main_bp.route('/backtesting')
+@login_required
+@sync_discord_roles_if_needed
+@require_discord_permission('can_access_backtesting')
+def backtesting():
+    """Captain Backtest - Premium backtesting feature."""
+    try:
+        record_activity('backtesting_access', 'Accessed backtesting tools')
+        permissions = current_user.get_discord_permissions()
+
+        return render_template('backtesting.html',
+                               title='Captain Backtest - Trading Journal',
+                               user=current_user,
+                               permissions=permissions)
+
+    except Exception as e:
+        current_app.logger.error(f"Error loading backtesting for {current_user.username}: {e}", exc_info=True)
+        flash('Failed to load backtesting tools. Please try again.', 'danger')
+        return redirect(url_for('main.index'))
+
+
+@main_bp.route('/live-trading')
+@login_required
+@sync_discord_roles_if_needed
+@require_discord_permission('can_access_live_trading')
+def live_trading():
+    """Live Trading Interface - VIP feature."""
+    try:
+        record_activity('live_trading_access', 'Accessed live trading interface')
+        permissions = current_user.get_discord_permissions()
+
+        return render_template('live_trading.html',
+                               title='Live Trading - Trading Journal',
+                               user=current_user,
+                               permissions=permissions)
+
+    except Exception as e:
+        current_app.logger.error(f"Error loading live trading for {current_user.username}: {e}", exc_info=True)
+        flash('Failed to load live trading interface. Please try again.', 'danger')
+        return redirect(url_for('main.index'))
+
+
+@main_bp.route('/advanced-analytics')
+@login_required
+@sync_discord_roles_if_needed
+@require_discord_permission('can_access_analytics')
+def advanced_analytics():
+    """Advanced Analytics - Premium feature."""
+    try:
+        record_activity('analytics_access', 'Accessed advanced analytics')
+        permissions = current_user.get_discord_permissions()
+
+        return render_template('advanced_analytics.html',
+                               title='Advanced Analytics - Trading Journal',
+                               user=current_user,
+                               permissions=permissions)
+
+    except Exception as e:
+        current_app.logger.error(f"Error loading advanced analytics for {current_user.username}: {e}", exc_info=True)
+        flash('Failed to load advanced analytics. Please try again.', 'danger')
+        return redirect(url_for('main.index'))

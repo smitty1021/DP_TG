@@ -9,7 +9,8 @@ from flask_mail import Mail
 from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 from itsdangerous import URLSafeTimedSerializer
-from flask_session import Session # <--- ADD THIS IMPORT
+from flask_session import Session
+from app.services.discord_service import discord_service
 
 
 # Import blueprints
@@ -89,7 +90,13 @@ def create_app(config_class=None):
         MAIL_USERNAME=os.environ.get('MAIL_USERNAME'),
         MAIL_PASSWORD=os.environ.get('MAIL_PASSWORD'),
         MAIL_DEFAULT_SENDER=os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@example.com'),
-        MAIL_DEBUG=(os.environ.get('FLASK_DEBUG', '0') == '1')
+        MAIL_DEBUG=(os.environ.get('FLASK_DEBUG', '0') == '1'),
+
+        DISCORD_CLIENT_ID = os.environ.get('DISCORD_CLIENT_ID'),
+        DISCORD_CLIENT_SECRET = os.environ.get('DISCORD_CLIENT_SECRET'),
+        DISCORD_BOT_TOKEN = os.environ.get('DISCORD_BOT_TOKEN'),
+        DISCORD_GUILD_ID = os.environ.get('DISCORD_GUILD_ID'),
+        DISCORD_REDIRECT_URI = os.environ.get('DISCORD_REDIRECT_URI')
     )
 
     if config_class:
@@ -264,6 +271,14 @@ def create_app(config_class=None):
         app.register_blueprint(image_bp)
         from app.template_filters import register_template_filters
         register_template_filters(app)
+
+        try:
+            from app.services.discord_service import discord_service
+            discord_service.initialize(app)  # Pass the app instance
+            app.logger.info("Discord service initialized successfully")
+        except Exception as e:
+            app.logger.error(f"Failed to initialize Discord service: {e}")
+            # Don't fail app startup if Discord service fails
 
 
         @app.errorhandler(403)

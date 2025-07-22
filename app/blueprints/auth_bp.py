@@ -11,16 +11,21 @@ from app.models import User, Activity, Settings
 from app.forms import (LoginForm, RegistrationForm, RequestPasswordResetForm,
                        ResetPasswordForm, ResendVerificationForm,
                        ProfileForm, ChangePasswordForm)
-# Import allowed_file from utils
+
 from app.utils import (generate_token, verify_token, send_email, record_activity, allowed_file)
+
+import asyncio
+import secrets
+import aiohttp
+from urllib.parse import urlencode
+from datetime import datetime, timedelta
+from app.models import User, DiscordRolePermission, UserSession
+from app.services.discord_service import discord_service
 
 auth_bp = Blueprint('auth', __name__,
                     template_folder='../templates/auth',
                     url_prefix='/auth')
 
-
-# ... (login, register, logout, verify_email, resend_verification_request,
-#      request_password_reset, reset_password_with_token routes remain the same as before) ...
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -42,8 +47,25 @@ def login():
                 flash(flash_message, 'warning')
                 return redirect(url_for('auth.login'))
 
+            # ENHANCED: Check Discord role validity if user has Discord linked
+            if user.discord_linked and user.discord_id:
+                # Sync Discord roles
+                try:
+                    current_roles = discord_service.get_user_roles_sync(user.discord_id)
+                    user.sync_discord_roles(current_roles)
+
+                    # Check if user still has valid roles (unless admin)
+                    if not user.is_admin() and not has_valid_discord_roles(current_roles):
+                        flash('Access denied: Your Discord roles no longer permit access to this application.',
+                              'danger')
+                        return redirect(url_for('auth.login'))
+
+                except Exception as e:
+                    current_app.logger.error(f"Error syncing Discord roles for {user.username}: {e}")
+                    # Continue with login but log the error
+
             login_user(user, remember=form.remember.data)
-            user.last_login = db.func.now()
+            user.last_login = datetime.utcnow()
             if user.settings and user.settings.theme:
                 session['theme'] = user.settings.theme
             else:
@@ -60,7 +82,7 @@ def login():
                 flash("An error occurred during login. Please try again.", "danger")
         else:
             flash('Login failed. Check username/password.', 'danger')
-    return render_template('login.html', title='Login', form=form)
+    return render_template('auth/login.html', title='Login', form=form)
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -211,6 +233,266 @@ def reset_password_with_token(token):
             current_app.logger.error(f"Error resetting password for {user.username}: {e}", exc_info=True)
     return render_template('reset_password_with_token.html', title='Reset Password', form=form, token=token)
 
+
+@auth_bp.route('/discord/login')
+def discord_login():
+    """Initiate Discord OAuth2 login."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+
+    # Generate state parameter for CSRF protection
+    state = secrets.token_urlsafe(32)
+    session['discord_oauth_state'] = state
+
+    # Discord OAuth2 authorization URL
+    discord_oauth_url = "https://discord.com/api/oauth2/authorize"
+
+    params = {
+        'client_id': current_app.config.get('DISCORD_CLIENT_ID', os.getenv('DISCORD_CLIENT_ID')),
+        'redirect_uri': url_for('auth.discord_callback', _external=True),
+        'response_type': 'code',
+        'scope': 'identify guilds.members.read',
+        'state': state
+    }
+
+    authorization_url = f"{discord_oauth_url}?{urlencode(params)}"
+    return redirect(authorization_url)
+
+
+@auth_bp.route('/discord/callback')
+def discord_callback():
+    """Handle Discord OAuth2 callback."""
+    try:
+        # Verify state parameter
+        state = request.args.get('state')
+        if not state or state != session.pop('discord_oauth_state', None):
+            flash('Invalid authentication request. Please try again.', 'danger')
+            return redirect(url_for('auth.login'))
+
+        # Check for authorization code
+        code = request.args.get('code')
+        if not code:
+            error = request.args.get('error', 'Unknown error')
+            flash(f'Discord authorization failed: {error}', 'danger')
+            return redirect(url_for('auth.login'))
+
+        # Exchange code for access token
+        token_data = asyncio.run(discord_service.exchange_code_for_token(
+            code,
+            url_for('auth.discord_callback', _external=True)
+        ))
+
+        if not token_data:
+            flash('Failed to authenticate with Discord. Please try again.', 'danger')
+            return redirect(url_for('auth.login'))
+
+        # Get user information from Discord
+        user_info = asyncio.run(discord_service.get_user_info(token_data['access_token']))
+
+        if not user_info:
+            flash('Failed to retrieve user information from Discord.', 'danger')
+            return redirect(url_for('auth.login'))
+
+        # Process Discord authentication
+        discord_user = process_discord_authentication(user_info)
+
+        if not discord_user:
+            flash('Authentication failed. You may not have the required Discord roles.', 'danger')
+            return redirect(url_for('auth.login'))
+
+        # Log the user in
+        login_user(discord_user, remember=True)
+        discord_user.last_login = datetime.utcnow()
+
+        # Set theme from user settings
+        if discord_user.settings and discord_user.settings.theme:
+            session['theme'] = discord_user.settings.theme
+        else:
+            session['theme'] = 'dark'
+
+        try:
+            db.session.commit()
+            record_activity('discord_login', f'Discord login: {discord_user.discord_username}')
+            flash('Successfully logged in with Discord!', 'success')
+
+            # Redirect based on user permissions
+            permissions = discord_user.get_discord_permissions()
+            next_page = request.args.get('next')
+
+            if next_page:
+                return redirect(next_page)
+            elif permissions.get('can_access_portfolio'):
+                return redirect(url_for('main.portfolio_analytics'))  # We'll create this route
+            else:
+                return redirect(url_for('main.index'))
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error during Discord login for {discord_user.username}: {e}", exc_info=True)
+            flash("An error occurred during login. Please try again.", "danger")
+            return redirect(url_for('auth.login'))
+
+    except Exception as e:
+        current_app.logger.error(f"Discord callback error: {e}", exc_info=True)
+        flash('Authentication failed. Please try again.', 'danger')
+        return redirect(url_for('auth.login'))
+
+
+def process_discord_authentication(discord_user_info):
+    """Process Discord user authentication and role checking."""
+    try:
+        discord_id = discord_user_info['id']
+        discord_username = discord_user_info['username']
+        discord_discriminator = discord_user_info.get('discriminator', '0')
+        discord_avatar = discord_user_info.get('avatar')
+
+        # Get user's Discord roles
+        discord_roles = discord_service.get_user_roles_sync(discord_id)
+
+        # Check if user has valid roles (unless they're an admin)
+        existing_user = User.query.filter_by(discord_id=discord_id).first()
+        if existing_user and existing_user.is_admin():
+            # Admin can always log in
+            pass
+        elif not has_valid_discord_roles(discord_roles):
+            current_app.logger.warning(f"User {discord_username} attempted login without valid Discord roles")
+            return None
+
+        # Check if user exists by Discord ID
+        user = User.query.filter_by(discord_id=discord_id).first()
+
+        if user:
+            # Update existing user's Discord info
+            user.discord_username = discord_username
+            user.discord_discriminator = discord_discriminator
+            user.discord_avatar = discord_avatar
+            user.sync_discord_roles(discord_roles)
+
+            # Ensure user is active
+            if not user.is_active:
+                current_app.logger.warning(f"Inactive user attempted Discord login: {user.username}")
+                return None
+
+            return user
+
+        else:
+            # Check if there's an existing user by email that can be linked
+            discord_email = discord_user_info.get('email')
+            if discord_email:
+                existing_email_user = User.query.filter_by(email=discord_email.lower()).first()
+                if existing_email_user:
+                    # Link Discord to existing email account
+                    existing_email_user.discord_id = discord_id
+                    existing_email_user.discord_username = discord_username
+                    existing_email_user.discord_discriminator = discord_discriminator
+                    existing_email_user.discord_avatar = discord_avatar
+                    existing_email_user.discord_linked = True
+                    existing_email_user.sync_discord_roles(discord_roles)
+                    existing_email_user.is_active = True
+                    existing_email_user.is_email_verified = True
+
+                    current_app.logger.info(f"Linked Discord account to existing user: {existing_email_user.username}")
+                    return existing_email_user
+
+            # Create new Discord-only user
+            new_user = User(
+                username=f"discord_{discord_username}_{discord_id[-4:]}",  # Ensure unique username
+                email=discord_email.lower() if discord_email else f"{discord_id}@discord.local",
+                discord_id=discord_id,
+                discord_username=discord_username,
+                discord_discriminator=discord_discriminator,
+                discord_avatar=discord_avatar,
+                discord_linked=True,
+                name=discord_user_info.get('global_name') or discord_username,
+                is_active=True,
+                is_email_verified=True  # Discord accounts are considered verified
+            )
+
+            # Set a random password (won't be used for Discord users)
+            new_user.set_password(secrets.token_urlsafe(32))
+            new_user.sync_discord_roles(discord_roles)
+
+            db.session.add(new_user)
+            db.session.flush()  # Get the user ID
+
+            # Copy default tags for new user
+            try:
+                from app.models import Tag
+                copied_tags = Tag.copy_defaults_to_user(new_user.id)
+                current_app.logger.info(f"Copied {copied_tags} default tags to new Discord user {new_user.username}")
+            except Exception as e:
+                current_app.logger.error(f"Failed to copy default tags to Discord user {new_user.username}: {e}")
+
+            current_app.logger.info(f"Created new Discord user: {new_user.username}")
+            return new_user
+
+    except Exception as e:
+        current_app.logger.error(f"Error processing Discord authentication: {e}", exc_info=True)
+        return None
+
+
+def has_valid_discord_roles(discord_roles):
+    """Check if user has any valid Discord roles for access."""
+    if not discord_roles:
+        return False
+
+    # Get all configured Discord role IDs
+    configured_roles = db.session.query(DiscordRolePermission.discord_role_id).all()
+    configured_role_ids = {role[0] for role in configured_roles}
+
+    # Check if user has any configured role
+    user_role_ids = {role['id'] for role in discord_roles}
+
+    return bool(configured_role_ids.intersection(user_role_ids))
+
+
+@auth_bp.route('/discord/link', methods=['GET', 'POST'])
+@login_required
+def link_discord():
+    """Allow existing users to link their Discord account."""
+    if current_user.discord_linked:
+        flash('Your account is already linked to Discord.', 'info')
+        return redirect(url_for('auth.user_profile'))
+
+    if request.method == 'POST':
+        # Start Discord linking process
+        return redirect(url_for('auth.discord_login'))
+
+    return render_template('auth/link_discord.html', title='Link Discord Account')
+
+
+@auth_bp.route('/discord/unlink', methods=['POST'])
+@login_required
+def unlink_discord():
+    """Allow users to unlink their Discord account."""
+    if not current_user.discord_linked:
+        flash('Your account is not linked to Discord.', 'info')
+        return redirect(url_for('auth.user_profile'))
+
+    # Don't allow unlinking if this is a Discord-only account
+    if not current_user.email or current_user.email.endswith('@discord.local'):
+        flash('Cannot unlink Discord from a Discord-only account.', 'danger')
+        return redirect(url_for('auth.user_profile'))
+
+    try:
+        current_user.discord_id = None
+        current_user.discord_username = None
+        current_user.discord_discriminator = None
+        current_user.discord_avatar = None
+        current_user.discord_linked = False
+        current_user.discord_roles = None
+        current_user.last_discord_sync = None
+
+        db.session.commit()
+        record_activity('discord_unlink', 'Discord account unlinked')
+        flash('Discord account successfully unlinked.', 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error unlinking Discord for {current_user.username}: {e}", exc_info=True)
+        flash('Failed to unlink Discord account. Please try again.', 'danger')
+
+    return redirect(url_for('auth.user_profile'))
 
 @auth_bp.route('/profile', methods=['GET', 'POST'])
 @login_required

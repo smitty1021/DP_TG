@@ -47,6 +47,13 @@ class User(db.Model, UserMixin):
     profile_picture = db.Column(db.String(200), nullable=True)
     bio = db.Column(db.Text, nullable=True)
     is_email_verified = db.Column(db.Boolean, nullable=False, server_default='0')
+    discord_id = db.Column(db.String(255), unique=True, nullable=True, index=True)
+    discord_username = db.Column(db.String(255), nullable=True)
+    discord_discriminator = db.Column(db.String(10), nullable=True)
+    discord_avatar = db.Column(db.String(255), nullable=True)
+    discord_linked = db.Column(db.Boolean, nullable=False, default=False)
+    discord_roles = db.Column(db.JSON, nullable=True)  # Store Discord roles as JSON
+    last_discord_sync = db.Column(db.DateTime, nullable=True)
 
     # Relationships
     activities = db.relationship('Activity', backref='user', lazy='dynamic', cascade='all, delete-orphan')
@@ -122,6 +129,67 @@ class User(db.Model, UserMixin):
         )
         db.session.add(api_key)
         return api_key
+
+    def get_discord_permissions(self):
+        """Get user's permissions based on their Discord roles."""
+        if not self.discord_linked or not self.discord_roles:
+            return {'access_level': 'basic', 'permissions': []}
+
+        # Admin override
+        if self.is_admin():
+            return {
+                'access_level': 'admin',
+                'permissions': ['all'],
+                'can_access_portfolio': True,
+                'can_access_backtesting': True,
+                'can_access_live_trading': True,
+                'can_access_analytics': True,
+                'can_access_advanced_features': True
+            }
+
+        # Get highest permission level from Discord roles
+        role_ids = [role['id'] for role in self.discord_roles] if self.discord_roles else []
+
+        role_permissions = DiscordRolePermission.query.filter(
+            DiscordRolePermission.discord_role_id.in_(role_ids)
+        ).order_by(
+            db.case(
+                (DiscordRolePermission.access_level == 'admin', 4),
+                (DiscordRolePermission.access_level == 'vip', 3),
+                (DiscordRolePermission.access_level == 'premium', 2),
+                else_=1
+            ).desc()
+        ).first()
+
+        if not role_permissions:
+            return {'access_level': 'basic', 'permissions': ['read']}
+
+        return {
+            'access_level': role_permissions.access_level,
+            'permissions': role_permissions.custom_permissions or [],
+            'can_access_portfolio': role_permissions.can_access_portfolio,
+            'can_access_backtesting': role_permissions.can_access_backtesting,
+            'can_access_live_trading': role_permissions.can_access_live_trading,
+            'can_access_analytics': role_permissions.can_access_analytics,
+            'can_access_advanced_features': role_permissions.can_access_advanced_features
+        }
+
+    def has_discord_permission(self, permission):
+        """Check if user has a specific Discord-based permission."""
+        permissions = self.get_discord_permissions()
+
+        # Admin has all permissions
+        if permissions.get('access_level') == 'admin':
+            return True
+
+        # Check specific permission
+        return permissions.get(permission, False)
+
+    def sync_discord_roles(self, new_roles):
+        """Update user's Discord roles."""
+        self.discord_roles = new_roles
+        self.last_discord_sync = datetime.utcnow()
+        db.session.commit()
 
     @property
     def storage_usage(self):
@@ -1641,3 +1709,56 @@ class GlobalImage(db.Model):
     def get_for_entity(cls, entity_type, entity_id):
         """Get all images for a specific entity."""
         return cls.query.filter_by(entity_type=entity_type, entity_id=entity_id).order_by(cls.upload_date.desc()).all()
+
+
+class DiscordRolePermission(db.Model):
+    """Maps Discord roles to journal permissions."""
+    __tablename__ = 'discord_role_permissions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    discord_role_id = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    discord_role_name = db.Column(db.String(255), nullable=False)
+
+    # Access levels
+    access_level = db.Column(db.Enum('basic', 'premium', 'vip', 'admin', name='access_levels'),
+                             nullable=False, default='basic')
+
+    # Specific permissions for your journal features
+    can_access_portfolio = db.Column(db.Boolean, nullable=False, default=False)
+    can_access_backtesting = db.Column(db.Boolean, nullable=False, default=False)
+    can_access_live_trading = db.Column(db.Boolean, nullable=False, default=False)
+    can_access_analytics = db.Column(db.Boolean, nullable=False, default=False)
+    can_access_advanced_features = db.Column(db.Boolean, nullable=False, default=False)
+
+    # Custom permissions as JSON
+    custom_permissions = db.Column(db.JSON, nullable=True)
+
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=True, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<DiscordRolePermission {self.discord_role_name} ({self.access_level})>'
+
+
+class UserSession(db.Model):
+    """Track user sessions for Discord authentication."""
+    __tablename__ = 'user_sessions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    discord_id = db.Column(db.String(255), nullable=True)
+    session_token = db.Column(db.String(255), nullable=False, unique=True)
+    ip_address = db.Column(db.String(45), nullable=True)
+    user_agent = db.Column(db.Text, nullable=True)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    # Relationships
+    user = db.relationship('User', backref=db.backref('sessions', lazy='dynamic', cascade='all, delete-orphan'))
+
+    @property
+    def is_expired(self):
+        return datetime.utcnow() > self.expires_at
+
+    def __repr__(self):
+        return f'<UserSession {self.session_token[:10]}... User ID: {self.user_id}>'
