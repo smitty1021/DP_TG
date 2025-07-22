@@ -2,52 +2,159 @@
 {% from "macros/_form_helpers.html" import render_field, render_checkbox %}
 
 {% block title %}
-    {{ title or "Login" }} - Trading Journal
+    {{ title or "System Access Portal" }} - Trading Journal
+{% endblock %}
+
+{% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+
+<!-- Optional: Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5 mb-5">
-    <div class="row justify-content-center">
-        <div class="col-md-7 col-lg-5 col-xl-4"> {# Adjust column classes for desired compactness #}
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white text-center">
-                    <h3 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Login to Your Account</h3>
-                </div>
-                <div class="card-body p-4">
-                    {# Flashed messages are now handled by base.html, no need to include here #}
-
-                    <form method="POST" action="{{ url_for('auth.login') }}{{ '?next=' + request.args.get('next', '') if request.args.get('next') else '' }}" novalidate>
-                        {{ form.hidden_tag() }} {# CSRF token and other hidden fields #}
-
-                        {{ render_field(form.username,
-                                        label_visible=true,
-                                        input_class="form-control form-control-lg",
-                                        placeholder="Enter your username") }}
-
-                        {{ render_field(form.password,
-                                        label_visible=true,
-                                        input_class="form-control form-control-lg",
-                                        placeholder="Enter your password",
-                                        type="password") }}
-
-                        <div class="d-flex justify-content-between align-items-center my-3">
-                            {% if form.remember %}
-                                {{ render_checkbox(form.remember, label_visible=true, input_class="form-check-input-sm") }}
-                            {% endif %}
-                            <a href="{{ url_for('auth.request_password_reset') }}" class="small">Forgot Password?</a>
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<body>
+    <!-- Main Content Wrapper -->
+    <div class="enterprise-container">
+        <div class="d-flex justify-content-center py-5">
+            <div class="col-md-6 col-lg-5 col-xl-4">
+                <!-- Authentication Module -->
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-user-circle module-icon"></i>
+                            User Authentication
                         </div>
+                        <div class="module-meta"></div>
+                    </div>
+                    <div class="module-content">
+                        <!-- Authentication Form -->
+                        <form method="POST" action="{{ url_for('auth.login') }}{{ '?next=' + request.args.get('next', '') if request.args.get('next') else '' }}" novalidate>
+                            {{ form.hidden_tag() }}
 
-                        <div class="d-grid gap-2 mt-4">
-                            {{ form.submit(class="btn btn-primary btn-lg w-100") }}
-                        </div>
-                    </form>
-                    <hr class="my-4">
-                    <div class="text-center">
-                        <p class="mb-0">Don't have an account? <a href="{{ url_for('auth.register') }}">Register here</a></p>
+                            <!-- Credential Input Section -->
+                            <div class="enterprise-module mb-3">
+                                <div class="module-content">
+                                    {{ render_field(form.username,
+                                                    label_visible=true,
+                                                    input_class="form-control form-control-lg",
+                                                    placeholder="Enter authorized username") }}
+
+                                    {{ render_field(form.password,
+                                                    label_visible=true,
+                                                    input_class="form-control form-control-lg",
+                                                    placeholder="Enter secure password",
+                                                    type="password") }}
+
+                                    <!-- Authentication Options -->
+                                    <div class="d-flex justify-content-between align-items-center my-4">
+                                        {% if form.remember %}
+                                            <div class="form-check">
+                                                {{ render_checkbox(form.remember, label_visible=true, input_class="form-check-input") }}
+                                            </div>
+                                        {% endif %}
+
+                                    </div>
+
+                                    <!-- Authentication Action -->
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="fas fa-sign-in-alt me-2"></i>
+                                            Authenticate Access
+                                        </button>
+                                        <div class="module-content text-center">
+                                            <a href="{{ url_for('auth.request_password_reset') }}" class="text-primary">
+                                                <i class="fas fa-key me-1 text-primary"></i>Password Recovery
+                                            </a>
+                                        </div>
+                                        <div class="module-content text-center">
+                                            <p class="text-muted mb-3">New to the trading operations platform?</p>
+                                            <a href="{{ url_for('auth.register') }}" class="text-primary">
+                                                <i class="fas fa-clipboard-list me-2 text-primary"></i>
+                                                Request Account Access
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- Enterprise JavaScript Framework -->
+    <script src="/static/js/custom-modals.js"></script>
+    <script src="/static/js/notifications.js"></script>
+    <script src="/static/js/unsaved-changes.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize enterprise unsaved changes detection
+        // For login forms, we're more lenient - only track if user starts typing
+        const unsavedChanges = window.initEnterpriseUnsavedChanges({
+            formSelector: 'form',
+            excludeInputs: ['input[type="hidden"]', 'input[name="csrf_token"]', 'input[name="remember"]']
+        });
+
+        // Handle form submission with enterprise notifications
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Mark as submitting to prevent warnings
+                if (window.enterpriseUnsavedChanges) {
+                    window.enterpriseUnsavedChanges.markAsSubmitting();
+                }
+
+                // Show loading indicator
+                const submitButton = form.querySelector('button[type="submit"]');
+                const originalText = submitButton.innerHTML;
+
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Authenticating...';
+                submitButton.disabled = true;
+
+                // Note: Form will submit normally, this just provides user feedback
+                // The backend will handle success/error states
+
+                // Re-enable button after a short delay if form validation fails
+                setTimeout(() => {
+                    if (submitButton.disabled) {
+                        submitButton.innerHTML = originalText;
+                        submitButton.disabled = false;
+                        // Reset unsaved changes state if form didn't submit
+                        if (window.enterpriseUnsavedChanges) {
+                            window.enterpriseUnsavedChanges.reset();
+                        }
+                    }
+                }, 5000);
+            });
+        }
+
+        // Convert any flash messages to enterprise notifications
+        const flashMessages = document.querySelectorAll('.alert');
+        flashMessages.forEach(alert => {
+            const message = alert.textContent.trim();
+            if (message) {
+                if (alert.classList.contains('alert-success')) {
+                    showSuccess(message, 'Authentication Successful');
+                } else if (alert.classList.contains('alert-danger')) {
+                    showError(message, 'Authentication Failed');
+                } else if (alert.classList.contains('alert-warning')) {
+                    showWarning(message, 'Authentication Warning');
+                } else if (alert.classList.contains('alert-info')) {
+                    showInfo(message, 'System Information');
+                }
+                // Hide the original flash message
+                alert.style.display = 'none';
+            }
+        });
+    });
+    </script>
+</body>
+</html>
 {% endblock %}

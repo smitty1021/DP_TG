@@ -596,10 +596,22 @@ Version: 2.0
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    padding: var(--enterprise-spacing-md) 0;
+
     background-color: var(--enterprise-bg-primary);
     border-bottom: 1px solid var(--enterprise-border);
     transition: all var(--enterprise-transition-base);
+}
+
+.navbar-container {
+    width: 100%;
+    padding-right: var(--enterprise-spacing-lg);
+    padding-left: var(--enterprise-spacing-lg);
+    margin-right: auto;
+    margin-left: auto;
+    display: flex;
+    flex-wrap: inherit;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .navbar-brand {
@@ -623,7 +635,7 @@ Version: 2.0
 }
 
 .navbar-brand-icon {
-    height: 40px;
+    height: 48px;
     width: auto;
     object-fit: contain;
     margin-right: var(--enterprise-spacing-sm);
@@ -635,11 +647,12 @@ Version: 2.0
     padding-left: 0;
     margin-bottom: 0;
     list-style: none;
-    gap: var(--enterprise-spacing-lg);
+    gap: 0;
+
 }
 
 .navbar-nav .nav-link {
-    padding: var(--enterprise-spacing-sm) var(--enterprise-spacing-md);
+    padding: var(--enterprise-spacing-sm);
     color: var(--enterprise-text-secondary);
     text-decoration: none;
     font-weight: 500;
@@ -704,6 +717,11 @@ Version: 2.0
     background-size: 100%;
 }
 
+.navbar-nav .dropdown-menu {
+    right: 0;
+    left: auto;
+}
+
 /* Fixed Navbar */
 .navbar.fixed-top {
     position: fixed;
@@ -760,6 +778,12 @@ Version: 2.0
 
     .navbar-expand-lg .navbar-collapse.show {
         display: block;
+    }
+}
+
+@media (min-width: 992px) {
+    .navbar-expand-lg .navbar-collapse {
+        display: flex !important;
     }
 }
 
@@ -926,8 +950,8 @@ Version: 2.0
 .main-content {
     flex: 1;
     padding: var(--enterprise-spacing-lg);
-    background-color: var(--enterprise-bg-secondary);
-    min-height: 100%;
+    background-color: var(--enterprise-bg-primary);
+    /*min-height: 100%;*/
 }
 
 .page-wrapper {

@@ -4,30 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token.current_token }}">
-    <title>{% block title %}Enterprise Trading Journal{% endblock %}</title>
-
-    <!-- Fortune 500 Enterprise CSS Framework - Load in this exact order -->
-    <link rel="stylesheet" href="/static/css/enterprise-core.css">
-    <link rel="stylesheet" href="/static/css/enterprise-layout.css">
-    <link rel="stylesheet" href="/static/css/enterprise-components.css">
-    <link rel="stylesheet" href="/static/css/enterprise-specialized.css">
-
-    <!-- Optional: Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <!-- External Libraries -->
+    <title>{% block title %}Enterprise Trading Platform{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <script src="{{ url_for('static', filename='js/unsaved-changes.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block head_extra %}{% endblock %}
 </head>
 <body class="d-flex flex-column min-vh-100">
 
-    <!-- Executive Navigation Bar -->
     <nav class="navbar navbar-expand-lg fixed-top">
-        <div class="navbar-container">
+        <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
                 <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Enterprise Platform Icon" class="navbar-brand-icon me-2">
             </a>
@@ -38,7 +29,7 @@
             </button>
             {% endif %}
 
-            <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto align-items-center">
                     {% if current_user.is_authenticated %}
                         {% if current_user.is_admin() %}
@@ -46,7 +37,7 @@
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="adminDropdown"
                                role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user-shield me-2"></i>
-                                <span class="d-none d-md-inline"></span>
+                                <span class="d-none d-md-inline">Executive Administration</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="adminDropdown">
                                 <li><h6 class="dropdown-header">System Administration</h6></li>
@@ -73,7 +64,7 @@
                                 {% else %}
                                      <i class="fas fa-user fa-fw me-2"></i>
                                 {% endif %}
-                                <span class="d-none d-md-inline"></span>
+                                <span class="d-none d-md-inline">{{ current_user.username }}</span>
                             </a>
 
                             <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="navbarUserDropdown">
@@ -131,7 +122,7 @@
                     <li>
                         <a class="nav-link {{ 'active' if request.endpoint == 'main.index' else '' }}" href="{{ url_for('main.index') }}">
                             <span class="icon"><i class="fas fa-tachometer-alt"></i></span>
-                            <span class="label">Strategic Overview</span>
+                            <span class="label">Executive Dashboard</span>
                         </a>
                     </li>
 
@@ -146,10 +137,10 @@
                                 <i class="fas fa-calendar-day me-2"></i>Daily Operations</a></li>
                             <li><a href="{{ url_for('journal.p12_statistics') }}" class="{{ 'active' if request.endpoint == 'journal.p12_statistics' else '' }}">
                                 <i class="fas fa-chart-bar me-2"></i>Performance Analytics</a></li>
-                            <li><a href="#"><i class="fas fa-calendar-week me-2"></i>Weekly Review <span class="badge bg-secondary ms-1">Development Phase</span></a></li>
-                            <li><a href="#"><i class="fas fa-calendar-alt me-2"></i>Monthly Report <span class="badge bg-secondary ms-1">Development Phase</span></a></li>
-                            <li><a href="#"><i class="fas fa-chart-line me-2"></i>Quarterly Analysis <span class="badge bg-secondary ms-1">Development Phase</span></a></li>
-                            <li><a href="#"><i class="fas fa-calendar-year me-2"></i>Annual Summary <span class="badge bg-secondary ms-1">Development Phase</span></a></li>
+                            <li><a href="#"><i class="fas fa-calendar-week me-2"></i>Weekly Review <span class="badge bg-secondary ms-1">Planned</span></a></li>
+                            <li><a href="#"><i class="fas fa-calendar-alt me-2"></i>Monthly Report <span class="badge bg-secondary ms-1">Planned</span></a></li>
+                            <li><a href="#"><i class="fas fa-chart-line me-2"></i>Quarterly Analysis <span class="badge bg-secondary ms-1">Planned</span></a></li>
+                            <li><a href="#"><i class="fas fa-calendar-year me-2"></i>Annual Summary <span class="badge bg-secondary ms-1">Planned</span></a></li>
                         </ul>
                     </li>
 
@@ -174,9 +165,9 @@
                             <span class="arrow"><i class="fas fa-chevron-right"></i></span>
                         </a>
                         <ul class="submenu">
-                            <li><a href="#"><i class="fas fa-calendar-day me-2"></i>Daily View <span class="badge bg-secondary ms-1">Development Phase</span></a></li>
-                            <li><a href="#"><i class="fas fa-calendar-week me-2"></i>Weekly View <span class="badge bg-secondary ms-1">Development Phase</span></a></li>
-                            <li><a href="#"><i class="fas fa-calendar-year me-2"></i>Annual Calendar <span class="badge bg-secondary ms-1">Development Phase</span></a></li>
+                            <li><a href="#"><i class="fas fa-calendar-day me-2"></i>Daily View <span class="badge bg-secondary ms-1">Planned</span></a></li>
+                            <li><a href="#"><i class="fas fa-calendar-week me-2"></i>Weekly View <span class="badge bg-secondary ms-1">Planned</span></a></li>
+                            <li><a href="#"><i class="fas fa-calendar-year me-2"></i>Annual Calendar <span class="badge bg-secondary ms-1">Planned</span></a></li>
                         </ul>
                     </li>
 
@@ -196,8 +187,8 @@
                         <ul class="submenu">
                             <li><a href="{{ url_for('analytics.tag_usage_analytics') }}">
                                 <i class="fas fa-tags me-2"></i>Tag Analytics</a></li>
-                            <li><a href="#"><i class="fas fa-calculator me-2"></i>Statistical Analysis <span class="badge bg-secondary ms-1">Development Phase</span></a></li>
-                            <li><a href="#"><i class="fas fa-vial me-2"></i>Performance Testing <span class="badge bg-secondary ms-1">Development Phase</span></a></li>
+                            <li><a href="#"><i class="fas fa-calculator me-2"></i>Statistical Analysis <span class="badge bg-secondary ms-1">Planned</span></a></li>
+                            <li><a href="#"><i class="fas fa-vial me-2"></i>Performance Testing <span class="badge bg-secondary ms-1">Planned</span></a></li>
                         </ul>
                     </li>
 
@@ -208,10 +199,10 @@
                             <span class="arrow"><i class="fas fa-chevron-right"></i></span>
                         </a>
                         <ul class="submenu">
-                            <li><a href="#"><i class="fas fa-eye me-2"></i>Strategic Vision <span class="badge bg-secondary ms-1">Development Phase</span></a></li>
-                            <li><a href="#"><i class="fas fa-first-aid me-2"></i>Recovery Protocol <span class="badge bg-secondary ms-1">Development Phase</span></a></li>
-                            <li><a href="#"><i class="fas fa-tasks me-2"></i>Implementation Plan <span class="badge bg-secondary ms-1">Development Phase</span></a></li>
-                            <li><a href="#"><i class="fas fa-door-open me-2"></i>Exit Strategy <span class="badge bg-secondary ms-1">Development Phase</span></a></li>
+                            <li><a href="#"><i class="fas fa-eye me-2"></i>Strategic Vision <span class="badge bg-secondary ms-1">Planned</span></a></li>
+                            <li><a href="#"><i class="fas fa-first-aid me-2"></i>Recovery Protocol <span class="badge bg-secondary ms-1">Planned</span></a></li>
+                            <li><a href="#"><i class="fas fa-tasks me-2"></i>Implementation Plan <span class="badge bg-secondary ms-1">Planned</span></a></li>
+                            <li><a href="#"><i class="fas fa-door-open me-2"></i>Exit Strategy <span class="badge bg-secondary ms-1">Planned</span></a></li>
                         </ul>
                     </li>
 
@@ -219,7 +210,7 @@
                         <a href="#">
                             <span class="icon"><i class="fas fa-sticky-note"></i></span>
                             <span class="label">Knowledge Base</span>
-                            <span class="badge bg-secondary ms-2">Development Phase</span>
+                            <span class="badge bg-secondary ms-2">Planned</span>
                         </a>
                     </li>
 
@@ -227,7 +218,7 @@
                         <a href="#">
                             <span class="icon"><i class="fas fa-graduation-cap"></i></span>
                             <span class="label">Professional Development</span>
-                            <span class="badge bg-secondary ms-2">Development Phase</span>
+                            <span class="badge bg-secondary ms-2">Planned</span>
                         </a>
                     </li>
 
@@ -258,7 +249,7 @@
             <footer class="footer mt-auto py-3">
                 <div class="enterprise-container-fluid">
                     <div class="d-flex align-items-center justify-content-between">
-                        <div class="text-muted small">&copy; {{ current_year }} Pack Trade Group - Enterprise Trading Journal</div>
+                        <div class="text-muted small">&copy; {{ current_year }} Pack Trade Group - Trading Journal</div>
                         <div class="small">
                             <a href="#" class="text-decoration-none">Privacy Policy</a>
                             <span class="text-muted mx-2">&middot;</span>
@@ -270,18 +261,31 @@
         </div>
     </div>
 
-    <!-- External JavaScript Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 
-    <!-- Enterprise JavaScript Framework -->
-    <script src="/static/js/custom-modals.js"></script>
-    <script src="/static/js/notifications.js"></script>
-    <script src="/static/js/enterprise-search.js"></script>
-    <script src="/static/js/unsaved-changes.js"></script>
-    <script src="/static/js/script.js"></script>
-    <script src="/static/js/theme.js"></script>
-    <script src="/static/js/enterprise-base.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Enterprise notification system
+        const flaskMessages = document.querySelectorAll('#flask-flash-data > div');
+        flaskMessages.forEach(msg => {
+            let category = msg.dataset.category;
+            const message = msg.dataset.message;
+
+            if (category === 'error') {
+                category = 'danger';
+            }
+
+            if (message) {
+                showNotification(message, category);
+            }
+        });
+    });
+    </script>
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 
     <!-- Enterprise Media Modal Component -->
     <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalTitle" aria-hidden="true">
@@ -295,18 +299,201 @@
                     <img id="imageModalImg" src="" alt="" class="img-fluid">
                 </div>
                 <div class="modal-footer">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="downloadCurrentImage()">
-                            <i class="fas fa-download me-1"></i>Download Asset
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
-                            <i class="fas fa-times me-1"></i>Close
-                        </button>
-                    </div>
+                    <button type="button" class="btn btn-outline-primary" onclick="downloadCurrentImage()">
+                        <i class="fas fa-download me-1"></i>Download Asset
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+    // Enterprise media preview system
+    function showImagePreview(imageUrl, title) {
+        document.getElementById('imagePreviewTitle').textContent = title;
+        document.getElementById('imagePreviewImg').src = imageUrl;
+        document.getElementById('imagePreviewCard').style.display = 'block';
+
+        document.getElementById('imagePreviewCard').scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+    }
+
+    function closeImagePreview() {
+        document.getElementById('imagePreviewCard').style.display = 'none';
+    }
+
+    function downloadCurrentImage() {
+        const imageUrl = document.getElementById('imageModalImg').src;
+        const title = document.getElementById('imageModalTitle').textContent;
+
+        const filename = title.replace(/[^a-z0-9\s]/gi, '_').replace(/\s+/g, '_').toLowerCase() + '.png';
+
+        try {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = filename;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Direct download failed:', error);
+
+            fetch(imageUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(error => {
+                    console.error('Fetch download failed:', error);
+                    window.open(imageUrl, '_blank');
+                });
+        }
+    }
+    </script>
+
+    <script>
+    // Enterprise modal focus management system
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.modal').forEach(function(modal) {
+            modal.addEventListener('hide.bs.modal', function() {
+                const focusedElement = modal.querySelector(':focus');
+                if (focusedElement) {
+                    focusedElement.blur();
+                }
+            });
+
+            modal.addEventListener('hidden.bs.modal', function() {
+                document.body.focus();
+            });
+        });
+    });
+    </script>
+
+    <script>
+    // Enhanced Enterprise sidebar dropdown functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.querySelector('.sidebar');
+
+        // Function to close all sidebar submenus
+        function closeSidebarSubmenus() {
+            document.querySelectorAll('.sidebar-nav .has-submenu').forEach(function(item) {
+                item.classList.remove('open');
+            });
+        }
+
+        // FIXED: Initialize sidebar with all dropdowns collapsed on page load
+        // Sidebar dropdowns should only open on user interaction, not automatically
+        function initializeSidebarState() {
+            // Always close all dropdowns on page load for clean state
+            document.querySelectorAll('.sidebar-nav .has-submenu').forEach(function(item) {
+                item.classList.remove('open');
+            });
+        }
+
+        // Initialize sidebar state on page load
+        initializeSidebarState();
+
+        // Sidebar dropdown toggle functionality
+        document.querySelectorAll('.sidebar-nav .has-submenu > a').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const parentLi = this.parentElement;
+                const isOpen = parentLi.classList.contains('open');
+
+                // Close all other submenus
+                document.querySelectorAll('.sidebar-nav .has-submenu').forEach(function(item) {
+                    if (item !== parentLi) {
+                        item.classList.remove('open');
+                    }
+                });
+
+                // Toggle current submenu
+                if (!isOpen) {
+                    parentLi.classList.add('open');
+                } else {
+                    parentLi.classList.remove('open');
+                }
+            });
+        });
+
+        // Enhanced sidebar dropdown management on navigation
+        document.querySelectorAll('.sidebar-nav a[href]').forEach(function(link) {
+            // Skip dropdown toggle links (they don't have actual hrefs)
+            if (link.getAttribute('href') !== '#') {
+                link.addEventListener('click', function() {
+                    // Close all dropdowns when navigating to a new page
+                    closeSidebarSubmenus();
+                });
+            }
+        });
+
+        // FIXED: Close sidebar dropdowns when sidebar collapses to icon-only mode
+        if (sidebar) {
+            sidebar.addEventListener('mouseleave', function() {
+                // Wait a short delay to ensure sidebar has collapsed
+                setTimeout(function() {
+                    if (!sidebar.matches(':hover')) {
+                        closeSidebarSubmenus();
+                    }
+                }, 100);
+            });
+        }
+
+        // Close all sidebar dropdowns when clicking outside sidebar
+        document.addEventListener('click', function(e) {
+            const isClickInsideSidebar = sidebar && sidebar.contains(e.target);
+
+            if (!isClickInsideSidebar) {
+                closeSidebarSubmenus();
+            }
+        });
+
+        // Close dropdowns when sidebar loses focus
+        document.addEventListener('focusin', function(e) {
+            const isClickInsideSidebar = sidebar && sidebar.contains(e.target);
+
+            if (!isClickInsideSidebar) {
+                closeSidebarSubmenus();
+            }
+        });
+
+        // Mobile menu toggle
+        const menuToggle = document.getElementById('menuToggle');
+
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+            });
+        }
+
+        // Close mobile sidebar when clicking outside
+        document.addEventListener('click', function(e) {
+            const menuToggle = document.getElementById('menuToggle');
+
+            if (sidebar && menuToggle &&
+                !sidebar.contains(e.target) &&
+                !menuToggle.contains(e.target) &&
+                sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+                closeSidebarSubmenus();
+            }
+        });
+    });
+    </script>
 
     {% block scripts_extra %}{% endblock %}
     {% block extra_js %}{% endblock %}
