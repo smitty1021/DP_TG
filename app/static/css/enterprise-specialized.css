@@ -1,0 +1,1817 @@
+/*
+===============================================================================
+FORTUNE 500 ENTERPRISE SPECIALIZED COMPONENT LIBRARY
+DP-TG Trading Journal System - Specialized Layer
+===============================================================================
+Professional specialized components for enterprise trading applications
+Advanced charts, calendars, analytics, and trading-specific styling
+Based on Fortune 500 corporate design standards
+Version: 2.0
+*/
+
+/*
+===============================================================================
+1. CALENDAR GRID SYSTEM
+===============================================================================
+*/
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: var(--enterprise-border);
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius);
+    overflow: hidden;
+    transition: all var(--enterprise-transition-base);
+    box-shadow: var(--enterprise-shadow);
+}
+
+.calendar-day-header {
+    background: var(--enterprise-gray-100);
+    padding: 0.5rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--enterprise-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--enterprise-border);
+}
+
+.calendar-day {
+    background: var(--enterprise-white);
+    padding: 0.5rem;
+    min-height: 60px;
+    cursor: pointer;
+    transition: all var(--enterprise-transition-fast);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--enterprise-border-light);
+}
+
+.calendar-day:hover {
+    background: var(--enterprise-gray-50);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 102, 204, 0.15);
+    z-index: 2;
+}
+
+.calendar-day.has-trades {
+    background: linear-gradient(135deg, rgba(0, 112, 192, 0.05) 0%, rgba(0, 102, 204, 0.03) 100%);
+    border-left: 3px solid var(--enterprise-primary);
+    font-weight: 600;
+    padding-left: calc(0.5rem - 3px);
+}
+
+.calendar-day.other-month {
+    background: var(--enterprise-gray-50);
+    color: var(--enterprise-text-light);
+    opacity: 0.6;
+}
+
+.calendar-day.today {
+    background: linear-gradient(135deg, var(--enterprise-primary) 0%, var(--enterprise-secondary) 100%);
+    color: var(--enterprise-white);
+    font-weight: 700;
+    box-shadow: 0 0 0 2px var(--enterprise-accent);
+}
+
+.calendar-day:active {
+    transform: translateY(-1px) scale(0.98);
+    transition: transform 0.1s ease;
+}
+
+.calendar-pnl {
+    font-size: 0.65rem;
+    font-weight: 600;
+    margin-top: 2px;
+    padding: 1px 3px;
+    border-radius: var(--enterprise-radius-sm);
+    text-align: center;
+}
+
+.calendar-pnl.positive {
+    color: var(--enterprise-success);
+    background: rgba(0, 112, 192, 0.1);
+    border: 1px solid rgba(0, 112, 192, 0.2);
+}
+
+.calendar-pnl.negative {
+    color: var(--enterprise-danger);
+    background: rgba(209, 52, 56, 0.1);
+    border: 1px solid rgba(209, 52, 56, 0.2);
+}
+
+.calendar-trades {
+    font-size: 0.6rem;
+    color: var(--enterprise-text-muted);
+    margin-top: 1px;
+    text-align: center;
+}
+
+/* Calendar Variants */
+.calendar-mini {
+    font-size: 0.8rem;
+}
+
+.calendar-mini .calendar-day {
+    min-height: 40px;
+    padding: 0.25rem;
+}
+
+.calendar-mini .calendar-day-header {
+    padding: 0.25rem;
+    font-size: 0.7rem;
+}
+
+.calendar-mini .calendar-pnl {
+    font-size: 0.55rem;
+}
+
+.calendar-mini .calendar-trades {
+    font-size: 0.5rem;
+}
+
+/* Calendar Navigation */
+.calendar-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--enterprise-spacing-lg);
+    background: var(--enterprise-gray-50);
+    border-bottom: 1px solid var(--enterprise-border);
+}
+
+.calendar-nav-title {
+    font-size: var(--enterprise-font-size-lg);
+    font-weight: 600;
+    color: var(--enterprise-text-primary);
+    margin: 0;
+}
+
+.calendar-nav-controls {
+    display: flex;
+    gap: var(--enterprise-spacing-sm);
+}
+
+.calendar-nav-btn {
+    background: var(--enterprise-white);
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius);
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: all var(--enterprise-transition-fast);
+    font-size: var(--enterprise-font-size-sm);
+    color: var(--enterprise-text-secondary);
+}
+
+.calendar-nav-btn:hover {
+    background: var(--enterprise-primary);
+    border-color: var(--enterprise-primary);
+    color: var(--enterprise-white);
+}
+
+/* Dark Theme Calendar Support */
+html[data-bs-theme="dark"] .calendar-day {
+    background: var(--enterprise-card-bg);
+    color: var(--enterprise-text-primary);
+}
+
+html[data-bs-theme="dark"] .calendar-day:hover {
+    background: var(--enterprise-gray-200);
+}
+
+html[data-bs-theme="dark"] .calendar-day-header {
+    background: var(--enterprise-gray-200);
+    color: var(--enterprise-text-primary);
+}
+
+html[data-bs-theme="dark"] .calendar-day.has-trades {
+    background: linear-gradient(135deg, rgba(77, 166, 255, 0.1) 0%, rgba(0, 102, 204, 0.05) 100%);
+    border-left-color: var(--enterprise-primary);
+}
+
+html[data-bs-theme="dark"] .calendar-nav {
+    background: var(--enterprise-gray-200);
+}
+
+html[data-bs-theme="dark"] .calendar-nav-btn {
+    background: var(--enterprise-gray-100);
+    border-color: var(--enterprise-border);
+    color: var(--enterprise-text-primary);
+}
+
+/*
+===============================================================================
+2. VISUAL ANALYSIS COMPONENTS
+===============================================================================
+*/
+
+.visual-showcase {
+    text-align: center;
+    padding: var(--enterprise-spacing-lg);
+    background: var(--enterprise-white);
+    border-radius: var(--enterprise-radius);
+    border: 1px solid var(--enterprise-border);
+    margin-bottom: var(--enterprise-spacing-lg);
+    box-shadow: var(--enterprise-shadow);
+}
+
+.primary-visual {
+    margin-bottom: var(--enterprise-spacing-lg);
+    position: relative;
+}
+
+.analysis-chart {
+    width: 100%;
+    border-radius: var(--enterprise-radius);
+    border: 1px solid var(--enterprise-border);
+    cursor: pointer;
+    transition: all var(--enterprise-transition-base);
+    background: var(--enterprise-white);
+    box-shadow: var(--enterprise-shadow-sm);
+    display: block;
+}
+
+.analysis-chart:hover {
+    box-shadow: var(--enterprise-shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--enterprise-primary);
+}
+
+.visual-caption {
+    font-size: var(--enterprise-font-size-sm);
+    color: var(--enterprise-text-secondary);
+    margin-bottom: var(--enterprise-spacing-lg);
+    font-style: italic;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.visual-metadata {
+    border-top: 1px solid var(--enterprise-border);
+    padding-top: var(--enterprise-spacing-lg);
+    margin-top: var(--enterprise-spacing-lg);
+}
+
+.metadata-row {
+    display: flex;
+    justify-content: center;
+    gap: var(--enterprise-spacing-lg);
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    font-size: var(--enterprise-font-size-xs);
+    color: var(--enterprise-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: var(--enterprise-gray-50);
+    border-radius: var(--enterprise-radius-sm);
+    border: 1px solid var(--enterprise-border-light);
+}
+
+.additional-visuals {
+    margin-top: var(--enterprise-spacing-xl);
+    border-top: 1px solid var(--enterprise-border);
+    padding-top: var(--enterprise-spacing-xl);
+}
+
+.visuals-header {
+    margin-bottom: var(--enterprise-spacing-lg);
+    text-align: center;
+}
+
+.visuals-title {
+    font-size: var(--enterprise-font-size-lg);
+    font-weight: 600;
+    color: var(--enterprise-text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.visuals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--enterprise-spacing-lg);
+}
+
+.visual-thumbnail {
+    border-radius: var(--enterprise-radius);
+    overflow: hidden;
+    border: 1px solid var(--enterprise-border);
+    background: var(--enterprise-white);
+    transition: all var(--enterprise-transition-base);
+    box-shadow: var(--enterprise-shadow-sm);
+}
+
+.visual-thumbnail:hover {
+    box-shadow: var(--enterprise-shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--enterprise-primary);
+}
+
+.thumbnail-image {
+    width: 100%;
+    cursor: pointer;
+    transition: all var(--enterprise-transition-base);
+    display: block;
+}
+
+.thumbnail-image:hover {
+    transform: scale(1.02);
+}
+
+.no-visual-state {
+    text-align: center;
+    padding: var(--enterprise-spacing-xxl) var(--enterprise-spacing-lg);
+    color: var(--enterprise-text-muted);
+    background: var(--enterprise-gray-50);
+    border-radius: var(--enterprise-radius);
+    border: 2px dashed var(--enterprise-border);
+    margin: var(--enterprise-spacing-lg) 0;
+}
+
+.no-visual-icon {
+    font-size: 3rem;
+    margin-bottom: var(--enterprise-spacing-lg);
+    opacity: 0.3;
+    color: var(--enterprise-text-light);
+}
+
+.no-visual-text h6 {
+    color: var(--enterprise-text-secondary);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.no-visual-text p {
+    font-size: var(--enterprise-font-size-sm);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/*
+===============================================================================
+3. DATA VISUALIZATION & CHART COMPONENTS
+===============================================================================
+*/
+
+/* Chart Container System */
+.chart-container {
+    position: relative;
+    width: 100%;
+    min-height: 300px;
+    background: var(--enterprise-white);
+    border-radius: var(--enterprise-radius);
+    padding: var(--enterprise-spacing-lg);
+    box-shadow: var(--enterprise-shadow);
+    border: 1px solid var(--enterprise-border);
+    overflow: hidden;
+    margin-bottom: var(--enterprise-spacing-lg);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--enterprise-spacing-lg);
+    padding-bottom: var(--enterprise-spacing-sm);
+    border-bottom: 1px solid var(--enterprise-border);
+}
+
+.chart-title {
+    font-size: var(--enterprise-font-size-lg);
+    font-weight: 600;
+    color: var(--enterprise-text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-subtitle {
+    font-size: var(--enterprise-font-size-sm);
+    color: var(--enterprise-text-secondary);
+    margin-top: 0.25rem;
+}
+
+.chart-controls {
+    display: flex;
+    gap: var(--enterprise-spacing-sm);
+    align-items: center;
+}
+
+.chart-control-btn {
+    background: var(--enterprise-white);
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius);
+    padding: 0.375rem 0.75rem;
+    font-size: var(--enterprise-font-size-xs);
+    cursor: pointer;
+    transition: all var(--enterprise-transition-fast);
+    color: var(--enterprise-text-secondary);
+}
+
+.chart-control-btn:hover,
+.chart-control-btn.active {
+    background: var(--enterprise-primary);
+    border-color: var(--enterprise-primary);
+    color: var(--enterprise-white);
+}
+
+.chart-body {
+    position: relative;
+    min-height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 400px;
+}
+
+/* Radar Chart Specific */
+.radar-chart-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    min-height: 180px;
+    padding: var(--enterprise-spacing-md);
+}
+
+.radar-chart-container-large {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    min-height: 220px;
+    padding: var(--enterprise-spacing-lg);
+    background: var(--enterprise-gray-50);
+    border-radius: var(--enterprise-radius);
+    border: 1px solid var(--enterprise-border-light);
+}
+
+.radar-chart-canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+.radar-chart-canvas-large {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Data Points */
+.data-point {
+    position: relative;
+    cursor: pointer;
+    transition: all var(--enterprise-transition-fast);
+    border-radius: 50%;
+    padding: 0.25rem;
+}
+
+.data-point:hover {
+    transform: scale(1.1);
+    box-shadow: var(--enterprise-shadow-sm);
+}
+
+.data-point.positive {
+    color: var(--enterprise-success);
+    background: rgba(0, 112, 192, 0.1);
+    border: 1px solid rgba(0, 112, 192, 0.3);
+}
+
+.data-point.negative {
+    color: var(--enterprise-danger);
+    background: rgba(209, 52, 56, 0.1);
+    border: 1px solid rgba(209, 52, 56, 0.3);
+}
+
+.data-point.neutral {
+    color: var(--enterprise-text-muted);
+    background: var(--enterprise-gray-100);
+    border: 1px solid var(--enterprise-border);
+}
+
+/* Chart Legend */
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--enterprise-spacing-md);
+    margin-top: var(--enterprise-spacing-lg);
+    padding-top: var(--enterprise-spacing-sm);
+    border-top: 1px solid var(--enterprise-border);
+    justify-content: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--enterprise-spacing-xs);
+    font-size: var(--enterprise-font-size-sm);
+    color: var(--enterprise-text-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--enterprise-radius-sm);
+    background: var(--enterprise-gray-50);
+    border: 1px solid var(--enterprise-border-light);
+}
+
+.legend-marker {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--enterprise-radius-sm);
+    flex-shrink: 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.legend-marker.primary { background-color: var(--enterprise-primary); }
+.legend-marker.success { background-color: var(--enterprise-success); }
+.legend-marker.warning { background-color: var(--enterprise-warning); }
+.legend-marker.danger { background-color: var(--enterprise-danger); }
+.legend-marker.info { background-color: var(--enterprise-info); }
+.legend-marker.secondary { background-color: var(--enterprise-gray-500); }
+
+/* Chart Metrics Grid */
+.chart-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--enterprise-spacing-md);
+    margin-top: var(--enterprise-spacing-lg);
+}
+
+.metric-card {
+    background: var(--enterprise-gray-50);
+    padding: var(--enterprise-spacing-md);
+    border-radius: var(--enterprise-radius);
+    text-align: center;
+    border: 1px solid var(--enterprise-border);
+    transition: all var(--enterprise-transition-base);
+}
+
+.metric-card:hover {
+    background: var(--enterprise-white);
+    box-shadow: var(--enterprise-shadow-sm);
+    transform: translateY(-1px);
+}
+
+.metric-card-value {
+    font-size: var(--enterprise-font-size-lg);
+    font-weight: 700;
+    color: var(--enterprise-text-primary);
+    margin-bottom: var(--enterprise-spacing-xs);
+    line-height: 1.2;
+}
+
+.metric-card-label {
+    font-size: var(--enterprise-font-size-xs);
+    color: var(--enterprise-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+/* Chart Loading & Error States */
+.chart-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    color: var(--enterprise-text-muted);
+}
+
+.chart-loading-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 0.25em solid var(--enterprise-border);
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+    margin-bottom: var(--enterprise-spacing-lg);
+}
+
+.chart-loading-text {
+    font-size: var(--enterprise-font-size-sm);
+    font-weight: 500;
+}
+
+.chart-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    color: var(--enterprise-text-muted);
+    background: var(--enterprise-gray-50);
+    border-radius: var(--enterprise-radius);
+    border: 2px dashed var(--enterprise-border);
+}
+
+.chart-error-icon {
+    font-size: 2rem;
+    margin-bottom: var(--enterprise-spacing-lg);
+    color: var(--enterprise-danger);
+}
+
+.chart-error-text {
+    font-size: var(--enterprise-font-size-sm);
+    text-align: center;
+    line-height: 1.5;
+}
+
+/*
+===============================================================================
+4. TRADING-SPECIFIC COMPONENTS
+===============================================================================
+*/
+
+/* Performance Indicators */
+.performance-indicator {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--enterprise-white);
+    font-size: 1.2rem;
+    position: relative;
+    flex-shrink: 0;
+    transition: all var(--enterprise-transition-base);
+}
+
+.performance-indicator:hover {
+    transform: scale(1.05);
+}
+
+.performance-indicator canvas {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 2 !important;
+    pointer-events: none !important;
+}
+
+.performance-indicator.excellent {
+    background: var(--enterprise-success);
+}
+
+.performance-indicator.good {
+    background: var(--enterprise-info);
+}
+
+.performance-indicator.average {
+    background: var(--enterprise-warning);
+}
+
+.performance-indicator.poor {
+    background: var(--enterprise-danger);
+}
+
+/* Trade Details Enhancements */
+.trade-details-container {
+    background: var(--enterprise-bg-secondary);
+    border-top: 1px solid var(--enterprise-border);
+    padding: var(--enterprise-spacing-xl);
+    margin: 0 -1px;
+}
+
+.trade-details-container .enterprise-module {
+    border-radius: var(--enterprise-radius-md);
+    border: 1px solid var(--enterprise-border);
+    background: var(--enterprise-card-bg);
+    box-shadow: var(--enterprise-shadow-md);
+    overflow: hidden;
+    transition: all var(--enterprise-transition-base);
+    margin-bottom: var(--enterprise-spacing-lg);
+}
+
+.trade-details-container .enterprise-module:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--enterprise-shadow-lg);
+    border-color: var(--enterprise-primary);
+}
+
+/* Rating System */
+.ratings-section {
+    padding: var(--enterprise-spacing-lg);
+}
+
+.rating-item {
+    margin-bottom: var(--enterprise-spacing-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.rating-name {
+    color: var(--enterprise-text-secondary);
+    font-size: var(--enterprise-font-size-sm);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rating-dots {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.rating-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--enterprise-gray-300);
+    transition: all var(--enterprise-transition-fast);
+    cursor: pointer;
+}
+
+.rating-dot:hover {
+    transform: scale(1.2);
+}
+
+.rating-dot.filled-1 { background: #dc3545; }
+.rating-dot.filled-2 { background: #fd7e14; }
+.rating-dot.filled-3 { background: #ffc107; }
+.rating-dot.filled-4 { background: #20c997; }
+.rating-dot.filled-5 { background: #198754; }
+
+/* Trading Model Performance */
+.model-performance-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--enterprise-spacing-lg);
+    border-bottom: 1px solid var(--enterprise-border);
+    transition: all var(--enterprise-transition-base);
+    min-height: 80px;
+    position: relative;
+    overflow: hidden;
+}
+
+.model-performance-item::before {
+    content: '';
+    position: absolute;
+    left: -100%;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.model-performance-item:hover::before {
+    left: 100%;
+}
+
+.model-performance-item:hover {
+    background: var(--enterprise-gray-50);
+    border-left: 4px solid var(--enterprise-primary);
+    padding-left: calc(var(--enterprise-spacing-lg) - 4px);
+}
+
+.model-performance-item:last-child {
+    border-bottom: none;
+}
+
+.model-name {
+    font-weight: 600;
+    color: var(--enterprise-text-primary);
+    font-size: var(--enterprise-font-size-base);
+    margin-bottom: 0.25rem;
+}
+
+.model-stats {
+    font-size: var(--enterprise-font-size-sm);
+    color: var(--enterprise-text-secondary);
+    line-height: 1.3;
+}
+
+.model-pnl {
+    font-weight: 700;
+    text-align: right;
+    font-size: var(--enterprise-font-size-lg);
+    line-height: 1.2;
+}
+
+/* Win/Loss Statistics */
+.win-loss-stats {
+    font-size: 0.9rem;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.strike-rate-value {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+/* Tag Color Classification System */
+.tag-category-section {
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius);
+    margin-bottom: var(--enterprise-spacing-xl);
+    background: var(--enterprise-white);
+    overflow: hidden;
+    box-shadow: var(--enterprise-shadow-sm);
+}
+
+.tag-category-header {
+    background: var(--enterprise-gray-50);
+    color: var(--enterprise-text-primary);
+    border-bottom: 1px solid var(--enterprise-border);
+    padding: var(--enterprise-spacing-lg);
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tag-category-body {
+    padding: var(--enterprise-spacing-lg);
+}
+
+.tag-item {
+    display: inline-flex;
+    align-items: center;
+    background: var(--enterprise-gray-100);
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius-pill);
+    padding: 0.25rem 0.75rem;
+    margin: 0.25rem;
+    font-size: var(--enterprise-font-size-sm);
+    position: relative;
+    transition: all var(--enterprise-transition-base);
+    cursor: pointer;
+}
+
+.tag-item:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--enterprise-shadow-sm);
+}
+
+.tag-item.inactive {
+    opacity: 0.6;
+    background: var(--enterprise-gray-200);
+}
+
+.tag-good {
+    background: rgba(25, 135, 84, 0.1);
+    border-color: rgba(25, 135, 84, 0.3);
+    color: #059669;
+}
+
+.tag-bad {
+    background: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.3);
+    color: #dc2626;
+}
+
+.tag-neutral {
+    background: rgba(13, 110, 253, 0.1);
+    border-color: rgba(13, 110, 253, 0.3);
+    color: var(--enterprise-primary);
+}
+
+.tag-actions {
+    margin-left: 0.5rem;
+    display: none;
+    gap: 0.25rem;
+}
+
+.tag-item:hover .tag-actions {
+    display: flex;
+}
+
+.tag-actions .action-btn {
+    background: none;
+    border: none;
+    padding: 0.125rem;
+    cursor: pointer;
+    opacity: 0.7;
+    font-size: 0.75rem;
+    transition: all var(--enterprise-transition-fast);
+    border-radius: var(--enterprise-radius-sm);
+}
+
+.tag-actions .action-btn:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+    background: var(--enterprise-gray-50);
+}
+
+/* Bias Indicators */
+.bias-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--enterprise-radius-sm);
+    font-weight: 500;
+    font-size: var(--enterprise-font-size-sm);
+    border: 1px solid transparent;
+}
+
+.bias-indicator.bullish {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #059669;
+}
+
+.bias-indicator.bearish {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #dc2626;
+}
+
+.bias-indicator.choppy {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: #d97706;
+}
+
+.bias-indicator.neutral {
+    background: rgba(107, 114, 128, 0.1);
+    border-color: rgba(107, 114, 128, 0.3);
+    color: #6b7280;
+}
+
+/*
+===============================================================================
+5. ENHANCED SEARCH & FILTER COMPONENTS
+===============================================================================
+*/
+
+/* Search Container System */
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 400px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius);
+    font-size: var(--enterprise-font-size-base);
+    background-color: var(--enterprise-white);
+    transition: all var(--enterprise-transition-fast);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--enterprise-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+}
+
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    color: var(--enterprise-text-muted);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.search-clear {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    color: var(--enterprise-text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: var(--enterprise-radius-sm);
+    transition: all var(--enterprise-transition-fast);
+}
+
+.search-clear:hover {
+    color: var(--enterprise-text-primary);
+    background-color: var(--enterprise-gray-100);
+}
+
+/* Filter Bar System */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--enterprise-spacing-md);
+    padding: var(--enterprise-spacing-lg);
+    background: var(--enterprise-gray-50);
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius);
+    margin-bottom: var(--enterprise-spacing-lg);
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: var(--enterprise-spacing-sm);
+}
+
+.filter-label {
+    font-size: var(--enterprise-font-size-sm);
+    font-weight: 500;
+    color: var(--enterprise-text-secondary);
+    white-space: nowrap;
+}
+
+.filter-select {
+    min-width: 120px;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius);
+    background-color: var(--enterprise-white);
+    font-size: var(--enterprise-font-size-sm);
+    transition: all var(--enterprise-transition-fast);
+}
+
+.filter-select:focus {
+    border-color: var(--enterprise-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+}
+
+.filter-tags {
+    display: flex;
+    align-items: center;
+    gap: var(--enterprise-spacing-sm);
+    flex-wrap: wrap;
+}
+
+.filter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    background: var(--enterprise-primary);
+    color: var(--enterprise-white);
+    border-radius: var(--enterprise-radius-pill);
+    font-size: var(--enterprise-font-size-xs);
+    font-weight: 500;
+}
+
+.filter-tag-remove {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color var(--enterprise-transition-fast);
+}
+
+.filter-tag-remove:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.filter-actions {
+    margin-left: auto;
+    display: flex;
+    gap: var(--enterprise-spacing-sm);
+}
+
+/* Advanced Search System */
+.advanced-search {
+    background: var(--enterprise-white);
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius);
+    padding: var(--enterprise-spacing-xl);
+    margin-bottom: var(--enterprise-spacing-lg);
+    box-shadow: var(--enterprise-shadow-sm);
+}
+
+.advanced-search-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--enterprise-spacing-xl);
+    padding-bottom: var(--enterprise-spacing-sm);
+    border-bottom: 1px solid var(--enterprise-border);
+}
+
+.advanced-search-title {
+    font-size: var(--enterprise-font-size-xl);
+    font-weight: 600;
+    color: var(--enterprise-text-primary);
+    margin: 0;
+}
+
+.advanced-search-toggle {
+    background: none;
+    border: none;
+    color: var(--enterprise-primary);
+    cursor: pointer;
+    font-size: var(--enterprise-font-size-sm);
+    font-weight: 500;
+    padding: 0.5rem;
+    border-radius: var(--enterprise-radius);
+    transition: all var(--enterprise-transition-fast);
+}
+
+.advanced-search-toggle:hover {
+    background: var(--enterprise-gray-50);
+}
+
+.advanced-search-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--enterprise-spacing-lg);
+}
+
+.search-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.search-field-label {
+    font-size: var(--enterprise-font-size-sm);
+    font-weight: 500;
+    color: var(--enterprise-text-primary);
+}
+
+/* Search Results */
+.search-results {
+    background: var(--enterprise-white);
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius);
+    overflow: hidden;
+    box-shadow: var(--enterprise-shadow-sm);
+}
+
+.search-results-header {
+    padding: var(--enterprise-spacing-lg);
+    background: var(--enterprise-gray-50);
+    border-bottom: 1px solid var(--enterprise-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-results-count {
+    font-size: var(--enterprise-font-size-sm);
+    color: var(--enterprise-text-secondary);
+    font-weight: 500;
+}
+
+.search-results-sort {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--enterprise-font-size-sm);
+}
+
+.search-result-item {
+    padding: var(--enterprise-spacing-lg);
+    border-bottom: 1px solid var(--enterprise-border);
+    transition: background-color var(--enterprise-transition-fast);
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background-color: var(--enterprise-gray-50);
+}
+
+.search-result-title {
+    font-size: var(--enterprise-font-size-lg);
+    font-weight: 600;
+    color: var(--enterprise-primary);
+    margin-bottom: 0.5rem;
+    text-decoration: none;
+}
+
+.search-result-title:hover {
+    text-decoration: underline;
+}
+
+.search-result-description {
+    font-size: var(--enterprise-font-size-base);
+    color: var(--enterprise-text-secondary);
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+}
+
+.search-result-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--enterprise-spacing-md);
+    font-size: var(--enterprise-font-size-xs);
+    color: var(--enterprise-text-muted);
+}
+
+.search-highlight {
+    background-color: #ffeb3b;
+    color: var(--enterprise-text-primary);
+    padding: 0.1em 0.2em;
+    border-radius: 2px;
+    font-weight: 600;
+}
+
+/*
+===============================================================================
+6. SPECIALIZED UTILITY COMPONENTS
+===============================================================================
+*/
+
+/* Chevron Icons */
+.chevron-icon {
+    transition: transform var(--enterprise-transition-base);
+    color: var(--enterprise-text-muted);
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.chevron-icon:hover {
+    color: var(--enterprise-primary);
+    transform: scale(1.1);
+}
+
+.chevron-icon.fa-chevron-down {
+    transform: rotate(0deg);
+}
+
+.chevron-icon.fa-chevron-right {
+    transform: rotate(0deg);
+}
+
+/* Status Indicators */
+.status-operational {
+    background: var(--enterprise-success);
+}
+
+.status-maintenance {
+    background: var(--enterprise-warning);
+}
+
+.status-error {
+    background: var(--enterprise-danger);
+}
+
+.status-degraded {
+    background: var(--enterprise-info);
+}
+
+/* Direction Badges */
+.direction-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--enterprise-radius-sm);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Compact Detail Styling */
+.details-list-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.detail-item-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+.detail-label-compact {
+    color: var(--enterprise-text-secondary);
+    font-weight: 500;
+    min-width: 60px;
+    font-size: 0.75rem;
+}
+
+.detail-value-compact {
+    color: var(--enterprise-text-primary);
+    text-align: right;
+    flex: 1;
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.tag-badge-compact {
+    font-size: 0.6rem;
+    padding: 0.125rem 0.375rem;
+}
+
+/*
+===============================================================================
+7. DARK THEME SUPPORT FOR SPECIALIZED COMPONENTS
+===============================================================================
+*/
+
+/* Dark Theme Visual Components */
+html[data-bs-theme="dark"] .visual-showcase {
+    background: var(--enterprise-card-bg);
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="dark"] .analysis-chart {
+    background: var(--enterprise-card-bg);
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="dark"] .no-visual-state {
+    background: var(--enterprise-gray-200);
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="dark"] .meta-item {
+    background: var(--enterprise-gray-200);
+    border-color: var(--enterprise-border);
+    color: var(--enterprise-text-primary);
+}
+
+/* Dark Theme Chart Components */
+html[data-bs-theme="dark"] .chart-container {
+    background: var(--enterprise-card-bg);
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="dark"] .chart-error {
+    background: var(--enterprise-gray-200);
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="dark"] .chart-loading {
+    color: var(--enterprise-text-primary);
+}
+
+html[data-bs-theme="dark"] .legend-item {
+    background: var(--enterprise-gray-200);
+    border-color: var(--enterprise-border);
+    color: var(--enterprise-text-primary);
+}
+
+html[data-bs-theme="dark"] .metric-card {
+    background: var(--enterprise-gray-200);
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="dark"] .metric-card:hover {
+    background: var(--enterprise-card-bg);
+}
+
+html[data-bs-theme="dark"] .radar-chart-container-large {
+    background: var(--enterprise-gray-200);
+    border-color: var(--enterprise-border);
+}
+
+/* Dark Theme Trading Components */
+html[data-bs-theme="dark"] .trade-details-container {
+    background: var(--enterprise-bg-primary);
+}
+
+html[data-bs-theme="dark"] .model-performance-item:hover {
+    background: var(--enterprise-gray-200);
+}
+
+html[data-bs-theme="dark"] .tag-category-section {
+    background: var(--enterprise-card-bg);
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="dark"] .tag-category-header {
+    background: var(--enterprise-gray-200);
+}
+
+html[data-bs-theme="dark"] .tag-item {
+    background: var(--enterprise-gray-200);
+    border-color: var(--enterprise-border);
+    color: var(--enterprise-text-primary);
+}
+
+html[data-bs-theme="dark"] .tag-good {
+    background-color: rgba(74, 222, 128, 0.2) !important;
+    border-color: rgba(74, 222, 128, 0.4) !important;
+    color: #75b798 !important;
+}
+
+html[data-bs-theme="dark"] .tag-bad {
+    background-color: rgba(248, 113, 113, 0.2) !important;
+    border-color: rgba(248, 113, 113, 0.4) !important;
+    color: #e8a4af !important;
+}
+
+html[data-bs-theme="dark"] .tag-neutral {
+    background-color: rgba(77, 166, 255, 0.2) !important;
+    border-color: rgba(77, 166, 255, 0.4) !important;
+    color: #9ec5fe !important;
+}
+
+/* Dark Theme Search & Filter */
+html[data-bs-theme="dark"] .search-input {
+    background-color: var(--enterprise-gray-200) !important;
+    border-color: var(--enterprise-gray-300) !important;
+    color: var(--enterprise-text-primary) !important;
+}
+
+html[data-bs-theme="dark"] .search-input:focus {
+    background-color: var(--enterprise-gray-200) !important;
+    border-color: var(--enterprise-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(77, 166, 255, 0.25) !important;
+}
+
+html[data-bs-theme="dark"] .search-input::placeholder {
+    color: var(--enterprise-text-muted) !important;
+}
+
+html[data-bs-theme="dark"] .filter-bar {
+    background: var(--enterprise-gray-200);
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="dark"] .filter-select {
+    background-color: var(--enterprise-gray-200) !important;
+    border-color: var(--enterprise-gray-300) !important;
+    color: var(--enterprise-text-primary) !important;
+}
+
+html[data-bs-theme="dark"] .filter-select:focus {
+    background-color: var(--enterprise-gray-200) !important;
+    border-color: var(--enterprise-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(77, 166, 255, 0.25) !important;
+}
+
+html[data-bs-theme="dark"] .advanced-search {
+    background: var(--enterprise-card-bg);
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="dark"] .search-results {
+    background: var(--enterprise-card-bg);
+    border-color: var(--enterprise-border);
+}
+
+html[data-bs-theme="dark"] .search-results-header {
+    background: var(--enterprise-gray-200);
+}
+
+html[data-bs-theme="dark"] .search-result-item:hover {
+    background-color: var(--enterprise-gray-200);
+}
+
+/*
+===============================================================================
+8. RESPONSIVE DESIGN FOR SPECIALIZED COMPONENTS
+===============================================================================
+*/
+
+/* Mobile Calendar Adjustments */
+@media (max-width: 768px) {
+    .calendar-grid {
+        font-size: 0.8rem;
+    }
+
+    .calendar-day {
+        min-height: 50px;
+        padding: 0.25rem;
+    }
+
+    .calendar-pnl {
+        font-size: 0.6rem;
+    }
+
+    .calendar-trades {
+        font-size: 0.55rem;
+    }
+
+    .calendar-nav {
+        flex-direction: column;
+        gap: var(--enterprise-spacing-md);
+    }
+
+    .calendar-nav-controls {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .calendar-day {
+        min-height: 40px;
+        font-size: 0.75rem;
+    }
+
+    .calendar-mini .calendar-day {
+        min-height: 30px;
+        padding: 0.125rem;
+    }
+}
+
+/* Mobile Chart Adjustments */
+@media (max-width: 991.98px) {
+    .chart-container {
+        min-height: 250px;
+        padding: var(--enterprise-spacing-md);
+    }
+
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--enterprise-spacing-sm);
+    }
+
+    .chart-controls {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .chart-metrics {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .radar-chart-container-large {
+        min-height: 150px;
+        padding: var(--enterprise-spacing-md);
+    }
+
+    .chart-legend {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .visuals-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .metadata-row {
+        flex-direction: column;
+        gap: var(--enterprise-spacing-md);
+    }
+}
+
+/* Mobile Trading Component Adjustments */
+@media (max-width: 991.98px) {
+    .trade-details-container {
+        padding: var(--enterprise-spacing-lg);
+    }
+
+    .model-performance-item {
+        padding: var(--enterprise-spacing-md);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .win-loss-stats {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .win-loss-stats .mx-1 {
+        display: none;
+    }
+
+    .performance-indicator {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .tag-category-body {
+        padding: var(--enterprise-spacing-md);
+    }
+
+    .rating-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .detail-item-compact {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .detail-value-compact {
+        margin-left: 0;
+        text-align: left;
+    }
+}
+
+/* Mobile Search & Filter Adjustments */
+@media (max-width: 767.98px) {
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--enterprise-spacing-md);
+    }
+
+    .filter-group {
+        justify-content: space-between;
+    }
+
+    .filter-actions {
+        margin-left: 0;
+        justify-content: center;
+    }
+
+    .advanced-search-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .search-container {
+        max-width: none;
+    }
+}
+
+/*
+===============================================================================
+9. PERFORMANCE OPTIMIZATIONS FOR SPECIALIZED COMPONENTS
+===============================================================================
+*/
+
+/* GPU Acceleration */
+.calendar-day,
+.analysis-chart,
+.visual-thumbnail,
+.performance-indicator,
+.model-performance-item,
+.tag-item {
+    will-change: transform, box-shadow;
+    transform: translateZ(0);
+}
+
+/* Efficient Transitions */
+.chart-container,
+.visual-showcase,
+.trade-details-container .enterprise-module {
+    transition-timing-function: cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Contain Layout for Performance */
+.calendar-grid {
+    contain: layout style;
+}
+
+.chart-body {
+    contain: layout;
+}
+
+/* Optimize Repaints */
+.calendar-day:hover,
+.analysis-chart:hover,
+.performance-indicator:hover {
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/*
+===============================================================================
+10. ACCESSIBILITY ENHANCEMENTS FOR SPECIALIZED COMPONENTS
+===============================================================================
+*/
+
+/* Focus Management */
+.calendar-day:focus,
+.search-input:focus,
+.filter-select:focus,
+.tag-item:focus {
+    outline: 2px solid var(--enterprise-primary);
+    outline-offset: 2px;
+}
+
+/* Screen Reader Support for Charts */
+.chart-container[aria-label] {
+    position: relative;
+}
+
+.chart-sr-description {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* High Contrast Support */
+@media (prefers-contrast: high) {
+    .calendar-day,
+    .chart-container,
+    .tag-item {
+        border-width: 2px;
+    }
+
+    .rating-dot {
+        border: 2px solid var(--enterprise-text-primary);
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .calendar-day,
+    .analysis-chart,
+    .performance-indicator,
+    .model-performance-item::before,
+    .chart-loading-spinner {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+
+    .calendar-day:hover,
+    .analysis-chart:hover,
+    .performance-indicator:hover {
+        transform: none !important;
+    }
+}
+
+/*
+===============================================================================
+11. PRINT STYLES FOR SPECIALIZED COMPONENTS
+===============================================================================
+*/
+
+@media print {
+    .calendar-grid,
+    .chart-container,
+    .visual-showcase {
+        break-inside: avoid;
+        border: 1px solid #cccccc !important;
+        box-shadow: none !important;
+    }
+
+    .search-container,
+    .filter-bar,
+    .tag-actions,
+    .chart-controls {
+        display: none !important;
+    }
+
+    .calendar-day {
+        background: white !important;
+        color: black !important;
+    }
+
+    .calendar-day.has-trades {
+        border-left: 3px solid #000000 !important;
+    }
+
+    .tag-item {
+        background: #f0f0f0 !important;
+        color: black !important;
+        border: 1px solid #cccccc !important;
+    }
+}
+
+/*
+===============================================================================
+END OF ENTERPRISE SPECIALIZED COMPONENT LIBRARY
+===============================================================================
+*/
+
+/*
+Specialized Component Library Summary:
+- Advanced calendar grid system with trading data integration
+- Comprehensive visual analysis and chart components
+- Professional data visualization support
+- Trading-specific performance indicators and metrics
+- Enhanced search and filter capabilities
+- Tag classification and management system
+- Complete dark theme support
+- Mobile-first responsive design
+- Accessibility compliance
+- Performance optimizations
+- Print-friendly layouts
+- Enterprise-grade styling consistency
+*/
