@@ -81,9 +81,9 @@
 
                     <!-- Navigation Actions -->
                     <div class="text-center mt-4">
-                        <p class="mb-0">Already have an account?
-                            <a href="{{ url_for('auth.login') }}" class="text-decoration-none">
-                                Access Authentication Portal
+                        <p class="mb-0">Already have an account?<br>
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-link">
+                                <i class="fas fa-sign-in-alt me-1"></i>Return to Login Portal
                             </a>
                         </p>
                     </div>
@@ -137,18 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Add password strength validation
-    const passwordField = document.querySelector('input[type="password"]');
-    const confirmPasswordField = document.querySelector('input[name="confirm_password"]');
 
-    if (passwordField) {
-        passwordField.addEventListener('input', function() {
-            const password = this.value;
-            if (password.length > 0 && password.length < 8) {
-                showWarning('Password should be at least 8 characters long', 'Security Notice');
-            }
-        });
-    }
 
     // Add email format validation
     const emailField = document.querySelector('input[type="email"]');
@@ -170,28 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Handle navigation with enterprise confirmation system
-    document.querySelectorAll('a[href]:not([href="#"])').forEach(link => {
-        link.addEventListener('click', function(e) {
-            if (window.enterpriseUnsavedChanges && window.enterpriseUnsavedChanges.hasUnsavedChanges) {
-                e.preventDefault();
-                const href = this.getAttribute('href');
-
-                showCustomConfirmation(
-                    'Unsaved Configuration Changes',
-                    'Account registration form has unsaved changes. Continue without completing registration?',
-                    'btn-warning',
-                    'exclamation-triangle'
-                ).then((confirmed) => {
-                    if (confirmed) {
-                        window.location.href = href;
-                    }
-                });
-            }
-        });
-    });
-
-    // Username availability feedback (optional enhancement)
+    // Username availability feedback
     const usernameField = document.querySelector('input[name="username"]');
     if (usernameField) {
         let usernameTimeout;

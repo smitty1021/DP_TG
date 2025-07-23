@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Verify Your Email</title>
+    <title>Pack Trade Group Trading Journal - Verify Your Email</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f0f0f0; color: #333333; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
         .email-container { background-color: #ffffff !important; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 600px; margin: 20px auto; border: 1px solid #dddddd;}
@@ -28,8 +28,9 @@
 </head>
 <body>
     <div class="email-container">
+        <h2>Trading Journal - Email Verification</h2>
         <h2>Hello {{ username or 'User' }},</h2>
-        <p>Thank you for registering for the Trading Journal! Please click the button below to verify your email address and activate your account:</p>
+        <p>Thank you for registering for the Pack Trade Group Trading Journal! Please click the button below to verify your email address and activate your account:</p>
         <p style="text-align: center;">
             <a href="{{ verification_url }}" class="button">Verify Email Address</a>
         </p>

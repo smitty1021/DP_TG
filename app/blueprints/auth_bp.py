@@ -39,12 +39,10 @@ def login():
                 flash('Your account is inactive. Please contact support.', 'warning')
                 return redirect(url_for('auth.login'))
             if not user.is_email_verified:
-                # ENHANCED: Concise verification message with click here link
-                flash_message = (
-                    'Email verification required. Check your inbox or '
-                    '<a href="{}" class="alert-link"><strong>click here to resend</strong></a>.'
-                ).format(url_for('auth.resend_verification_request'))
-                flash(flash_message, 'warning')
+                # FIXED: Use custom notification instead of flash message with HTML
+                # This will trigger the custom verification notification with resend button
+                session['show_verification_required'] = True
+                session['verification_email'] = user.email
                 return redirect(url_for('auth.login'))
 
             # ENHANCED: Check Discord role validity if user has Discord linked
@@ -56,32 +54,51 @@ def login():
 
                     # Check if user still has valid roles (unless admin)
                     if not user.is_admin() and not has_valid_discord_roles(current_roles):
-                        flash('Access denied: Your Discord roles no longer permit access to this application.', 'danger')
+                        flash('Access denied: Your Discord roles no longer permit access to this application.',
+                              'danger')
                         return redirect(url_for('auth.login'))
-
                 except Exception as e:
-                    current_app.logger.error(f"Error syncing Discord roles for {user.username}: {e}")
-                    # Continue with login but log the error
+                    current_app.logger.error(f"Discord role sync error for user {user.username}: {e}")
+                    # Continue with login - don't block due to Discord API issues
 
             login_user(user, remember=form.remember.data)
-            user.last_login = datetime.utcnow()
-            if user.settings and user.settings.theme:
-                session['theme'] = user.settings.theme
-            else:
-                session['theme'] = 'dark'
+            record_activity('login', user_id_for_activity=user.id)
+
+            # ENHANCED: Create user session record
             try:
+                session_id = str(uuid.uuid4())
+                session['user_session_id'] = session_id
+
+                user_session = UserSession(
+                    user_id=user.id,
+                    session_id=session_id,
+                    ip_address=request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr),
+                    user_agent=request.user_agent.string[:500],
+                    login_time=datetime.utcnow()
+                )
+                db.session.add(user_session)
                 db.session.commit()
-                record_activity('login')
-                next_page = request.args.get('next')
-                flash('Authentication successful! Welcome to your Enterprise Trading Platform.', 'success')
-                return redirect(next_page or url_for('main.index'))
             except Exception as e:
-                db.session.rollback()
-                current_app.logger.error(f"Error during login for {user.username}: {e}", exc_info=True)
-                flash("System error occurred during authentication. Please try again.", "danger")
+                current_app.logger.error(f"Session creation error for user {user.username}: {e}")
+                # Don't block login for session creation failure
+
+            flash('Authentication successful. Welcome to Pack Trade Group!', 'success')
+            next_page = request.args.get('next')
+            if not next_page or urlparse(next_page).netloc != '':
+                next_page = url_for('main.index')
+            return redirect(next_page)
         else:
-            flash('Authentication failed. Please verify your credentials and try again.', 'danger')
-    return render_template('auth/login.html', title='Login', form=form)
+            flash('Invalid credentials. Please verify your username and password.', 'danger')
+    return render_template('login.html', title='Authentication Portal', form=form)
+
+# Add this route to your auth_bp.py file to clear the session flag
+
+@auth_bp.route('/clear_verification_flag', methods=['POST'])
+def clear_verification_flag():
+    """Clear the verification required session flag"""
+    session.pop('show_verification_required', None)
+    session.pop('verification_email', None)
+    return '', 204
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -194,7 +211,7 @@ def request_password_reset():
         if user:
             token = generate_token(user.id, salt='password-reset-salt')
             reset_url = url_for('auth.reset_password_with_token', token=token, _external=True)
-            send_email(to=user.email, subject="Password Reset Request - Trading Journal",
+            send_email(to=user.email, subject="Pack Trade Group - Trading Journal Password Reset Request",
                        template_name="reset_password_email.html", username=user.username, reset_url=reset_url)
             flash('Password reset email sent.', 'info')
         else:

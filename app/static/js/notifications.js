@@ -130,111 +130,140 @@ if (typeof module !== 'undefined' && module.exports) {
 
 
 function showVerificationRequired(userEmail = '') {
-    // Remove any existing verification notification
-    const existing = document.getElementById('verification-notification');
-    if (existing) {
-        existing.remove();
-    }
+    // Remove any existing verification notifications
+    const existing = document.querySelectorAll('.verification-notification');
+    existing.forEach(el => el.remove());
 
-    // Create a completely independent notification
+    // Create the notification element
     const notification = document.createElement('div');
-    notification.id = 'verification-notification';
+    notification.className = 'verification-notification';
     notification.style.cssText = `
         position: fixed;
-        top: 1rem;
+        top: 20px;
         left: 50%;
         transform: translateX(-50%);
-        z-index: 9999;
-        width: calc(100vw - 2rem);
-        max-width: 700px;
-        min-width: 400px;
-        background-color: #fff3cd;
-        color: #664d03;
-        border: 1px solid #ffecb5;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 1px solid #f0ad4e;
         border-radius: 8px;
-        padding: 12px 16px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-        font-size: 14px;
-        opacity: 0;
-        transition: all 0.3s ease-out;
-        pointer-events: auto;
+        padding: 16px 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        z-index: 10000;
+        max-width: 500px;
+        width: 90%;
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 12px;
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+        transition: all 0.3s ease;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     `;
 
-    // Create the content
     notification.innerHTML = `
-        <div style="display: flex; align-items: center; flex: 1; min-width: 0;">
-            <i class="fas fa-exclamation-circle" style="color: #664d03; margin-right: 8px; flex-shrink: 0;"></i>
-            <span style="flex: 1; min-width: 0;">Email verification required. Check your inbox or</span>
+        <div style="
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        ">
+            <i class="fas fa-envelope" style="color: white; font-size: 14px;"></i>
+        </div>
+        <div style="flex: 1; color: #664d03; line-height: 1.4;">
+            <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">
+                Email Verification Required
+            </div>
+            <div style="font-size: 13px;">
+                Please verify your email address to access the trading platform.
+                ${userEmail ? `Check your inbox at <strong>${userEmail}</strong> or` : 'Check your inbox or'} 
+                click below to resend the verification email.
+            </div>
         </div>
         <button type="button" id="resendVerificationBtn" style="
             background-color: #0d6efd;
             color: white;
             border: none;
-            border-radius: 4px;
-            padding: 6px 12px;
+            border-radius: 6px;
+            padding: 8px 16px;
             font-size: 13px;
+            font-weight: 500;
             cursor: pointer;
             flex-shrink: 0;
             white-space: nowrap;
-            transition: background-color 0.2s ease;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(13,110,253,0.2);
         ">
-            <i class="fas fa-paper-plane" style="margin-right: 4px;"></i>Resend Email
+            <i class="fas fa-paper-plane" style="margin-right: 6px;"></i>Resend Email
         </button>
         <button type="button" id="closeVerificationBtn" style="
             background: none;
             border: none;
             color: #664d03;
-            font-size: 16px;
+            font-size: 18px;
             cursor: pointer;
-            padding: 0;
+            padding: 4px;
             margin-left: 8px;
-            width: 20px;
-            height: 20px;
+            width: 28px;
+            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
         ">×</button>
     `;
 
-    // Add to body (not to the container)
+    // Add to body
     document.body.appendChild(notification);
 
-    // Add hover effect for button
+    // Add hover effects
     const resendBtn = notification.querySelector('#resendVerificationBtn');
+    const closeBtn = notification.querySelector('#closeVerificationBtn');
+
     resendBtn.addEventListener('mouseenter', () => {
         resendBtn.style.backgroundColor = '#0b5ed7';
+        resendBtn.style.transform = 'translateY(-1px)';
+        resendBtn.style.boxShadow = '0 4px 8px rgba(13,110,253,0.3)';
     });
     resendBtn.addEventListener('mouseleave', () => {
         resendBtn.style.backgroundColor = '#0d6efd';
+        resendBtn.style.transform = 'translateY(0)';
+        resendBtn.style.boxShadow = '0 2px 4px rgba(13,110,253,0.2)';
+    });
+
+    closeBtn.addEventListener('mouseenter', () => {
+        closeBtn.style.backgroundColor = 'rgba(102, 77, 3, 0.1)';
+    });
+    closeBtn.addEventListener('mouseleave', () => {
+        closeBtn.style.backgroundColor = 'transparent';
     });
 
     // Animate in
     requestAnimationFrame(() => {
         notification.style.opacity = '1';
+        notification.style.transform = 'translateX(-50%) translateY(0)';
     });
 
     // Add click handler for resend button
     resendBtn.addEventListener('click', function() {
         // Show loading state
-        this.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 4px;"></i>Sending...';
+        this.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i>Sending...';
         this.disabled = true;
         this.style.backgroundColor = '#6c757d';
         this.style.cursor = 'not-allowed';
+        this.style.transform = 'translateY(0)';
 
-        // Redirect to resend page
+        // Redirect to resend page after short delay
         setTimeout(() => {
             window.location.href = '/auth/resend_verification';
-        }, 500);
+        }, 800);
     });
 
     // Add click handler for close button
-    const closeBtn = notification.querySelector('#closeVerificationBtn');
     closeBtn.addEventListener('click', () => {
         notification.style.opacity = '0';
         notification.style.transform = 'translateX(-50%) translateY(-10px)';
@@ -245,7 +274,7 @@ function showVerificationRequired(userEmail = '') {
         }, 300);
     });
 
-    // Auto-remove after 12 seconds
+    // Auto-remove after 15 seconds
     setTimeout(() => {
         if (notification.parentNode) {
             notification.style.opacity = '0';
@@ -256,7 +285,7 @@ function showVerificationRequired(userEmail = '') {
                 }
             }, 300);
         }
-    }, 12000);
+    }, 15000);
 }
 
 // Make sure this function is available globally

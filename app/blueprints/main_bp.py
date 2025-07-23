@@ -702,22 +702,7 @@ def debug_data():
         return jsonify({'error': str(e), 'traceback': str(e.__traceback__)})
 
 
-@main_bp.route('/preview1')
-def TEST_PAGE():
-    """Route to preview the TEST-PAGE.html file"""
-    return render_template('TEST_PAGE.html')
 
-
-@main_bp.route('/preview2')
-def TEST_PAGE2():
-    """Route to preview the TEST-PAGE.html file"""
-    return render_template('TEST_PAGE2.html')
-
-
-@main_bp.route('/preview3')
-def TEST_PAGE3():
-    """Route to preview the TEST-PAGE.html file"""
-    return render_template('admin/analytics.html')
 
 
 @main_bp.route('/api/dashboard-data')
@@ -1098,3 +1083,21 @@ def advanced_analytics():
         current_app.logger.error(f"Error loading advanced analytics for {current_user.username}: {e}", exc_info=True)
         flash('Failed to load advanced analytics. Please try again.', 'danger')
         return redirect(url_for('main.index'))
+
+
+@main_bp.route('/preview1')
+def TEST_PAGE1():
+    """Route to preview the TEST-PAGE.html file"""
+    return render_template('TEST_PAGE.html')
+
+
+@main_bp.route('/preview2')
+def TEST_PAGE2():
+    """Route to preview the TEST-PAGE.html file"""
+    return render_template('TEST_PAGE2.html')
+
+
+@main_bp.route('/preview3')
+def TEST_PAGE3():
+    """Route to preview the TEST-PAGE.html file"""
+    return render_template('profile.html')
