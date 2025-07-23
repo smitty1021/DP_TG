@@ -2,62 +2,141 @@
 {% from "macros/_form_helpers.html" import render_field, render_checkbox %}
 
 {% block title %}
-    {{ title or "Your Profile" }} - Trading Journal
+    {{ title or "User Profile Configuration" }} - Enterprise Trading System
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4 mb-5">
-    {# If you had a row here, adjust column classes for the profile form section #}
-    <div class="row justify-content-center"> {# Centering the remaining content #}
-        <div class="col-lg-8 col-md-10"> {# Expanded to take more width, or adjust as desired #}
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="fas fa-user-edit me-2"></i>Edit Profile Information</h4>
-                </div>
-                <div class="card-body p-4">
-                    <form method="POST" action="{{ url_for('auth.user_profile') }}" enctype="multipart/form-data" novalidate>
-                        {{ profile_form.hidden_tag() }}
+<!-- Executive Header (Required on all pages) -->
+<div class="executive-header">
+    <div class="enterprise-container">
+        <h1 class="executive-title">
+            <i class="fas fa-user-cog executive-icon"></i>
+            User Profile Configuration
+        </h1>
+        <div class="executive-subtitle">
+            Manage user account settings and security credentials
+        </div>
+    </div>
+</div>
 
-                        <div class="text-center mb-3">
-                            {% if current_user.profile_picture and current_user.profile_picture != 'default.jpg' %}
-                                <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/' + current_user.profile_picture) }}?v={{ range(1,100000)|random }}"
-                                     alt="Current Profile Picture" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
-                            {% else %}
-                                <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/default.jpg') }}"
-                                     alt="Default Profile Picture" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
-                            {% endif %}
-                        </div>
-
-                        {{ render_field(profile_form.name, input_class="form-control") }}
-                        {{ render_field(profile_form.email, input_class="form-control", type="email") }}
-                        {{ render_field(profile_form.bio, input_class="form-control", rows="3") }}
-                        {{ render_field(profile_form.profile_picture, input_class="form-control") }}
-
-                        <div class="d-grid mt-3">
-                            <button type="submit" name="submit_profile" class="btn btn-primary"><i class="fas fa-save me-2"></i>Save Profile Changes</button>
-                        </div>
-                    </form>
-                </div>
+<!-- Main Content Wrapper -->
+<div class="enterprise-container">
+    <!-- Navigation Button Group -->
+    <div class="enterprise-module mb-4">
+        <div class="module-content">
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Strategic Overview">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Configuration">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.show_admin_dashboard') }}'"
+                        title="Back to Administration Center">
+                    <i class="fas fa-tachometer-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();" title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
             </div>
+        </div>
+    </div>
 
-            <div class="card shadow-sm">
-                <div class="card-header bg-secondary text-white">
-                    <h4 class="mb-0"><i class="fas fa-key me-2"></i>Change Password</h4>
-                </div>
-                <div class="card-body p-4">
-                    <form method="POST" action="{{ url_for('auth.user_profile') }}" novalidate>
-                        {{ password_form.hidden_tag() }}
-                        {{ render_field(password_form.current_password, input_class="form-control", type="password") }}
-                        {{ render_field(password_form.new_password, input_class="form-control", type="password") }}
-                        {{ render_field(password_form.confirm_password, input_class="form-control", type="password") }}
-                        <div class="d-grid mt-3">
-                            <button type="submit" name="submit_password" class="btn btn-secondary"><i class="fas fa-lock me-2"></i>Update Password</button>
+    <div class="d-flex justify-content-center">
+        <div class="w-100" style="max-width: 900px;">
+                <!-- Profile Information Module -->
+                <div class="enterprise-module mb-4">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-user-edit module-icon"></i>
+                            Profile Information Configuration
                         </div>
-                    </form>
+                        <div class="module-meta">Update user account details and profile settings</div>
+                    </div>
+                    <div class="module-content">
+                        <form method="POST" action="{{ url_for('auth.user_profile') }}" enctype="multipart/form-data" novalidate id="profile-form">
+                            {{ profile_form.hidden_tag() }}
+
+                            <div class="d-flex justify-content-center mb-4">
+                                {% if current_user.profile_picture and current_user.profile_picture != 'default.jpg' %}
+                                    <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/' + current_user.profile_picture) }}?v={{ range(1,100000)|random }}"
+                                         alt="Current Profile Picture" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+                                {% else %}
+                                    <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/default.jpg') }}"
+                                         alt="Default Profile Picture" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+                                {% endif %}
+                            </div>
+
+                            {{ render_field(profile_form.name, input_class="form-control") }}
+                            {{ render_field(profile_form.email, input_class="form-control", type="email") }}
+                            {{ render_field(profile_form.bio, input_class="form-control", rows="3") }}
+                            {{ render_field(profile_form.profile_picture, input_class="form-control") }}
+
+                            <div class="d-grid mt-4">
+                                <button type="submit" name="submit_profile" class="btn btn-primary" onclick="showSuccess('Profile Configuration Updated Successfully')">
+                                    <i class="fas fa-save me-2"></i>Update Profile Configuration
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Security Credentials Module -->
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-shield-alt module-icon"></i>
+                            Security Credentials Management
+                        </div>
+                        <div class="module-meta">Modify authentication credentials and access controls</div>
+                    </div>
+                    <div class="module-content">
+                        <form method="POST" action="{{ url_for('auth.user_profile') }}" novalidate id="password-form">
+                            {{ password_form.hidden_tag() }}
+                            {{ render_field(password_form.current_password, input_class="form-control", type="password") }}
+                            {{ render_field(password_form.new_password, input_class="form-control", type="password") }}
+                            {{ render_field(password_form.confirm_password, input_class="form-control", type="password") }}
+                            <div class="d-grid mt-4">
+                                <button type="submit" name="submit_password" class="btn btn-outline-secondary" onclick="showSuccess('Security Credentials Updated Successfully')">
+                                    <i class="fas fa-lock me-2"></i>Update Security Credentials
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-        {# The Activity Log Column that was here has been removed #}
     </div>
-</div>
+
+<!-- Enterprise JavaScript Framework -->
+<script src="/static/js/custom-modals.js"></script>
+<script src="/static/js/notifications.js"></script>
+<script src="/static/js/unsaved-changes.js"></script>
+<script>
+    // Initialize unsaved changes detection
+    window.initEnterpriseUnsavedChanges();
+
+    // Form submission handlers with enterprise notifications
+    document.addEventListener('DOMContentLoaded', function() {
+        const profileForm = document.querySelector('form[action*="user_profile"]:first-of-type');
+        const passwordForm = document.querySelector('form[action*="user_profile"]:last-of-type');
+
+        if (profileForm) {
+            profileForm.addEventListener('submit', function(e) {
+                // Form will submit normally, success message handled by server-side flash messages
+            });
+        }
+
+        if (passwordForm) {
+            passwordForm.addEventListener('submit', function(e) {
+                // Form will submit normally, success message handled by server-side flash messages
+            });
+        }
+    });
+</script>
 {% endblock %}

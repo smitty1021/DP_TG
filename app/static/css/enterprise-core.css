@@ -261,6 +261,18 @@ button:disabled {
     color: var(--enterprise-white);
 }
 
+textarea {
+    font-family: var(--enterprise-font-family) ;
+}
+
+/* Exception for code/monospace areas where monospace is intentional */
+textarea.code,
+textarea.monospace,
+textarea[class*="code"],
+textarea[class*="monospace"] {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+}
+
 /*
 ===============================================================================
 19. UTILITY CLASSES
