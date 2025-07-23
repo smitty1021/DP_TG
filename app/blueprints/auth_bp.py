@@ -39,10 +39,10 @@ def login():
                 flash('Your account is inactive. Please contact support.', 'warning')
                 return redirect(url_for('auth.login'))
             if not user.is_email_verified:
+                # ENHANCED: Concise verification message with click here link
                 flash_message = (
-                    'Please verify your email address before logging in. '
-                    'Check your inbox for a verification link, or request a new verification link.'
-                    '<a href="{}" class="alert-link">request a new one</a>.'
+                    'Email verification required. Check your inbox or '
+                    '<a href="{}" class="alert-link"><strong>click here to resend</strong></a>.'
                 ).format(url_for('auth.resend_verification_request'))
                 flash(flash_message, 'warning')
                 return redirect(url_for('auth.login'))
@@ -56,8 +56,7 @@ def login():
 
                     # Check if user still has valid roles (unless admin)
                     if not user.is_admin() and not has_valid_discord_roles(current_roles):
-                        flash('Access denied: Your Discord roles no longer permit access to this application.',
-                              'danger')
+                        flash('Access denied: Your Discord roles no longer permit access to this application.', 'danger')
                         return redirect(url_for('auth.login'))
 
                 except Exception as e:
@@ -74,16 +73,15 @@ def login():
                 db.session.commit()
                 record_activity('login')
                 next_page = request.args.get('next')
-                flash('Logged in successfully!', 'success')
+                flash('Authentication successful! Welcome to your Enterprise Trading Platform.', 'success')
                 return redirect(next_page or url_for('main.index'))
             except Exception as e:
                 db.session.rollback()
                 current_app.logger.error(f"Error during login for {user.username}: {e}", exc_info=True)
-                flash("An error occurred during login. Please try again.", "danger")
+                flash("System error occurred during authentication. Please try again.", "danger")
         else:
-            flash('Login failed. Check username/password.', 'danger')
+            flash('Authentication failed. Please verify your credentials and try again.', 'danger')
     return render_template('auth/login.html', title='Login', form=form)
-
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():

@@ -2540,7 +2540,7 @@ html[data-bs-theme="dark"] .badge.bg-warning {
     background-color: rgba(251, 191, 36, 0.5);
     color: var(--enterprise-gray-800);
 }
-
+/*
 ===============================================================================
 DISCORD AUTHENTICATION BUTTON STYLING
 Add this section to app/static/css/enterprise-components.css
