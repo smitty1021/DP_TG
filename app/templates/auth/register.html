@@ -137,29 +137,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Convert flash messages to enterprise notifications
-    const flashMessages = document.querySelectorAll('#flash-messages-container .alert');
-    flashMessages.forEach(alert => {
-        const message = alert.textContent.trim();
-        if (message) {
-            // Remove original flash message element
-            setTimeout(() => {
-                alert.remove();
-            }, 100);
-
-            // Show enterprise notification
-            if (alert.classList.contains('alert-success')) {
-                showSuccess(message, 'Account Creation Successful');
-            } else if (alert.classList.contains('alert-danger')) {
-                showError(message, 'Account Creation Failed');
-            } else if (alert.classList.contains('alert-warning')) {
-                showWarning(message, 'Account Creation Notice');
-            } else if (alert.classList.contains('alert-info')) {
-                showInfo(message, 'Account Creation Information');
-            }
-        }
-    });
-
     // Add password strength validation
     const passwordField = document.querySelector('input[type="password"]');
     const confirmPasswordField = document.querySelector('input[name="confirm_password"]');

@@ -124,25 +124,6 @@
                 }, 5000);
             });
         }
-
-        // Convert any flash messages to enterprise notifications
-        const flashMessages = document.querySelectorAll('.alert');
-        flashMessages.forEach(alert => {
-            const message = alert.innerHTML.replace(/<button[^>]*>.*?<\/button>/gi, '').trim(); // Remove close button from HTML
-            if (message) {
-                if (alert.classList.contains('alert-success')) {
-                    showSuccess(message, 'Authentication Successful');
-                } else if (alert.classList.contains('alert-danger')) {
-                    showError(message, 'Authentication Failed');
-                } else if (alert.classList.contains('alert-warning')) {
-                    showWarning(message, 'Authentication Warning');
-                } else if (alert.classList.contains('alert-info')) {
-                    showInfo(message, 'System Information');
-                }
-                // Hide the original flash message
-                alert.style.display = 'none';
-            }
-        });
     });
     </script>
 </body>

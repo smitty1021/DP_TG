@@ -138,24 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
     });
-    const flashMessages = document.querySelectorAll('.alert:not(#unsaved-indicator)');
-    flashMessages.forEach(alert => {
-        const message = alert.textContent.trim();
-        if (message) {
-            if (alert.classList.contains('alert-success')) {
-                showSuccess(message, 'Configuration Updated');
-            } else if (alert.classList.contains('alert-danger')) {
-                showError(message, 'Configuration Error');
-            } else if (alert.classList.contains('alert-warning')) {
-                showWarning(message, 'Configuration Warning');
-            } else if (alert.classList.contains('alert-info')) {
-                showInfo(message, 'Configuration Info');
-            }
 
-            // Hide the original alert
-            alert.style.display = 'none';
-        }
-    });
 
     console.log('Enterprise Instrument Configuration Management initialized');
 });

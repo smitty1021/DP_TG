@@ -4,9 +4,14 @@
  * Part of Fortune 500 Enterprise Framework
  */
 
+// Global flag to prevent duplicate flash message processing
+let flashMessagesProcessed = false;
+
 // Enterprise notification system initialization
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Flask flash message system
+    console.log('🔧 Enterprise base initialization starting...');
+
+    // Initialize Flask flash message system (with deduplication)
     initializeFlashMessages();
 
     // Initialize sidebar functionality
@@ -20,14 +25,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize media preview system
     initializeMediaPreviewSystem();
+
+    console.log('✅ Enterprise base initialization complete');
 });
 
 /**
  * Initialize Flask flash messages with enterprise notifications
+ * Includes deduplication to prevent double processing
  */
 function initializeFlashMessages() {
+    // DEDUPLICATION: Prevent multiple processing of the same messages
+    if (flashMessagesProcessed) {
+        console.log('⚠️ Flash messages already processed, skipping duplicate call');
+        return;
+    }
+
     const flaskMessages = document.querySelectorAll('#flask-flash-data > div');
-    flaskMessages.forEach(msg => {
+    console.log(`🔔 Processing ${flaskMessages.length} flash messages...`);
+
+    if (flaskMessages.length === 0) {
+        console.log('ℹ️ No flash messages to process');
+        return;
+    }
+
+    flaskMessages.forEach((msg, index) => {
         let category = msg.dataset.category;
         const message = msg.dataset.message;
 
@@ -36,9 +57,26 @@ function initializeFlashMessages() {
         }
 
         if (message) {
+            console.log(`📨 Processing flash message ${index + 1}: [${category}] ${message.substring(0, 50)}...`);
             showNotification(message, category);
+
+            // Mark the message as processed by adding a class
+            msg.classList.add('flash-processed');
         }
     });
+
+    // Set the global flag to prevent duplicate processing
+    flashMessagesProcessed = true;
+    console.log('✅ Flash message processing completed and locked');
+
+    // Clear the flash data container after processing to prevent any future conflicts
+    setTimeout(() => {
+        const flashContainer = document.getElementById('flask-flash-data');
+        if (flashContainer) {
+            flashContainer.innerHTML = '';
+            console.log('🧹 Flash data container cleared');
+        }
+    }, 100);
 }
 
 /**
@@ -69,61 +107,22 @@ function initializeSidebar() {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const parentLi = this.parentElement;
-            const isOpen = parentLi.classList.contains('open');
 
-            // Close all other submenus
+            // Toggle current submenu
+            parentLi.classList.toggle('open');
+
+            // Close other submenus
             document.querySelectorAll('.sidebar-nav .has-submenu').forEach(function(item) {
                 if (item !== parentLi) {
                     item.classList.remove('open');
                 }
             });
-
-            // Toggle current submenu
-            if (!isOpen) {
-                parentLi.classList.add('open');
-            } else {
-                parentLi.classList.remove('open');
-            }
         });
     });
 
-    // Enhanced sidebar dropdown management on navigation
-    document.querySelectorAll('.sidebar-nav a[href]').forEach(function(link) {
-        // Skip dropdown toggle links (they don't have actual hrefs)
-        if (link.getAttribute('href') !== '#') {
-            link.addEventListener('click', function() {
-                // Close all dropdowns when navigating to a new page
-                closeSidebarSubmenus();
-            });
-        }
-    });
-
-    // Close sidebar dropdowns when sidebar collapses to icon-only mode
-    if (sidebar) {
-        sidebar.addEventListener('mouseleave', function() {
-            // Wait a short delay to ensure sidebar has collapsed
-            setTimeout(function() {
-                if (!sidebar.matches(':hover')) {
-                    closeSidebarSubmenus();
-                }
-            }, 100);
-        });
-    }
-
-    // Close all sidebar dropdowns when clicking outside sidebar
+    // Close sidebar when clicking outside (mobile)
     document.addEventListener('click', function(e) {
-        const isClickInsideSidebar = sidebar && sidebar.contains(e.target);
-
-        if (!isClickInsideSidebar) {
-            closeSidebarSubmenus();
-        }
-    });
-
-    // Close dropdowns when sidebar loses focus
-    document.addEventListener('focusin', function(e) {
-        const isClickInsideSidebar = sidebar && sidebar.contains(e.target);
-
-        if (!isClickInsideSidebar) {
+        if (sidebar && !sidebar.contains(e.target)) {
             closeSidebarSubmenus();
         }
     });
@@ -191,62 +190,17 @@ function initializeMediaPreviewSystem() {
 function showImagePreview(imageUrl, title) {
     document.getElementById('imagePreviewTitle').textContent = title;
     document.getElementById('imagePreviewImg').src = imageUrl;
-    document.getElementById('imagePreviewCard').style.display = 'block';
-
-    document.getElementById('imagePreviewCard').scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-    });
-}
-
-function closeImagePreview() {
-    document.getElementById('imagePreviewCard').style.display = 'none';
+    document.getElementById('imagePreviewModal').show();
 }
 
 function downloadCurrentImage() {
-    const imageUrl = document.getElementById('imageModalImg').src;
-    const title = document.getElementById('imageModalTitle').textContent;
-
-    const filename = title.replace(/[^a-z0-9\s]/gi, '_').replace(/\s+/g, '_').toLowerCase() + '.png';
-
-    try {
+    const imageUrl = document.getElementById('imagePreviewImg').src;
+    if (imageUrl) {
         const link = document.createElement('a');
         link.href = imageUrl;
-        link.download = filename;
-        link.target = '_blank';
+        link.download = 'enterprise-media-asset';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-
-        // Show success notification
-        showSuccess('Media Asset Download Initiated');
-    } catch (error) {
-        console.error('Direct download failed:', error);
-
-        fetch(imageUrl)
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.blob();
-            })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = filename;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-
-                // Show success notification
-                showSuccess('Media Asset Download Completed');
-            })
-            .catch(error => {
-                console.error('Fetch download failed:', error);
-                window.open(imageUrl, '_blank');
-
-                // Show info notification
-                showInfo('Media Asset Opened in New Tab');
-            });
     }
 }

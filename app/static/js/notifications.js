@@ -14,11 +14,15 @@ function showNotification(message, category = 'success', title = null, duration 
     // Create notification element
     const notification = document.createElement('div');
     notification.className = `alert alert-${category} alert-dismissible fade show`;
+
+    // FIXED: Use CSS transitions instead of conflicting animations
     notification.style.cssText = `
         margin-bottom: 10px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         border: none;
-        animation: slideUpFromBottom 0.4s ease-out;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.4s ease-out;
     `;
 
     // Build the notification content
@@ -50,10 +54,21 @@ function showNotification(message, category = 'success', title = null, duration 
     // Add to container (at the top, so new notifications appear above older ones)
     container.insertBefore(notification, container.firstChild);
 
+    // FIXED: Use requestAnimationFrame for proper timing
+    requestAnimationFrame(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateY(0)';
+    });
+
     // Auto-remove after specified duration
-    setTimeout(() => {
+    const removalTimeout = setTimeout(() => {
         if (notification.parentNode) {
-            notification.style.animation = 'slideDownToBottom 0.3s ease-in';
+            // FIXED: Single smooth exit animation
+            notification.style.transition = 'all 0.3s ease-in';
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateY(-20px)';
+
+            // Remove from DOM after animation completes
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
@@ -61,6 +76,25 @@ function showNotification(message, category = 'success', title = null, duration 
             }, 300);
         }
     }, duration);
+
+    // Handle manual close button
+    const closeButton = notification.querySelector('.btn-close');
+    if (closeButton) {
+        closeButton.addEventListener('click', () => {
+            clearTimeout(removalTimeout);
+            if (notification.parentNode) {
+                notification.style.transition = 'all 0.2s ease-in';
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateY(-10px)';
+
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 200);
+            }
+        });
+    }
 }
 
 // Convenience functions for different notification types
