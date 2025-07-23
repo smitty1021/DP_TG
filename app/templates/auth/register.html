@@ -3,54 +3,73 @@
 {% from "macros/_form_helpers.html" import render_field, render_checkbox %}
 
 {% block title %}
-    {{ title or "Create an Account" }}
+    {{ title or "Account Provisioning Request" }} - Strategic Authentication Center
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5 mb-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white text-center">
-                    <h3 class="mb-0">Create Your Account</h3>
+<!-- Main Content Wrapper -->
+<div class="enterprise-container">
+    <div class="grid grid-cols-1 justify-items-center">
+        <div class="col-span-1" style="max-width: 600px; width: 100%;">
+
+            <!-- Account Creation Module -->
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-user-plus module-icon"></i>
+                        User Account Provisioning Portal
+                    </div>
                 </div>
-                <div class="card-body p-4">
+                <div class="module-content">
+
+                    <!-- Flash Messages Container -->
                     {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                    {{ message|safe }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                </div>
-                            {% endfor %}
+                            <div id="flash-messages-container" class="mb-4">
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                        {{ message|safe }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            </div>
                         {% endif %}
                     {% endwith %}
 
+                    <!-- Account Registration Form -->
                     <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
                         {{ form.hidden_tag() }}
 
-                        {{ render_field(form.username,
-                                        label_visible=true,
-                                        input_class="form-control form-control-lg",
-                                        placeholder="Choose a unique username") }}
+                        <div class="form-group mb-3">
+                            {{ render_field(form.username,
+                                            label_visible=true,
+                                            input_class="form-control form-control-lg",
+                                            placeholder="Choose a unique username") }}
+                        </div>
 
-                        {{ render_field(form.email,
-                                        label_visible=true,
-                                        input_class="form-control form-control-lg",
-                                        placeholder="your.email@example.com",
-                                        type="email") }}
+                        <div class="form-group mb-3">
+                            {{ render_field(form.email,
+                                            label_visible=true,
+                                            input_class="form-control form-control-lg",
+                                            placeholder="your.email@enterprise.com",
+                                            type="email") }}
+                        </div>
 
-                        {{ render_field(form.password,
-                                        label_visible=true,
-                                        input_class="form-control form-control-lg",
-                                        placeholder="Create a strong password",
-                                        type="password") }}
+                        <div class="form-group mb-3">
+                            {{ render_field(form.password,
+                                            label_visible=true,
+                                            input_class="form-control form-control-lg",
+                                            placeholder="Create a strong password",
+                                            type="password") }}
+                        </div>
 
-                        {{ render_field(form.confirm_password,
-                                        label_visible=true,
-                                        input_class="form-control form-control-lg",
-                                        placeholder="Confirm your password",
-                                        type="password") }}
+                        <div class="form-group mb-4">
+                            {{ render_field(form.confirm_password,
+                                            label_visible=true,
+                                            input_class="form-control form-control-lg",
+                                            placeholder="Confirm your password",
+                                            type="password") }}
+                        </div>
 
                         {# Example if you had a 'remember me' checkbox on registration form #}
                         {# {{ render_checkbox(form.remember_me, input_class="custom-checkbox-class") }} #}
@@ -59,13 +78,161 @@
                             {{ form.submit(class="btn btn-primary btn-lg w-100") }}
                         </div>
                     </form>
-                    <hr class="my-4">
-                    <div class="text-center">
-                        <p class="mb-0">Already have an account? <a href="{{ url_for('auth.login') }}">Sign In Here</a></p>
+
+                    <!-- Navigation Actions -->
+                    <div class="text-center mt-4">
+                        <p class="mb-0">Already have an account?
+                            <a href="{{ url_for('auth.login') }}" class="text-decoration-none">
+                                Access Authentication Portal
+                            </a>
+                        </p>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
+
+<!-- Enterprise JavaScript Framework -->
+<script src="/static/js/custom-modals.js"></script>
+<script src="/static/js/notifications.js"></script>
+<script src="/static/js/unsaved-changes.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize enterprise unsaved changes detection for registration form
+    const unsavedChanges = window.initEnterpriseUnsavedChanges({
+        formSelector: 'form',
+        excludeInputs: ['input[type="hidden"]', 'input[name="csrf_token"]']
+    });
+
+    // Handle form submission with enterprise notifications
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Mark as submitting to prevent warnings
+            if (window.enterpriseUnsavedChanges) {
+                window.enterpriseUnsavedChanges.markAsSubmitting();
+            }
+
+            // Show loading indicator
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Account Request...';
+            submitButton.disabled = true;
+
+            // Re-enable button after delay if form validation fails
+            setTimeout(() => {
+                if (submitButton.disabled) {
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
+                    // Reset unsaved changes state if form didn't submit
+                    if (window.enterpriseUnsavedChanges) {
+                        window.enterpriseUnsavedChanges.reset();
+                    }
+                }
+            }, 5000);
+        });
+    }
+
+    // Convert flash messages to enterprise notifications
+    const flashMessages = document.querySelectorAll('#flash-messages-container .alert');
+    flashMessages.forEach(alert => {
+        const message = alert.textContent.trim();
+        if (message) {
+            // Remove original flash message element
+            setTimeout(() => {
+                alert.remove();
+            }, 100);
+
+            // Show enterprise notification
+            if (alert.classList.contains('alert-success')) {
+                showSuccess(message, 'Account Creation Successful');
+            } else if (alert.classList.contains('alert-danger')) {
+                showError(message, 'Account Creation Failed');
+            } else if (alert.classList.contains('alert-warning')) {
+                showWarning(message, 'Account Creation Notice');
+            } else if (alert.classList.contains('alert-info')) {
+                showInfo(message, 'Account Creation Information');
+            }
+        }
+    });
+
+    // Add password strength validation
+    const passwordField = document.querySelector('input[type="password"]');
+    const confirmPasswordField = document.querySelector('input[name="confirm_password"]');
+
+    if (passwordField) {
+        passwordField.addEventListener('input', function() {
+            const password = this.value;
+            if (password.length > 0 && password.length < 8) {
+                showWarning('Password should be at least 8 characters long', 'Security Notice');
+            }
+        });
+    }
+
+    // Add email format validation
+    const emailField = document.querySelector('input[type="email"]');
+    if (emailField) {
+        emailField.addEventListener('blur', function() {
+            const email = this.value.trim();
+            if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                showWarning('Please enter a valid corporate email address', 'Email Format Notice');
+            }
+        });
+    }
+
+    // Add password confirmation validation
+    if (confirmPasswordField && passwordField) {
+        confirmPasswordField.addEventListener('blur', function() {
+            if (this.value && passwordField.value && this.value !== passwordField.value) {
+                showWarning('Password confirmation does not match', 'Validation Notice');
+            }
+        });
+    }
+
+    // Handle navigation with enterprise confirmation system
+    document.querySelectorAll('a[href]:not([href="#"])').forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (window.enterpriseUnsavedChanges && window.enterpriseUnsavedChanges.hasUnsavedChanges) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+
+                showCustomConfirmation(
+                    'Unsaved Configuration Changes',
+                    'Account registration form has unsaved changes. Continue without completing registration?',
+                    'btn-warning',
+                    'exclamation-triangle'
+                ).then((confirmed) => {
+                    if (confirmed) {
+                        window.location.href = href;
+                    }
+                });
+            }
+        });
+    });
+
+    // Username availability feedback (optional enhancement)
+    const usernameField = document.querySelector('input[name="username"]');
+    if (usernameField) {
+        let usernameTimeout;
+        usernameField.addEventListener('input', function() {
+            clearTimeout(usernameTimeout);
+            const username = this.value.trim();
+
+            if (username.length >= 3) {
+                usernameTimeout = setTimeout(() => {
+                    // This would typically check availability via AJAX
+                    // For now, just provide format guidance
+                    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                        showWarning('Username should contain only letters, numbers, and underscores', 'Format Notice');
+                    }
+                }, 500);
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

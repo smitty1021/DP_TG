@@ -15,103 +15,77 @@
 
 {% block content %}
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
 <body>
     <!-- Main Content Wrapper -->
     <div class="enterprise-container">
         <div class="d-flex justify-content-center py-5">
             <div class="col-md-6 col-lg-5 col-xl-4">
-                <!-- Authentication Module -->
+                <!-- Login Card -->
                 <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-user-circle module-icon"></i>
-                            User Authentication
-                        </div>
-                        <div class="module-meta"></div>
-                    </div>
                     <div class="module-content">
-                        <!-- Authentication Form -->
+                        <!-- Welcome Message -->
+                        <div class="text-center mb-4">
+                            <h2 class="mb-3">Welcome to the Pack Trade Group!</h2>
+                            <p class="text-muted">Login to continue to the Pack Trade Group Trading Journal</p>
+                        </div>
+
+                        <!-- Primary Authentication Form -->
                         <form method="POST" action="{{ url_for('auth.login') }}{{ '?next=' + request.args.get('next', '') if request.args.get('next') else '' }}" novalidate>
                             {{ form.hidden_tag() }}
 
-                            <!-- Credential Input Section -->
-                            <div class="enterprise-module mb-3">
-                                <div class="module-content">
-                                    {{ render_field(form.username,
-                                                    label_visible=true,
-                                                    input_class="form-control form-control-lg",
-                                                    placeholder="Enter authorized username") }}
+                            <!-- Username Field -->
+                            <div class="form-group mb-3">
+                                {{ render_field(form.username,
+                                                label_visible=true,
+                                                input_class="form-control form-control-lg",
+                                                placeholder="Email or Username") }}
+                            </div>
 
-                                    {{ render_field(form.password,
-                                                    label_visible=true,
-                                                    input_class="form-control form-control-lg",
-                                                    placeholder="Enter secure password",
-                                                    type="password") }}
+                            <!-- Password Field -->
+                            <div class="form-group mb-3">
+                                {{ render_field(form.password,
+                                                label_visible=true,
+                                                input_class="form-control form-control-lg",
+                                                placeholder="Please enter your password",
+                                                type="password") }}
+                            </div>
 
-                                    <!-- Authentication Options -->
-                                    <div class="d-flex justify-content-between align-items-center my-4">
-                                        {% if form.remember %}
-                                            <div class="form-check">
-                                                {{ render_checkbox(form.remember, label_visible=true, input_class="form-check-input") }}
-                                            </div>
-                                        {% endif %}
-
-                                    </div>
-
-                                    <!-- Authentication Action -->
-                                    <div class="d-grid">
-                                        <button type="submit" class="btn btn-primary btn-lg">
-                                            <i class="fas fa-sign-in-alt me-2"></i>
-                                            Authenticate Access
-                                        </button>
-                                        <div class="module-content text-center">
-                                            <a href="{{ url_for('auth.request_password_reset') }}" class="text-primary">
-                                                <i class="fas fa-key me-1 text-primary"></i>Password Recovery
-                                            </a>
-                                        </div>
-                                        <div class="module-content text-center">
-                                            <p class="text-muted mb-3">New to the trading operations platform?</p>
-                                            <a href="{{ url_for('auth.register') }}" class="text-primary">
-                                                <i class="fas fa-clipboard-list me-2 text-primary"></i>
-                                                Request Account Access
-                                            </a>
-                                        </div>
-                                    </div>
+                            <!-- Remember Me Option -->
+                            {% if form.remember %}
+                                <div class="form-check mb-4">
+                                    {{ render_checkbox(form.remember, label_visible=true, input_class="form-check-input") }}
                                 </div>
+                            {% endif %}
+
+                            <!-- Login Button -->
+                            <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    Log in
+                                </button>
+                            </div>
+
+                            <!-- Discord Button -->
+                            <div class="text-center mb-4">
+                                <a href="{{ url_for('auth.discord_login') }}" class="btn p-2">
+                                    <i class="fab fa-discord" style="font-size: 2rem; color: #5865F2;"></i>
+                                </a>
+                            </div>
+
+                            <!-- Account Recovery and Registration -->
+                            <div class="text-center">
+                                <a href="{{ url_for('auth.request_password_reset') }}" class="text-primary d-block mb-3">
+                                    <i class="fas fa-key me-1"></i>
+                                    Credential Recovery
+                                </a>
+
+                                <p class="text-muted mb-2">New to the trading operations platform?</p>
+                                <a href="{{ url_for('auth.register') }}" class="text-primary">
+                                    <i class="fas fa-clipboard-list me-2"></i>
+                                    Request System Access
+                                </a>
                             </div>
                         </form>
-                    </div>
-                    <div class="enterprise-module mt-4">
-                        <div class="module-header">
-                            <div class="module-title">
-                                <i class="fab fa-discord module-icon" style="color: #5865F2;"></i>
-                                Discord Authentication
-                            </div>
-                            <div class="module-meta">Recommended for trading community members</div>
-                        </div>
-                        <div class="module-content">
-                            <div class="text-center mb-3">
-                                <p class="text-muted">
-                                    Join Random's trading community with Discord authentication.<br>
-                                    <small>Get instant access based on your Discord server roles.</small>
-                                </p>
-                            </div>
-
-                            <a href="{{ url_for('auth.discord_login') }}"
-                               class="btn btn-discord btn-lg w-100 d-flex align-items-center justify-content-center">
-                                <i class="fab fa-discord me-2"></i>
-                                Continue with Discord
-                            </a>
-
-                            <div class="text-center mt-3">
-                                <small class="text-muted">
-                                    Discord login automatically syncs your server permissions<br>
-                                    and provides access to premium features.
-                                </small>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -121,31 +95,21 @@
     <!-- Enterprise JavaScript Framework -->
     <script src="/static/js/custom-modals.js"></script>
     <script src="/static/js/notifications.js"></script>
-    <script src="/static/js/unsaved-changes.js"></script>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize enterprise unsaved changes detection
-        // For login forms, we're more lenient - only track if user starts typing
-        const unsavedChanges = window.initEnterpriseUnsavedChanges({
-            formSelector: 'form',
-            excludeInputs: ['input[type="hidden"]', 'input[name="csrf_token"]', 'input[name="remember"]']
-        });
+        // Note: Unsaved changes detection is intentionally NOT initialized for login page
+        // as per user requirements
 
         // Handle form submission with enterprise notifications
         const form = document.querySelector('form');
         if (form) {
             form.addEventListener('submit', function(e) {
-                // Mark as submitting to prevent warnings
-                if (window.enterpriseUnsavedChanges) {
-                    window.enterpriseUnsavedChanges.markAsSubmitting();
-                }
-
                 // Show loading indicator
                 const submitButton = form.querySelector('button[type="submit"]');
                 const originalText = submitButton.innerHTML;
 
-                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Authenticating...';
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
                 submitButton.disabled = true;
 
                 // Note: Form will submit normally, this just provides user feedback
@@ -156,10 +120,6 @@
                     if (submitButton.disabled) {
                         submitButton.innerHTML = originalText;
                         submitButton.disabled = false;
-                        // Reset unsaved changes state if form didn't submit
-                        if (window.enterpriseUnsavedChanges) {
-                            window.enterpriseUnsavedChanges.reset();
-                        }
                     }
                 }, 5000);
             });
@@ -168,7 +128,7 @@
         // Convert any flash messages to enterprise notifications
         const flashMessages = document.querySelectorAll('.alert');
         flashMessages.forEach(alert => {
-            const message = alert.textContent.trim();
+            const message = alert.innerHTML.replace(/<button[^>]*>.*?<\/button>/gi, '').trim(); // Remove close button from HTML
             if (message) {
                 if (alert.classList.contains('alert-success')) {
                     showSuccess(message, 'Authentication Successful');
@@ -188,62 +148,3 @@
 </body>
 </html>
 {% endblock %}
-
-<style>
-.btn-discord {
-    background-color: #5865F2;
-    border-color: #5865F2;
-    color: white;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-.btn-discord:hover {
-    background-color: #4752C4;
-    border-color: #4752C4;
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(88, 101, 242, 0.3);
-}
-
-.btn-discord:focus,
-.btn-discord:active {
-    background-color: #4752C4;
-    border-color: #4752C4;
-    color: white;
-    box-shadow: 0 0 0 0.2rem rgba(88, 101, 242, 0.25);
-}
-
-.module-icon {
-    font-size: 1.2em;
-}
-
-/* Alternative divider between login methods */
-.login-divider {
-    position: relative;
-    text-align: center;
-    margin: 2rem 0;
-}
-
-.login-divider::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background-color: #dee2e6;
-}
-
-.login-divider span {
-    background-color: white;
-    padding: 0 1rem;
-    color: #6c757d;
-    font-size: 0.875rem;
-}
-</style>
-
-<!-- Optional: Add a divider between traditional login and Discord login -->
-<div class="login-divider">
-    <span>or</span>
-</div>

@@ -2541,6 +2541,215 @@ html[data-bs-theme="dark"] .badge.bg-warning {
     color: var(--enterprise-gray-800);
 }
 
+===============================================================================
+DISCORD AUTHENTICATION BUTTON STYLING
+Add this section to app/static/css/enterprise-components.css
+===============================================================================
+*/
+
+/* Discord Button Styling */
+.btn-discord {
+    background-color: #5865F2;
+    border-color: #5865F2;
+    color: var(--enterprise-white);
+    font-weight: 600;
+    transition: all var(--enterprise-transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-discord:hover {
+    background-color: #4752C4;
+    border-color: #4752C4;
+    color: var(--enterprise-white);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
+}
+
+.btn-discord:focus,
+.btn-discord:active {
+    background-color: #4752C4;
+    border-color: #4752C4;
+    color: var(--enterprise-white);
+    box-shadow: 0 0 0 0.2rem rgba(88, 101, 242, 0.25);
+}
+
+.btn-discord:disabled,
+.btn-discord.disabled {
+    background-color: #5865F2;
+    border-color: #5865F2;
+    opacity: 0.5;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Discord Icon Styling */
+.btn-discord .fab.fa-discord {
+    color: var(--enterprise-white);
+    font-size: 1.1em;
+}
+
+/* Dark Theme Support for Discord Button */
+html[data-bs-theme="dark"] .btn-discord {
+    background-color: #5865F2;
+    border-color: #5865F2;
+}
+
+html[data-bs-theme="dark"] .btn-discord:hover {
+    background-color: #4752C4;
+    border-color: #4752C4;
+    box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
+}
+
+html[data-bs-theme="dark"] .btn-discord:focus,
+html[data-bs-theme="dark"] .btn-discord:active {
+    background-color: #4752C4;
+    border-color: #4752C4;
+    box-shadow: 0 0 0 0.2rem rgba(88, 101, 242, 0.3);
+}
+
+/*
+===============================================================================
+NOTIFICATION SYSTEM POSITIONING FIX
+===============================================================================
+*/
+
+/* Notification Container Positioning */
+.flash-message-container,
+#dynamic-notification-container {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--enterprise-z-tooltip, 1080);
+    max-width: 600px;
+    width: 95vw;
+    pointer-events: none;
+}
+
+/* Individual notification styling */
+.flash-message-container .alert,
+#dynamic-notification-container .alert {
+    pointer-events: auto;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: none;
+    border-radius: var(--enterprise-radius);
+    backdrop-filter: blur(10px);
+    word-wrap: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
+    line-height: 1.5;
+    padding: 1rem 1.25rem;
+    text-align: center;
+}
+
+/* Notification animations */
+@keyframes slideUpFromBottom {
+    from {
+        opacity: 0;
+        transform: translateY(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideDownToBottom {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-100px);
+    }
+}
+
+/* Responsive adjustments for notifications */
+@media (max-width: 576px) {
+    .flash-message-container,
+    #dynamic-notification-container {
+        top: 0.5rem;
+        left: 0.5rem;
+        right: 0.5rem;
+        transform: none;
+        width: auto;
+        max-width: none;
+    }
+
+    .flash-message-container .alert,
+    #dynamic-notification-container .alert {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+/* Enterprise Notification Color Styling */
+/* SUCCESS (Green) - Using Enterprise Success Color */
+.flash-message-container .alert-success,
+#dynamic-notification-container .alert-success {
+    background-color: rgba(0, 112, 192, 0.15);
+    border: 1px solid rgba(0, 112, 192, 0.4);
+    color: var(--enterprise-success);
+}
+
+/* DANGER/ERROR (Red) - Using Enterprise Danger Color */
+.flash-message-container .alert-danger,
+#dynamic-notification-container .alert-danger {
+    background-color: rgba(209, 52, 56, 0.15);
+    border: 1px solid rgba(209, 52, 56, 0.4);
+    color: var(--enterprise-danger);
+}
+
+/* WARNING (Orange-Yellow) - Using Enterprise Warning Color */
+.flash-message-container .alert-warning,
+#dynamic-notification-container .alert-warning {
+    background-color: rgba(255, 140, 0, 0.15);
+    border: 1px solid rgba(255, 140, 0, 0.4);
+    color: var(--enterprise-warning);
+}
+
+/* INFO (Blue) - Using Enterprise Info Color */
+.flash-message-container .alert-info,
+#dynamic-notification-container .alert-info {
+    background-color: rgba(23, 162, 184, 0.15);
+    border: 1px solid rgba(23, 162, 184, 0.4);
+    color: var(--enterprise-info);
+}
+
+/* Dark theme support for notifications */
+html[data-bs-theme="dark"] .flash-message-container .alert,
+html[data-bs-theme="dark"] #dynamic-notification-container .alert {
+    backdrop-filter: blur(10px);
+}
+
+html[data-bs-theme="dark"] .alert-success {
+    background-color: rgba(0, 112, 192, 0.25);
+    border: 1px solid rgba(0, 112, 192, 0.6);
+    color: #4db8ff;
+}
+
+html[data-bs-theme="dark"] .alert-danger {
+    background-color: rgba(209, 52, 56, 0.25);
+    border: 1px solid rgba(209, 52, 56, 0.6);
+    color: #ff6b70;
+}
+
+html[data-bs-theme="dark"] .alert-warning {
+    background-color: rgba(255, 140, 0, 0.25);
+    border: 1px solid rgba(255, 140, 0, 0.6);
+    color: #ffb84d;
+}
+
+html[data-bs-theme="dark"] .alert-info {
+    background-color: rgba(23, 162, 184, 0.25);
+    border: 1px solid rgba(23, 162, 184, 0.6);
+    color: #5bcae8;
+}
+
+
 /*
 ===============================================================================
 24. COMPONENT PERFORMANCE OPTIMIZATIONS

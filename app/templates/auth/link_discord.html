@@ -1,10 +1,241 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+<!-- Create: app/templates/auth/link_discord.html -->
+{% extends "base.html" %}
+{% block title %}Link Discord Account - Trading Journal{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<div class="enterprise-container">
+    <div class="d-flex justify-content-center py-5">
+        <div class="col-md-8 col-lg-6">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fab fa-discord module-icon" style="color: #5865F2;"></i>
+                        Link Discord Account
+                    </div>
+                </div>
+                <div class="module-content">
+                    <div class="text-center mb-4">
+                        <i class="fab fa-discord" style="font-size: 4rem; color: #5865F2;"></i>
+                        <h3 class="mt-3">Connect Your Discord Account</h3>
+                        <p class="text-muted">
+                            Link your Discord account to unlock premium features and
+                            get automatic access based on your server roles.
+                        </p>
+                    </div>
+
+                    <div class="row text-center mb-4">
+                        <div class="col-md-4">
+                            <i class="fas fa-chart-line text-primary mb-2" style="font-size: 2rem;"></i>
+                            <h6>Portfolio Analytics</h6>
+                            <small class="text-muted">Advanced performance tracking</small>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fas fa-history text-success mb-2" style="font-size: 2rem;"></i>
+                            <h6>Backtesting Tools</h6>
+                            <small class="text-muted">Captain Backtest features</small>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fas fa-rocket text-warning mb-2" style="font-size: 2rem;"></i>
+                            <h6>Live Trading</h6>
+                            <small class="text-muted">Real-time trading interface</small>
+                        </div>
+                    </div>
+
+                    <form method="POST">
+                        <button type="submit" class="btn btn-discord btn-lg w-100 mb-3">
+                            <i class="fab fa-discord me-2"></i>
+                            Connect Discord Account
+                        </button>
+                    </form>
+
+                    <div class="text-center">
+                        <a href="{{ url_for('auth.user_profile') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Back to Profile
+                        </a>
+                    </div>
+
+                    <div class="alert alert-info mt-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> Your Discord server roles will determine which features you can access.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- Create: app/templates/portfolio_analytics.html -->
+{% extends "base.html" %}
+{% block title %}Portfolio Analytics - Trading Journal{% endblock %}
+
+{% block head_extra %}
+<!-- Include the Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/enterprise-all.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- THIS IS WHERE YOUR PORTFOLIO ANALYTICS DASHBOARD GOES -->
+<!-- Copy the HTML content from the portfolio dashboard artifact we created earlier -->
+
+<!-- Executive Header -->
+<header class="executive-header">
+    <div class="header-brand">
+        <h1 class="corporate-title">Portfolio Analytics</h1>
+        <span class="division-subtitle">Investment Performance Intelligence</span>
+    </div>
+    <div class="header-actions">
+        <button class="btn-executive btn-primary">Generate Report</button>
+        <button class="btn-executive btn-secondary">Export Data</button>
+    </div>
+</header>
+
+<!-- Main Container -->
+<main class="enterprise-container">
+    <!-- Add a Discord role indicator -->
+    <div class="alert alert-success mb-4">
+        <i class="fab fa-discord me-2"></i>
+        <strong>Premium Access Granted</strong> - You have access to Portfolio Analytics through your Discord role:
+        <span class="badge bg-primary">{{ permissions.access_level|title }}</span>
+    </div>
+
+    <!-- Copy the rest of the portfolio dashboard content here -->
+    <!-- For now, we'll add a placeholder -->
+    <div class="enterprise-module">
+        <div class="module-header">
+            <h2 class="section-title">Portfolio Dashboard</h2>
+            <p class="text-muted">Your premium portfolio analytics dashboard</p>
+        </div>
+        <div class="module-content">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Welcome to Portfolio Analytics</h5>
+                            <p class="card-text">
+                                This is your premium portfolio analytics dashboard. Your Discord role
+                                <strong>{{ permissions.access_level|title }}</strong> grants you access to this feature.
+                            </p>
+                            <p class="text-muted">
+                                Full dashboard implementation coming soon. This demonstrates the Discord
+                                role-based access control is working correctly.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Your Permissions</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    Portfolio Analytics
+                                    <span class="badge bg-success">Granted</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    Backtesting Tools
+                                    <span class="badge bg-{{ 'success' if permissions.can_access_backtesting else 'secondary' }}">
+                                        {{ 'Granted' if permissions.can_access_backtesting else 'Not Available' }}
+                                    </span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    Live Trading
+                                    <span class="badge bg-{{ 'success' if permissions.can_access_live_trading else 'secondary' }}">
+                                        {{ 'Granted' if permissions.can_access_live_trading else 'Not Available' }}
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+<!-- Create: app/templates/backtesting.html -->
+{% extends "base.html" %}
+{% block title %}Captain Backtest - Trading Journal{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <h1 class="section-title">
+                        <i class="fas fa-history me-2"></i>
+                        Captain Backtest
+                    </h1>
+                    <p class="text-muted">Premium backtesting tools for Random's trading systems</p>
+                </div>
+                <div class="module-content">
+                    <div class="alert alert-info">
+                        <i class="fab fa-discord me-2"></i>
+                        <strong>Premium Feature Unlocked</strong> - Access granted through Discord role:
+                        <span class="badge bg-primary">{{ permissions.access_level|title }}</span>
+                    </div>
+
+                    <div class="text-center py-5">
+                        <i class="fas fa-history" style="font-size: 4rem; color: #6c757d;"></i>
+                        <h3 class="mt-3">Backtesting Tools</h3>
+                        <p class="text-muted">
+                            Your premium backtesting interface will be implemented here.<br>
+                            This demonstrates Discord role-based access is working.
+                        </p>
+                        <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- Create: app/templates/live_trading.html -->
+{% extends "base.html" %}
+{% block title %}Live Trading - Trading Journal{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <h1 class="section-title">
+                        <i class="fas fa-rocket me-2"></i>
+                        Live Trading Interface
+                    </h1>
+                    <p class="text-muted">Real-time trading interface for VIP members</p>
+                </div>
+                <div class="module-content">
+                    <div class="alert alert-warning">
+                        <i class="fab fa-discord me-2"></i>
+                        <strong>VIP Feature Unlocked</strong> - Access granted through Discord role:
+                        <span class="badge bg-primary">{{ permissions.access_level|title }}</span>
+                    </div>
+
+                    <div class="text-center py-5">
+                        <i class="fas fa-rocket" style="font-size: 4rem; color: #ffc107;"></i>
+                        <h3 class="mt-3">Live Trading Interface</h3>
+                        <p class="text-muted">
+                            Your VIP live trading interface will be implemented here.<br>
+                            This demonstrates Discord VIP role access is working.
+                        </p>
+                        <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %>

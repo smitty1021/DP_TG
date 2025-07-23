@@ -41,7 +41,7 @@ def login():
             if not user.is_email_verified:
                 flash_message = (
                     'Please verify your email address before logging in. '
-                    'Check your inbox for a verification link, or '
+                    'Check your inbox for a verification link, or request a new verification link.'
                     '<a href="{}" class="alert-link">request a new one</a>.'
                 ).format(url_for('auth.resend_verification_request'))
                 flash(flash_message, 'warning')
