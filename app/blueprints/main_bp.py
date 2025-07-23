@@ -21,6 +21,7 @@ from sqlalchemy.orm import joinedload
 from app.utils.discord_decorators import require_discord_permission, sync_discord_roles_if_needed
 from app.utils import record_activity
 
+
 # Define the blueprint
 main_bp = Blueprint('main', __name__)
 
@@ -1007,11 +1008,7 @@ def prepare_simplified_trades_data(trades):
 # Add these imports to the top of your app/blueprints/main_bp.py file
 # (if they're not already there):
 
-from app.utils.discord_decorators import require_discord_permission, sync_discord_roles_if_needed
-from app.utils import record_activity
 
-
-# Then add these routes at the end of your main_bp.py file, before the last line:
 
 @main_bp.route('/portfolio-analytics')
 @login_required

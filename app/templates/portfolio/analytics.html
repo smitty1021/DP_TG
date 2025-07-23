@@ -1,0 +1,584 @@
+<!-- app/templates/portfolio/analytics.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .portfolio-dashboard {
+        padding: 2rem 0;
+    }
+
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .kpi-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+    }
+
+    .kpi-title {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .kpi-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .kpi-change {
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .kpi-change.positive { color: #28a745; }
+    .kpi-change.negative { color: #dc3545; }
+    .kpi-change.neutral { color: #6c757d; }
+
+    .chart-container {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+        margin-bottom: 2rem;
+        height: 400px;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+        overflow-x: auto;
+    }
+
+    .filter-controls {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+        margin-bottom: 2rem;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .btn-refresh {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .btn-refresh:hover {
+        background: #0056b3;
+    }
+
+    .loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+        .kpi-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid portfolio-dashboard">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1>Portfolio Analytics</h1>
+                    <p class="text-muted">Performance Intelligence Dashboard - Random's Trading Journal</p>
+                </div>
+                <div>
+                    <button class="btn btn-refresh" onclick="refreshDashboard()">
+                        <i class="fas fa-sync-alt"></i> Refresh Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="row">
+        <div class="col-12">
+            <div class="filter-controls">
+                <h5 class="mb-3">Analysis Parameters</h5>
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label for="dateRange">Date Range</label>
+                        <select id="dateRange" class="form-control" onchange="updateFilters()">
+                            <option value="7">Last 7 Days</option>
+                            <option value="30" selected>Last 30 Days</option>
+                            <option value="90">Last 90 Days</option>
+                            <option value="365">Last Year</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tradingModel">Trading Model</label>
+                        <select id="tradingModel" class="form-control" onchange="updateFilters()">
+                            <option value="all">All Models</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="instrument">Instrument</label>
+                        <select id="instrument" class="form-control" onchange="updateFilters()">
+                            <option value="all">All Instruments</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="classification">Classification</label>
+                        <select id="classification" class="form-control" onchange="updateFilters()">
+                            <option value="all">All Classifications</option>
+                            <option value="DWP">DWP (Directional With Purpose)</option>
+                            <option value="DNP">DNP (Directional No Purpose)</option>
+                            <option value="R1">R1 (Range Expansion)</option>
+                            <option value="R2">R2 (Range Contraction)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row">
+        <div class="col-12">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">Total P&L</div>
+                    <div class="kpi-value" id="totalPnL">$0.00</div>
+                    <div class="kpi-change neutral">
+                        <span>Loading...</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Win Rate</div>
+                    <div class="kpi-value" id="winRate">0%</div>
+                    <div class="kpi-change neutral">
+                        <span>Loading...</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Total Trades</div>
+                    <div class="kpi-value" id="totalTrades">0</div>
+                    <div class="kpi-change neutral">
+                        <span>Loading...</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-title">Avg Risk/Reward</div>
+                    <div class="kpi-value" id="avgRiskReward">1:0</div>
+                    <div class="kpi-change neutral">
+                        <span>Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Table -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h5>Cumulative P&L Performance</h5>
+                <canvas id="pnlChart"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h5>Performance by Trading Model</h5>
+                <canvas id="modelChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Trades Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="table-container">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Recent Trading Activity</h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="exportData()">
+                        <i class="fas fa-download"></i> Export CSV
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="tradesTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Model</th>
+                                <th>Instrument</th>
+                                <th>Classification</th>
+                                <th>P&L</th>
+                                <th>R:R</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tradesTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center">Loading trades...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js - Use different CDN version without ES6 modules -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+<script>
+let portfolioCharts = {};
+let currentFilters = {
+    days: 30,
+    model: 'all',
+    instrument: 'all',
+    classification: 'all'
+};
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    loadDashboardData();
+    loadFilterOptions();
+});
+
+function initializeCharts() {
+    // P&L Chart
+    const pnlCtx = document.getElementById('pnlChart').getContext('2d');
+    portfolioCharts.pnlChart = new Chart(pnlCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Cumulative P&L',
+                data: [],
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return ' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Model Performance Chart
+    const modelCtx = document.getElementById('modelChart').getContext('2d');
+    portfolioCharts.modelChart = new Chart(modelCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [
+                    '#007bff', '#28a745', '#ffc107',
+                    '#17a2b8', '#dc3545', '#6f42c1'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+async function loadDashboardData() {
+    try {
+        // Show loading state
+        document.querySelector('.portfolio-dashboard').classList.add('loading');
+
+        // Load metrics
+        await loadMetrics();
+
+        // Load trades
+        await loadTrades();
+
+        // Load chart data
+        await loadChartData();
+
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        showError('Failed to load dashboard data');
+    } finally {
+        // Remove loading state
+        document.querySelector('.portfolio-dashboard').classList.remove('loading');
+    }
+}
+
+async function loadMetrics() {
+    try {
+        const params = new URLSearchParams(currentFilters);
+        const response = await fetch(`/portfolio/api/metrics?${params}`);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        const metrics = await response.json();
+        updateKPICards(metrics);
+    } catch (error) {
+        console.error('Error loading metrics:', error);
+        throw error;
+    }
+}
+
+async function loadTrades() {
+    try {
+        const params = new URLSearchParams({
+            ...currentFilters,
+            page: 1,
+            per_page: 25
+        });
+        const response = await fetch(`/portfolio/api/trades?${params}`);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+        updateTradesTable(data.trades);
+    } catch (error) {
+        console.error('Error loading trades:', error);
+        throw error;
+    }
+}
+
+async function loadChartData() {
+    try {
+        const params = new URLSearchParams(currentFilters);
+        const response = await fetch(`/portfolio/api/chart-data?${params}`);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        const chartData = await response.json();
+        updateCharts(chartData);
+    } catch (error) {
+        console.error('Error loading chart data:', error);
+        throw error;
+    }
+}
+
+async function loadFilterOptions() {
+    try {
+        // Load trading models
+        const modelsResponse = await fetch('/portfolio/api/trading-models');
+        if (modelsResponse.ok) {
+            const models = await modelsResponse.json();
+            populateSelect('tradingModel', models, 'name', 'name');
+        }
+
+        // Load instruments
+        const instrumentsResponse = await fetch('/portfolio/api/instruments');
+        if (instrumentsResponse.ok) {
+            const instruments = await instrumentsResponse.json();
+            populateSelect('instrument', instruments, 'symbol', 'symbol');
+        }
+    } catch (error) {
+        console.error('Error loading filter options:', error);
+    }
+}
+
+function populateSelect(selectId, options, valueField, textField) {
+    const select = document.getElementById(selectId);
+    const currentValue = select.value;
+
+    // Keep the "All" option and add new options
+    const allOption = select.querySelector('option[value="all"]');
+    select.innerHTML = '';
+    if (allOption) select.appendChild(allOption);
+
+    options.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option[valueField];
+        optionElement.textContent = option[textField];
+        select.appendChild(optionElement);
+    });
+
+    // Restore previous selection
+    if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+        select.value = currentValue;
+    }
+}
+
+function updateKPICards(metrics) {
+    document.getElementById('totalPnL').textContent = `${metrics.totalPnL.toFixed(2)}`;
+    document.getElementById('winRate').textContent = `${metrics.winRate}%`;
+    document.getElementById('totalTrades').textContent = metrics.totalTrades;
+    document.getElementById('avgRiskReward').textContent = `1:${metrics.avgRiskReward}`;
+
+    // Update change indicators (simplified for now)
+    const changeElements = document.querySelectorAll('.kpi-change');
+    changeElements.forEach(el => {
+        el.innerHTML = '<span>Updated</span>';
+        el.className = 'kpi-change positive';
+    });
+}
+
+function updateTradesTable(trades) {
+    const tbody = document.getElementById('tradesTableBody');
+    tbody.innerHTML = '';
+
+    if (trades.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No trades found for the selected filters</td></tr>';
+        return;
+    }
+
+    trades.forEach(trade => {
+        const row = document.createElement('tr');
+        const pnlClass = trade.pnl >= 0 ? 'text-success' : 'text-danger';
+        const pnlSymbol = trade.pnl >= 0 ? '+' : '';
+
+        row.innerHTML = `
+            <td>${trade.date}</td>
+            <td><span class="badge badge-primary">${trade.model}</span></td>
+            <td>${trade.instrument}</td>
+            <td><span class="badge badge-secondary">${trade.classification}</span></td>
+            <td class="${pnlClass}"><strong>${pnlSymbol}${Math.abs(trade.pnl).toFixed(2)}</strong></td>
+            <td>${trade.risk_reward}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateCharts(chartData) {
+    // Update P&L chart
+    if (portfolioCharts.pnlChart && chartData.cumulative_pnl) {
+        portfolioCharts.pnlChart.data.labels = chartData.cumulative_pnl.labels;
+        portfolioCharts.pnlChart.data.datasets[0].data = chartData.cumulative_pnl.data;
+        portfolioCharts.pnlChart.update();
+    }
+
+    // Update model performance chart
+    if (portfolioCharts.modelChart && chartData.model_performance) {
+        portfolioCharts.modelChart.data.labels = chartData.model_performance.labels;
+        portfolioCharts.modelChart.data.datasets[0].data = chartData.model_performance.data;
+        portfolioCharts.modelChart.update();
+    }
+}
+
+function updateFilters() {
+    // Update current filters
+    currentFilters.days = parseInt(document.getElementById('dateRange').value);
+    currentFilters.model = document.getElementById('tradingModel').value;
+    currentFilters.instrument = document.getElementById('instrument').value;
+    currentFilters.classification = document.getElementById('classification').value;
+
+    // Reload data with new filters
+    loadDashboardData();
+}
+
+function refreshDashboard() {
+    loadDashboardData();
+}
+
+function exportData() {
+    // Simple CSV export
+    const params = new URLSearchParams(currentFilters);
+    window.open(`/portfolio/api/trades?${params}&export=csv`, '_blank');
+}
+
+function showError(message) {
+    // Simple error display
+    console.error(message);
+
+    // Show user-friendly error message
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+    errorDiv.style.position = 'fixed';
+    errorDiv.style.top = '20px';
+    errorDiv.style.right = '20px';
+    errorDiv.style.zIndex = '9999';
+    errorDiv.innerHTML = `
+        <strong>Error:</strong> ${message}
+        <button type="button" class="close" onclick="this.parentElement.remove()">
+            <span>&times;</span>
+        </button>
+    `;
+    document.body.appendChild(errorDiv);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (errorDiv.parentElement) {
+            errorDiv.remove();
+        }
+    }, 5000);
+}
+
+// Utility function to format currency
+function formatCurrency(value) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+    }).format(value);
+}
+</script>
+{% endblock %}

@@ -271,6 +271,8 @@ def create_app(config_class=None):
         app.register_blueprint(image_bp)
         from app.template_filters import register_template_filters
         register_template_filters(app)
+        from app.blueprints.portfolio_bp import portfolio_bp
+        app.register_blueprint(portfolio_bp)
 
         try:
             from app.services.discord_service import discord_service
