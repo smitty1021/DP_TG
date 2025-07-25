@@ -62,7 +62,9 @@ def login():
                     # Continue with login - don't block due to Discord API issues
 
             login_user(user, remember=form.remember.data)
+            user.last_login = datetime.utcnow()
             record_activity('login', user_id_for_activity=user.id)
+            db.session.commit()
 
             # ENHANCED: Create user session record
             try:
