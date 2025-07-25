@@ -31,23 +31,26 @@
                                         <!-- Discord Avatar - Try different formats -->
                                         <img src="https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.webp?size=150"
                                              alt="Discord Profile Picture" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;"
-                                             onload="console.log('✅ Discord avatar (.webp) loaded successfully:', this.src)"
-                                             onerror="console.log('❌ Discord avatar (.webp) failed, trying .png'); this.src='https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.png'; this.onerror=function(){console.log('❌ Discord avatar (.png) also failed, using default fallback'); this.src='{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/default.jpg') }}'; this.style.border='none';};">
+                                             onerror="this.src='https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.png'; this.onerror=function(){this.src='{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/default.jpg') }}'; this.style.border='none';};">
                                     {% else %}
                                         <!-- Default Picture -->
                                         <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/default.jpg') }}"
-                                             alt="Default Profile Picture" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;"
-                                             onload="console.log('✅ Default picture loaded:', this.src)">
+                                             alt="Default Profile Picture" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
                                     {% endif %}
                                 </div>
 
-                                <!-- Profile Form Fields (No Profile Picture Upload) -->
+                                <!-- Profile Form Fields -->
                                 {{ render_field(profile_form.name, input_class="form-control") }}
                                 {{ render_field(profile_form.email, input_class="form-control", type="email") }}
                                 {{ render_field(profile_form.bio, input_class="form-control", rows="3") }}
 
+                                <!-- Profile picture field - render properly but hidden -->
+                                <div style="display: none;">
+                                    {{ render_field(profile_form.profile_picture, input_class="form-control") }}
+                                </div>
+
                                 <div class="d-grid mt-4">
-                                    <button type="submit" name="submit_profile" class="btn btn-primary">
+                                    <button type="submit" name="submit_profile" value="submit_profile" class="btn btn-primary">
                                         <i class="fas fa-save me-2"></i>Update Configuration
                                     </button>
                                 </div>
@@ -71,12 +74,78 @@
                                 <!-- Add hidden username field for accessibility compliance -->
                                 <input type="hidden" name="username" value="{{ current_user.username }}" autocomplete="username">
 
-                                {{ render_field(password_form.current_password, input_class="form-control", type="password") }}
-                                {{ render_field(password_form.new_password, input_class="form-control", type="password") }}
-                                {{ render_field(password_form.confirm_password, input_class="form-control", type="password") }}
+                                <!-- Current Password Field -->
+                                <div class="form-group mb-3">
+                                    {{ password_form.current_password.label(class="form-label") }}
+                                    {{ password_form.current_password(class="form-control", type="password", id="current_password", autocomplete="current-password") }}
+
+                                    {% if password_form.current_password.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in password_form.current_password.errors %}
+                                                <span>{{ error }}</span><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- New Password with Strength Indicator -->
+                                <div class="form-group mb-3">
+                                    {{ password_form.new_password.label(class="form-label") }}
+                                    {{ password_form.new_password(class="form-control", type="password", id="new_password", autocomplete="new-password") }}
+
+                                    <!-- Password Strength Indicator -->
+                                    <div id="password-strength-container" class="mt-2" style="display: none;">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <small class="text-muted me-2">Strength:</small>
+                                            <div class="progress flex-grow-1" style="height: 6px;">
+                                                <div id="password-strength-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                            <small id="password-strength-text" class="text-muted ms-2">Weak</small>
+                                        </div>
+                                        <div id="password-requirements" class="small text-muted">
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <span id="req-length" class="badge bg-secondary">8+ chars</span>
+                                                <span id="req-uppercase" class="badge bg-secondary">A-Z</span>
+                                                <span id="req-lowercase" class="badge bg-secondary">a-z</span>
+                                                <span id="req-number" class="badge bg-secondary">0-9</span>
+                                                <span id="req-special" class="badge bg-secondary">Special</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {% if password_form.new_password.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in password_form.new_password.errors %}
+                                                <span>{{ error }}</span><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Confirm Password with Match Indicator -->
+                                <div class="form-group mb-3">
+                                    {{ password_form.confirm_password.label(class="form-label") }}
+                                    {{ password_form.confirm_password(class="form-control", type="password", id="confirm_password", autocomplete="new-password") }}
+
+                                    <!-- Password Match Indicator -->
+                                    <div id="password-match-indicator" class="mt-2" style="display: none;">
+                                        <small id="password-match-text" class="text-muted">
+                                            <i id="password-match-icon" class="fas fa-times me-1"></i>
+                                            Passwords do not match
+                                        </small>
+                                    </div>
+
+                                    {% if password_form.confirm_password.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in password_form.confirm_password.errors %}
+                                                <span>{{ error }}</span><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
 
                                 <div class="d-grid mt-4">
-                                    <button type="submit" name="submit_password" class="btn btn-primary">
+                                    <button type="submit" name="submit_password" value="submit_password" class="btn btn-primary" id="password-submit-btn">
                                         <i class="fas fa-lock me-2"></i>Update Password
                                     </button>
                                 </div>
@@ -151,17 +220,13 @@
                                                     {% set role_count = role_count + 1 %}
                                                 {% endif %}
                                             {% endfor %}
-                                            {% if role_count == 0 %}
-
-                                            {% endif %}
                                         </div>
-
                                     {% else %}
                                         <div class="text-muted" style="font-size: 0.8rem;">
                                             <i class="fas fa-exclamation-circle me-1"></i>
                                             No Discord roles found or roles not synced yet.
                                             <br>
-                                            <small>Try using the "Sync Roles" button above to refresh.</small>
+                                            <small>Try using the "Sync Roles" button below to refresh.</small>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -293,283 +358,427 @@
         {% endif %}
     {% endwith %}
 </div>
+{% endblock %}
 
+{% block scripts_extra %}
 <script>
-    // Wait for DOM to be fully loaded
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🔧 Profile page initialization starting...');
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 Profile page loading...');
 
-        // Initialize unsaved changes detection (only if not already initialized by base.html)
-        if (typeof window.initEnterpriseUnsavedChanges === 'function' && !window.enterpriseUnsavedChanges) {
-            try {
-                window.initEnterpriseUnsavedChanges();
-                console.log('✅ Enterprise unsaved changes initialized');
-            } catch (error) {
-                console.warn('⚠️ Could not initialize unsaved changes:', error);
-            }
+    // Initialize enterprise unsaved changes detection
+    if (typeof window.initEnterpriseUnsavedChanges === 'function') {
+        window.initEnterpriseUnsavedChanges();
+        console.log('✅ Unsaved changes initialized');
+    }
+
+    // Initialize password strength meter
+    initializePasswordStrengthMeter();
+
+    // Initialize password match validator
+    initializePasswordMatchValidator();
+
+    // Setup form submissions
+    setupFormSubmissions();
+
+    // Handle Flask flash messages
+    handleFlashMessages();
+
+    // Convert UTC time to EST for last login
+    convertLastLoginTime();
+
+    console.log('✅ Profile page fully loaded');
+});
+
+// Password Strength Meter Implementation
+function initializePasswordStrengthMeter() {
+    const passwordField = document.getElementById('new_password');
+    const strengthContainer = document.getElementById('password-strength-container');
+    const strengthBar = document.getElementById('password-strength-bar');
+    const strengthText = document.getElementById('password-strength-text');
+
+    if (!passwordField || !strengthContainer) return;
+
+    passwordField.addEventListener('input', function() {
+        const password = this.value;
+
+        if (password.length === 0) {
+            strengthContainer.style.display = 'none';
+            return;
         }
 
-        // Add autocomplete attributes to password fields for better security
-        const passwordFields = {
-            'current_password': 'current-password',
-            'new_password': 'new-password',
-            'confirm_password': 'new-password'
+        strengthContainer.style.display = 'block';
+
+        // Calculate password strength
+        let score = 0;
+        const requirements = {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[^A-Za-z0-9]/.test(password)
         };
 
-        Object.entries(passwordFields).forEach(([fieldId, autocomplete]) => {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                field.setAttribute('autocomplete', autocomplete);
-            }
-        });
-
-        // Fix profile picture loading errors globally
-        document.querySelectorAll('img[src*="profile_pics"]').forEach(function(img) {
-            if (img.src.includes('profile_pics') && !img.src.includes('default.jpg') && !img.src.includes('discord')) {
-                img.onerror = function() {
-                    console.log('📸 Profile picture failed to load, using default:', this.src);
-                    this.src = '{{ url_for("static", filename=config.get("PROFILE_PICS_FOLDER_REL", "profile_pics") + "/default.jpg") }}';
-                    this.onerror = null; // Prevent infinite error loops
-                };
-            }
-        });
-
-        // Handle navigation user avatar specifically
-        const navUserAvatar = document.querySelector('#navbarUserDropdown img.user-avatar');
-        if (navUserAvatar && navUserAvatar.src.includes('profile_pics') && !navUserAvatar.src.includes('default.jpg') && !navUserAvatar.src.includes('discord')) {
-            navUserAvatar.onerror = function() {
-                console.log('🚀 Navigation avatar failed, switching to default');
-                this.src = '{{ url_for("static", filename=config.get("PROFILE_PICS_FOLDER_REL", "profile_pics") + "/default.jpg") }}';
-                this.alt = 'Default User Avatar';
-                this.onerror = null;
-            };
-        }
-
-        // Handle Flask flash messages and convert to enterprise notifications
-        const flashMessages = document.querySelectorAll('#flask-flash-data > div');
-        flashMessages.forEach(function(msgElement) {
-            const category = msgElement.dataset.category || 'info';
-            const message = msgElement.textContent.trim();
-
-            // Convert Flask categories to enterprise notification types
-            let notificationType = 'info';
-            if (category === 'success') notificationType = 'success';
-            else if (category === 'danger' || category === 'error') notificationType = 'error';
-            else if (category === 'warning') notificationType = 'warning';
-
-            // Show enterprise notification
-            setTimeout(() => {
-                if (typeof showCustomNotification === 'function') {
-                    showCustomNotification(notificationType, message);
-                } else if (notificationType === 'success' && typeof showSuccess === 'function') {
-                    showSuccess(message);
-                } else if (notificationType === 'error' && typeof showError === 'function') {
-                    showError(message);
-                } else if (notificationType === 'warning' && typeof showWarning === 'function') {
-                    showWarning(message);
+        // Update requirement badges
+        Object.keys(requirements).forEach(req => {
+            const badge = document.getElementById(`req-${req}`);
+            if (badge) {
+                if (requirements[req]) {
+                    badge.className = 'badge bg-success';
+                    score++;
                 } else {
-                    console.log(`📢 ${notificationType.toUpperCase()}: ${message}`);
+                    badge.className = 'badge bg-secondary';
                 }
-            }, 500);
+            }
         });
 
-        // Convert UTC time to EST for last login display
-        const lastLoginElement = document.querySelector('#last-login-display span[data-utc-time]');
-        if (lastLoginElement) {
-            const utcTimeString = lastLoginElement.getAttribute('data-utc-time');
-            const utcDate = new Date(utcTimeString);
+        // Update strength bar and text
+        let strengthClass = 'bg-danger';
+        let strengthLabel = 'Very Weak';
+        let percentage = 0;
 
-            // Convert to EST (UTC-5) or EDT (UTC-4) based on daylight saving time
-            const estDate = new Date(utcDate.getTime() - (5 * 60 * 60 * 1000)); // EST is UTC-5
-
-            // Format as YYYY-MM-DD HH:MM EST
-            const year = estDate.getFullYear();
-            const month = String(estDate.getMonth() + 1).padStart(2, '0');
-            const day = String(estDate.getDate()).padStart(2, '0');
-            const hours = String(estDate.getHours()).padStart(2, '0');
-            const minutes = String(estDate.getMinutes()).padStart(2, '0');
-
-            lastLoginElement.textContent = `${year}-${month}-${day} ${hours}:${minutes} EST`;
+        if (score === 0) {
+            strengthClass = 'bg-danger';
+            strengthLabel = 'Very Weak';
+            percentage = 10;
+        } else if (score === 1) {
+            strengthClass = 'bg-danger';
+            strengthLabel = 'Weak';
+            percentage = 20;
+        } else if (score === 2) {
+            strengthClass = 'bg-warning';
+            strengthLabel = 'Fair';
+            percentage = 40;
+        } else if (score === 3) {
+            strengthClass = 'bg-info';
+            strengthLabel = 'Good';
+            percentage = 60;
+        } else if (score === 4) {
+            strengthClass = 'bg-primary';
+            strengthLabel = 'Strong';
+            percentage = 80;
+        } else if (score === 5) {
+            strengthClass = 'bg-success';
+            strengthLabel = 'Very Strong';
+            percentage = 100;
         }
 
-        console.log('✅ Profile page initialization complete');
+        strengthBar.className = `progress-bar ${strengthClass}`;
+        strengthBar.style.width = `${percentage}%`;
+        strengthText.textContent = strengthLabel;
     });
+}
 
-    // Discord roles refresh function
-    async function refreshDiscordRoles() {
-        const refreshBtn = document.getElementById('refresh-roles-btn');
-        const originalText = refreshBtn.innerHTML;
+// Password Match Validator Implementation
+function initializePasswordMatchValidator() {
+    const newPasswordField = document.getElementById('new_password');
+    const confirmPasswordField = document.getElementById('confirm_password');
+    const matchIndicator = document.getElementById('password-match-indicator');
+    const matchText = document.getElementById('password-match-text');
+    const submitBtn = document.getElementById('password-submit-btn');
 
-        // Show loading state
-        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Syncing...';
-        refreshBtn.disabled = true;
+    if (!newPasswordField || !confirmPasswordField || !matchIndicator) return;
 
-        try {
-            const response = await fetch('/auth/discord/sync-roles', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
-                },
-                credentials: 'same-origin'
-            });
+    function checkPasswordMatch() {
+        const newPassword = newPasswordField.value;
+        const confirmPassword = confirmPasswordField.value;
 
-            const result = await response.json();
+        if (confirmPassword.length === 0) {
+            matchIndicator.style.display = 'none';
+            return;
+        }
 
-            if (result.success) {
-                // Show success notification
-                if (typeof showSuccess === 'function') {
-                    showSuccess('Discord Roles Synchronized Successfully');
-                } else if (typeof showCustomNotification === 'function') {
-                    showCustomNotification('success', 'Discord Roles Synchronized Successfully');
-                } else {
-                    console.log('✅ Discord roles synced successfully');
-                }
+        matchIndicator.style.display = 'block';
 
-                // Reload the page to show updated roles
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-
-            } else {
-                throw new Error(result.message || 'Failed to sync Discord roles');
-            }
-
-        } catch (error) {
-            console.error('Discord sync error:', error);
-
-            // Show error notification
-            if (typeof showError === 'function') {
-                showError('Failed to sync Discord roles: ' + error.message);
-            } else if (typeof showCustomNotification === 'function') {
-                showCustomNotification('error', 'Failed to sync Discord roles: ' + error.message);
-            } else {
-                alert('Failed to sync Discord roles: ' + error.message);
-            }
-
-            // Reset button
-            refreshBtn.innerHTML = originalText;
-            refreshBtn.disabled = false;
+        if (newPassword === confirmPassword && newPassword.length > 0) {
+            matchText.innerHTML = '<i class="fas fa-check me-1 text-success"></i><span class="text-success">Passwords match</span>';
+            confirmPasswordField.style.borderColor = '#28a745';
+            if (submitBtn) submitBtn.disabled = false;
+        } else {
+            matchText.innerHTML = '<i class="fas fa-times me-1 text-danger"></i><span class="text-danger">Passwords do not match</span>';
+            confirmPasswordField.style.borderColor = '#dc3545';
+            if (submitBtn) submitBtn.disabled = true;
         }
     }
 
-    // FIXED Discord connection function - uses existing Flask routes
-    function connectDiscord() {
-        console.log('🔗 Attempting to connect Discord account...');
+    // Add event listeners
+    confirmPasswordField.addEventListener('input', checkPasswordMatch);
+    newPasswordField.addEventListener('input', checkPasswordMatch);
+}
 
-        // Use the proper showCustomConfirmation function signature from your custom-modals.js
-        if (typeof showCustomConfirmation === 'function') {
-            showCustomConfirmation({
-                title: 'Confirm Discord Integration',
-                message: 'Connect your Discord account to enable enhanced features and role-based access?',
-                confirmText: 'Connect Discord',
-                cancelText: 'Cancel',
-                confirmClass: 'btn-primary',
-                icon: 'question-circle',
-                onConfirm: function() {
-                    console.log('✅ User confirmed Discord connection');
+// Setup form submissions with proper debugging
+function setupFormSubmissions() {
+    console.log('🔧 Setting up form submissions...');
 
-                    // Show loading state
-                    const connectBtn = document.querySelector('button[onclick="connectDiscord()"]');
-                    if (connectBtn) {
-                        const originalText = connectBtn.innerHTML;
-                        connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Connecting...';
-                        connectBtn.disabled = true;
-                    }
+    const profileForm = document.getElementById('profile-form');
+    const passwordForm = document.getElementById('password-form');
 
-                    // Create and submit form for Discord linking (uses existing route)
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '{{ url_for('auth.link_discord') }}';
-                    form.style.display = 'none';
+    console.log('Profile form found:', profileForm ? '✅ YES' : '❌ NO');
+    console.log('Password form found:', passwordForm ? '✅ YES' : '❌ NO');
 
-                    // Add CSRF token
-                    const csrfToken = document.createElement('input');
-                    csrfToken.type = 'hidden';
-                    csrfToken.name = 'csrf_token';
-                    csrfToken.value = document.querySelector('input[name="csrf_token"]').value;
-                    form.appendChild(csrfToken);
+    if (profileForm) {
+        console.log('✅ Attaching profile form event listener...');
 
-                    // Submit form to initiate Discord linking
-                    document.body.appendChild(form);
-                    form.submit();
-                },
-                onCancel: function() {
-                    console.log('❌ Discord connection cancelled by user');
-                }
+        // Also add a click listener to the submit button for debugging
+        const profileSubmitBtn = profileForm.querySelector('button[type="submit"]');
+        if (profileSubmitBtn) {
+            profileSubmitBtn.addEventListener('click', function(e) {
+                console.log('🔘 Profile submit button clicked!');
             });
-        } else {
-            // Fallback if custom modal system is not available
-            if (confirm('Connect your Discord account to enable enhanced features and role-based access?')) {
-                console.log('✅ User confirmed Discord connection (fallback)');
+            console.log('✅ Profile button click listener attached');
+        }
 
-                // Create and submit form for Discord linking
+        profileForm.addEventListener('submit', function(e) {
+            console.log('🔍 Profile form submitting...');
+
+            // CRITICAL: Mark as submitting IMMEDIATELY to prevent unsaved changes interception
+            if (window.enterpriseUnsavedChanges) {
+                window.enterpriseUnsavedChanges.markAsSubmitting();
+                console.log('✅ Marked as submitting to bypass unsaved changes detection');
+            }
+
+            // Debug: Check if all required fields are filled
+            const formData = new FormData(this);
+            console.log('Profile form data being submitted:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}: ${value || '(empty)'}`);
+            }
+
+            // Check for validation errors on the form
+            const invalidFields = this.querySelectorAll(':invalid');
+            if (invalidFields.length > 0) {
+                console.warn('⚠️ Form has validation errors:');
+                invalidFields.forEach(field => {
+                    console.warn(`  - ${field.name || field.id}: ${field.validationMessage}`);
+                });
+            }
+
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating Configuration...';
+            submitBtn.disabled = true;
+
+            // Reset button after timeout if still disabled (indicates error)
+            setTimeout(() => {
+                if (submitBtn.disabled) {
+                    console.warn('⚠️ Button still disabled after 8 seconds - likely a form validation error');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    // Reset unsaved changes state
+                    if (window.enterpriseUnsavedChanges) {
+                        window.enterpriseUnsavedChanges.reset();
+                    }
+                }
+            }, 8000);
+        });
+        console.log('✅ Profile form event listener attached');
+    } else {
+        console.error('❌ Could not find profile form with id="profile-form"');
+    }
+
+    if (passwordForm) {
+        console.log('✅ Attaching password form event listener...');
+        passwordForm.addEventListener('submit', function(e) {
+            console.log('🔍 Password form submitting...');
+
+            // CRITICAL: Mark as submitting IMMEDIATELY to prevent unsaved changes interception
+            if (window.enterpriseUnsavedChanges) {
+                window.enterpriseUnsavedChanges.markAsSubmitting();
+                console.log('✅ Marked as submitting to bypass unsaved changes detection');
+            }
+
+            // Final password match check
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+
+            if (newPassword !== confirmPassword) {
+                e.preventDefault();
+                // Reset unsaved changes state since we're preventing submission
+                if (window.enterpriseUnsavedChanges) {
+                    window.enterpriseUnsavedChanges.reset();
+                }
+                if (typeof showError === 'function') {
+                    showError('Passwords do not match. Please verify your password entries.');
+                } else {
+                    alert('Passwords do not match. Please verify your password entries.');
+                }
+                return false;
+            }
+
+            // Debug: Check form data
+            const formData = new FormData(this);
+            console.log('Password form data being submitted:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}: ${value ? '(filled)' : '(empty)'}`);
+            }
+
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating Password...';
+            submitBtn.disabled = true;
+
+            // Reset button after timeout if still disabled
+            setTimeout(() => {
+                if (submitBtn.disabled) {
+                    console.warn('⚠️ Password button still disabled - likely validation error');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    // Reset unsaved changes state
+                    if (window.enterpriseUnsavedChanges) {
+                        window.enterpriseUnsavedChanges.reset();
+                    }
+                }
+            }, 8000);
+        });
+        console.log('✅ Password form event listener attached');
+    } else {
+        console.error('❌ Could not find password form with id="password-form"');
+    }
+
+    console.log('✅ Form submissions setup complete');
+}
+
+// Handle Flask flash messages
+function handleFlashMessages() {
+    const flashMessages = document.querySelectorAll('#flask-flash-data > div');
+    flashMessages.forEach(function(msgElement) {
+        const category = msgElement.dataset.category || 'info';
+        const message = msgElement.textContent.trim();
+
+        // Convert Flask categories to enterprise notification types
+        let notificationType = 'info';
+        if (category === 'success') notificationType = 'success';
+        else if (category === 'danger' || category === 'error') notificationType = 'error';
+        else if (category === 'warning') notificationType = 'warning';
+
+        // Show enterprise notification
+        setTimeout(() => {
+            if (typeof showCustomNotification === 'function') {
+                showCustomNotification(notificationType, message);
+            } else if (notificationType === 'success' && typeof showSuccess === 'function') {
+                showSuccess(message);
+            } else if (notificationType === 'error' && typeof showError === 'function') {
+                showError(message);
+            } else if (notificationType === 'warning' && typeof showWarning === 'function') {
+                showWarning(message);
+            } else {
+                console.log(`📢 ${notificationType.toUpperCase()}: ${message}`);
+            }
+        }, 500);
+    });
+}
+
+// Convert UTC time to EST for last login display
+function convertLastLoginTime() {
+    const lastLoginElement = document.querySelector('#last-login-display span[data-utc-time]');
+    if (lastLoginElement) {
+        const utcTimeString = lastLoginElement.getAttribute('data-utc-time');
+        const utcDate = new Date(utcTimeString);
+        const estDate = new Date(utcDate.getTime() - (5 * 60 * 60 * 1000)); // EST is UTC-5
+
+        const year = estDate.getFullYear();
+        const month = String(estDate.getMonth() + 1).padStart(2, '0');
+        const day = String(estDate.getDate()).padStart(2, '0');
+        const hours = String(estDate.getHours()).padStart(2, '0');
+        const minutes = String(estDate.getMinutes()).padStart(2, '0');
+
+        lastLoginElement.textContent = `${year}-${month}-${day} ${hours}:${minutes} EST`;
+    }
+}
+
+// Discord roles refresh function
+async function refreshDiscordRoles() {
+    const refreshBtn = document.getElementById('refresh-roles-btn');
+    const originalText = refreshBtn.innerHTML;
+
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Syncing...';
+    refreshBtn.disabled = true;
+
+    try {
+        const response = await fetch('/auth/discord/sync-roles', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            credentials: 'same-origin'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            if (typeof showSuccess === 'function') {
+                showSuccess('Discord Roles Synchronized Successfully');
+            }
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            throw new Error(result.message || 'Failed to sync Discord roles');
+        }
+    } catch (error) {
+        console.error('Discord sync error:', error);
+        if (typeof showError === 'function') {
+            showError('Failed to sync Discord roles: ' + error.message);
+        }
+        refreshBtn.innerHTML = originalText;
+        refreshBtn.disabled = false;
+    }
+}
+
+// Discord connection function
+function connectDiscord() {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation(
+            'Confirm Discord Integration',
+            'Connect your Discord account to enable enhanced features and role-based access?',
+            'btn-primary',
+            'question-circle'
+        ).then((confirmed) => {
+            if (confirmed) {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '{{ url_for('auth.link_discord') }}';
                 form.style.display = 'none';
 
-                // Add CSRF token
                 const csrfToken = document.createElement('input');
                 csrfToken.type = 'hidden';
                 csrfToken.name = 'csrf_token';
                 csrfToken.value = document.querySelector('input[name="csrf_token"]').value;
                 form.appendChild(csrfToken);
 
-                // Submit form
                 document.body.appendChild(form);
                 form.submit();
-            } else {
-                console.log('❌ Discord connection cancelled by user (fallback)');
             }
+        });
+    } else {
+        if (confirm('Connect your Discord account to enable enhanced features and role-based access?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for('auth.link_discord') }}';
+            form.style.display = 'none';
+
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = 'csrf_token';
+            csrfToken.value = document.querySelector('input[name="csrf_token"]').value;
+            form.appendChild(csrfToken);
+
+            document.body.appendChild(form);
+            form.submit();
         }
     }
+}
 
-    // Discord unlink function
-    function unlinkDiscord() {
-        console.log('🔗 Attempting to unlink Discord account...');
-
-        if (typeof showCustomConfirmation === 'function') {
-            showCustomConfirmation({
-                title: 'Confirm Discord Disconnection',
-                message: 'Remove Discord integration from this account? This action cannot be undone.',
-                confirmText: 'Remove Integration',
-                cancelText: 'Cancel',
-                confirmClass: 'btn-danger',
-                icon: 'exclamation-triangle',
-                onConfirm: function() {
-                    console.log('✅ User confirmed Discord disconnection');
-
-                    // Show loading state
-                    const unlinkBtn = document.querySelector('button[onclick="unlinkDiscord()"]');
-                    if (unlinkBtn) {
-                        const originalText = unlinkBtn.innerHTML;
-                        unlinkBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Disconnecting...';
-                        unlinkBtn.disabled = true;
-                    }
-
-                    // Create and submit form for Discord disconnection
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '{{ url_for('auth.unlink_discord') }}';
-
-                    const csrfToken = document.createElement('input');
-                    csrfToken.type = 'hidden';
-                    csrfToken.name = 'csrf_token';
-                    csrfToken.value = document.querySelector('input[name="csrf_token"]').value;
-
-                    form.appendChild(csrfToken);
-                    document.body.appendChild(form);
-                    form.submit();
-                },
-                onCancel: function() {
-                    console.log('❌ Discord disconnection cancelled by user');
-                }
-            });
-        } else {
-            // Fallback
-            if (confirm('Remove Discord integration from this account? This action cannot be undone.')) {
-                // Create and submit form
+// Discord unlink function
+function unlinkDiscord() {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation(
+            'Confirm Discord Disconnection',
+            'Remove Discord integration from this account? This action cannot be undone.',
+            'btn-danger',
+            'exclamation-triangle'
+        ).then((confirmed) => {
+            if (confirmed) {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '{{ url_for('auth.unlink_discord') }}';
@@ -583,34 +792,23 @@
                 document.body.appendChild(form);
                 form.submit();
             }
+        });
+    } else {
+        if (confirm('Remove Discord integration from this account? This action cannot be undone.')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for('auth.unlink_discord') }}';
+
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = 'csrf_token';
+            csrfToken.value = document.querySelector('input[name="csrf_token"]').value;
+
+            form.appendChild(csrfToken);
+            document.body.appendChild(form);
+            form.submit();
         }
     }
-
-    // Form submission handling with enterprise notifications
-    document.getElementById('profile-form').addEventListener('submit', function(e) {
-        // Mark as submitting to prevent unsaved changes warnings
-        if (window.enterpriseUnsavedChanges) {
-            window.enterpriseUnsavedChanges.markAsSubmitting();
-        }
-
-        // Show loading state
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating Configuration...';
-        submitBtn.disabled = true;
-    });
-
-    document.getElementById('password-form').addEventListener('submit', function(e) {
-        // Mark as submitting to prevent unsaved changes warnings
-        if (window.enterpriseUnsavedChanges) {
-            window.enterpriseUnsavedChanges.markAsSubmitting();
-        }
-
-        // Show loading state
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating Password...';
-        submitBtn.disabled = true;
-    });
+}
 </script>
 {% endblock %}
