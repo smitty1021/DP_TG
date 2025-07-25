@@ -112,6 +112,7 @@ class EnhancedBootstrapManager:
         """Create the admin user account with full setup."""
         print("\n👤 Creating admin user...")
 
+        # Only use fields that actually exist in the User model
         admin_data = {
             'username': 'admin',
             'email': 'admin@tradingjournal.local',
@@ -119,10 +120,8 @@ class EnhancedBootstrapManager:
             'role': UserRole.ADMIN,
             'is_active': True,
             'is_email_verified': True,
-            'bio': 'System administrator for the trading journal application.',
-            'timezone': 'EST',
-            'theme_preference': 'dark',
-            'notification_preferences': 'email,in_app'
+            'bio': 'System administrator for the trading journal application.'
+            # Remove: timezone, theme_preference, notification_preferences
         }
 
         admin = User(**admin_data)
@@ -131,16 +130,13 @@ class EnhancedBootstrapManager:
         db.session.add(admin)
         db.session.commit()
 
-        # Create default settings for admin
+        # Create default settings for admin in Settings table
         admin_settings = Settings(
             user_id=admin.id,
-            timezone='EST',
-            theme='dark',
-            email_notifications=True,
-            browser_notifications=True,
-            trading_session_reminders=True,
-            daily_journal_reminders=True,
-            performance_summary_frequency='weekly'
+            theme='dark',  # 'theme' not 'timezone'
+            notifications_enabled=True,  # Use correct field name
+            items_per_page=20,
+            language='en'
         )
         db.session.add(admin_settings)
 
@@ -178,9 +174,7 @@ class EnhancedBootstrapManager:
             is_active = random.choice([True, True, True, False])  # 75% active
             is_verified = random.choice([True, True, False])  # 66% verified
 
-            themes = ['light', 'dark', 'auto']
-            timezones = ['EST', 'PST', 'CST', 'MST', 'UTC']
-
+            # Only use fields that exist in the User model
             test_user_data = {
                 'username': f'testuser{i}',
                 'email': f'testuser{i}@example.com',
@@ -188,9 +182,8 @@ class EnhancedBootstrapManager:
                 'role': user_role,
                 'is_active': is_active,
                 'is_email_verified': is_verified,
-                'bio': f'Test user account {i} for trading journal application.',
-                'timezone': random.choice(timezones),
-                'theme_preference': random.choice(themes)
+                'bio': f'Test user account {i} for trading journal application.'
+                # Remove: timezone, theme_preference - these go in Settings
             }
 
             test_user = User(**test_user_data)
@@ -209,16 +202,15 @@ class EnhancedBootstrapManager:
 
         # Create settings for all test users
         print("  ⚙️ Creating settings for test users...")
+        themes = ['light', 'dark']
+
         for user in created_users:
             settings = Settings(
                 user_id=user.id,
-                timezone=user.timezone,
-                theme=user.theme_preference,
-                email_notifications=random.choice([True, False]),
-                browser_notifications=random.choice([True, False]),
-                trading_session_reminders=random.choice([True, False]),
-                daily_journal_reminders=random.choice([True, False]),
-                performance_summary_frequency=random.choice(['daily', 'weekly', 'monthly'])
+                theme=random.choice(['light', 'dark']),
+                notifications_enabled=random.choice([True, False]),
+                items_per_page=random.choice([10, 20, 50]),
+                language='en'
             )
             db.session.add(settings)
 
@@ -451,9 +443,8 @@ class EnhancedBootstrapManager:
                 'point_value': 50.0,
                 'tick_size': 0.25,
                 'currency': 'USD',
-                'is_active': True,
-                'trading_hours': '18:00-17:00 EST',
-                'margin_requirement': 12500.0
+                'is_active': True
+                # Remove: trading_hours, margin_requirement - these fields don't exist
             },
             {
                 'symbol': 'NQ',
@@ -464,9 +455,7 @@ class EnhancedBootstrapManager:
                 'point_value': 20.0,
                 'tick_size': 0.25,
                 'currency': 'USD',
-                'is_active': True,
-                'trading_hours': '18:00-17:00 EST',
-                'margin_requirement': 18700.0
+                'is_active': True
             },
             {
                 'symbol': 'YM',
@@ -477,9 +466,7 @@ class EnhancedBootstrapManager:
                 'point_value': 5.0,
                 'tick_size': 1.0,
                 'currency': 'USD',
-                'is_active': True,
-                'trading_hours': '18:00-17:00 EST',
-                'margin_requirement': 9900.0
+                'is_active': True
             },
             {
                 'symbol': 'RTY',
@@ -490,9 +477,7 @@ class EnhancedBootstrapManager:
                 'point_value': 50.0,
                 'tick_size': 0.1,
                 'currency': 'USD',
-                'is_active': True,
-                'trading_hours': '18:00-17:00 EST',
-                'margin_requirement': 6050.0
+                'is_active': True
             },
             {
                 'symbol': 'CL',
@@ -503,9 +488,7 @@ class EnhancedBootstrapManager:
                 'point_value': 1000.0,
                 'tick_size': 0.01,
                 'currency': 'USD',
-                'is_active': True,
-                'trading_hours': '18:00-17:00 EST',
-                'margin_requirement': 4895.0
+                'is_active': True
             },
             {
                 'symbol': 'GC',
@@ -516,9 +499,7 @@ class EnhancedBootstrapManager:
                 'point_value': 100.0,
                 'tick_size': 0.10,
                 'currency': 'USD',
-                'is_active': True,
-                'trading_hours': '18:00-17:00 EST',
-                'margin_requirement': 9900.0
+                'is_active': True
             }
         ]
 
@@ -618,64 +599,330 @@ class EnhancedBootstrapManager:
         print(f"✅ Created {len(created_scenarios)} P12 scenarios")
 
     def create_trading_models(self):
-        """Create comprehensive trading models."""
+        """Create Random's 6 core trading models."""
         print("\n📋 Creating Random's trading models...")
 
-        # Your existing trading models data (keeping the same structure)
         default_models_data = [
             {
                 'name': '0930 Opening Range',
                 'version': '2.1',
                 'is_active': True,
                 'is_default': True,
-                'overview_logic': """The 0930 Opening Range model captures the initial momentum and direction at the New York market open...""",
+                'overview_logic': """The 0930 Opening Range model captures the initial momentum and direction at the New York market open. 
+                Based on Random's Four Steps methodology, this model identifies "Snap" patterns (High, Low, HH/LL) in the first few minutes 
+                after 9:30 AM EST. The model can trade either direction (breakout or Return to VWAP) depending on the daily classification 
+                (DWP, DNP, Range 1, Range 2) determined through P12 analysis and session behavior assessment.""",
+
                 'primary_chart_tf': '1-Minute',
                 'execution_chart_tf': '1-Minute',
                 'context_chart_tf': 'Daily, P12 Chart, Hourly',
-                'technical_indicators_used': """- 09:30 Open Price\n- VWAP (Volume Weighted Average Price)...""",
+
+                'technical_indicators_used': """- 09:30 Open Price
+                - VWAP (Volume Weighted Average Price)
+                - Previous Day High/Low
+                - P12 High/Mid/Low levels
+                - ADR (Average Daily Range) for context
+                - RVOL (Relative Volume) for confirmation""",
+
                 'instrument_applicability': 'Index Futures (ES, NQ, YM)',
                 'session_applicability': '09:30-09:45 EST primary window, exits by 09:44 EST',
                 'optimal_market_conditions': 'Clear daily classification (DWP/DNP), normal to high RVOL, clean break of pre-market structure',
                 'sub_optimal_market_conditions': 'Range 1 days, extremely low volume, major news events during execution window',
-                'entry_trigger_description': """Breakout Entry: 1-minute close above/below the identified "Snap" level...""",
+
+                'entry_trigger_description': """Breakout Entry: 1-minute close above/below the identified "Snap" level (High/Low formed in first 1-3 minutes)
+                RTV Entry: Return to VWAP after initial displacement, confirmed by price action
+                Entry must align with daily bias from Four Steps analysis""",
+
                 'stop_loss_strategy': 'Structural stop below/above recent swing point or 0.1% (10 basis points) maximum',
-                'take_profit_strategy': """TP1: 0.1% (20 NQ handles) - Quick scalp target...""",
+                'take_profit_strategy': """TP1: 0.1% (20 NQ handles) - Quick scalp target
+                TP2: 50% of 09:30-10:00 session DRO
+                Time-based exit: All positions closed by 09:44 EST""",
                 'min_risk_reward_ratio': 1.5,
+
                 'position_sizing_rules': 'Risk 2.5% baseline, up to 7-10% for A+ setups based on Four Steps confidence',
                 'trade_management_breakeven_rules': 'Move stop to breakeven after TP1 hit or 1R profit achieved',
                 'trade_management_partial_profit_rules': 'Take 50-75% at TP1, let remainder run to TP2 or time stop',
+
                 'model_max_loss_per_trade': '2.5% baseline, 7-10% for A+ setups',
                 'model_max_daily_loss': '5%',
                 'model_max_weekly_loss': '10%',
                 'model_consecutive_loss_limit': '3 trades',
             },
-            # Add all your other trading models here...
-            # (keeping the same structure you already have)
+
+            {
+                'name': 'HOD/LOD Reversal',
+                'version': '1.8',
+                'is_active': True,
+                'is_default': True,
+                'overview_logic': """Mean reversion strategy targeting reversals at the High of Day (HOD) or Low of Day (LOD). 
+                Uses Random's Four Steps to identify likely HOD/LOD zones and times, then waits for confirmation signals like 
+                059 boxes, hourly momentum changes, or 1-minute rejection patterns. NOT for trend days - requires patience 
+                for proper reversal confirmation.""",
+
+                'primary_chart_tf': '1-Minute',
+                'execution_chart_tf': '1-Minute',
+                'context_chart_tf': 'Daily, Hourly, P12 Chart',
+
+                'technical_indicators_used': """- Dashboard logic for HOD/LOD identification
+                - % move from 18:00 open
+                - Hourly quarters and 059 boxes
+                - Previous session behavior (Asia/London True/False/Broken)
+                - ADR and RVOL analysis""",
+
+                'instrument_applicability': 'Index Futures (ES, NQ, YM)',
+                'session_applicability': 'Active throughout RTH, best during statistical HOD/LOD times',
+                'optimal_market_conditions': 'Range days, broken Asia/London sessions, clear HOD/LOD zones defined',
+                'sub_optimal_market_conditions': 'Strong trend days (DWP/DNP), unclear daily structure',
+
+                'entry_trigger_description': """Wait for price to reach defined HOD/LOD zone, then:
+                - 1-minute confirmation candle (rejection pattern)
+                - Hourly momentum change
+                - 059 box formation
+                - NOT for catching falling knives - patience required""",
+
+                'stop_loss_strategy': '0.1% (10 basis points) above/below the HOD/LOD zone',
+                'take_profit_strategy': """TP1: 50% of NY1 DRO (Daily Range Objective)
+                TP2: P12 Mid level
+                TP3: Previous Day Mid (PDM) or Settlement""",
+                'min_risk_reward_ratio': 2.0,
+
+                'position_sizing_rules': 'Conservative sizing due to reversal nature, 2.5% baseline risk',
+                'trade_management_breakeven_rules': 'Move to breakeven after 1R profit or TP1 achievement',
+                'trade_management_partial_profit_rules': 'Scale out at TP1, trail stop on remainder',
+
+                'model_max_loss_per_trade': '2.5%',
+                'model_max_daily_loss': '5%',
+                'model_max_weekly_loss': '8%',
+                'model_consecutive_loss_limit': '2 trades',
+            },
+
+            {
+                'name': 'Captain Backtest',
+                'version': '2.3',
+                'is_active': True,
+                'is_default': True,
+                'overview_logic': """Trend-following model designed to capture HOD/LOD by front-running NY2 session. 
+                Requires H4 range (06:00-09:59 EST) break by 11:30, followed by pullback and continuation. 
+                Higher expectancy but requires trending days (DWP/DNP). Targets 0.50% minimum with potential 
+                extension to daily extremes.""",
+
+                'primary_chart_tf': '10-Minute',
+                'execution_chart_tf': '10-Minute',
+                'context_chart_tf': 'Daily, P12 Chart, Hourly',
+
+                'technical_indicators_used': """- H4 Range (06:00-09:59 EST High/Low)
+                - 10-minute pullback patterns
+                - Daily Range Objective (DRO) analysis
+                - Hourly quarters for fine-tuning entries""",
+
+                'instrument_applicability': 'Index Futures (ES, NQ, YM)',
+                'session_applicability': 'Setup after 10:00 EST, entry by 11:30 EST, target 15:00 HOD/LOD',
+                'optimal_market_conditions': 'Trending days (DWP/DNP), sufficient daily range available, clean H4 break',
+                'sub_optimal_market_conditions': 'Range days, late H4 breaks after 11:30, insufficient DRO remaining',
+
+                'entry_trigger_description': """1. H4 range must be breached by 10-minute close before 11:30 EST
+                2. Wait for pullback formation on 10-minute chart
+                3. Enter on 10-minute close beyond pullback extreme
+                4. Use 05 boxes from hourly quarters for precision if desired""",
+
+                'stop_loss_strategy': '0.25% (25 basis points) or structural level at previous hour 50%',
+                'take_profit_strategy': """Minimum: 0.50% (50 basis points)
+                Extended: Potential HOD/LOD at 15:00 if daily profile supports
+                Partial scaling recommended at minimum target""",
+                'min_risk_reward_ratio': 2.0,
+
+                'position_sizing_rules': 'Standard to aggressive sizing for trending setups, 2.5-7% risk range',
+                'trade_management_breakeven_rules': 'Move to breakeven after 1R (0.25%) profit',
+                'trade_management_partial_profit_rules': 'Take 50% at 0.50% target, trail remainder to HOD/LOD',
+
+                'model_max_loss_per_trade': '5%',
+                'model_max_daily_loss': '7%',
+                'model_max_weekly_loss': '12%',
+                'model_consecutive_loss_limit': '3 trades',
+            },
+
+            {
+                'name': 'P12 Scenario-Based',
+                'version': '1.5',
+                'is_active': True,
+                'is_default': True,
+                'overview_logic': """Uses 12-hour Globex range (18:00-06:00 EST) High/Mid/Low as key structural levels. 
+                Observes 06:00-08:30 price action relative to P12 levels to classify into 5 scenarios. 
+                Provides bias for HOD/LOD location and probable price path. Trades taken at P12 levels 
+                with scenario confirmation.""",
+
+                'primary_chart_tf': '15-Minute',
+                'execution_chart_tf': '5-Minute',
+                'context_chart_tf': 'Daily, P12 Chart',
+
+                'technical_indicators_used': """- P12 High/Mid/Low levels (18:00-06:00 EST range)
+                - 06:00-08:30 scenario analysis window
+                - Daily classification integration
+                - Quarter level analysis for entries""",
+
+                'instrument_applicability': 'Index Futures (ES, NQ, YM) - Use MQ for Nasdaq analysis',
+                'session_applicability': 'Analysis 06:00-08:30, execution after 09:30 EST',
+                'optimal_market_conditions': 'Clear P12 scenario development, alignment with daily bias',
+                'sub_optimal_market_conditions': 'Unclear scenario, price chopping around P12 levels',
+
+                'entry_trigger_description': """Based on scenario analysis:
+                - Above Mid: Target P12 High breakout, expect low of day in
+                - Below Mid: Target P12 Low breakdown, expect high of day in
+                - Entry on confirmation at P12 levels with quarter precision""",
+
+                'stop_loss_strategy': 'Below/above P12 Mid or relevant P12 level based on scenario',
+                'take_profit_strategy': """Next P12 level (High/Mid/Low)
+                Scenario-specific targets: 25-75 basis points
+                NFP/CPI exception: 50 basis points viable""",
+                'min_risk_reward_ratio': 1.5,
+
+                'position_sizing_rules': 'Risk adjusted by scenario confidence, 2.5-10% range',
+                'trade_management_breakeven_rules': 'Move to breakeven at 1:1 R:R',
+                'trade_management_partial_profit_rules': 'Scale at interim levels, hold runners to final target',
+
+                'model_max_loss_per_trade': '5%',
+                'model_max_daily_loss': '8%',
+                'model_max_weekly_loss': '12%',
+                'model_consecutive_loss_limit': '2 trades',
+            },
+
+            {
+                'name': 'Quarterly Theory & 05 Boxes',
+                'version': '1.2',
+                'is_active': True,
+                'is_default': True,
+                'overview_logic': """Precision entry model using hourly quarter levels and 05 boxes for optimal 
+                trade timing. Can be standalone or used to enhance other models. Focuses on statistical 
+                reaction points within hourly structures. Emphasizes scaling and precise risk management.""",
+
+                'primary_chart_tf': '1-Minute',
+                'execution_chart_tf': '1-Minute',
+                'context_chart_tf': 'Hourly, Daily',
+
+                'technical_indicators_used': """- Hourly quarter levels (00, 15, 30, 45 minute marks)
+                - 05 boxes (statistical reaction zones)
+                - Volume analysis at quarter levels
+                - Previous hour structure""",
+
+                'instrument_applicability': 'Index Futures (ES, NQ, YM)',
+                'session_applicability': 'Active throughout RTH, best at hourly turn times',
+                'optimal_market_conditions': 'Clear hourly structure, normal volume, defined quarter reactions',
+                'sub_optimal_market_conditions': 'High volatility news events, extremely low volume',
+
+                'entry_trigger_description': """Entry at quarter levels on:
+                - Rejection patterns at 05 boxes
+                - Confirmation of hourly direction
+                - Volume spike at quarter levels
+                - Structure alignment with higher timeframes""",
+
+                'stop_loss_strategy': 'Previous quarter level or 0.15% maximum',
+                'take_profit_strategy': """Fixed target: 0.15%
+                Scaling option: 50% at 1:1 R:R, trail remainder
+                Next quarter level as extended target""",
+                'min_risk_reward_ratio': 1.0,
+
+                'position_sizing_rules': 'Conservative due to frequent entries, 1-3% risk per trade',
+                'trade_management_breakeven_rules': 'Quick move to breakeven at 0.5R',
+                'trade_management_partial_profit_rules': 'Heavy scaling at first target, small runner positions',
+
+                'model_max_loss_per_trade': '3%',
+                'model_max_daily_loss': '6%',
+                'model_max_weekly_loss': '10%',
+                'model_consecutive_loss_limit': '4 trades',
+            },
+
+            {
+                'name': 'Midnight Open Retracement',
+                'version': '1.0',
+                'is_active': True,
+                'is_default': True,
+                'overview_logic': """Statistical retracement model targeting moves back to Midnight Open price. 
+                Active 08:00-11:15 EST window. Uses hourly footprints and distribution analysis to identify 
+                optimal entry points for mean reversion to Midnight Open level.""",
+
+                'primary_chart_tf': '3-Minute',
+                'execution_chart_tf': '1-Minute',
+                'context_chart_tf': 'Hourly, Daily',
+
+                'technical_indicators_used': """- Midnight Open price (00:00 EST)
+                - Hourly footprints (overlapping wicks)
+                - 3-minute distribution analysis
+                - Asia Range context
+                - RTH Gap measurements""",
+
+                'instrument_applicability': 'Index Futures (ES, NQ, YM)',
+                'session_applicability': '08:00-11:15 EST execution window',
+                'optimal_market_conditions': 'Clear overextension from Midnight Open, defined hourly footprints',
+                'sub_optimal_market_conditions': 'Price near Midnight Open, unclear distribution patterns',
+
+                'entry_trigger_description': """Entry when:
+                - Price overextended from Midnight Open
+                - Reaction at hourly footprint level
+                - Distribution extreme reached (bullish/bearish)
+                - 1-minute confirmation of reversal""",
+
+                'stop_loss_strategy': 'Beyond footprint extreme or distribution limit',
+                'take_profit_strategy': """Primary: Midnight Open price level
+                Statistical: 0.12-0.13% on NASDAQ
+                Secondary: Asia Range opposing side or RTH Gap fill""",
+                'min_risk_reward_ratio': 1.2,
+
+                'position_sizing_rules': 'Increase size with multiple confluences, 2-7% risk range',
+                'trade_management_breakeven_rules': 'Move to breakeven halfway to target',
+                'trade_management_partial_profit_rules': 'Scale heavily at Midnight Open, minimal runners',
+
+                'model_max_loss_per_trade': '4%',
+                'model_max_daily_loss': '8%',
+                'model_max_weekly_loss': '12%',
+                'model_consecutive_loss_limit': '3 trades',
+            },
         ]
 
-        # Add your complete user models (keeping your existing structure)
         user_models_data = [
             {
                 'name': 'Fucktard-FOMO-FAFO',
                 'version': '1.0',
                 'is_active': True,
                 'overview_logic': """The Fucktard-FOMO-FAFO (Fear of Missing Out - Fuck Around and Find Out) model represents 
-                unstructured, emotion-driven trading decisions made without proper analysis or adherence to systematic methodology...""",
+                unstructured, emotion-driven trading decisions made without proper analysis or adherence to systematic methodology. 
+                This model captures impulsive entries based on price movement momentum, social media sentiment, or perceived "hot tips" 
+                without consideration of Random's Four Steps framework or risk management protocols.""",
+
                 'primary_chart_tf': 'Variable',
                 'execution_chart_tf': 'Any available',
                 'context_chart_tf': 'None - decision made without context',
-                'technical_indicators_used': """- Price movement (basic observation)...""",
+
+                'technical_indicators_used': """- Price movement (basic observation)
+                - Social media sentiment indicators
+                - "Hot tip" information from unverified sources
+                - Recent news headlines (surface level)
+                - Fear/greed emotional indicators
+                - Market "buzz" and momentum""",
+
                 'instrument_applicability': 'Any available instrument, often unfamiliar ones',
                 'session_applicability': 'Any time, often at market extremes or during high volatility',
                 'optimal_market_conditions': 'High volatility environments with significant price movement and market excitement',
                 'sub_optimal_market_conditions': 'All conditions - this model lacks systematic approach to market assessment',
-                'entry_trigger_description': """Impulsive entry based on: sudden large price movements...""",
-                'stop_loss_strategy': 'Often absent or moved impulsively',
-                'take_profit_strategy': """Highly variable and emotional...""",
+
+                'entry_trigger_description': """Impulsive entry based on:
+                - Sudden large price movements in either direction
+                - Social media posts suggesting "guaranteed" profits
+                - News headlines creating urgency
+                - Feeling of missing out on profitable opportunities
+                - Emotional reaction to recent wins/losses""",
+
+                'stop_loss_strategy': 'Often absent or moved impulsively. When present, typically too tight or too wide without logical basis',
+                'take_profit_strategy': """Highly variable and emotional:
+                - Premature exits on small gains due to fear
+                - Holding losing positions hoping for recovery
+                - Moving targets based on greed rather than analysis
+                - Exit driven by external noise rather than plan""",
                 'min_risk_reward_ratio': 0.1,
-                'position_sizing_rules': 'Inconsistent sizing based on emotions',
-                'trade_management_breakeven_rules': 'No systematic breakeven rules',
-                'trade_management_partial_profit_rules': 'All-or-nothing approach',
+
+                'position_sizing_rules': 'Inconsistent sizing based on emotions - often too large on "sure things" or revenge trades',
+                'trade_management_breakeven_rules': 'No systematic breakeven rules - management driven by fear and greed cycles',
+                'trade_management_partial_profit_rules': 'All-or-nothing approach - rarely scales positions systematically',
+
                 'model_max_loss_per_trade': 'Undefined - risk management not systematically applied',
                 'model_max_daily_loss': 'Undefined - can lead to significant drawdowns',
                 'model_max_weekly_loss': 'Undefined - lacks systematic risk controls',
@@ -696,7 +943,7 @@ class EnhancedBootstrapManager:
         # Create user-specific models (assigned to test user)
         for model_data in user_models_data:
             model_data['user_id'] = self.test_user.id
-            model_data['created_by_admin_user_id'] = None
+            model_data['created_by_admin_user_id'] = None  # Not created by admin
             model = TradingModel(**model_data)
             db.session.add(model)
             created_models.append(model)
@@ -759,566 +1006,653 @@ class EnhancedBootstrapManager:
         print(f"✅ Created {len(created_events)} news events")
 
 
-def create_account_settings(self):
-    """Create comprehensive account settings."""
-    print("\n⚙️  Creating account settings...")
+    def create_account_settings(self):
+        """Create comprehensive account settings."""
+        print("\n⚙️  Creating account settings...")
 
-    settings_data = [
-        ('current_account_size', '100000'),
-        ('default_risk_per_trade', '2.5'),
-        ('max_daily_loss', '5'),
-        ('max_weekly_loss', '10'),
-        ('max_monthly_loss', '15'),
-        ('preferred_instrument', 'NQ'),
-        ('secondary_instrument', 'ES'),
-        ('timezone', 'EST'),
-        ('currency', 'USD'),
-        ('trading_session_start', '09:30'),
-        ('trading_session_end', '16:00'),
-        ('premarket_analysis_time', '08:00'),
-        ('journal_reminder_time', '17:00'),
-        ('daily_risk_reset_time', '18:00'),
-        ('performance_review_frequency', 'weekly'),
-        ('backup_frequency', 'daily'),
-        ('data_retention_days', '1095')  # 3 years
-    ]
+        settings_data = [
+            ('current_account_size', '100000'),
+            ('default_risk_per_trade', '2.5'),
+            ('max_daily_loss', '5'),
+            ('max_weekly_loss', '10'),
+            ('max_monthly_loss', '15'),
+            ('preferred_instrument', 'NQ'),
+            ('secondary_instrument', 'ES'),
+            ('timezone', 'EST'),
+            ('currency', 'USD'),
+            ('trading_session_start', '09:30'),
+            ('trading_session_end', '16:00'),
+            ('premarket_analysis_time', '08:00'),
+            ('journal_reminder_time', '17:00'),
+            ('daily_risk_reset_time', '18:00'),
+            ('performance_review_frequency', 'weekly'),
+            ('backup_frequency', 'daily'),
+            ('data_retention_days', '1095')  # 3 years
+        ]
 
-    created_settings = []
-    for setting_name, value in settings_data:
-        setting = AccountSetting(
-            setting_name=setting_name,
-            value_str=value
+        created_settings = []
+        for setting_name, value in settings_data:
+            setting = AccountSetting(
+                setting_name=setting_name,
+                value_str=value
+            )
+            db.session.add(setting)
+            created_settings.append(setting)
+
+        db.session.commit()
+        self.account_settings = created_settings
+        print(f"✅ Created {len(created_settings)} account settings")
+
+    def generate_realistic_trades(self, num_trades=10000):
+        """Generate realistic trades with full relationships."""
+        print(f"\n📊 Generating {num_trades} realistic trades...")
+
+        win_rate = 0.65
+        breakeven_rate = 0.05
+
+        # R-multiple distributions
+        winner_r_multiples = [0.5, 0.8, 1.0, 1.2, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0]
+        winner_weights = [0.15, 0.20, 0.25, 0.15, 0.10, 0.08, 0.04, 0.02, 0.008, 0.002]
+
+        loser_r_multiples = [-1.0, -0.8, -0.6, -0.4, -0.3, -0.15]
+        loser_weights = [0.40, 0.25, 0.15, 0.10, 0.07, 0.03]
+
+        created_trades = []
+        start_date = date.today() - timedelta(days=730)  # 2 years of data
+
+        # Distribute trades across all users
+        users_for_trades = [self.admin_user] + self.test_users[:50]  # Admin + 50 test users
+
+        for i in range(num_trades):
+            # Assign to random user (weighted toward test users)
+            if i < 200:  # First 200 to admin
+                assigned_user = self.admin_user
+            else:
+                assigned_user = random.choice(users_for_trades)
+
+            # Generate trade details
+            days_back = random.randint(0, 730)
+            trade_date = start_date + timedelta(days=days_back)
+
+            # Skip weekends
+            while trade_date.weekday() >= 5:
+                trade_date += timedelta(days=1)
+
+            # Random instrument and model
+            instrument = random.choice(list(self.instruments.values()))
+            model = random.choice(self.trading_models) if self.trading_models else None
+
+            # Determine outcome
+            outcome_rand = random.random()
+            if outcome_rand < win_rate:
+                outcome = 'win'
+                r_multiple = random.choices(winner_r_multiples, winner_weights)[0]
+            elif outcome_rand < win_rate + breakeven_rate:
+                outcome = 'breakeven'
+                r_multiple = 0
+            else:
+                outcome = 'loss'
+                r_multiple = random.choices(loser_r_multiples, loser_weights)[0]
+
+            # Generate realistic prices and trade details
+            direction = random.choice(['Long', 'Short'])
+
+            # Entry time based on model
+            entry_hour = random.randint(9, 15)
+            entry_minute = random.randint(0, 59)
+            entry_time = time(entry_hour, entry_minute)
+
+            # Generate prices based on instrument
+            price_ranges = {
+                'ES': (4000, 4800),
+                'NQ': (12000, 16000),
+                'YM': (33000, 38000),
+                'RTY': (1800, 2200),
+                'CL': (65, 85),
+                'GC': (1800, 2100)
+            }
+
+            price_range = price_ranges.get(instrument.symbol, (4000, 4800))
+            base_price = random.uniform(price_range[0], price_range[1])
+            entry_price = round(base_price, 2)
+
+            # Calculate stop and target
+            stop_distance = random.uniform(0.1, 1.0) * (price_range[1] - price_range[0]) / 100
+
+            if direction == 'Long':
+                stop_loss = entry_price - stop_distance
+            else:
+                stop_loss = entry_price + stop_distance
+
+            # Calculate exit price based on outcome
+            risk_per_share = abs(entry_price - stop_loss)
+            target_distance = abs(r_multiple) * risk_per_share
+
+            if outcome == 'win':
+                if direction == 'Long':
+                    exit_price = entry_price + target_distance
+                else:
+                    exit_price = entry_price - target_distance
+            elif outcome == 'breakeven':
+                exit_price = entry_price
+            else:
+                exit_price = stop_loss + random.uniform(-0.1, 0.1)
+
+            # Contract size
+            contracts = random.choice([1, 2, 3, 4, 5])
+
+            # Exit time
+            exit_time = datetime.combine(trade_date, entry_time) + timedelta(minutes=random.randint(5, 180))
+            if exit_time.hour >= 16:
+                exit_time = exit_time.replace(hour=15, minute=random.randint(45, 59))
+
+            # Create trade
+            trade = Trade(
+                instrument_id=instrument.id,
+                trade_date=trade_date,
+                direction=direction,
+                initial_stop_loss=stop_loss,
+                terminus_target=exit_price if outcome == 'win' else entry_price + (
+                    2 * target_distance if direction == 'Long' else -2 * target_distance),
+                is_dca=random.choice([True, False]) if random.random() < 0.15 else False,
+                mae=random.uniform(0, stop_distance * 0.8) if outcome != 'loss' else stop_distance,
+                mfe=target_distance if outcome == 'win' else random.uniform(0, target_distance * 0.6),
+                how_closed=self._get_close_reason(outcome),
+                news_event=self._get_random_news_event() if random.random() < 0.1 else None,
+                rules_rating=random.randint(1, 5),
+                management_rating=random.randint(1, 5),
+                target_rating=random.randint(1, 5),
+                entry_rating=random.randint(1, 5),
+                preparation_rating=random.randint(1, 5),
+                trade_notes=self._get_trade_note(model.name if model else 'Manual', outcome),
+                trading_model_id=model.id if model else None,
+                user_id=assigned_user.id
+            )
+
+            db.session.add(trade)
+            db.session.flush()
+
+            # Create entry point
+            entry = EntryPoint(
+                trade_id=trade.id,
+                entry_time=entry_time,
+                contracts=contracts,
+                entry_price=entry_price
+            )
+            db.session.add(entry)
+
+            # Create exit point
+            exit_point = ExitPoint(
+                trade_id=trade.id,
+                exit_time=exit_time.time(),
+                contracts=contracts,
+                exit_price=exit_price
+            )
+            db.session.add(exit_point)
+
+            # Calculate P&L
+            if hasattr(trade, 'calculate_and_store_pnl'):
+                trade.calculate_and_store_pnl()
+
+            # Assign tags
+            self._assign_tags_to_trade(trade, outcome)
+
+            created_trades.append(trade)
+
+            if (i + 1) % 100 == 0:
+                print(f"  📝 Generated {i + 1}/{num_trades} trades...")
+                db.session.commit()  # Commit in batches
+
+        db.session.commit()
+        self.trades = created_trades
+        print(f"✅ Created {len(created_trades)} realistic trades")
+
+    def create_trade_images(self):
+        """Create sample trade images."""
+        print("\n📷 Creating sample trade images...")
+
+        # Create sample trade images for first 50 trades
+        created_images = 0
+        sample_trades = self.trades[:50]
+
+        for trade in sample_trades:
+            # 30% chance of having images
+            if random.random() < 0.3:
+                num_images = random.randint(1, 3)
+
+                for i in range(num_images):
+                    # Create mock image record
+                    image = TradeImage(
+                        trade_id=trade.id,
+                        user_id=trade.user_id,
+                        filename=f'trade_{trade.id}_image_{i + 1}.png',
+                        filepath=f'trade_images/trade_{trade.id}_image_{i + 1}.png',
+                        filesize=random.randint(50000, 500000),  # 50KB - 500KB
+                        mime_type='image/png',
+                        caption=f'Chart analysis for trade {trade.id}'
+                    )
+                    db.session.add(image)
+                    created_images += 1
+
+        db.session.commit()
+        print(f"✅ Created {created_images} sample trade images")
+
+    def create_daily_journals(self):
+        """Create comprehensive daily journal entries."""
+        print("\n📖 Creating daily journal entries...")
+
+        # Group trades by user and date
+        user_trade_days = defaultdict(lambda: defaultdict(list))
+        for trade in self.trades:
+            user_trade_days[trade.user_id][trade.trade_date].append(trade)
+
+        created_journals = 0
+        created_p12_usage = 0
+
+        for user_id, trade_days in user_trade_days.items():
+            for trade_date, trades_for_day in trade_days.items():
+                # Create journal entry
+                journal = self._create_enhanced_daily_journal_entry(user_id, trade_date, trades_for_day)
+                created_journals += 1
+
+                # Create P12 usage stat (50% chance)
+                if random.random() < 0.5 and self.p12_scenarios:
+                    scenario = random.choice(self.p12_scenarios)
+                    p12_usage = P12UsageStats(
+                        user_id=user_id,
+                        p12_scenario_id=scenario.id,
+                        journal_date=trade_date,
+                        market_session=random.choice(['pre-market', 'regular-hours']),
+                        p12_high=random.uniform(4200, 4600),
+                        p12_mid=random.uniform(4150, 4550),
+                        p12_low=random.uniform(4100, 4500),
+                        outcome_successful=random.choice([True, False, None]),
+                        outcome_notes=f'P12 scenario {scenario.scenario_number} analysis for {trade_date}'
+                    )
+                    db.session.add(p12_usage)
+                    created_p12_usage += 1
+
+        db.session.commit()
+        print(f"✅ Created {created_journals} daily journal entries")
+        print(f"✅ Created {created_p12_usage} P12 usage statistics")
+
+    def create_weekly_journals(self):
+        """Create sample weekly journal entries."""
+        print("\n📅 Creating weekly journal entries...")
+
+        # Create weekly journals for active users for last 12 weeks
+        active_users = [self.admin_user] + self.test_users[:20]
+        created_weeklies = 0
+
+        for user in active_users:
+            for week_back in range(1, 13):  # Last 12 weeks
+                target_date = date.today() - timedelta(weeks=week_back)
+                year, week_num, _ = target_date.isocalendar()
+
+                weekly = WeeklyJournal(
+                    user_id=user.id,
+                    year=year,
+                    week_number=week_num,
+                    weekly_improve_action_next_week=f'Focus on improving risk management and trade selection for user {user.username}'
+                )
+                db.session.add(weekly)
+                created_weeklies += 1
+
+        db.session.commit()
+        print(f"✅ Created {created_weeklies} weekly journal entries")
+
+    def create_activity_logs(self):
+        """Create realistic activity logs."""
+        print("\n📋 Creating activity logs...")
+
+        activity_types = [
+            'user_login', 'user_logout', 'trade_created', 'trade_updated', 'trade_deleted',
+            'journal_created', 'journal_updated', 'model_created', 'settings_updated',
+            'password_changed', 'profile_updated', 'export_data', 'import_data'
+        ]
+
+        created_activities = 0
+        all_users = [self.admin_user] + self.test_users
+
+        # Create activities over last 90 days
+        for day_back in range(90):
+            activity_date = datetime.now() - timedelta(days=day_back)
+
+            # Random number of activities per day (0-20)
+            daily_activities = random.randint(0, 20)
+
+            for _ in range(daily_activities):
+                user = random.choice(all_users)
+                activity_type = random.choice(activity_types)
+
+                activity = Activity(
+                    user_id=user.id,
+                    action=activity_type,
+                    details=f'{activity_type} performed by {user.username}',
+                    ip_address=f'192.168.1.{random.randint(1, 255)}',
+                    user_agent='Mozilla/5.0 (Test Browser)',
+                    timestamp=activity_date - timedelta(
+                        hours=random.randint(0, 23),
+                        minutes=random.randint(0, 59)
+                    )
+                )
+                db.session.add(activity)
+                created_activities += 1
+
+        db.session.commit()
+        print(f"✅ Created {created_activities} activity log entries")
+
+    def create_sample_files(self):
+        """Create sample file records."""
+        print("\n📁 Creating sample file records...")
+
+        file_types = ['csv', 'xlsx', 'pdf', 'png', 'jpg']
+        file_purposes = ['trade_export', 'journal_backup', 'chart_image', 'report', 'analysis']
+
+        created_files = 0
+        active_users = [self.admin_user] + self.test_users[:25]
+
+        for user in active_users:
+            # Each user gets 2-8 files
+            num_files = random.randint(2, 8)
+
+            for i in range(num_files):
+                file_ext = random.choice(file_types)
+                purpose = random.choice(file_purposes)
+
+                file_record = File(
+                    user_id=user.id,
+                    filename=f'{purpose}_{user.username}_{i + 1}.{file_ext}',
+                    original_filename=f'{purpose}_{i + 1}.{file_ext}',
+                    file_path=f'uploads/user_{user.id}/{purpose}_{i + 1}.{file_ext}',
+                    file_size=random.randint(1024, 5242880),  # 1KB - 5MB
+                    mime_type=f'application/{file_ext}' if file_ext in ['csv', 'xlsx', 'pdf'] else f'image/{file_ext}',
+                    upload_date=datetime.now() - timedelta(
+                        days=random.randint(1, 180),
+                        hours=random.randint(0, 23)
+                    )
+                )
+                db.session.add(file_record)
+                created_files += 1
+
+        db.session.commit()
+        print(f"✅ Created {created_files} file records")
+
+    def create_sample_files(self):
+        """Create sample file records."""
+        print("\n📁 Creating sample file records...")
+
+        file_types = ['csv', 'xlsx', 'pdf', 'png', 'jpg']
+        file_purposes = ['trade_export', 'journal_backup', 'chart_image', 'report', 'analysis']
+
+        created_files = 0
+        active_users = [self.admin_user] + self.test_users[:25]
+
+        for user in active_users:
+            # Each user gets 2-8 files
+            num_files = random.randint(2, 8)
+
+            for i in range(num_files):
+                file_ext = random.choice(file_types)
+                purpose = random.choice(file_purposes)
+
+                # Use only fields that exist in the File model
+                file_record = File(
+                    user_id=user.id,
+                    filename=f'{purpose}_{user.username}_{i + 1}.{file_ext}',  # This is the field name
+                    filepath=f'uploads/user_{user.id}/{purpose}_{i + 1}.{file_ext}',  # This is the field name
+                    filesize=random.randint(1024, 5242880),  # 1KB - 5MB (this is the field name)
+                    file_type=file_ext,  # This field exists
+                    mime_type=f'application/{file_ext}' if file_ext in ['csv', 'xlsx', 'pdf'] else f'image/{file_ext}',
+                    upload_date=datetime.now() - timedelta(
+                        days=random.randint(1, 180),
+                        hours=random.randint(0, 23)
+                    ),
+                    description=f'{purpose} file for {user.username}',
+                    is_public=random.choice([True, False]),
+                    download_count=random.randint(0, 10)
+                    # Remove: original_filename - this field doesn't exist
+                    # Remove: file_path - use filepath instead
+                    # Remove: file_size - use filesize instead
+                )
+                db.session.add(file_record)
+                created_files += 1
+
+        db.session.commit()
+        print(f"✅ Created {created_files} file records")
+
+
+    def _create_enhanced_daily_journal_entry(self, user_id, trade_date, trades_for_day):
+        """Create a comprehensive daily journal entry with all fields."""
+
+        # Calculate performance
+        performance = self._calculate_daily_performance(trades_for_day)
+
+        # Generate P12 levels
+        p12_high = random.uniform(4200, 4600)
+        p12_mid = p12_high - random.uniform(15, 35)
+        p12_low = p12_mid - random.uniform(15, 35)
+
+        # Select random P12 scenario
+        p12_scenario = random.choice(self.p12_scenarios) if self.p12_scenarios else None
+
+        journal = DailyJournal(
+            user_id=user_id,
+            journal_date=trade_date,
+
+            # Pre-market mental state
+            key_events_today=f'Market session for {trade_date}. {len(trades_for_day)} trades planned.',
+            mental_feeling_rating=random.randint(3, 5),
+            mental_mind_rating=random.randint(3, 5),
+            mental_energy_rating=random.randint(3, 5),
+            mental_motivation_rating=random.randint(3, 5),
+
+            # P12 analysis
+            p12_scenario_id=p12_scenario.id if p12_scenario else None,
+            p12_high=p12_high,
+            p12_mid=p12_mid,
+            p12_low=p12_low,
+            p12_notes=f'P12 analysis: Range {p12_high - p12_low:.1f} points. Scenario {p12_scenario.scenario_number if p12_scenario else "None"} selected.',
+            p12_expected_outcomes=self._generate_four_steps_analysis(trades_for_day),
+
+            # Market analysis
+            realistic_expectance_notes=f'Expected range: {p12_high - p12_low:.1f} points. Daily bias based on overnight action.',
+            engagement_structure_notes=f'Plan to trade {len(trades_for_day)} setups using selected models.',
+            key_levels_notes=f'Key levels: P12 High {p12_high:.2f}, Mid {p12_mid:.2f}, Low {p12_low:.2f}',
+
+            # Post-market analysis
+            market_observations=f'Market behaved according to {p12_scenario.scenario_number if p12_scenario else "expected"} scenario.',
+            self_observations=f'Executed {len(trades_for_day)} trades with {performance["win_rate"]:.1f}% win rate.',
+
+            # Daily review
+            did_well_today='Followed trading plan and risk management rules.' if performance['total_pnl'] >= 0 else 'Maintained discipline despite challenging conditions.',
+            did_not_go_well_today='Minor timing issues on some entries.' if performance['win_rate'] < 60 else 'No major issues identified.',
+            learned_today=random.choice([
+                'Patience at key levels continues to pay off.',
+                'Model selection alignment with daily bias is crucial.',
+                'Risk management discipline prevents larger losses.'
+            ]),
+            improve_action_next_day=random.choice([
+                'Focus on tighter entry timing.',
+                'Review daily classification criteria.',
+                'Enhance position sizing based on setup quality.'
+            ]),
+
+            # Psychology ratings
+            review_psych_discipline_rating=random.randint(3, 5),
+            review_psych_motivation_rating=random.randint(3, 5),
+            review_psych_focus_rating=random.randint(3, 5),
+            review_psych_mastery_rating=random.randint(3, 5),
+            review_psych_composure_rating=random.randint(3, 5),
+            review_psych_resilience_rating=random.randint(3, 5),
+            review_psych_mind_rating=random.randint(3, 5),
+            review_psych_energy_rating=random.randint(3, 5)
         )
-        db.session.add(setting)
-        created_settings.append(setting)
 
-    db.session.commit()
-    self.account_settings = created_settings
-    print(f"✅ Created {len(created_settings)} account settings")
+        db.session.add(journal)
+        return journal
 
+    def _calculate_daily_performance(self, trades_for_day):
+        """Calculate performance metrics for trades."""
+        total_pnl = sum(trade.pnl for trade in trades_for_day if hasattr(trade, 'pnl') and trade.pnl) or 0
+        winning_trades = sum(1 for trade in trades_for_day if hasattr(trade, 'pnl') and trade.pnl and trade.pnl > 0)
 
-def generate_realistic_trades(self, num_trades=10000):
-    """Generate realistic trades with full relationships."""
-    print(f"\n📊 Generating {num_trades} realistic trades...")
-
-    # Your existing trade generation logic (keeping it the same)
-    # But with improvements for larger dataset and more models
-
-    win_rate = 0.65
-    breakeven_rate = 0.05
-
-    # R-multiple distributions
-    winner_r_multiples = [0.5, 0.8, 1.0, 1.2, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0]
-    winner_weights = [0.15, 0.20, 0.25, 0.15, 0.10, 0.08, 0.04, 0.02, 0.008, 0.002]
-
-    loser_r_multiples = [-1.0, -0.8, -0.6, -0.4, -0.3, -0.15]
-    loser_weights = [0.40, 0.25, 0.15, 0.10, 0.07, 0.03]
-
-    created_trades = []
-    start_date = date.today() - timedelta(days=730)  # 2 years of data
-
-    # Distribute trades across all users
-    users_for_trades = [self.admin_user] + self.test_users[:50]  # Admin + 50 test users
-
-    for i in range(num_trades):
-        # Assign to random user (weighted toward test users)
-        if i < 200:  # First 200 to admin
-            assigned_user = self.admin_user
-        else:
-            assigned_user = random.choice(users_for_trades)
-
-        # Generate trade (using your existing logic but improved)
-        days_back = random.randint(0, 730)
-        trade_date = start_date + timedelta(days=days_back)
-
-        # Skip weekends
-        while trade_date.weekday() >= 5:
-            trade_date += timedelta(days=1)
-
-        # Random instrument and model
-        instrument = random.choice(list(self.instruments.values()))
-        model = random.choice(self.trading_models)
-
-        # Determine outcome
-        outcome_rand = random.random()
-        if outcome_rand < win_rate:
-            outcome = 'win'
-            r_multiple = random.choices(winner_r_multiples, winner_weights)[0]
-        elif outcome_rand < win_rate + breakeven_rate:
-            outcome = 'breakeven'
-            r_multiple = 0
-        else:
-            outcome = 'loss'
-            r_multiple = random.choices(loser_r_multiples, loser_weights)[0]
-
-        # Generate realistic prices and trade details
-        direction = random.choice(['Long', 'Short'])
-
-        # Entry time based on model
-        entry_hour = random.randint(9, 15)
-        entry_minute = random.randint(0, 59)
-        entry_time = time(entry_hour, entry_minute)
-
-        # Generate prices based on instrument
-        price_ranges = {
-            'ES': (4000, 4800),
-            'NQ': (12000, 16000),
-            'YM': (33000, 38000),
-            'RTY': (1800, 2200),
-            'CL': (65, 85),
-            'GC': (1800, 2100)
+        return {
+            'total_pnl': total_pnl,
+            'winning_trades': winning_trades,
+            'total_trades': len(trades_for_day),
+            'win_rate': (winning_trades / len(trades_for_day)) * 100 if trades_for_day else 0
         }
 
-        price_range = price_ranges.get(instrument.symbol, (4000, 4800))
-        base_price = random.uniform(price_range[0], price_range[1])
+    def _generate_four_steps_analysis(self, trades_for_day):
+        """Generate Four Steps analysis."""
+        models_used = list(set([trade.trading_model.name for trade in trades_for_day if hasattr(trade, 'trading_model') and trade.trading_model]))
+        models_str = ', '.join(models_used) if models_used else 'Standard setups'
 
-        entry_price = round(base_price, 2)
+        return f"""Step 1 - Define HOD/LOD: Dashboard analysis shows trending bias based on overnight action.
+    
+    Step 2 - Incorporate Variables: Session behavior confirms directional bias with normal volume.
+    
+    Step 3 - Set Realistic Expectance: Daily range target set with appropriate risk parameters.
+    
+    Step 4 - Engage at Highest Statistical Structure: Executed using {models_str} models."""
 
-        # Calculate stop and target
-        stop_distance = random.uniform(0.1, 1.0) * (price_range[1] - price_range[0]) / 100
-
-        if direction == 'Long':
-            stop_loss = entry_price - stop_distance
-        else:
-            stop_loss = entry_price + stop_distance
-
-        # Calculate exit price based on outcome
-        risk_per_share = abs(entry_price - stop_loss)
-        target_distance = abs(r_multiple) * risk_per_share
-
+    def _get_close_reason(self, outcome):
+        """Get realistic close reasons."""
         if outcome == 'win':
-            if direction == 'Long':
-                exit_price = entry_price + target_distance
-            else:
-                exit_price = entry_price - target_distance
+            return random.choice(['Target Hit', 'Partial Scale', 'Time Stop', 'Trailing Stop'])
         elif outcome == 'breakeven':
-            exit_price = entry_price
+            return random.choice(['Breakeven Stop', 'Time Stop', 'Scratch'])
         else:
-            exit_price = stop_loss + random.uniform(-0.1, 0.1)
-
-        # Contract size
-        contracts = random.choice([1, 2, 3, 4, 5])
-
-        # Exit time
-        exit_time = datetime.combine(trade_date, entry_time) + timedelta(minutes=random.randint(5, 180))
-        if exit_time.hour >= 16:
-            exit_time = exit_time.replace(hour=15, minute=random.randint(45, 59))
-
-        # Create trade
-        trade = Trade(
-            instrument_id=instrument.id,
-            trade_date=trade_date,
-            direction=direction,
-            initial_stop_loss=stop_loss,
-            terminus_target=exit_price if outcome == 'win' else entry_price + (
-                2 * target_distance if direction == 'Long' else -2 * target_distance),
-            is_dca=random.choice([True, False]) if random.random() < 0.15 else False,
-            mae=random.uniform(0, stop_distance * 0.8) if outcome != 'loss' else stop_distance,
-            mfe=target_distance if outcome == 'win' else random.uniform(0, target_distance * 0.6),
-            how_closed=self._get_close_reason(outcome),
-            news_event=self._get_random_news_event() if random.random() < 0.1 else None,
-            rules_rating=random.randint(1, 5),
-            management_rating=random.randint(1, 5),
-            target_rating=random.randint(1, 5),
-            entry_rating=random.randint(1, 5),
-            preparation_rating=random.randint(1, 5),
-            trade_notes=self._get_trade_note(model.name, outcome),
-            trading_model_id=model.id,
-            user_id=assigned_user.id
-        )
-
-        db.session.add(trade)
-        db.session.flush()
-
-        # Create entry point
-        entry = EntryPoint(
-            trade_id=trade.id,
-            entry_time=entry_time,
-            contracts=contracts,
-            entry_price=entry_price
-        )
-        db.session.add(entry)
-
-        # Create exit point
-        exit_point = ExitPoint(
-            trade_id=trade.id,
-            exit_time=exit_time.time(),
-            contracts=contracts,
-            exit_price=exit_price
-        )
-        db.session.add(exit_point)
-
-        # Calculate P&L
-        trade.calculate_and_store_pnl()
-
-        # Assign tags
-        self._assign_tags_to_trade(trade, outcome)
-
-        created_trades.append(trade)
-
-        if (i + 1) % 100 == 0:
-            print(f"  📝 Generated {i + 1}/{num_trades} trades...")
-            db.session.commit()  # Commit in batches
-
-    db.session.commit()
-    self.trades = created_trades
-    print(f"✅ Created {len(created_trades)} realistic trades")
-
-
-def create_trade_images(self):
-    """Create sample trade images."""
-    print("\n📷 Creating sample trade images...")
-
-    # Create sample trade images for first 50 trades
-    created_images = 0
-    sample_trades = self.trades[:50]
-
-    for trade in sample_trades:
-        # 30% chance of having images
-        if random.random() < 0.3:
-            num_images = random.randint(1, 3)
-
-            for i in range(num_images):
-                # Create mock image record
-                image = TradeImage(
-                    trade_id=trade.id,
-                    user_id=trade.user_id,
-                    filename=f'trade_{trade.id}_image_{i + 1}.png',
-                    filepath=f'trade_images/trade_{trade.id}_image_{i + 1}.png',
-                    filesize=random.randint(50000, 500000),  # 50KB - 500KB
-                    mime_type='image/png',
-                    caption=f'Chart analysis for trade {trade.id}'
-                )
-                db.session.add(image)
-                created_images += 1
-
-    db.session.commit()
-    print(f"✅ Created {created_images} sample trade images")
-
-
-def create_daily_journals(self):
-    """Create comprehensive daily journal entries."""
-    print("\n📖 Creating daily journal entries...")
-
-    # Group trades by user and date
-    user_trade_days = defaultdict(lambda: defaultdict(list))
-    for trade in self.trades:
-        user_trade_days[trade.user_id][trade.trade_date].append(trade)
-
-    created_journals = 0
-    created_p12_usage = 0
-
-    for user_id, trade_days in user_trade_days.items():
-        for trade_date, trades_for_day in trade_days.items():
-            # Create journal entry
-            journal = self._create_enhanced_daily_journal_entry(user_id, trade_date, trades_for_day)
-            created_journals += 1
-
-            # Create P12 usage stat (50% chance)
-            if random.random() < 0.5 and self.p12_scenarios:
-                scenario = random.choice(self.p12_scenarios)
-                p12_usage = P12UsageStats(
-                    user_id=user_id,
-                    p12_scenario_id=scenario.id,
-                    journal_date=trade_date,
-                    market_session=random.choice(['pre-market', 'regular-hours']),
-                    p12_high=random.uniform(4200, 4600),
-                    p12_mid=random.uniform(4150, 4550),
-                    p12_low=random.uniform(4100, 4500),
-                    outcome_successful=random.choice([True, False, None]),
-                    outcome_notes=f'P12 scenario {scenario.scenario_number} analysis for {trade_date}'
-                )
-                db.session.add(p12_usage)
-                created_p12_usage += 1
-
-    db.session.commit()
-    print(f"✅ Created {created_journals} daily journal entries")
-    print(f"✅ Created {created_p12_usage} P12 usage statistics")
-
-
-def create_weekly_journals(self):
-    """Create sample weekly journal entries."""
-    print("\n📅 Creating weekly journal entries...")
-
-    # Create weekly journals for active users for last 12 weeks
-    active_users = [self.admin_user] + self.test_users[:20]
-    created_weeklies = 0
-
-    for user in active_users:
-        for week_back in range(1, 13):  # Last 12 weeks
-            target_date = date.today() - timedelta(weeks=week_back)
-            year, week_num, _ = target_date.isocalendar()
-
-            weekly = WeeklyJournal(
-                user_id=user.id,
-                year=year,
-                week_number=week_num,
-                weekly_improve_action_next_week=f'Focus on improving risk management and trade selection for user {user.username}'
-            )
-            db.session.add(weekly)
-            created_weeklies += 1
-
-    db.session.commit()
-    print(f"✅ Created {created_weeklies} weekly journal entries")
-
-
-def create_activity_logs(self):
-    """Create realistic activity logs."""
-    print("\n📋 Creating activity logs...")
-
-    activity_types = [
-        'user_login', 'user_logout', 'trade_created', 'trade_updated', 'trade_deleted',
-        'journal_created', 'journal_updated', 'model_created', 'settings_updated',
-        'password_changed', 'profile_updated', 'export_data', 'import_data'
-    ]
-
-    created_activities = 0
-    all_users = [self.admin_user] + self.test_users
-
-    # Create activities over last 90 days
-    for day_back in range(90):
-        activity_date = datetime.now() - timedelta(days=day_back)
-
-        # Random number of activities per day (0-20)
-        daily_activities = random.randint(0, 20)
-
-        for _ in range(daily_activities):
-            user = random.choice(all_users)
-            activity_type = random.choice(activity_types)
-
-            activity = Activity(
-                user_id=user.id,
-                action=activity_type,
-                details=f'{activity_type} performed by {user.username}',
-                ip_address=f'192.168.1.{random.randint(1, 255)}',
-                user_agent='Mozilla/5.0 (Test Browser)',
-                timestamp=activity_date - timedelta(
-                    hours=random.randint(0, 23),
-                    minutes=random.randint(0, 59)
-                )
-            )
-            db.session.add(activity)
-            created_activities += 1
-
-    db.session.commit()
-    print(f"✅ Created {created_activities} activity log entries")
-
-
-def create_sample_files(self):
-    """Create sample file records."""
-    print("\n📁 Creating sample file records...")
-
-    file_types = ['csv', 'xlsx', 'pdf', 'png', 'jpg']
-    file_purposes = ['trade_export', 'journal_backup', 'chart_image', 'report', 'analysis']
-
-    created_files = 0
-    active_users = [self.admin_user] + self.test_users[:25]
-
-    for user in active_users:
-        # Each user gets 2-8 files
-        num_files = random.randint(2, 8)
-
-        for i in range(num_files):
-            file_ext = random.choice(file_types)
-            purpose = random.choice(file_purposes)
-
-            file_record = File(
-                user_id=user.id,
-                filename=f'{purpose}_{user.username}_{i + 1}.{file_ext}',
-                original_filename=f'{purpose}_{i + 1}.{file_ext}',
-                file_path=f'uploads/user_{user.id}/{purpose}_{i + 1}.{file_ext}',
-                file_size=random.randint(1024, 5242880),  # 1KB - 5MB
-                mime_type=f'application/{file_ext}' if file_ext in ['csv', 'xlsx', 'pdf'] else f'image/{file_ext}',
-                upload_date=datetime.now() - timedelta(
-                    days=random.randint(1, 180),
-                    hours=random.randint(0, 23)
-                )
-            )
-            db.session.add(file_record)
-            created_files += 1
-
-    db.session.commit()
-    print(f"✅ Created {created_files} file records")
-
-
-def _create_enhanced_daily_journal_entry(self, user_id, trade_date, trades_for_day):
-    """Create a comprehensive daily journal entry with all fields."""
-
-    # Calculate performance
-    performance = self._calculate_daily_performance(trades_for_day)
-
-    # Generate P12 levels
-    p12_high = random.uniform(4200, 4600)
-    p12_mid = p12_high - random.uniform(15, 35)
-    p12_low = p12_mid - random.uniform(15, 35)
-
-    # Select random P12 scenario
-    p12_scenario = random.choice(self.p12_scenarios) if self.p12_scenarios else None
-
-    journal = DailyJournal(
-        user_id=user_id,
-        journal_date=trade_date,
-
-        # Pre-market mental state
-        key_events_today=f'Market session for {trade_date}. {len(trades_for_day)} trades planned.',
-        mental_feeling_rating=random.randint(3, 5),
-        mental_mind_rating=random.randint(3, 5),
-        mental_energy_rating=random.randint(3, 5),
-        mental_motivation_rating=random.randint(3, 5),
-
-        # P12 analysis
-        p12_scenario_id=p12_scenario.id if p12_scenario else None,
-        p12_high=p12_high,
-        p12_mid=p12_mid,
-        p12_low=p12_low,
-        p12_notes=f'P12 analysis: Range {p12_high - p12_low:.1f} points. Scenario {p12_scenario.scenario_number if p12_scenario else "None"} selected.',
-        p12_expected_outcomes=self._generate_four_steps_analysis(trades_for_day),
-
-        # Market analysis
-        realistic_expectance_notes=f'Expected range: {p12_high - p12_low:.1f} points. Daily bias based on overnight action.',
-        engagement_structure_notes=f'Plan to trade {len(trades_for_day)} setups using selected models.',
-        key_levels_notes=f'Key levels: P12 High {p12_high:.2f}, Mid {p12_mid:.2f}, Low {p12_low:.2f}',
-
-        # Post-market analysis
-        market_observations=f'Market behaved according to {p12_scenario.scenario_number if p12_scenario else "expected"} scenario.',
-        self_observations=f'Executed {len(trades_for_day)} trades with {performance["win_rate"]:.1f}% win rate.',
-
-        # Daily review
-        did_well_today='Followed trading plan and risk management rules.' if performance[
-                                                                                 'total_pnl'] >= 0 else 'Maintained discipline despite challenging conditions.',
-        did_not_go_well_today='Minor timing issues on some entries.' if performance[
-                                                                            'win_rate'] < 60 else 'No major issues identified.',
-        learned_today=random.choice([
-            'Patience at key levels continues to pay off.',
-            'Model selection alignment with daily bias is crucial.',
-            'Risk management discipline prevents larger losses.'
-        ]),
-        improve_action_next_day=random.choice([
-            'Focus on tighter entry timing.',
-            'Review daily classification criteria.',
-            'Enhance position sizing based on setup quality.'
-        ]),
-
-        # Psychology ratings
-        review_psych_discipline_rating=random.randint(3, 5),
-        review_psych_motivation_rating=random.randint(3, 5),
-        review_psych_focus_rating=random.randint(3, 5),
-        review_psych_mastery_rating=random.randint(3, 5),
-        review_psych_composure_rating=random.randint(3, 5),
-        review_psych_resilience_rating=random.randint(3, 5),
-        review_psych_mind_rating=random.randint(3, 5),
-        review_psych_energy_rating=random.randint(3, 5)
-    )
-
-    db.session.add(journal)
-    return journal
-
-
-def _calculate_daily_performance(self, trades_for_day):
-    """Calculate performance metrics for trades."""
-    total_pnl = sum(trade.pnl for trade in trades_for_day if trade.pnl) or 0
-    winning_trades = sum(1 for trade in trades_for_day if trade.pnl and trade.pnl > 0)
-
-    return {
-        'total_pnl': total_pnl,
-        'winning_trades': winning_trades,
-        'total_trades': len(trades_for_day),
-        'win_rate': (winning_trades / len(trades_for_day)) * 100 if trades_for_day else 0
-    }
-
-
-def _generate_four_steps_analysis(self, trades_for_day):
-    """Generate Four Steps analysis."""
-    models_used = list(set([trade.trading_model.name for trade in trades_for_day if trade.trading_model]))
-    models_str = ', '.join(models_used) if models_used else 'Standard setups'
-
-    return f"""Step 1 - Define HOD/LOD: Dashboard analysis shows trending bias based on overnight action.
-
-Step 2 - Incorporate Variables: Session behavior confirms directional bias with normal volume.
-
-Step 3 - Set Realistic Expectance: Daily range target set with appropriate risk parameters.
-
-Step 4 - Engage at Highest Statistical Structure: Executed using {models_str} models."""
-
-
-def _get_close_reason(self, outcome):
-    """Get realistic close reasons."""
-    if outcome == 'win':
-        return random.choice(['Target Hit', 'Partial Scale', 'Time Stop', 'Trailing Stop'])
-    elif outcome == 'breakeven':
-        return random.choice(['Breakeven Stop', 'Time Stop', 'Scratch'])
+            return random.choice(['Stop Loss', 'Manual Close', 'Risk Management'])
+
+    def _get_random_news_event(self):
+        """Get random news events."""
+        if self.news_events:
+            return random.choice(self.news_events).name
+        return 'Market Event'
+
+    def _get_trade_note(self, model_name, outcome):
+        """Generate realistic trade notes."""
+        outcome_text = {
+            'win': 'Executed according to plan.',
+            'loss': 'Stop loss hit, followed rules.',
+            'breakeven': 'Scratched for small gain/loss.'
+        }.get(outcome, 'Trade completed.')
+
+        return f'{model_name} setup. {outcome_text}'
+
+    def _assign_tags_to_trade(self, trade, outcome):
+        """Assign realistic tags to trades."""
+        available_tags = self.tags
+        if not available_tags:
+            return
+
+        good_tags = [tag for tag in available_tags if tag.color_category == 'good']
+        bad_tags = [tag for tag in available_tags if tag.color_category == 'bad']
+        neutral_tags = [tag for tag in available_tags if tag.color_category == 'neutral']
+
+        selected_tags = []
+
+        # Always add 1-2 neutral tags
+        if neutral_tags:
+            selected_tags.extend(random.sample(neutral_tags, min(2, len(neutral_tags))))
+
+        # Add outcome-based tags
+        if outcome == 'win' and good_tags:
+            selected_tags.extend(random.sample(good_tags, min(2, len(good_tags))))
+        elif outcome == 'loss' and bad_tags:
+            selected_tags.extend(random.sample(bad_tags, min(2, len(bad_tags))))
+
+        # Assign unique tags
+        trade.tags = list(set(selected_tags))
+
+    def print_comprehensive_statistics(self):
+        """Print detailed statistics about the generated data."""
+        print("\n" + "=" * 80)
+        print("📊 ENHANCED BOOTSTRAP COMPLETE - COMPREHENSIVE STATISTICS")
+        print("=" * 80)
+
+        # User statistics
+        print(f"\n👤 Users & Authentication:")
+        print(f"   • Admin User: {self.admin_user.username} (ID: {self.admin_user.id})")
+        print(f"   • Test Users: {len(self.test_users)}")
+        print(f"   • User Groups: {len(self.user_groups)}")
+        print(f"   • API Keys: {ApiKey.query.count()}")
+        print(f"   • Password Resets: {PasswordReset.query.count()}")
+
+        # Core trading data
+        print(f"\n📊 Core Trading Data:")
+        print(f"   • Instruments: {len(self.instruments)}")
+        print(f"   • Trading Models: {len(self.trading_models)}")
+        print(f"   • P12 Scenarios: {len(self.p12_scenarios)}")
+        print(f"   • Tags: {len(self.tags)}")
+        print(f"   • News Events: {len(self.news_events)}")
+
+        # Trading activity
+        print(f"\n📈 Trading Activity:")
+        print(f"   • Total Trades: {len(self.trades)}")
+        print(f"   • Entry Points: {EntryPoint.query.count()}")
+        print(f"   • Exit Points: {ExitPoint.query.count()}")
+
+
+def run_complete_bootstrap():
+    """Complete bootstrap process with all data generation."""
+    manager = EnhancedBootstrapManager()
+
+    try:
+        print("🚀 Starting Enhanced Database Bootstrap...")
+
+        # Initialize application and database
+        manager.initialize_app()
+
+        with manager.app.app_context():
+            print("\n🔧 Phase 1: Core System Setup")
+            manager.create_admin_user()
+            manager.create_test_users()
+            manager.create_user_groups()
+            manager.create_sample_password_resets()
+
+            print("\n🔧 Phase 2: Trading Framework")
+            manager.create_default_tags()
+            manager.create_instruments()
+            manager.create_p12_scenarios()
+            manager.create_trading_models()
+            manager.create_news_events()
+            manager.create_account_settings()
+
+            print("\n🔧 Phase 3: Trading Data Generation")
+            manager.generate_realistic_trades(1000)  # Reduce for initial testing
+            manager.create_trade_images()
+            manager.create_daily_journals()
+            manager.create_weekly_journals()
+
+            print("\n🔧 Phase 4: System Activity & Files")
+            manager.create_activity_logs()
+            manager.create_sample_files()
+
+            print("\n🔧 Phase 5: Final Statistics")
+            manager.print_comprehensive_statistics()
+
+            print("\n🎉 BOOTSTRAP COMPLETE!")
+            print("=" * 60)
+            print("Ready to run: python run.py")
+            print("Admin login: admin / admin123")
+            print("Test user login: testuser1 / testuser1")
+
+    except Exception as e:
+        print(f"❌ Bootstrap failed with error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+    return True
+
+
+if __name__ == '__main__':
+    success = run_complete_bootstrap()
+    if not success:
+        print("\n❌ Bootstrap failed. Check the errors above.")
+        sys.exit(1)
     else:
-        return random.choice(['Stop Loss', 'Manual Close', 'Risk Management'])
-
-
-def _get_random_news_event(self):
-    """Get random news events."""
-    if self.news_events:
-        return random.choice(self.news_events).name
-    return 'Market Event'
-
-
-def _get_trade_note(self, model_name, outcome):
-    """Generate realistic trade notes."""
-    outcome_text = {
-        'win': 'Executed according to plan.',
-        'loss': 'Stop loss hit, followed rules.',
-        'breakeven': 'Scratched for small gain/loss.'
-    }.get(outcome, 'Trade completed.')
-
-    return f'{model_name} setup. {outcome_text}'
-
-
-def _assign_tags_to_trade(self, trade, outcome):
-    """Assign realistic tags to trades."""
-    available_tags = self.tags
-    if not available_tags:
-        return
-
-    good_tags = [tag for tag in available_tags if tag.color_category == 'good']
-    bad_tags = [tag for tag in available_tags if tag.color_category == 'bad']
-    neutral_tags = [tag for tag in available_tags if tag.color_category == 'neutral']
-
-    selected_tags = []
-
-    # Always add 1-2 neutral tags
-    if neutral_tags:
-        selected_tags.extend(random.sample(neutral_tags, min(2, len(neutral_tags))))
-
-    # Add outcome-based tags
-    if outcome == 'win' and good_tags:
-        selected_tags.extend(random.sample(good_tags, min(2, len(good_tags))))
-    elif outcome == 'loss' and bad_tags:
-        selected_tags.extend(random.sample(bad_tags, min(2, len(bad_tags))))
-
-    # Assign unique tags
-    trade.tags = list(set(selected_tags))
-
-
-def print_comprehensive_statistics(self):
-    """Print detailed statistics about the generated data."""
-    print("\n" + "=" * 80)
-    print("📊 ENHANCED BOOTSTRAP COMPLETE - COMPREHENSIVE STATISTICS")
-    print("=" * 80)
-
-    # User statistics
-    print(f"\n👤 Users & Authentication:")
-    print(f"   • Admin User: {self.admin_user.username} (ID: {self.admin_user.id})")
-    print(f"   • Test Users: {len(self.test_users)}")
-    print(f"   • User Groups: {len(self.user_groups)}")
-    print(f"   • API Keys: {ApiKey.query.count()}")
-    print(f"   • Password Resets: {PasswordReset.query.count()}")
-
-    # Core trading data
-    print(f"\n📊 Core Trading Data:")
-    print(f"   • Instruments: {len(self.instruments)}")
-    print(f"   • Trading Models: {len(self.trading_models)}")
-    print(f"   • P12 Scenarios: {len(self.p12_scenarios)}")
-    print(f"   • Tags: {len(self.tags)}")
-    print(f"   • News Events: {len(self.news_events)}")
-
-    # Trading activity
-    print(f"\n📈 Trading Activity:")
-    print(f"   • Total Trades: {len(self.trades)}")
-    print(f"   • Entry Points: {EntryPoint.query.count()}")
-    print(f"   • Exit Points: {ExitPoint.query.count()}")
+        print("\n✅ Bootstrap completed successfully!")
