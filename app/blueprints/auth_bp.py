@@ -277,6 +277,40 @@ def discord_login():
     return redirect(authorization_url)
 
 
+@auth_bp.route('/discord/sync-roles', methods=['POST'])
+@login_required
+def sync_discord_roles():
+    """Manually sync Discord roles for the current user."""
+    if not current_user.discord_linked:
+        return {'success': False, 'message': 'Discord account not linked'}, 400
+
+    if not current_user.discord_id:
+        return {'success': False, 'message': 'Discord ID not found'}, 400
+
+    try:
+        # Get fresh Discord roles
+        current_roles = discord_service.get_user_roles_sync(current_user.discord_id)
+
+        if current_roles is None:
+            return {'success': False, 'message': 'Discord service unavailable'}, 503
+
+        # Update user's roles
+        current_user.sync_discord_roles(current_roles)
+
+        # Log the activity
+        record_activity('discord_role_sync', f'Discord roles manually synced. Found {len(current_roles)} roles.')
+
+        return {
+            'success': True,
+            'message': f'Successfully synced {len(current_roles)} Discord roles',
+            'role_count': len(current_roles),
+            'sync_time': current_user.last_discord_sync.isoformat() if current_user.last_discord_sync else None
+        }
+
+    except Exception as e:
+        current_app.logger.error(f"Error syncing Discord roles for {current_user.username}: {e}", exc_info=True)
+        return {'success': False, 'message': 'Internal server error during sync'}, 500
+
 @auth_bp.route('/discord/callback')
 def discord_callback():
     """Handle Discord OAuth2 callback."""
@@ -587,38 +621,6 @@ def user_profile():
         if hasattr(current_user, 'bio'):
             current_user.bio = profile_form.bio.data
 
-        if profile_form.profile_picture.data:
-            picture_file = profile_form.profile_picture.data
-            # Use the specific allowed extensions for images from app config
-            if picture_file and allowed_file(picture_file.filename, current_app.config['ALLOWED_IMAGE_EXTENSIONS']):
-                original_filename = secure_filename(picture_file.filename)
-                file_ext = os.path.splitext(original_filename)[1].lower()
-
-                if current_user.profile_picture and current_user.profile_picture != 'default.jpg':
-                    old_picture_path = os.path.join(current_app.config['PROFILE_PICS_SAVE_PATH'],
-                                                    current_user.profile_picture)
-                    if os.path.exists(old_picture_path):
-                        try:
-                            os.remove(old_picture_path)
-                        except Exception as e_del:
-                            current_app.logger.error(f"Error deleting old profile pic: {e_del}")
-
-                picture_fn = uuid.uuid4().hex + file_ext
-                picture_save_path = os.path.join(current_app.config['PROFILE_PICS_SAVE_PATH'], picture_fn)
-
-                try:
-                    i = Image.open(picture_file)
-                    i.thumbnail((150, 150))  # Resize to 150x150
-                    i.save(picture_save_path)
-                    current_user.profile_picture = picture_fn
-                except Exception as e_save:
-                    flash('Error saving profile picture.', 'danger')
-                    current_app.logger.error(f"Profile pic save error: {e_save}", exc_info=True)
-            elif picture_file:  # File was provided but type not allowed
-                allowed_types_str = ', '.join(current_app.config['ALLOWED_IMAGE_EXTENSIONS'])
-                flash(
-                    f"Invalid image file type: '{picture_file.filename.rsplit('.', 1)[1].lower()}'. Allowed: {allowed_types_str}.",
-                    'warning')
         try:
             db.session.commit()
             record_activity('profile_update', 'User profile information updated.')
