@@ -67,11 +67,18 @@
                         <li class="nav-item dropdown me-2">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" id="navbarUserDropdown" href="#"
                                role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {% if current_user.profile_picture and current_user.profile_picture != 'default.jpg' %}
+                                {% if current_user.discord_linked and current_user.discord_avatar %}
+                                    <!-- Discord Avatar -->
+                                    <img src="https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.webp?size=32"
+                                         alt="Discord Avatar" class="rounded-circle me-2 user-avatar"
+                                         onerror="this.src='https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.png';">
+                                {% elif current_user.profile_picture and current_user.profile_picture != 'default.jpg' %}
+                                    <!-- Local Profile Picture -->
                                     <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/' + current_user.profile_picture) }}?v={{ range(1,100000)|random }}"
                                          alt="User Avatar" class="rounded-circle me-2 user-avatar">
                                 {% else %}
-                                     <i class="fas fa-user fa-fw me-2"></i>
+                                    <!-- Default Icon -->
+                                    <i class="fas fa-user fa-fw me-2"></i>
                                 {% endif %}
                                 <span class="d-none d-md-inline"></span>
                             </a>

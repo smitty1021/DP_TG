@@ -252,7 +252,10 @@ def reset_password_with_token(token):
 @auth_bp.route('/discord/login')
 def discord_login():
     """Initiate Discord OAuth2 login."""
-    if current_user.is_authenticated:
+    # Check if this is a linking operation for an authenticated user
+    linking_mode = session.get('discord_linking_mode', False)
+
+    if current_user.is_authenticated and not linking_mode:
         return redirect(url_for('main.index'))
 
     # Generate state parameter for CSRF protection
@@ -308,50 +311,91 @@ def discord_callback():
             flash('Failed to retrieve user information from Discord.', 'danger')
             return redirect(url_for('auth.login'))
 
-        # Process Discord authentication
-        discord_user = process_discord_authentication(user_info)
+        # Check if this is a linking operation
+        linking_mode = session.pop('discord_linking_mode', False)
+        linking_user_id = session.pop('linking_user_id', None)
 
-        if not discord_user:
-            flash('Authentication failed. You may not have the required Discord roles.', 'danger')
-            return redirect(url_for('auth.login'))
+        if linking_mode and linking_user_id and current_user.is_authenticated:
+            # This is a linking operation for an existing user
+            try:
+                discord_id = user_info['id']
+                discord_username = user_info['username']
+                discord_discriminator = user_info.get('discriminator', '0')
+                discord_avatar = user_info.get('avatar')
 
-        # Log the user in
-        login_user(discord_user, remember=True)
-        discord_user.last_login = datetime.utcnow()
+                # Check if Discord account is already linked to another user
+                existing_discord_user = User.query.filter_by(discord_id=discord_id).first()
+                if existing_discord_user:
+                    flash('This Discord account is already linked to another user.', 'danger')
+                    return redirect(url_for('auth.user_profile'))
 
-        # Set theme from user settings
-        if discord_user.settings and discord_user.settings.theme:
-            session['theme'] = discord_user.settings.theme
+                # Get Discord roles
+                discord_roles = discord_service.get_user_roles_sync(discord_id)
+
+                # Link Discord to current user
+                current_user.discord_id = discord_id
+                current_user.discord_username = discord_username
+                current_user.discord_discriminator = discord_discriminator
+                current_user.discord_avatar = discord_avatar
+                current_user.discord_linked = True
+                current_user.sync_discord_roles(discord_roles)
+
+                db.session.commit()
+                record_activity('discord_link', f'Discord account linked: {discord_username}')
+                flash('Discord account successfully linked!', 'success')
+                return redirect(url_for('auth.user_profile'))
+
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"Error linking Discord for {current_user.username}: {e}", exc_info=True)
+                flash('Failed to link Discord account. Please try again.', 'danger')
+                return redirect(url_for('auth.user_profile'))
+
         else:
-            session['theme'] = 'dark'
+            # This is a regular Discord login for new users or existing Discord users
+            # Process Discord authentication
+            discord_user = process_discord_authentication(user_info)
 
-        try:
-            db.session.commit()
-            record_activity('discord_login', f'Discord login: {discord_user.discord_username}')
-            flash('Successfully logged in with Discord!', 'success')
+            if not discord_user:
+                flash('Authentication failed. You may not have the required Discord roles.', 'danger')
+                return redirect(url_for('auth.login'))
 
-            # Redirect based on user permissions
-            permissions = discord_user.get_discord_permissions()
-            next_page = request.args.get('next')
+            # Log the user in
+            login_user(discord_user, remember=True)
+            discord_user.last_login = datetime.utcnow()
 
-            if next_page:
-                return redirect(next_page)
-            elif permissions.get('can_access_portfolio'):
-                return redirect(url_for('main.portfolio_analytics'))  # We'll create this route
+            # Set theme from user settings
+            if discord_user.settings and discord_user.settings.theme:
+                session['theme'] = discord_user.settings.theme
             else:
-                return redirect(url_for('main.index'))
+                session['theme'] = 'dark'
 
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Error during Discord login for {discord_user.username}: {e}", exc_info=True)
-            flash("An error occurred during login. Please try again.", "danger")
-            return redirect(url_for('auth.login'))
+            try:
+                db.session.commit()
+                record_activity('discord_login', f'Discord login: {discord_user.discord_username}')
+                flash('Successfully logged in with Discord!', 'success')
+
+                # Redirect based on user permissions
+                permissions = discord_user.get_discord_permissions()
+                next_page = request.args.get('next')
+
+                if next_page:
+                    return redirect(next_page)
+                elif permissions.get('can_access_portfolio'):
+                    return redirect(url_for('main.portfolio_analytics'))
+                else:
+                    return redirect(url_for('main.index'))
+
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"Error during Discord login for {discord_user.username}: {e}", exc_info=True)
+                flash("An error occurred during login. Please try again.", "danger")
+                return redirect(url_for('auth.login'))
 
     except Exception as e:
         current_app.logger.error(f"Discord callback error: {e}", exc_info=True)
         flash('Authentication failed. Please try again.', 'danger')
         return redirect(url_for('auth.login'))
-
 
 def process_discord_authentication(discord_user_info):
     """Process Discord user authentication and role checking."""
@@ -470,6 +514,9 @@ def link_discord():
         return redirect(url_for('auth.user_profile'))
 
     if request.method == 'POST':
+        # Set session flag to indicate this is a linking operation
+        session['discord_linking_mode'] = True
+        session['linking_user_id'] = current_user.id
         # Start Discord linking process
         return redirect(url_for('auth.discord_login'))
 
