@@ -47,7 +47,8 @@
                                 {{ render_field(profile_form.bio, input_class="form-control", rows="3") }}
 
                                 <div class="d-grid mt-4">
-                                    <button type="submit" name="submit_profile" class="btn btn-primary">
+                                    <button type="submit" name="submit_profile" class="btn btn-primary"
+                                            onclick="showSuccess('Profile Configuration Updated Successfully')">
                                         <i class="fas fa-save me-2"></i>Update Configuration
                                     </button>
                                 </div>
@@ -73,7 +74,8 @@
                                 {{ render_field(password_form.confirm_password, input_class="form-control", type="password") }}
 
                                 <div class="d-grid mt-4">
-                                    <button type="submit" name="submit_password" class="btn btn-primary">
+                                    <button type="submit" name="submit_password" class="btn btn-primary"
+                                            onclick="showSuccess('Password Configuration Updated Successfully')">
                                         <i class="fas fa-lock me-2"></i>Update Password
                                     </button>
                                 </div>
@@ -169,13 +171,10 @@
                                             onclick="refreshDiscordRoles()" id="refresh-roles-btn">
                                         <i class="fas fa-sync-alt me-1"></i>Sync Roles
                                     </button>
-                                    <form method="POST" action="{{ url_for('auth.unlink_discord') }}" style="display: inline;">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                        <button type="submit" class="btn btn-outline-danger btn-sm"
-                                                onclick="return showCustomConfirmation('Confirm Discord Disconnection', 'Remove Discord integration from this account?', 'btn-danger', 'exclamation-triangle');">
-                                            <i class="fas fa-unlink me-2"></i>Remove Integration
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            onclick="unlinkDiscord()">
+                                        <i class="fas fa-unlink me-2"></i>Remove Integration
+                                    </button>
                                 </div>
                                 {% else %}
                                 <div class="d-flex gap-2 align-items-center">
@@ -205,12 +204,9 @@
                                     <i class="fab fa-discord fa-3x text-muted mb-3"></i>
                                     <h5>Discord Not Connected</h5>
                                     <p class="text-muted mb-4">Link your Discord account to access additional features and role-based permissions.</p>
-                                    <form method="POST" action="{{ url_for('auth.link_discord') }}">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fab fa-discord me-2"></i>Connect Discord Account
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-primary" onclick="connectDiscord()">
+                                        <i class="fab fa-discord me-2"></i>Connect Discord Account
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -274,7 +270,87 @@
     </div>
 </div>
 
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+
+<!-- Optional: Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- Enterprise JavaScript Framework -->
+<script src="/static/js/custom-modals.js"></script>
+<script src="/static/js/notifications.js"></script>
+
 <script>
+    // Check if unsaved changes handler is already initialized to avoid duplicate declarations
+    if (typeof window.initEnterpriseUnsavedChanges === 'function' && !window.enterpriseUnsavedChangesInitialized) {
+        // Load unsaved changes script only if not already loaded
+        if (!document.querySelector('script[src*="unsaved-changes.js"]')) {
+            const script = document.createElement('script');
+            script.src = '/static/js/unsaved-changes.js';
+            script.onload = function() {
+                if (typeof window.initEnterpriseUnsavedChanges === 'function') {
+                    window.initEnterpriseUnsavedChanges();
+                    window.enterpriseUnsavedChangesInitialized = true;
+                }
+            };
+            document.head.appendChild(script);
+        } else {
+            window.initEnterpriseUnsavedChanges();
+            window.enterpriseUnsavedChangesInitialized = true;
+        }
+    }
+
+    // Add autocomplete attributes and username field to password forms for accessibility
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add autocomplete attributes to password fields
+        const currentPasswordField = document.getElementById('current_password');
+        const newPasswordField = document.getElementById('new_password');
+        const confirmPasswordField = document.getElementById('confirm_password');
+
+        if (currentPasswordField) {
+            currentPasswordField.setAttribute('autocomplete', 'current-password');
+        }
+        if (newPasswordField) {
+            newPasswordField.setAttribute('autocomplete', 'new-password');
+        }
+        if (confirmPasswordField) {
+            confirmPasswordField.setAttribute('autocomplete', 'new-password');
+        }
+
+        // Add hidden username field to password form for accessibility compliance
+        const passwordForm = document.getElementById('password-form');
+        if (passwordForm && !passwordForm.querySelector('input[name="username"]')) {
+            const hiddenUsernameField = document.createElement('input');
+            hiddenUsernameField.type = 'hidden';
+            hiddenUsernameField.name = 'username';
+            hiddenUsernameField.value = '{{ current_user.username }}';
+            hiddenUsernameField.setAttribute('autocomplete', 'username');
+            passwordForm.insertBefore(hiddenUsernameField, passwordForm.firstChild.nextSibling);
+        }
+
+        // Fix profile picture loading errors globally by handling fallbacks
+        document.querySelectorAll('img[src*="profile_pics"]').forEach(function(img) {
+            if (img.src.includes('profile_pics') && !img.src.includes('default.jpg') && !img.src.includes('discord')) {
+                img.onerror = function() {
+                    console.log('📸 Profile picture failed to load, using default:', this.src);
+                    this.src = '{{ url_for("static", filename=config.get("PROFILE_PICS_FOLDER_REL", "profile_pics") + "/default.jpg") }}';
+                    this.onerror = null; // Prevent infinite error loops
+                };
+            }
+        });
+
+        // Also handle the navigation user avatar specifically
+        const navUserAvatar = document.querySelector('#navbarUserDropdown img.user-avatar');
+        if (navUserAvatar && navUserAvatar.src.includes('profile_pics') && !navUserAvatar.src.includes('default.jpg') && !navUserAvatar.src.includes('discord')) {
+            navUserAvatar.onerror = function() {
+                console.log('🚀 Navigation avatar failed, switching to default');
+                this.src = '{{ url_for("static", filename=config.get("PROFILE_PICS_FOLDER_REL", "profile_pics") + "/default.jpg") }}';
+                this.alt = 'Default User Avatar';
+                this.onerror = null;
+            };
+        }
+    });
+
     // Discord roles refresh function
     async function refreshDiscordRoles() {
         const refreshBtn = document.getElementById('refresh-roles-btn');
@@ -301,7 +377,7 @@
                 if (typeof showSuccess === 'function') {
                     showSuccess('Discord Roles Synchronized Successfully');
                 } else {
-                    alert('Discord roles synchronized successfully!');
+                    showCustomNotification('success', 'Discord Roles Synchronized Successfully');
                 }
 
                 // Reload the page to show updated roles
@@ -320,7 +396,7 @@
             if (typeof showError === 'function') {
                 showError('Failed to sync Discord roles: ' + error.message);
             } else {
-                alert('Failed to sync Discord roles: ' + error.message);
+                showCustomNotification('error', 'Failed to sync Discord roles: ' + error.message);
             }
 
             // Reset button
@@ -328,5 +404,72 @@
             refreshBtn.disabled = false;
         }
     }
+
+    // Discord connection function
+    function connectDiscord() {
+        showCustomConfirmation(
+            'Confirm Discord Integration',
+            'Connect your Discord account to enable enhanced features and role-based access?',
+            'btn-primary',
+            'question-circle',
+            function() {
+                // Create and submit form for Discord connection
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ url_for('auth.link_discord') }}';
+
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = 'csrf_token';
+                csrfToken.value = document.querySelector('input[name="csrf_token"]').value;
+
+                form.appendChild(csrfToken);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        );
+    }
+
+    // Discord unlink function
+    function unlinkDiscord() {
+        showCustomConfirmation(
+            'Confirm Discord Disconnection',
+            'Remove Discord integration from this account? This action cannot be undone.',
+            'btn-danger',
+            'exclamation-triangle',
+            function() {
+                // Create and submit form for Discord disconnection
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ url_for('auth.unlink_discord') }}';
+
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = 'csrf_token';
+                csrfToken.value = document.querySelector('input[name="csrf_token"]').value;
+
+                form.appendChild(csrfToken);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        );
+    }
+
+    // Form submission handling with enterprise notifications
+    document.getElementById('profile-form').addEventListener('submit', function(e) {
+        // Let the form submit normally, but show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating Configuration...';
+        submitBtn.disabled = true;
+    });
+
+    document.getElementById('password-form').addEventListener('submit', function(e) {
+        // Let the form submit normally, but show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating Password...';
+        submitBtn.disabled = true;
+    });
 </script>
 {% endblock %}
