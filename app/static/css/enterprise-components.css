@@ -806,6 +806,11 @@ Version: 2.0
     color: var(--enterprise-warning);
 }
 
+.status-badge.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--enterprise-danger);
+}
+
 /* Status Indicators */
 .status-indicator {
     font-size: var(--enterprise-font-size-sm);
