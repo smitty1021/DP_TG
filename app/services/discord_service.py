@@ -146,7 +146,7 @@ class DiscordService:
                         'name': role.name,
                         'position': role.position,
                         'member_count': len(role.members),
-                        'permissions': [perm.name for perm, value in role.permissions if value]
+                        'permissions': str(role.permissions.value)  # Convert to string to avoid serialization issues
                     })
 
             return sorted(roles, key=lambda x: x['position'], reverse=True)
@@ -171,6 +171,10 @@ class DiscordService:
         except Exception as e:
             self.logger.error(f"Error in sync guild roles fetch: {e}")
             return []
+
+    def get_all_server_roles(self) -> List[Dict]:
+        """Get all server roles - wrapper for access control compatibility."""
+        return self.get_guild_roles_sync()
 
     def get_guild_info(self) -> Dict:
         """Get Discord guild information."""

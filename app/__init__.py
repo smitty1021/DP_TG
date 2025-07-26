@@ -260,17 +260,17 @@ def create_app(config_class=None):
         from .blueprints.main_bp import main_bp
         app.register_blueprint(main_bp)
         from .blueprints.auth_bp import auth_bp
-        app.register_blueprint(auth_bp, url_prefix='/auth')  # Added prefix for consistency
+        app.register_blueprint(auth_bp, url_prefix='/auth')
         from .blueprints.trading_models import bp as trading_models_bp
         app.register_blueprint(trading_models_bp)
         from .blueprints.files_bp import files_bp
-        app.register_blueprint(files_bp, url_prefix='/files')  # Added prefix
+        app.register_blueprint(files_bp, url_prefix='/files')
         from .blueprints.admin_bp import admin_bp
-        app.register_blueprint(admin_bp, url_prefix='/admin')  # Added prefix
+        app.register_blueprint(admin_bp, url_prefix='/admin')
         from .blueprints.trades_bp import trades_bp
-        app.register_blueprint(trades_bp, url_prefix='/trades')  # Added prefix
+        app.register_blueprint(trades_bp, url_prefix='/trades')
         from .blueprints.settings_bp import settings_bp
-        app.register_blueprint(settings_bp, url_prefix='/settings')  # Added prefix
+        app.register_blueprint(settings_bp, url_prefix='/settings')
         from app.blueprints.analytics_bp import analytics_bp
         app.register_blueprint(analytics_bp)
         from .blueprints.journal_bp import journal_bp
@@ -280,9 +280,12 @@ def create_app(config_class=None):
         from app.blueprints.image_bp import image_bp
         app.register_blueprint(image_bp)
         from app.template_filters import register_template_filters
-        register_template_filters(app)
+        register_template_filters(app)  # FIXED THIS LINE
         from app.blueprints.portfolio_bp import portfolio_bp
         app.register_blueprint(portfolio_bp)
+
+        from app.blueprints.admin_access_control import access_control_bp
+        app.register_blueprint(access_control_bp)
 
         try:
             from app.services.discord_service import discord_service

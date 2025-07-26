@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <!-- Executive Header -->
+    <div class="executive-header">
+        <div class="enterprise-container">
+            <h1 class="executive-title">
+                <i class="fas fa-shield-alt executive-icon"></i>
+                Access Control Management Center
+            </h1>
+            <div class="executive-subtitle">
+                Discord Role-Based Page Access Configuration
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="enterprise-container">
+        
+        <!-- Navigation Controls -->
+        <div class="enterprise-module mb-4">
+            <div class="module-content">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                            onclick="window.location.href='{{ url_for('main.index') }}'"
+                            title="Return to Main Dashboard">
+                        <i class="fas fa-home"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                            onclick="location.reload()" title="Refresh Configuration">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                            onclick="window.location.href='{{ url_for('admin.admin_dashboard') }}'"
+                            title="Administration Center">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                            onclick="refreshDiscordRoles()" title="Refresh Discord Roles">
+                        <i class="fab fa-discord"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="enterprise-module">
+            <div class="module-header">
+                <div class="module-title">
+                    <i class="fas fa-info-circle module-icon"></i>
+                    System Status
+                </div>
+            </div>
+            <div class="module-content">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="status-badge text-info">
+                            <i class="fas fa-sitemap"></i>
+                            Total Pages: {{ pages_by_category.values() | map('length') | sum | default(0) }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="status-badge text-warning">
+                            <i class="fab fa-discord"></i>
+                            Discord Roles: {{ discord_roles | length }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="status-badge text-success">
+                            <i class="fas fa-cog"></i>
+                            Configured Roles: {{ permissions_by_role | length }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discord Roles Configuration Section -->
+        <div class="enterprise-module">
+            <div class="module-header">
+                <div class="module-title">
+                    <i class="fab fa-discord module-icon"></i>
+                    Discord Roles Configuration
+                </div>
+                <div class="module-meta">Configure page access permissions for Discord roles</div>
+            </div>
+            <div class="module-content">
+                
+                <!-- Discord Roles List -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Available Discord Roles</h6>
+                        <div id="discord-roles-list" class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                            {% if discord_roles %}
+                                {% for role in discord_roles %}
+                                    <div class="role-item d-flex justify-content-between align-items-center p-2 mb-2 border rounded cursor-pointer"
+                                         data-role-id="{{ role.id }}" data-role-name="{{ role.name }}"
+                                         onclick="selectRole('{{ role.id }}', '{{ role.name }}')">
+                                        <div>
+                                            <span class="fw-bold">{{ role.name }}</span>
+                                            <br>
+                                            <small class="text-muted">ID: {{ role.id }}</small>
+                                        </div>
+                                        <div>
+                                            {% if role.id in permissions_by_role %}
+                                                <span class="status-badge text-success">
+                                                    <i class="fas fa-check-circle"></i> Configured
+                                                </span>
+                                            {% else %}
+                                                <span class="status-badge text-warning">
+                                                    <i class="fas fa-exclamation-triangle"></i> Not Configured
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-muted p-4">
+                                    <i class="fab fa-discord fa-3x mb-3"></i>
+                                    <p>No Discord roles available. Click "Refresh Discord Roles" to load them.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Selected Role Configuration -->
+                    <div class="col-md-6">
+                        <div id="role-config-panel" style="display: none;">
+                            <h6 class="mb-3">Configure Role Permissions</h6>
+                            <div class="border rounded p-3">
+                                
+                                <!-- Role Info -->
+                                <div class="mb-3">
+                                    <h6 id="selected-role-name" class="text-primary"></h6>
+                                    <small id="selected-role-id" class="text-muted"></small>
+                                </div>
+                                
+                                <!-- Access Level -->
+                                <div class="mb-3">
+                                    <label class="form-label">Access Level</label>
+                                    <select id="access-level" class="form-control">
+                                        <option value="basic">Basic Access</option>
+                                        <option value="premium">Premium Access</option>
+                                        <option value="vip">VIP Access</option>
+                                        <option value="admin">Administrator Access</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Feature Permissions -->
+                                <div class="mb-3">
+                                    <label class="form-label">Feature Access</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="can_access_portfolio">
+                                        <label class="form-check-label" for="can_access_portfolio">
+                                            Portfolio Analytics
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="can_access_backtesting">
+                                        <label class="form-check-label" for="can_access_backtesting">
+                                            Backtesting Features
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="can_access_live_trading">
+                                        <label class="form-check-label" for="can_access_live_trading">
+                                            Live Trading Operations
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="can_access_analytics">
+                                        <label class="form-check-label" for="can_access_analytics">
+                                            Advanced Analytics
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="can_access_advanced_features">
+                                        <label class="form-check-label" for="can_access_advanced_features">
+                                            Advanced Features
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Quick Permission Groups -->
+                                <div class="mb-3">
+                                    <label class="form-label">Quick Permission Templates</label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for group_key, group in available_groups.items() %}
+                                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                                    onclick="applyPermissionGroup('{{ group_key }}')"
+                                                    title="{{ group.description }}">
+                                                {{ group.name }}
+                                            </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-primary" onclick="saveRolePermissions()">
+                                        <i class="fas fa-save"></i> Save Configuration
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info" onclick="testRoleAccess()">
+                                        <i class="fas fa-vial"></i> Test Access
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Access Configuration -->
+        <div class="enterprise-module">
+            <div class="module-header">
+                <div class="module-title">
+                    <i class="fas fa-sitemap module-icon"></i>
+                    Page Access Configuration
+                </div>
+                <div class="module-meta">Configure individual page access permissions</div>
+            </div>
+            <div class="module-content">
+                
+                <div id="page-access-config" style="display: none;">
+                    <p class="text-muted mb-3">Select pages this role can access:</p>
+                    
+                    <!-- Pages by Category -->
+                    {% for category, pages in pages_by_category.items() %}
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-primary mb-2">
+                                <i class="fas fa-folder"></i> {{ category }}
+                            </h6>
+                            
+                            <div class="category-pages border rounded p-3">
+                                <div class="mb-2">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                                            onclick="toggleCategoryPages('{{ category }}', true)">
+                                        <i class="fas fa-check-square"></i> Select All
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2"
+                                            onclick="toggleCategoryPages('{{ category }}', false)">
+                                        <i class="fas fa-square"></i> Deselect All
+                                    </button>
+                                </div>
+                                
+                                <div class="row">
+                                    {% for page in pages %}
+                                        <div class="col-md-6 mb-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input page-checkbox" 
+                                                       type="checkbox" 
+                                                       id="page_{{ page.endpoint }}"
+                                                       data-endpoint="{{ page.endpoint }}"
+                                                       data-category="{{ category }}"
+                                                       {% if page.admin_only %}data-admin-only="true"{% endif %}>
+                                                <label class="form-check-label" for="page_{{ page.endpoint }}">
+                                                    {{ page.display_name }}
+                                                    {% if page.admin_only %}
+                                                        <span class="status-badge text-danger ms-1">Admin Only</span>
+                                                    {% endif %}
+                                                </label>
+                                                <br>
+                                                <small class="text-muted">{{ page.url_rule }}</small>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Access Test Results -->
+        <div id="access-test-results" class="enterprise-module" style="display: none;">
+            <div class="module-header">
+                <div class="module-title">
+                    <i class="fas fa-vial module-icon"></i>
+                    Access Test Results
+                </div>
+                <div class="module-meta">Testing role access permissions</div>
+            </div>
+            <div class="module-content">
+                <div id="test-results-content">
+                    <!-- Test results will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+    // Global variables
+    let selectedRoleId = null;
+    let selectedRoleName = null;
+    let currentPermissions = null;
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize unsaved changes detection
+        if (typeof window.initEnterpriseUnsavedChanges === 'function') {
+            window.initEnterpriseUnsavedChanges();
+        }
+        console.log('Access Control Dashboard initialized');
+    });
+
+    // Select a Discord role for configuration
+    function selectRole(roleId, roleName) {
+        selectedRoleId = roleId;
+        selectedRoleName = roleName;
+        
+        // Update UI
+        document.getElementById('selected-role-name').textContent = roleName;
+        document.getElementById('selected-role-id').textContent = `Role ID: ${roleId}`;
+        
+        // Show configuration panels
+        document.getElementById('role-config-panel').style.display = 'block';
+        document.getElementById('page-access-config').style.display = 'block';
+        
+        // Highlight selected role
+        document.querySelectorAll('.role-item').forEach(item => {
+            item.classList.remove('bg-primary', 'text-white');
+        });
+        document.querySelector(`[data-role-id="${roleId}"]`).classList.add('bg-primary', 'text-white');
+        
+        // Load existing permissions
+        loadRolePermissions(roleId);
+    }
+
+    // Load existing permissions for a role
+    async function loadRolePermissions(roleId) {
+        try {
+            const response = await fetch(`/admin/access-control/permissions/${roleId}`);
+            const result = await response.json();
+            
+            if (result.success && result.permissions) {
+                currentPermissions = result.permissions;
+                populatePermissionForm(result.permissions);
+            } else {
+                resetPermissionForm();
+            }
+        } catch (error) {
+            console.error('Error loading permissions:', error);
+            showError('Failed to load existing permissions');
+        }
+    }
+
+    // Populate the permission form with existing data
+    function populatePermissionForm(permissions) {
+        document.getElementById('access-level').value = permissions.access_level || 'basic';
+        document.getElementById('can_access_portfolio').checked = permissions.can_access_portfolio || false;
+        document.getElementById('can_access_backtesting').checked = permissions.can_access_backtesting || false;
+        document.getElementById('can_access_live_trading').checked = permissions.can_access_live_trading || false;
+        document.getElementById('can_access_analytics').checked = permissions.can_access_analytics || false;
+        document.getElementById('can_access_advanced_features').checked = permissions.can_access_advanced_features || false;
+        
+        const allowedPages = permissions.custom_permissions?.allowed_pages || [];
+        document.querySelectorAll('.page-checkbox').forEach(checkbox => {
+            checkbox.checked = allowedPages.includes(checkbox.dataset.endpoint);
+        });
+    }
+
+    // Reset the permission form
+    function resetPermissionForm() {
+        document.getElementById('access-level').value = 'basic';
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+
+    // Toggle all pages in a category
+    function toggleCategoryPages(category, checked) {
+        document.querySelectorAll(`[data-category="${category}"]`).forEach(checkbox => {
+            checkbox.checked = checked;
+        });
+    }
+
+    // Apply a permission group template
+    async function applyPermissionGroup(groupKey) {
+        if (!selectedRoleId) {
+            showError('Please select a role first');
+            return;
+        }
+
+        try {
+            const response = await fetch('/admin/access-control/groups/apply', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
+                },
+                body: JSON.stringify({
+                    role_id: selectedRoleId,
+                    group_key: groupKey
+                })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                showSuccess(result.message);
+                document.querySelectorAll('.page-checkbox').forEach(checkbox => {
+                    checkbox.checked = result.pages.includes(checkbox.dataset.endpoint);
+                });
+            } else {
+                showError(result.message);
+            }
+        } catch (error) {
+            console.error('Error applying group:', error);
+            showError('Failed to apply permission group');
+        }
+    }
+
+    // Save role permissions
+    async function saveRolePermissions() {
+        if (!selectedRoleId || !selectedRoleName) {
+            showError('Please select a role first');
+            return;
+        }
+
+        try {
+            const permissions = {
+                access_level: document.getElementById('access-level').value,
+                can_access_portfolio: document.getElementById('can_access_portfolio').checked,
+                can_access_backtesting: document.getElementById('can_access_backtesting').checked,
+                can_access_live_trading: document.getElementById('can_access_live_trading').checked,
+                can_access_analytics: document.getElementById('can_access_analytics').checked,
+                can_access_advanced_features: document.getElementById('can_access_advanced_features').checked,
+                pages: []
+            };
+
+            document.querySelectorAll('.page-checkbox:checked').forEach(checkbox => {
+                permissions.pages.push(checkbox.dataset.endpoint);
+            });
+
+            const response = await fetch('/admin/access-control/permissions/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.content || ''
+                },
+                body: JSON.stringify({
+                    role_id: selectedRoleId,
+                    role_name: selectedRoleName,
+                    permissions: permissions
+                })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                showSuccess(result.message);
+                const roleItem = document.querySelector(`[data-role-id="${selectedRoleId}"]`);
+                const statusBadge = roleItem.querySelector('.status-badge');
+                statusBadge.className = 'status-badge text-success';
+                statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> Configured';
+            } else {
+                showError(result.message);
+            }
+        } catch (error) {
+            console.error('Error saving permissions:', error);
+            showError('Failed to save permissions');
+        }
+    }
+
+    // Test role access
+    async function testRoleAccess() {
+        if (!selectedRoleId) {
+            showError('Please select a role first');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/access-control/test/page-access/${selectedRoleId}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                displayTestResults(result);
+            } else {
+                showError(result.message);
+            }
+        } catch (error) {
+            console.error('Error testing access:', error);
+            showError('Failed to test role access');
+        }
+    }
+
+    // Display access test results
+    function displayTestResults(testData) {
+        const resultsContainer = document.getElementById('test-results-content');
+        
+        let html = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary">Role: ${testData.role_name}</h6>
+                    <p><strong>Access Level:</strong> ${testData.access_level}</p>
+                    <p><strong>Total Accessible Pages:</strong> ${testData.total_pages}</p>
+                </div>
+            </div>
+            <h6 class="mt-3 mb-2">Accessible Pages by Category:</h6>
+        `;
+        
+        const pagesByCategory = {};
+        testData.accessible_pages.forEach(page => {
+            if (!pagesByCategory[page.category]) {
+                pagesByCategory[page.category] = [];
+            }
+            pagesByCategory[page.category].push(page);
+        });
+        
+        Object.keys(pagesByCategory).forEach(category => {
+            html += `
+                <div class="mb-3">
+                    <h6 class="fw-bold">${category} (${pagesByCategory[category].length} pages)</h6>
+                    <div class="row">
+            `;
+            
+            pagesByCategory[category].forEach(page => {
+                html += `
+                    <div class="col-md-6 mb-1">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <span>${page.display_name}</span>
+                        </div>
+                        <small class="text-muted ms-3">${page.url_rule}</small>
+                    </div>
+                `;
+            });
+            
+            html += `</div></div>`;
+        });
+        
+        resultsContainer.innerHTML = html;
+        document.getElementById('access-test-results').style.display = 'block';
+        document.getElementById('access-test-results').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Refresh Discord roles from server
+    async function refreshDiscordRoles() {
+        try {
+            showInfo('Refreshing Discord roles...');
+            
+            const response = await fetch('/admin/access-control/roles/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.content || ''
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.success) {
+                showSuccess(result.message);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showError(result.message);
+            }
+        } catch (error) {
+            console.error('Error refreshing roles:', error);
+            showError('Failed to refresh Discord roles: ' + error.message);
+        }
+    }
+</script>
+{% endblock %}

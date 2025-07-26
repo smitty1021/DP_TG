@@ -11,6 +11,8 @@ import statistics
 from sqlalchemy import ForeignKey
 from app.extensions import db
 from enum import Enum
+from datetime import datetime
+import json
 
 
 
@@ -189,6 +191,83 @@ class User(db.Model, UserMixin):
         self.discord_roles = new_roles
         self.last_discord_sync = datetime.utcnow()
         db.session.commit()
+
+    def check_page_access(self, page_endpoint):
+        """
+        Check if user has access to a specific page based on Discord roles.
+        ADD THIS METHOD TO YOUR EXISTING USER CLASS.
+        """
+        # Admin users have access to everything
+        if self.is_admin():
+            return True
+
+        # Check if user has Discord roles
+        if not self.discord_linked or not self.discord_roles:
+            return False
+
+        # Get user's Discord role IDs
+        role_ids = [role['id'] for role in self.discord_roles]
+
+        # Check page access permissions
+        return PageAccessPermission.check_page_access(role_ids, page_endpoint)
+
+    def get_accessible_pages(self):
+        """
+        Get all pages this user can access based on their Discord roles.
+        ADD THIS METHOD TO YOUR EXISTING USER CLASS.
+        """
+        if self.is_admin():
+            # Admin can access all pages
+            return []  # We'll implement full page discovery later
+
+        if not self.discord_linked or not self.discord_roles:
+            return []
+
+        role_ids = [role['id'] for role in self.discord_roles]
+        permissions = PageAccessPermission.query.filter(
+            PageAccessPermission.discord_role_id.in_(role_ids),
+            PageAccessPermission.is_allowed == True
+        ).all()
+
+        return [perm.page_endpoint for perm in permissions]
+
+    def log_access_attempt(self, page_endpoint, granted, reason=None):
+        """
+        Log an access attempt for this user.
+        ADD THIS METHOD TO YOUR EXISTING USER CLASS.
+        """
+        UserAccessLog.log_access_attempt(self, page_endpoint, granted, reason)
+
+    def get_access_summary(self):
+        """
+        Get a summary of this user's access permissions.
+        ADD THIS METHOD TO YOUR EXISTING USER CLASS.
+        """
+        if not self.discord_linked:
+            return {
+                'access_method': 'local_account',
+                'access_level': 'admin' if self.is_admin() else 'basic',
+                'discord_linked': False,
+                'total_accessible_pages': 0
+            }
+
+        permissions = self.get_discord_permissions()
+        accessible_pages = self.get_accessible_pages()
+
+        return {
+            'access_method': 'discord_roles',
+            'access_level': permissions.get('access_level', 'basic'),
+            'discord_linked': True,
+            'discord_roles': len(self.discord_roles) if self.discord_roles else 0,
+            'total_accessible_pages': len(accessible_pages),
+            'feature_access': {
+                'portfolio': permissions.get('can_access_portfolio', False),
+                'backtesting': permissions.get('can_access_backtesting', False),
+                'live_trading': permissions.get('can_access_live_trading', False),
+                'analytics': permissions.get('can_access_analytics', False),
+                'advanced_features': permissions.get('can_access_advanced_features', False)
+            }
+        }
 
     @property
     def storage_usage(self):
@@ -1761,3 +1840,159 @@ class UserSession(db.Model):
 
     def __repr__(self):
         return f'<UserSession {self.session_token[:10]}... User ID: {self.user_id}>'
+
+
+class PageAccessPermission(db.Model):
+    """Individual page access permissions for Discord roles."""
+    __tablename__ = 'page_access_permissions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    discord_role_id = db.Column(db.String(255), nullable=False, index=True)
+    page_endpoint = db.Column(db.String(255), nullable=False)
+    page_name = db.Column(db.String(255), nullable=False)
+    page_category = db.Column(db.String(100), nullable=True)
+    is_allowed = db.Column(db.Boolean, nullable=False, default=True)
+
+    # Metadata
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=True, onupdate=datetime.utcnow)
+    created_by = db.Column(db.String(100), nullable=True)
+
+    # Composite index for faster lookups
+    __table_args__ = (
+        db.Index('ix_role_page_access', 'discord_role_id', 'page_endpoint'),
+        db.UniqueConstraint('discord_role_id', 'page_endpoint', name='uq_role_page')
+    )
+
+    def __repr__(self):
+        return f'<PageAccessPermission {self.discord_role_id}:{self.page_endpoint}>'
+
+    @classmethod
+    def get_role_pages(cls, discord_role_id):
+        """Get all accessible pages for a role."""
+        return cls.query.filter_by(
+            discord_role_id=discord_role_id,
+            is_allowed=True
+        ).all()
+
+    @classmethod
+    def check_page_access(cls, discord_role_ids, page_endpoint):
+        """Check if any of the user's roles allow access to a page."""
+        if not discord_role_ids:
+            return False
+
+        permission = cls.query.filter(
+            cls.discord_role_id.in_(discord_role_ids),
+            cls.page_endpoint == page_endpoint,
+            cls.is_allowed == True
+        ).first()
+
+        return permission is not None
+
+
+class AccessControlGroup(db.Model):
+    """Predefined groups of pages for bulk permission assignment."""
+    __tablename__ = 'access_control_groups'
+
+    id = db.Column(db.Integer, primary_key=True)
+    group_key = db.Column(db.String(100), unique=True, nullable=False)
+    group_name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    pages = db.Column(db.JSON, nullable=False)
+
+    # Metadata
+    is_system_group = db.Column(db.Boolean, nullable=False, default=False)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=True, onupdate=datetime.utcnow)
+    created_by = db.Column(db.String(100), nullable=True)
+
+    def __repr__(self):
+        return f'<AccessControlGroup {self.group_key}>'
+
+    @classmethod
+    def get_system_groups(cls):
+        """Get all system-defined groups."""
+        return cls.query.filter_by(is_system_group=True, is_active=True).all()
+
+    @classmethod
+    def get_custom_groups(cls):
+        """Get all custom-defined groups."""
+        return cls.query.filter_by(is_system_group=False, is_active=True).all()
+
+
+class UserAccessLog(db.Model):
+    """Log user access attempts and permission changes."""
+    __tablename__ = 'user_access_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    discord_id = db.Column(db.String(255), nullable=True)
+
+    # Access attempt details
+    attempted_page = db.Column(db.String(255), nullable=False)
+    access_granted = db.Column(db.Boolean, nullable=False)
+    reason_denied = db.Column(db.String(255), nullable=True)
+
+    # Role information at time of access
+    user_roles = db.Column(db.JSON, nullable=True)
+    access_level = db.Column(db.String(50), nullable=True)
+
+    # Request metadata
+    ip_address = db.Column(db.String(45), nullable=True)
+    user_agent = db.Column(db.Text, nullable=True)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    # Relationships
+    user = db.relationship('User', backref=db.backref('access_logs', lazy='dynamic'))
+
+    def __repr__(self):
+        return f'<UserAccessLog {self.user_id}:{self.attempted_page}>'
+
+    @classmethod
+    def log_access_attempt(cls, user, page_endpoint, granted, reason=None):
+        """Log an access attempt."""
+        try:
+            log_entry = cls(
+                user_id=user.id if user else None,
+                discord_id=user.discord_id if user and user.discord_id else None,
+                attempted_page=page_endpoint,
+                access_granted=granted,
+                reason_denied=reason if not granted else None,
+                user_roles=user.discord_roles if user and user.discord_roles else None,
+                access_level=user.get_discord_permissions().get('access_level') if user else None
+            )
+
+            db.session.add(log_entry)
+            db.session.commit()
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error logging access attempt: {e}")
+
+
+class RolePermissionTemplate(db.Model):
+    """Templates for common role permission configurations."""
+    __tablename__ = 'role_permission_templates'
+
+    id = db.Column(db.Integer, primary_key=True)
+    template_name = db.Column(db.String(255), unique=True, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+
+    # Permission configuration as JSON
+    permission_config = db.Column(db.JSON, nullable=False)
+
+    # Template metadata
+    is_system_template = db.Column(db.Boolean, nullable=False, default=False)
+    usage_count = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=True, onupdate=datetime.utcnow)
+    created_by = db.Column(db.String(100), nullable=True)
+
+    def __repr__(self):
+        return f'<RolePermissionTemplate {self.template_name}>'
+
+    @classmethod
+    def get_system_templates(cls):
+        """Get all system-defined templates."""
+        return cls.query.filter_by(is_system_template=True).all()
