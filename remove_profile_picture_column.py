@@ -1,4 +1,4 @@
--- Create a new migration file: migrations/versions/remove_profile_picture_column.py
+
 
 """Remove profile_picture column from user table
 

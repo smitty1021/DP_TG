@@ -615,7 +615,7 @@ def user_profile():
                 verification_url = url_for('auth.verify_email', token=token, _external=True)
                 send_email(
                     to=form_email,
-                    subject="Verify Your New Email Address - Enterprise Trading System",
+                    subject="Verify Your New Email Address - Pack Trade Group Trading Journal",
                     template_name="verify_email.html",
                     username=current_user.username,
                     verification_url=verification_url

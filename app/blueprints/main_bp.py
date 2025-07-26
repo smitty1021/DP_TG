@@ -1088,13 +1088,13 @@ def advanced_analytics():
 @main_bp.route('/preview1')
 def TEST_PAGE1():
     """Route to preview the TEST-PAGE.html file"""
-    return render_template('TEST_PAGE.html')
+    return render_template('backtesting.html')
 
 
 @main_bp.route('/preview2')
 def TEST_PAGE2():
     """Route to preview the TEST-PAGE.html file"""
-    return render_template('TEST_PAGE2.html')
+    return render_template('errors/404.html')
 
 
 @main_bp.route('/preview3')

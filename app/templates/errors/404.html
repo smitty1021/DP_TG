@@ -1,19 +1,106 @@
 {% extends "errors/error.html" %}
 
 {% set error_code = 404 %}
-{% set error_title = "Page Not Found" %}
-{% set error_description = "The page you are looking for does not exist or has been moved." %}
+{% set error_title = "Resource Not Located" %}
+{% set error_description = "The requested resource could not be found in our system directory." %}
 {% set support_info = true %}
 {% set support_email = "support@tradingjournal.com" %}
 
+{% block scripts_extra %}
+{{ super() }}
+<style>
+/* Enhanced 404 Error Code Display */
+.error-code-number {
+    font-size: 8rem !important;
+    font-weight: 900 !important;
+    color: #FF6B35;
+    -webkit-text-stroke: 3px #000000;
+    text-stroke: 3px #000000;
+    animation: subtlePulse 2s ease-in-out infinite;
+    letter-spacing: -0.05em;
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes subtlePulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+.error-code-separator {
+    width: 120px !important;
+    height: 4px !important;
+    background: linear-gradient(90deg, #FF6B35, #FF8C42) !important;
+    box-shadow: 0 2px 6px rgba(255, 107, 53, 0.4);
+    animation: fadeInUp 0.8s ease-out 0.3s both;
+}
+
+/* Mobile responsiveness for enhanced 404 code */
+@media (max-width: 768px) {
+    .error-code-number {
+        font-size: 5rem !important;
+        -webkit-text-stroke: 2px #000000;
+        text-stroke: 2px #000000;
+    }
+}
+
+@media (max-width: 480px) {
+    .error-code-number {
+        font-size: 4rem !important;
+        -webkit-text-stroke: 2px #000000;
+        text-stroke: 2px #000000;
+    }
+}
+</style>
+{% endblock %}
+
 {% block extra_content %}
-<div class="suggestions">
-    <h6><i class="fas fa-search me-2"></i>You might want to try:</h6>
-    <ul class="text-start">
-        <li>Checking the URL for typing errors</li>
-        <li>Going back to the <a href="{{ url_for('main.index') }}" class="text-primary">main dashboard</a></li>
-        <li>Visiting your <a href="{{ url_for('trades.view_trades_list') }}" class="text-primary">trades list</a></li>
-        <li>Accessing your <a href="{{ url_for('journal.manage_daily_journal') }}" class="text-primary">daily journal</a></li>
-    </ul>
+<!-- Resource Location Alert -->
+<div class="enterprise-module mb-4">
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Resource Location Notice:</strong> The requested enterprise resource path could not be resolved in our system architecture.
+    </div>
+</div>
+
+<!-- Navigation Suggestions Module -->
+<div class="enterprise-module">
+    <div class="module-header">
+        <div class="module-title">
+            <i class="fas fa-route module-icon"></i>
+            Navigation Recommendations
+        </div>
+    </div>
+    <div class="module-content">
+        <div class="d-flex flex-column gap-3">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-spell-check text-warning me-3 mt-1"></i>
+                <div>
+                    <strong>URL Verification:</strong> Review the web address for potential typographical errors or formatting issues.
+                </div>
+            </div>
+            <div class="d-flex align-items-start">
+                <i class="fas fa-tachometer-alt text-primary me-3 mt-1"></i>
+                <div>
+                    <strong>Strategic Overview:</strong> Return to the <a href="{{ url_for('main.index') }}" class="text-primary">Strategic Overview</a> to access primary operational functions.
+                </div>
+            </div>
+            <div class="d-flex align-items-start">
+                <i class="fas fa-chart-line text-success me-3 mt-1"></i>
+                <div>
+                    <strong>Trading Operations:</strong> Access your <a href="{{ url_for('trades.view_trades_list') }}" class="text-success">Trading Operations Center</a> for portfolio management.
+                </div>
+            </div>
+            <div class="d-flex align-items-start">
+                <i class="fas fa-book text-info me-3 mt-1"></i>
+                <div>
+                    <strong>Journal Management:</strong> Review your <a href="{{ url_for('journal.manage_daily_journal') }}" class="text-info">Daily Journal Management</a> system.
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

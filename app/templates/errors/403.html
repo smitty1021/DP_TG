@@ -1,23 +1,100 @@
 {% extends "errors/error.html" %}
 
 {% set error_code = 403 %}
-{% set error_title = "Access Denied" %}
-{% set error_description = "You don't have permission to access this resource." %}
+{% set error_title = "Access Authorization Required" %}
+{% set error_description = "Your current credentials do not provide access to this enterprise resource." %}
 {% set support_info = true %}
 {% set support_email = "support@tradingjournal.com" %}
 
+{% block scripts_extra %}
+{{ super() }}
+<style>
+/* Enhanced 403 Error Code Display */
+.error-code-number {
+    font-size: 8rem !important;
+    font-weight: 900 !important;
+    color: #FFD700;
+    -webkit-text-stroke: 3px #000000;
+    text-stroke: 3px #000000;
+    animation: subtlePulse 2s ease-in-out infinite;
+    letter-spacing: -0.05em;
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes subtlePulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+.error-code-separator {
+    width: 120px !important;
+    height: 4px !important;
+    background: linear-gradient(90deg, #FFD700, #FFA500) !important;
+    box-shadow: 0 2px 6px rgba(255, 215, 0, 0.4);
+    animation: fadeInUp 0.8s ease-out 0.3s both;
+}
+
+/* Mobile responsiveness for enhanced 403 code */
+@media (max-width: 768px) {
+    .error-code-number {
+        font-size: 5rem !important;
+        -webkit-text-stroke: 2px #000000;
+        text-stroke: 2px #000000;
+    }
+}
+
+@media (max-width: 480px) {
+    .error-code-number {
+        font-size: 4rem !important;
+        -webkit-text-stroke: 2px #000000;
+        text-stroke: 2px #000000;
+    }
+}
+</style>
+{% endblock %}
+
 {% block extra_content %}
-<div class="alert alert-warning">
-    <i class="fas fa-exclamation-triangle me-2"></i>
-    <strong>Access Restricted:</strong> This area requires special permissions.
+<!-- Access Restriction Alert -->
+<div class="enterprise-module mb-4">
+    <div class="alert alert-warning">
+        <i class="fas fa-shield-alt me-2"></i>
+        <strong>Access Control Notice:</strong> This operational area requires elevated authorization levels.
+    </div>
 </div>
 
-<div class="suggestions">
-    <h6><i class="fas fa-lightbulb me-2"></i>What you can do:</h6>
-    <ul class="text-start">
-        <li>Contact your administrator if you believe you should have access</li>
-        <li>Check if you're logged in with the correct account</li>
-        <li>Return to the main dashboard to continue trading</li>
-    </ul>
+<!-- Executive Recommendations -->
+<div class="enterprise-module">
+    <div class="module-header">
+        <div class="module-title">
+            <i class="fas fa-clipboard-check module-icon"></i>
+            Resolution Procedures
+        </div>
+    </div>
+    <div class="module-content">
+        <div class="d-flex flex-column gap-3">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-user-shield text-primary me-3 mt-1"></i>
+                <div>
+                    <strong>Administrative Authorization:</strong> Contact your system administrator to request appropriate access permissions for this resource.
+                </div>
+            </div>
+            <div class="d-flex align-items-start">
+                <i class="fas fa-user-check text-info me-3 mt-1"></i>
+                <div>
+                    <strong>Account Verification:</strong> Ensure you are authenticated with the correct enterprise credentials.
+                </div>
+            </div>
+            <div class="d-flex align-items-start">
+                <i class="fas fa-tachometer-alt text-success me-3 mt-1"></i>
+                <div>
+                    <strong>Return to Operations:</strong> Navigate back to the Strategic Overview.
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

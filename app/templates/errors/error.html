@@ -2,8 +2,8 @@
 {% block title %}{{ error_code }} - {{ error_title }} - Trading Journal{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
+<div class="enterprise-container-fluid">
+    <div class="d-flex justify-content-center">
         <div class="col-lg-8 col-xl-6">
             <div class="error-container text-center py-5">
 
@@ -19,13 +19,14 @@
 
                 <!-- Error Details Card (if provided) -->
                 {% if error_details %}
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-info-circle me-2"></i>Error Details
-                        </h5>
+                <div class="enterprise-module mb-4">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-info-circle module-icon"></i>
+                            Error Details
+                        </div>
                     </div>
-                    <div class="card-body">
+                    <div class="module-content">
                         <div class="error-details-grid">
                             {% if error_type %}
                             <div class="error-detail-row">
@@ -41,31 +42,17 @@
                             </div>
                             {% endif %}
 
-                            {% if request_path %}
+                            {% if error_timestamp %}
                             <div class="error-detail-row">
-                                <span class="error-detail-label">Path:</span>
-                                <span class="error-detail-value">{{ request_path }}</span>
+                                <span class="error-detail-label">Timestamp:</span>
+                                <span class="error-detail-value">{{ error_timestamp }}</span>
                             </div>
                             {% endif %}
 
-                            {% if request_method %}
+                            {% if error_reference %}
                             <div class="error-detail-row">
-                                <span class="error-detail-label">Method:</span>
-                                <span class="error-detail-value">{{ request_method }}</span>
-                            </div>
-                            {% endif %}
-
-                            {% if timestamp %}
-                            <div class="error-detail-row">
-                                <span class="error-detail-label">Time:</span>
-                                <span class="error-detail-value">{{ timestamp }}</span>
-                            </div>
-                            {% endif %}
-
-                            {% if error_id %}
-                            <div class="error-detail-row">
-                                <span class="error-detail-label">Error ID:</span>
-                                <span class="error-detail-value">{{ error_id }}</span>
+                                <span class="error-detail-label">Reference:</span>
+                                <span class="error-detail-value">{{ error_reference }}</span>
                             </div>
                             {% endif %}
                         </div>
@@ -78,35 +65,36 @@
 
                 <!-- Action Buttons -->
                 <div class="error-actions">
-                    <div class="btn-group-spaced d-flex flex-wrap justify-content-center gap-2">
-                        <a href="{{ url_for('main.index') }}" class="btn btn-navigate-solid">
-                            <i class="fas fa-home me-2"></i>Go to Dashboard
+                    <div class="btn-group-spaced d-flex flex-wrap justify-content-center gap-3">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                            <i class="fas fa-tachometer-alt me-2"></i>Strategic Overview
                         </a>
 
                         {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-view-outline">
-                            <i class="fas fa-chart-line me-2"></i>View Trades
-                        </a>
+                        <!-- Removed View Trades button as requested -->
                         {% else %}
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-add-outline">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-sign-in-alt me-2"></i>Login
                         </a>
                         {% endif %}
 
-                        <button type="button" class="btn btn-utility-outline" onclick="window.history.back()">
+                        <button type="button" class="btn btn-outline-secondary" onclick="window.history.back()">
                             <i class="fas fa-arrow-left me-2"></i>Go Back
                         </button>
                     </div>
                 </div>
 
                 <!-- Support Information -->
-                {% if support_info %}
-                <div class="card mt-4">
-                    <div class="card-body">
-                        <h6 class="card-title">
-                            <i class="fas fa-life-ring me-2"></i>Need Help?
-                        </h6>
-                        <p class="card-text mb-2">If you need assistance, please contact our support team:</p>
+                <!-- {% if support_info %}
+                <div class="enterprise-module mt-4">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-life-ring module-icon"></i>
+                            Support Services
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        <p class="mb-2">If you require assistance, please contact our support team:</p>
                         <p class="mb-0">
                             <strong>Email:</strong>
                             <a href="mailto:{{ support_email or 'support@tradingjournal.com' }}" class="text-primary">
@@ -118,10 +106,98 @@
                         </p>
                     </div>
                 </div>
-                {% endif %}
+                {% endif %} -->
 
             </div>
         </div>
     </div>
 </div>
+
+{% block scripts_extra %}
+<style>
+/* Error Code Styling */
+.error-code-display {
+    position: relative;
+    margin: 2rem 0;
+}
+
+.error-code-number {
+    font-size: 6rem;
+    font-weight: 900;
+    color: var(--enterprise-text-muted);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    line-height: 0.8;
+    margin-bottom: 1rem;
+}
+
+.error-code-separator {
+    width: 80px;
+    height: 3px;
+    background-color: var(--enterprise-primary);
+    margin: 0 auto;
+    border-radius: 2px;
+}
+
+.error-title {
+    color: var(--enterprise-text-primary);
+    font-weight: 600;
+}
+
+.error-description {
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.error-details-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.error-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    text-align: left;
+}
+
+.error-detail-label {
+    font-weight: 600;
+    color: var(--enterprise-text-secondary);
+    min-width: 120px;
+}
+
+.error-detail-value {
+    color: var(--enterprise-text-primary);
+    flex: 1;
+    word-break: break-word;
+}
+
+.btn-group-spaced {
+    margin: 2rem 0;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .error-code-number {
+        font-size: 4rem;
+    }
+
+    .error-detail-row {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .error-detail-label {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .error-code-number {
+        font-size: 3rem;
+    }
+}
+</style>
+{% endblock %}
 {% endblock %}
