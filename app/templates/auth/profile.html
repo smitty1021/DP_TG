@@ -72,6 +72,7 @@
                         <!-- Required field for backend detection of password submissions -->
                         <input type="hidden" name="submit_password" value="submit_password"/>
 
+                        <!-- Hidden username field for accessibility and password managers -->
                         <input type="hidden" name="username" value="{{ current_user.username }}" autocomplete="username">
 
                         <!-- Current Password Field -->
@@ -190,13 +191,13 @@
                             </div>
                         </div>
 
-                        <div class="status-badge text-success mb-2">
+                        <div class="status-badge text-success mb-2" style="font-size: 0.85rem;">
                             <i class="fas fa-check-circle me-2"></i>
                             Discord Integration Active
                         </div>
 
                         {% if current_user.discord_avatar %}
-                        <div class="status-badge text-info mb-3">
+                        <div class="status-badge text-info mb-3" style="font-size: 0.85rem;">
                             <i class="fas fa-user-circle me-2"></i>
                             Discord Avatar Active
                         </div>
@@ -214,7 +215,8 @@
                                     {% set role_count = 0 %}
                                     {% for role in current_user.discord_roles %}
                                         {% if role.get('name', '') != "@everyone" and role.get('name', '') != "" %}
-                                            <span class="badge bg-secondary text-light" style="font-size: 0.75rem;">
+                                            <!-- <span class="btn btn-outline-warning" style="font-size: 0.75rem;"> -->
+                                            <span class="status-badge text-warning" style="font-size: 0.85rem;">
                                                 {{ role.get('name', 'Unknown Role') }}
                                             </span>
                                             {% set role_count = role_count + 1 %}
@@ -293,17 +295,17 @@
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Role:</span>
-                            <span class="badge bg-primary">{{ current_user.role.name.title() }}</span>
+                            <span class="badge bg-primary" style="font-size: 0.85rem;">{{ current_user.role.name.title() }}</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Account Status:</span>
                             <div class="text-end">
                                 {% if current_user.is_active %}
-                                    <span class="status-badge text-success">
+                                    <span class="status-badge text-success" style="font-size: 0.85rem;">
                                         <i class="fas fa-check-circle me-1"></i>Active
                                     </span>
                                 {% else %}
-                                    <span class="status-badge text-danger">
+                                    <span class="status-badge text-danger" style="font-size: 0.85rem;">
                                         <i class="fas fa-times-circle me-1"></i>Inactive
                                     </span>
                                 {% endif %}
@@ -313,11 +315,11 @@
                             <span class="text-muted">Email Verification:</span>
                             <div class="text-end">
                                 {% if current_user.is_email_verified %}
-                                    <span class="status-badge text-success">
+                                    <span class="status-badge text-success" style="font-size: 0.85rem;">
                                         <i class="fas fa-check-circle me-1"></i>Verified
                                     </span>
                                 {% else %}
-                                    <span class="status-badge text-warning">
+                                    <span class="status-badge text-warning" style="font-size: 0.85rem;">
                                         <i class="fas fa-exclamation-triangle me-1"></i>Pending
                                     </span>
                                 {% endif %}
@@ -348,12 +350,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔧 Profile page loading...');
-
     // Initialize enterprise unsaved changes detection
     if (typeof window.initEnterpriseUnsavedChanges === 'function') {
         window.initEnterpriseUnsavedChanges();
-        console.log('✅ Unsaved changes initialized');
     }
 
     // Initialize password strength meter
@@ -365,10 +364,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Setup form submissions
     setupFormSubmissions();
 
-    // Convert UTC time to EST for last login
+    // Convert UTC time to local Eastern time for last login
     convertLastLoginTime();
 
-    console.log('✅ Profile page fully loaded');
+    // Convert Discord sync time if present
+    convertDiscordSyncTime();
 });
 
 // Password Strength Meter Implementation
@@ -494,8 +494,6 @@ function setupFormSubmissions() {
 
     if (profileForm) {
         profileForm.addEventListener('submit', function(e) {
-            console.log('🔍 Profile form submitting...');
-
             // Show loading state
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
@@ -511,8 +509,6 @@ function setupFormSubmissions() {
 
     if (passwordForm) {
         passwordForm.addEventListener('submit', function(e) {
-            console.log('🔍 Password form submitting...');
-
             // Final password match check
             const newPassword = document.getElementById('new_password').value;
             const confirmPassword = document.getElementById('confirm_password').value;
@@ -563,22 +559,93 @@ function setupFormSubmissions() {
     }
 }
 
-// Convert UTC time to EST for last login display
+// Convert UTC time to local Eastern time for last login display
 function convertLastLoginTime() {
     const lastLoginElement = document.querySelector('#last-login-display span[data-utc-time]');
     if (lastLoginElement) {
         const utcTimeString = lastLoginElement.getAttribute('data-utc-time');
-        const utcDate = new Date(utcTimeString);
-        const estDate = new Date(utcDate.getTime() - (5 * 60 * 60 * 1000)); // EST is UTC-5
 
-        const year = estDate.getFullYear();
-        const month = String(estDate.getMonth() + 1).padStart(2, '0');
-        const day = String(estDate.getDate()).padStart(2, '0');
-        const hours = String(estDate.getHours()).padStart(2, '0');
-        const minutes = String(estDate.getMinutes()).padStart(2, '0');
+        try {
+            // Parse the UTC time string
+            const utcDate = new Date(utcTimeString);
 
-        lastLoginElement.textContent = `${year}-${month}-${day} ${hours}:${minutes} EST`;
+            // Convert to Eastern Time (handles EST/EDT automatically)
+            const easternTime = new Date(utcDate.toLocaleString("en-US", {timeZone: "America/New_York"}));
+
+            // Format as YYYY-MM-DD HH:MM ET
+            const year = easternTime.getFullYear();
+            const month = String(easternTime.getMonth() + 1).padStart(2, '0');
+            const day = String(easternTime.getDate()).padStart(2, '0');
+            const hours = String(easternTime.getHours()).padStart(2, '0');
+            const minutes = String(easternTime.getMinutes()).padStart(2, '0');
+
+            // Determine if we're in EST or EDT
+            const isEDT = isDaylightSavingTime(easternTime);
+            const timezone = isEDT ? 'EDT' : 'EST';
+
+            lastLoginElement.textContent = `${year}-${month}-${day} ${hours}:${minutes} ${timezone}`;
+
+        } catch (error) {
+            console.error('Error converting last login time:', error);
+            // Fallback - keep original text
+        }
     }
+}
+
+// Helper function to determine if date is in Daylight Saving Time
+function isDaylightSavingTime(date) {
+    const year = date.getFullYear();
+
+    // DST in US: Second Sunday in March to First Sunday in November
+    const dstStart = new Date(year, 2, 1); // March 1st
+    dstStart.setDate(1 + (7 - dstStart.getDay()) % 7 + 7); // Second Sunday
+
+    const dstEnd = new Date(year, 10, 1); // November 1st
+    dstEnd.setDate(1 + (7 - dstEnd.getDay()) % 7); // First Sunday
+
+    return date >= dstStart && date < dstEnd;
+}
+
+// Convert Discord sync time to local Eastern time
+function convertDiscordSyncTime() {
+    // Look for Discord sync time text (this will need to match your template structure)
+    const discordSyncElements = document.querySelectorAll('.text-muted');
+
+    discordSyncElements.forEach(element => {
+        const text = element.textContent;
+        // Look for pattern: "Connected • Last sync: YYYY-MM-DD HH:MM"
+        const syncPattern = /Last sync:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})/;
+        const match = text.match(syncPattern);
+
+        if (match) {
+            try {
+                // Assume the backend time is UTC and convert
+                const backendTime = match[1];
+                const utcDate = new Date(backendTime + ' UTC'); // Explicitly mark as UTC
+
+                // Convert to Eastern Time
+                const easternTime = new Date(utcDate.toLocaleString("en-US", {timeZone: "America/New_York"}));
+
+                // Format as YYYY-MM-DD HH:MM
+                const year = easternTime.getFullYear();
+                const month = String(easternTime.getMonth() + 1).padStart(2, '0');
+                const day = String(easternTime.getDate()).padStart(2, '0');
+                const hours = String(easternTime.getHours()).padStart(2, '0');
+                const minutes = String(easternTime.getMinutes()).padStart(2, '0');
+
+                // Determine timezone
+                const isEDT = isDaylightSavingTime(easternTime);
+                const timezone = isEDT ? 'EDT' : 'EST';
+
+                // Replace the time in the text
+                const newText = text.replace(syncPattern, `Last sync: ${year}-${month}-${day} ${hours}:${minutes} ${timezone}`);
+                element.textContent = newText;
+
+            } catch (error) {
+                console.error('Error converting Discord sync time:', error);
+            }
+        }
+    });
 }
 
 // Discord roles refresh function
@@ -675,8 +742,6 @@ function unlinkDiscord() {
             confirmClass: 'btn-danger',
             icon: 'exclamation-triangle',
             onConfirm: () => {
-                console.log('🔗 Unlinking Discord account...');
-
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '{{ url_for('auth.unlink_discord') }}';
@@ -692,13 +757,11 @@ function unlinkDiscord() {
                 form.submit();
             },
             onCancel: () => {
-                console.log('🚫 Discord unlink cancelled');
+                // Discord unlink cancelled
             }
         });
     } else {
         if (confirm('Remove Discord integration from this account? This action cannot be undone.')) {
-            console.log('🔗 Unlinking Discord account...');
-
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '{{ url_for('auth.unlink_discord') }}';
