@@ -1796,6 +1796,48 @@ html[data-bs-theme="dark"] .search-result-item:hover {
 
 /*
 ===============================================================================
+12. AVATAR COMPONENTS
+===============================================================================
+*/
+
+.avatar-container {
+    position: relative;
+    display: inline-block;
+}
+
+.avatar-badge {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background: white;
+    border-radius: 50%;
+    padding: 2px;
+    font-size: 0.8rem;
+}
+
+.avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 150px;
+    height: 150px;
+}
+
+.user-avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.integration-indicators .badge {
+    font-size: 0.7rem;
+    margin-right: 2px;
+}
+
+/*
+===============================================================================
 END OF ENTERPRISE SPECIALIZED COMPONENT LIBRARY
 ===============================================================================
 */

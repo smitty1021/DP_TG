@@ -458,18 +458,44 @@
                                     {% for user_item in users %}
                                     <tr class="resource-row">
                                         <td style="text-align: center;">
-                                            <input class="form-check-input user-checkbox" type="checkbox" value="{{ user_item.id }}" name="user_ids" aria-label="Select resource {{ user_item.username }}">
+                                            <input class="form-check-input user-checkbox" type="checkbox"
+                                                   value="{{ user_item.id }}" name="user_ids"
+                                                   aria-label="Select resource {{ user_item.username }}">
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                {% if user_item.profile_picture and user_item.profile_picture != 'default.jpg' %}
-                                                    <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/' + user_item.profile_picture) }}?v={{ range(1,100000)|random }}" alt="{{ user_item.username }}'s Profile" class="user-avatar me-2">
+                                                <!-- Use Discord avatar if available, otherwise show user icon -->
+                                                {% if user_item.discord_linked and user_item.discord_avatar %}
+                                                    <img src="https://cdn.discordapp.com/avatars/{{ user_item.discord_id }}/{{ user_item.discord_avatar }}.webp?size=64"
+                                                         alt="{{ user_item.username }}'s Discord Avatar"
+                                                         class="user-avatar me-2"
+                                                         style="width: 40px; height: 40px; object-fit: cover;"
+                                                         onerror="this.src='https://cdn.discordapp.com/avatars/{{ user_item.discord_id }}/{{ user_item.discord_avatar }}.png';">
                                                 {% else %}
-                                                    <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/default.jpg') }}" alt="Default Profile" class="user-avatar me-2">
+                                                    <div class="user-avatar-placeholder me-2">
+                                                        <i class="fas fa-user-circle fa-2x text-muted"></i>
+                                                    </div>
                                                 {% endif %}
+
                                                 <div>
                                                     <div class="resource-name">{{ user_item.username }}</div>
-                                                    {% if user_item.name %}<small class="resource-display-name">{{ user_item.name }}</small>{% endif %}
+                                                    {% if user_item.name %}
+                                                        <small class="resource-display-name">{{ user_item.name }}</small>
+                                                    {% endif %}
+
+                                                    <!-- Integration Status Indicators -->
+                                                    <div class="integration-indicators mt-1">
+                                                        {% if user_item.discord_linked %}
+                                                            <span class="badge bg-primary" title="Discord Connected">
+                                                                <i class="fab fa-discord"></i>
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if user_item.is_email_verified %}
+                                                            <span class="badge bg-success" title="Email Verified">
+                                                                <i class="fas fa-envelope-circle-check"></i>
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>

@@ -2,344 +2,348 @@
 {% from "macros/_form_helpers.html" import render_field, render_checkbox %}
 
 {% block title %}
-    {{ title or "User Profile Configuration" }} - Enterprise Trading System
+    {{ title or "User Configuration Management" }} - Enterprise Trading System
 {% endblock %}
 
 {% block content %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+
+<!-- Optional: Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 <!-- Main Content Wrapper -->
 <div class="enterprise-container">
-    <div class="d-flex justify-content-center">
-        <div class="w-100" style="max-width: 1400px;">
-            <!-- Profile Cards using Enterprise Grid System -->
-            <div class="grid grid-cols-3 gap-4">
-                <!-- Profile Information Module -->
-                <div class="col-span-1">
-                    <div class="enterprise-module">
-                        <div class="module-header">
-                            <div class="module-title">
-                                <i class="fas fa-user-edit module-icon"></i>
-                                Profile Information Configuration
-                            </div>
-                        </div>
-                        <div class="module-content">
-                            <form method="POST" action="{{ url_for('auth.user_profile') }}" enctype="multipart/form-data" novalidate id="profile-form">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-                                <!-- Profile Picture Display (Discord Avatar Only) -->
-                                <div class="d-flex justify-content-center mb-4">
-                                    {% if current_user.discord_linked and current_user.discord_avatar %}
-                                        <!-- Discord Avatar - Try different formats -->
-                                        <img src="https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.webp?size=150"
-                                             alt="Discord Profile Picture" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;"
-                                             onerror="this.src='https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.png'; this.onerror=function(){this.src='{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/default.jpg') }}'; this.style.border='none';};">
-                                    {% else %}
-                                        <!-- Default Picture -->
-                                        <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/default.jpg') }}"
-                                             alt="Default Profile Picture" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
-                                    {% endif %}
-                                </div>
-
-                                <!-- Profile Form Fields -->
-                                {{ render_field(profile_form.name, input_class="form-control") }}
-                                {{ render_field(profile_form.email, input_class="form-control", type="email") }}
-                                {{ render_field(profile_form.bio, input_class="form-control", rows="3") }}
-
-                                <!-- Profile picture field - render properly but hidden -->
-                                <div style="display: none;">
-                                    {{ render_field(profile_form.profile_picture, input_class="form-control") }}
-                                </div>
-
-                                <div class="d-grid mt-4">
-                                    <button type="submit" name="submit_profile" value="submit_profile" class="btn btn-primary">
-                                        <i class="fas fa-save me-2"></i>Update Configuration
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+    <!-- Profile Configuration Grid -->
+    <div class="grid grid-cols-3 gap-4">
+        <!-- Profile Information Module -->
+        <div class="col-span-1">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-user-edit module-icon"></i>
+                        Profile Information Configuration
                     </div>
                 </div>
-
-                <!-- Password Management Module -->
-                <div class="col-span-1">
-                    <div class="enterprise-module">
-                        <div class="module-header">
-                            <div class="module-title">
-                                <i class="fas fa-shield-alt module-icon"></i>
-                                Password Management
+                <div class="module-content">
+                    <!-- User Avatar Display (Discord Only) -->
+                    <div class="d-flex justify-content-center mb-4">
+                        {% if current_user.discord_linked and current_user.discord_avatar %}
+                            <!-- Discord Avatar -->
+                            <div class="avatar-container">
+                                <img src="https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.webp?size=150"
+                                     alt="Discord Avatar"
+                                     class="img-thumbnail rounded-circle"
+                                     style="width: 150px; height: 150px; object-fit: cover;"
+                                     onerror="this.src='https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.png';">
                             </div>
-                        </div>
-                        <div class="module-content">
-                            <form method="POST" action="{{ url_for('auth.user_profile') }}" novalidate id="password-form">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                <!-- Add hidden username field for accessibility compliance -->
-                                <input type="hidden" name="username" value="{{ current_user.username }}" autocomplete="username">
-
-                                <!-- Current Password Field -->
-                                <div class="form-group mb-3">
-                                    {{ password_form.current_password.label(class="form-label") }}
-                                    {{ password_form.current_password(class="form-control", type="password", id="current_password", autocomplete="current-password") }}
-
-                                    {% if password_form.current_password.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {% for error in password_form.current_password.errors %}
-                                                <span>{{ error }}</span><br>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-
-                                <!-- New Password with Strength Indicator -->
-                                <div class="form-group mb-3">
-                                    {{ password_form.new_password.label(class="form-label") }}
-                                    {{ password_form.new_password(class="form-control", type="password", id="new_password", autocomplete="new-password") }}
-
-                                    <!-- Password Strength Indicator -->
-                                    <div id="password-strength-container" class="mt-2" style="display: none;">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <small class="text-muted me-2">Strength:</small>
-                                            <div class="progress flex-grow-1" style="height: 6px;">
-                                                <div id="password-strength-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                                            </div>
-                                            <small id="password-strength-text" class="text-muted ms-2">Weak</small>
-                                        </div>
-                                        <div id="password-requirements" class="small text-muted">
-                                            <div class="d-flex flex-wrap gap-2">
-                                                <span id="req-length" class="badge bg-secondary">8+ chars</span>
-                                                <span id="req-uppercase" class="badge bg-secondary">A-Z</span>
-                                                <span id="req-lowercase" class="badge bg-secondary">a-z</span>
-                                                <span id="req-number" class="badge bg-secondary">0-9</span>
-                                                <span id="req-special" class="badge bg-secondary">Special</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {% if password_form.new_password.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {% for error in password_form.new_password.errors %}
-                                                <span>{{ error }}</span><br>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-
-                                <!-- Confirm Password with Match Indicator -->
-                                <div class="form-group mb-3">
-                                    {{ password_form.confirm_password.label(class="form-label") }}
-                                    {{ password_form.confirm_password(class="form-control", type="password", id="confirm_password", autocomplete="new-password") }}
-
-                                    <!-- Password Match Indicator -->
-                                    <div id="password-match-indicator" class="mt-2" style="display: none;">
-                                        <small id="password-match-text" class="text-muted">
-                                            <i id="password-match-icon" class="fas fa-times me-1"></i>
-                                            Passwords do not match
-                                        </small>
-                                    </div>
-
-                                    {% if password_form.confirm_password.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {% for error in password_form.confirm_password.errors %}
-                                                <span>{{ error }}</span><br>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-
-                                <div class="d-grid mt-4">
-                                    <button type="submit" name="submit_password" value="submit_password" class="btn btn-primary" id="password-submit-btn">
-                                        <i class="fas fa-lock me-2"></i>Update Password
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Column with Stacked Cards -->
-                <div class="col-span-1">
-                    <div class="d-flex flex-column gap-4">
-                        <!-- Discord Integration Module -->
-                        {% if current_user.discord_linked %}
-                        <div class="enterprise-module">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fab fa-discord module-icon"></i>
-                                    Discord Integration Status
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                <div class="d-flex align-items-center mb-3">
-                                    {% if current_user.discord_avatar %}
-                                        <img src="https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.png?size=64"
-                                             alt="Discord Avatar" class="rounded-circle me-3" style="width: 48px; height: 48px;">
-                                    {% else %}
-                                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
-                                             style="width: 48px; height: 48px;">
-                                            <i class="fab fa-discord text-white"></i>
-                                        </div>
-                                    {% endif %}
-                                    <div>
-                                        <h6 class="mb-1">{{ current_user.discord_username }}</h6>
-                                        <small class="text-muted">
-                                            Connected • Last sync:
-                                            {% if current_user.last_discord_sync %}
-                                                {{ current_user.last_discord_sync.strftime('%Y-%m-%d %H:%M') }}
-                                            {% else %}
-                                                Never
-                                            {% endif %}
-                                        </small>
-                                    </div>
-                                </div>
-
-                                <div class="status-badge text-success mb-2">
-                                    <i class="fas fa-check-circle me-2"></i>
-                                    Discord Integration Active
-                                </div>
-
-                                {% if current_user.discord_avatar %}
-                                <div class="status-badge text-info mb-3">
-                                    <i class="fas fa-user-circle me-2"></i>
-                                    Discord Avatar Active
-                                </div>
-                                {% endif %}
-
-                                <!-- Discord Roles/Tags Section -->
-                                <div class="mb-3" id="discord-roles-section">
-                                    <h6 class="mb-2">
-                                        <i class="fas fa-tags me-2"></i>
-                                        Discord Roles
-                                    </h6>
-
-                                    {% if current_user.discord_roles and current_user.discord_roles|length > 0 %}
-                                        <div class="d-flex flex-wrap gap-1 mb-2">
-                                            {% set role_count = 0 %}
-                                            {% for role in current_user.discord_roles %}
-                                                {% if role.get('name', '') != "@everyone" and role.get('name', '') != "" %}
-                                                    <span class="badge bg-secondary text-light" style="font-size: 0.75rem;">
-                                                        {{ role.get('name', 'Unknown Role') }}
-                                                    </span>
-                                                    {% set role_count = role_count + 1 %}
-                                                {% endif %}
-                                            {% endfor %}
-                                        </div>
-                                    {% else %}
-                                        <div class="text-muted" style="font-size: 0.8rem;">
-                                            <i class="fas fa-exclamation-circle me-1"></i>
-                                            No Discord roles found or roles not synced yet.
-                                            <br>
-                                            <small>Try using the "Sync Roles" button below to refresh.</small>
-                                        </div>
-                                    {% endif %}
-                                </div>
-
-                                {% if not (current_user.email and current_user.email.endswith('@discord.local')) %}
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                            onclick="refreshDiscordRoles()" id="refresh-roles-btn">
-                                        <i class="fas fa-sync-alt me-1"></i>Sync Roles
-                                    </button>
-                                    <button type="button" class="btn btn-outline-danger btn-sm"
-                                            onclick="unlinkDiscord()">
-                                        <i class="fas fa-unlink me-2"></i>Remove Integration
-                                    </button>
-                                </div>
-                                {% else %}
-                                <div class="d-flex gap-2 align-items-center">
-                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                            onclick="refreshDiscordRoles()" id="refresh-roles-btn">
-                                        <i class="fas fa-sync-alt me-1"></i>Sync Roles
-                                    </button>
-                                    <span class="badge bg-warning">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        Discord-Only Account
-                                    </span>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
                         {% else %}
-                        <div class="enterprise-module">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fab fa-discord module-icon"></i>
-                                    Discord Integration Setup
+                            <!-- Default User Icon -->
+
+                            <!-- <div class="avatar-placeholder">
+                                <i class="fas fa-user-circle fa-7x text-muted"></i>
+                            </div> -->
+                            <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/default.jpg') }}"
+                                 alt="Default Profile Picture" class="img-thumbnail rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% endif %}
+                    </div>
+
+                    <form method="POST" action="{{ url_for('auth.user_profile') }}" novalidate id="profile-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                        {{ render_field(profile_form.name, input_class="form-control") }}
+                        {{ render_field(profile_form.email, input_class="form-control", type="email") }}
+                        {{ render_field(profile_form.bio, input_class="form-control", rows="3") }}
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" name="submit_profile" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Update Configuration
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Password Management Module -->
+        <div class="col-span-1">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-shield-alt module-icon"></i>
+                        Password Management
+                    </div>
+                </div>
+                <div class="module-content">
+                    <form method="POST" action="{{ url_for('auth.user_profile') }}" novalidate id="password-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                        <input type="hidden" name="username" value="{{ current_user.username }}" autocomplete="username">
+
+                        <!-- Current Password Field -->
+                        <div class="form-group mb-3">
+                            {{ password_form.current_password.label(class="form-label") }}
+                            {{ password_form.current_password(class="form-control", type="password", id="current_password", autocomplete="current-password") }}
+
+                            {% if password_form.current_password.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in password_form.current_password.errors %}
+                                        <span>{{ error }}</span><br>
+                                    {% endfor %}
                                 </div>
-                                <div class="module-meta">Connect your Discord account for enhanced access</div>
-                            </div>
-                            <div class="module-content">
-                                <div class="text-center py-4">
-                                    <i class="fab fa-discord fa-3x text-muted mb-3"></i>
-                                    <h5>Discord Not Connected</h5>
-                                    <p class="text-muted mb-4">Link your Discord account to access additional features and role-based permissions.</p>
-                                    <button type="button" class="btn btn-primary" onclick="connectDiscord()">
-                                        <i class="fab fa-discord me-2"></i>Connect Discord Account
-                                    </button>
+                            {% endif %}
+                        </div>
+
+                        <!-- New Password with Strength Indicator -->
+                        <div class="form-group mb-3">
+                            {{ password_form.new_password.label(class="form-label") }}
+                            {{ password_form.new_password(class="form-control", type="password", id="new_password", autocomplete="new-password") }}
+
+                            <!-- Password Strength Indicator -->
+                            <div id="password-strength-container" class="mt-2" style="display: none;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <small class="text-muted me-2">Strength:</small>
+                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                        <div id="password-strength-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <small id="password-strength-text" class="text-muted ms-2">Weak</small>
+                                </div>
+                                <div id="password-requirements" class="small text-muted">
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <span id="req-length" class="badge bg-secondary">8+ chars</span>
+                                        <span id="req-uppercase" class="badge bg-secondary">A-Z</span>
+                                        <span id="req-lowercase" class="badge bg-secondary">a-z</span>
+                                        <span id="req-number" class="badge bg-secondary">0-9</span>
+                                        <span id="req-special" class="badge bg-secondary">Special</span>
+                                    </div>
                                 </div>
                             </div>
+
+                            {% if password_form.new_password.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in password_form.new_password.errors %}
+                                        <span>{{ error }}</span><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Confirm Password with Match Indicator -->
+                        <div class="form-group mb-3">
+                            {{ password_form.confirm_password.label(class="form-label") }}
+                            {{ password_form.confirm_password(class="form-control", type="password", id="confirm_password", autocomplete="new-password") }}
+
+                            <!-- Password Match Indicator -->
+                            <div id="password-match-indicator" class="mt-2" style="display: none;">
+                                <small id="password-match-text" class="text-muted">
+                                    <i id="password-match-icon" class="fas fa-times me-1"></i>
+                                    Passwords do not match
+                                </small>
+                            </div>
+
+                            {% if password_form.confirm_password.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in password_form.confirm_password.errors %}
+                                        <span>{{ error }}</span><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" name="submit_password" value="submit_password" class="btn btn-primary" id="password-submit-btn">
+                                <i class="fas fa-lock me-2"></i>Update Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column with Stacked Cards -->
+        <div class="col-span-1">
+            <div class="d-flex flex-column gap-4">
+                <!-- Discord Integration Module -->
+                {% if current_user.discord_linked %}
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fab fa-discord module-icon"></i>
+                            Discord Integration Status
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        <div class="d-flex align-items-center mb-3">
+                            {% if current_user.discord_avatar %}
+                                <img src="https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.png?size=64"
+                                     alt="Discord Avatar" class="rounded-circle me-3" style="width: 48px; height: 48px;">
+                            {% else %}
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                     style="width: 48px; height: 48px;">
+                                    <i class="fab fa-discord text-white"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-1">{{ current_user.discord_username }}</h6>
+                                <small class="text-muted">
+                                    Connected • Last sync:
+                                    {% if current_user.last_discord_sync %}
+                                        {{ current_user.last_discord_sync.strftime('%Y-%m-%d %H:%M') }}
+                                    {% else %}
+                                        Never
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="status-badge text-success mb-2">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Discord Integration Active
+                        </div>
+
+                        {% if current_user.discord_avatar %}
+                        <div class="status-badge text-info mb-3">
+                            <i class="fas fa-user-circle me-2"></i>
+                            Discord Avatar Active
                         </div>
                         {% endif %}
 
-                        <!-- Account Information Module -->
-                        <div class="enterprise-module">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-info-circle module-icon"></i>
-                                    Account Information Summary
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted">Username:</span>
-                                    <strong>{{ current_user.username }}</strong>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted">Role:</span>
-                                    <span class="badge bg-primary">{{ current_user.role.name.title() }}</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted">Account Status:</span>
-                                    <div class="text-end">
-                                        {% if current_user.is_active %}
-                                            <span class="status-badge text-success">
-                                                <i class="fas fa-check-circle me-1"></i>Active
+                        <!-- Discord Roles/Tags Section -->
+                        <div class="mb-3" id="discord-roles-section">
+                            <h6 class="mb-2">
+                                <i class="fas fa-tags me-2"></i>
+                                Discord Roles
+                            </h6>
+
+                            {% if current_user.discord_roles and current_user.discord_roles|length > 0 %}
+                                <div class="d-flex flex-wrap gap-1 mb-2">
+                                    {% set role_count = 0 %}
+                                    {% for role in current_user.discord_roles %}
+                                        {% if role.get('name', '') != "@everyone" and role.get('name', '') != "" %}
+                                            <span class="badge bg-secondary text-light" style="font-size: 0.75rem;">
+                                                {{ role.get('name', 'Unknown Role') }}
                                             </span>
-                                        {% else %}
-                                            <span class="status-badge text-danger">
-                                                <i class="fas fa-times-circle me-1"></i>Inactive
-                                            </span>
+                                            {% set role_count = role_count + 1 %}
                                         {% endif %}
-                                    </div>
+                                    {% endfor %}
                                 </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted">Email Verification:</span>
-                                    <div class="text-end">
-                                        {% if current_user.is_email_verified %}
-                                            <span class="status-badge text-success">
-                                                <i class="fas fa-check-circle me-1"></i>Verified
-                                            </span>
-                                        {% else %}
-                                            <span class="status-badge text-warning">
-                                                <i class="fas fa-exclamation-triangle me-1"></i>Pending
-                                            </span>
-                                        {% endif %}
-                                    </div>
+                            {% else %}
+                                <div class="text-muted" style="font-size: 0.8rem;">
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    No Discord roles found or roles not synced yet.
+                                    <br>
+                                    <small>Try using the "Sync Roles" button below to refresh.</small>
                                 </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted">Account Created:</span>
-                                    <span>{{ current_user.created_at.strftime('%Y-%m-%d') if current_user.created_at else 'N/A' }}</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted">Last Login:</span>
-                                    <span id="last-login-display">
-                                        {% if current_user.last_login %}
-                                            <span data-utc-time="{{ current_user.last_login.isoformat() }}Z">
-                                                {{ current_user.last_login.strftime('%Y-%m-%d %H:%M UTC') }}
-                                            </span>
-                                        {% else %}
-                                            Never logged in
-                                        {% endif %}
+                            {% endif %}
+                        </div>
+
+                        {% if not (current_user.email and current_user.email.endswith('@discord.local')) %}
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                    onclick="refreshDiscordRoles()" id="refresh-roles-btn">
+                                <i class="fas fa-sync-alt me-1"></i>Sync Roles
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm"
+                                    onclick="unlinkDiscord()">
+                                <i class="fas fa-unlink me-2"></i>Remove Integration
+                            </button>
+                        </div>
+                        {% else %}
+                        <div class="d-flex gap-2 align-items-center">
+                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                    onclick="refreshDiscordRoles()" id="refresh-roles-btn">
+                                <i class="fas fa-sync-alt me-1"></i>Sync Roles
+                            </button>
+                            <span class="badge bg-warning">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Discord-Only Account
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fab fa-discord module-icon"></i>
+                            Discord Integration Setup
+                        </div>
+                        <div class="module-meta">Connect your Discord account for enhanced access</div>
+                    </div>
+                    <div class="module-content">
+                        <div class="text-center py-4">
+                            <i class="fab fa-discord fa-3x text-muted mb-3"></i>
+                            <h5>Discord Not Connected</h5>
+                            <p class="text-muted mb-4">Link your Discord account to access additional features and role-based permissions.</p>
+                            <button type="button" class="btn btn-primary" onclick="connectDiscord()">
+                                <i class="fab fa-discord me-2"></i>Connect Discord Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Account Information Module -->
+                <div class="enterprise-module">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-info-circle module-icon"></i>
+                            Account Information Summary
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Username:</span>
+                            <strong>{{ current_user.username }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Role:</span>
+                            <span class="badge bg-primary">{{ current_user.role.name.title() }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Account Status:</span>
+                            <div class="text-end">
+                                {% if current_user.is_active %}
+                                    <span class="status-badge text-success">
+                                        <i class="fas fa-check-circle me-1"></i>Active
                                     </span>
-                                </div>
+                                {% else %}
+                                    <span class="status-badge text-danger">
+                                        <i class="fas fa-times-circle me-1"></i>Inactive
+                                    </span>
+                                {% endif %}
                             </div>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Email Verification:</span>
+                            <div class="text-end">
+                                {% if current_user.is_email_verified %}
+                                    <span class="status-badge text-success">
+                                        <i class="fas fa-check-circle me-1"></i>Verified
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge text-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Pending
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Account Created:</span>
+                            <span>{{ current_user.created_at.strftime('%Y-%m-%d') if current_user.created_at else 'N/A' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Last Login:</span>
+                            <span id="last-login-display">
+                                {% if current_user.last_login %}
+                                    <span data-utc-time="{{ current_user.last_login.isoformat() }}Z">
+                                        {{ current_user.last_login.strftime('%Y-%m-%d %H:%M UTC') }}
+                                    </span>
+                                {% else %}
+                                    Never logged in
+                                {% endif %}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -348,20 +352,8 @@
     </div>
 </div>
 
-<!-- Hidden Flask flash messages for JavaScript processing -->
-<div id="flask-flash-data" style="display: none;">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div data-category="{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-</div>
-{% endblock %}
-
-{% block scripts_extra %}
 <script>
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔧 Profile page loading...');
 
@@ -507,50 +499,12 @@ function initializePasswordMatchValidator() {
 
 // Setup form submissions with proper debugging
 function setupFormSubmissions() {
-    console.log('🔧 Setting up form submissions...');
-
     const profileForm = document.getElementById('profile-form');
     const passwordForm = document.getElementById('password-form');
 
-    console.log('Profile form found:', profileForm ? '✅ YES' : '❌ NO');
-    console.log('Password form found:', passwordForm ? '✅ YES' : '❌ NO');
-
     if (profileForm) {
-        console.log('✅ Attaching profile form event listener...');
-
-        // Also add a click listener to the submit button for debugging
-        const profileSubmitBtn = profileForm.querySelector('button[type="submit"]');
-        if (profileSubmitBtn) {
-            profileSubmitBtn.addEventListener('click', function(e) {
-                console.log('🔘 Profile submit button clicked!');
-            });
-            console.log('✅ Profile button click listener attached');
-        }
-
         profileForm.addEventListener('submit', function(e) {
             console.log('🔍 Profile form submitting...');
-
-            // CRITICAL: Mark as submitting IMMEDIATELY to prevent unsaved changes interception
-            if (window.enterpriseUnsavedChanges) {
-                window.enterpriseUnsavedChanges.markAsSubmitting();
-                console.log('✅ Marked as submitting to bypass unsaved changes detection');
-            }
-
-            // Debug: Check if all required fields are filled
-            const formData = new FormData(this);
-            console.log('Profile form data being submitted:');
-            for (let [key, value] of formData.entries()) {
-                console.log(`  ${key}: ${value || '(empty)'}`);
-            }
-
-            // Check for validation errors on the form
-            const invalidFields = this.querySelectorAll(':invalid');
-            if (invalidFields.length > 0) {
-                console.warn('⚠️ Form has validation errors:');
-                invalidFields.forEach(field => {
-                    console.warn(`  - ${field.name || field.id}: ${field.validationMessage}`);
-                });
-            }
 
             // Show loading state
             const submitBtn = this.querySelector('button[type="submit"]');
@@ -558,34 +512,16 @@ function setupFormSubmissions() {
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating Configuration...';
             submitBtn.disabled = true;
 
-            // Reset button after timeout if still disabled (indicates error)
-            setTimeout(() => {
-                if (submitBtn.disabled) {
-                    console.warn('⚠️ Button still disabled after 8 seconds - likely a form validation error');
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                    // Reset unsaved changes state
-                    if (window.enterpriseUnsavedChanges) {
-                        window.enterpriseUnsavedChanges.reset();
-                    }
-                }
-            }, 8000);
+            // Mark as submitting for unsaved changes
+            if (window.enterpriseUnsavedChanges) {
+                window.enterpriseUnsavedChanges.markAsSubmitting();
+            }
         });
-        console.log('✅ Profile form event listener attached');
-    } else {
-        console.error('❌ Could not find profile form with id="profile-form"');
     }
 
     if (passwordForm) {
-        console.log('✅ Attaching password form event listener...');
         passwordForm.addEventListener('submit', function(e) {
             console.log('🔍 Password form submitting...');
-
-            // CRITICAL: Mark as submitting IMMEDIATELY to prevent unsaved changes interception
-            if (window.enterpriseUnsavedChanges) {
-                window.enterpriseUnsavedChanges.markAsSubmitting();
-                console.log('✅ Marked as submitting to bypass unsaved changes detection');
-            }
 
             // Final password match check
             const newPassword = document.getElementById('new_password').value;
@@ -593,10 +529,6 @@ function setupFormSubmissions() {
 
             if (newPassword !== confirmPassword) {
                 e.preventDefault();
-                // Reset unsaved changes state since we're preventing submission
-                if (window.enterpriseUnsavedChanges) {
-                    window.enterpriseUnsavedChanges.reset();
-                }
                 if (typeof showError === 'function') {
                     showError('Passwords do not match. Please verify your password entries.');
                 } else {
@@ -605,38 +537,18 @@ function setupFormSubmissions() {
                 return false;
             }
 
-            // Debug: Check form data
-            const formData = new FormData(this);
-            console.log('Password form data being submitted:');
-            for (let [key, value] of formData.entries()) {
-                console.log(`  ${key}: ${value ? '(filled)' : '(empty)'}`);
-            }
-
             // Show loading state
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating Password...';
             submitBtn.disabled = true;
 
-            // Reset button after timeout if still disabled
-            setTimeout(() => {
-                if (submitBtn.disabled) {
-                    console.warn('⚠️ Password button still disabled - likely validation error');
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                    // Reset unsaved changes state
-                    if (window.enterpriseUnsavedChanges) {
-                        window.enterpriseUnsavedChanges.reset();
-                    }
-                }
-            }, 8000);
+            // Mark as submitting for unsaved changes
+            if (window.enterpriseUnsavedChanges) {
+                window.enterpriseUnsavedChanges.markAsSubmitting();
+            }
         });
-        console.log('✅ Password form event listener attached');
-    } else {
-        console.error('❌ Could not find password form with id="password-form"');
     }
-
-    console.log('✅ Form submissions setup complete');
 }
 
 // Handle Flask flash messages
@@ -810,5 +722,67 @@ function unlinkDiscord() {
         }
     }
 }
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize enterprise unsaved changes detection
+    window.initEnterpriseUnsavedChanges();
+
+    // Set up autocomplete attributes for better UX
+    const autocompleteFields = [
+        { id: 'name', autocomplete: 'name' },
+        { id: 'email', autocomplete: 'email' },
+    ];
+
+    autocompleteFields.forEach(({id, autocomplete}) => {
+        const field = document.getElementById(id);
+        if (field) {
+            field.setAttribute('autocomplete', autocomplete);
+        }
+    });
+
+    // Handle Flask flash messages and convert to enterprise notifications
+    const flashMessages = document.querySelectorAll('#flask-flash-data > div');
+    flashMessages.forEach(function(msgElement) {
+        const category = msgElement.dataset.category || 'info';
+        const message = msgElement.textContent.trim();
+
+        // Convert Flask categories to enterprise notification types
+        let notificationType = 'info';
+        if (category === 'success') notificationType = 'success';
+        else if (category === 'danger' || category === 'error') notificationType = 'error';
+        else if (category === 'warning') notificationType = 'warning';
+
+        // Show enterprise notification
+        setTimeout(() => {
+            if (typeof showNotification === 'function') {
+                showNotification(message, notificationType);
+            }
+        }, 100);
+    });
+
+    // Form validation and submission handling
+    const profileForm = document.getElementById('profile-form');
+    if (profileForm) {
+        profileForm.addEventListener('submit', function(e) {
+            // Add any client-side validation here if needed
+            showNotification('Configuration update initiated...', 'info');
+        });
+    }
+
+    const passwordForm = document.getElementById('password-form');
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', function(e) {
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+
+            if (newPassword !== confirmPassword) {
+                e.preventDefault();
+                showNotification('Password confirmation does not match', 'error');
+                return;
+            }
+
+            showNotification('Password update initiated...', 'info');
+        });
+    }
+});
 </script>
 {% endblock %}

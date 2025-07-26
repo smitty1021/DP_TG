@@ -112,10 +112,6 @@ class ProfileForm(FlaskForm):
     email = StringField('Email Address',
                         validators=[DataRequired(), Email(message="Invalid email address."), Length(max=120)])
     bio = TextAreaField('About Me (Optional)', validators=[Optional(), Length(max=500)])
-    profile_picture = FileField('Update Profile Picture', validators=[
-        Optional(),
-        FileAllowed(['jpg', 'png', 'jpeg', 'gif'], 'Images only! (jpg, jpeg, png, gif)')
-    ])
     submit = SubmitField('Save Profile Changes')
 
 

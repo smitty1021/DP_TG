@@ -72,39 +72,48 @@ def create_app(config_class=None):
         MAX_CONTENT_LENGTH=int(os.environ.get('MAX_CONTENT_LENGTH', 16 * 1024 * 1024)),
         ALLOWED_EXTENSIONS=set(
             os.environ.get('ALLOWED_EXTENSIONS', 'pdf,png,jpg,jpeg,doc,docx,xls,xlsx,txt,csv').split(',')),
-        ALLOWED_IMAGE_EXTENSIONS={'png', 'jpg', 'jpeg', 'gif', 'webp'},  # UPDATED: Added 'webp'
-        # NEW: Global Image Management Configuration
+        ALLOWED_IMAGE_EXTENSIONS={'png', 'jpg', 'jpeg', 'gif', 'webp'},
+
+        # Global Image Management Configuration
         IMAGE_QUALITY=85,  # JPEG quality (1-100)
         MAX_IMAGE_DIMENSION=1920,  # Max width or height in pixels
         RESIZE_LARGE_IMAGES=True,
 
         ITEMS_PER_PAGE=int(os.environ.get('ITEMS_PER_PAGE', 10)),
-        PER_PAGE_TRADES=int(os.environ.get('PER_PAGE_TRADES', 25)),  # Used in trades_bp
-        PROFILE_PICS_FOLDER_REL=os.environ.get('PROFILE_PICS_FOLDER_REL', 'profile_pics'),
-        PROFILE_PICS_SAVE_PATH=os.path.join(os.path.abspath(os.path.join(app.root_path, 'static')),
-                                            os.environ.get('PROFILE_PICS_FOLDER_REL', 'profile_pics')),
+        PER_PAGE_TRADES=int(os.environ.get('PER_PAGE_TRADES', 25)),
+
+        # REMOVED: Profile picture configuration
+        # PROFILE_PICS_FOLDER_REL=os.environ.get('PROFILE_PICS_FOLDER_REL', 'profile_pics'),
+        # PROFILE_PICS_SAVE_PATH=os.path.join(os.path.abspath(os.path.join(app.root_path, 'static')),
+        #                                     os.environ.get('PROFILE_PICS_FOLDER_REL', 'profile_pics')),
+
+        # Email Configuration
         MAIL_SERVER=os.environ.get('MAIL_SERVER'),
         MAIL_PORT=int(os.environ.get('MAIL_PORT', 587)),
         MAIL_USE_TLS=os.environ.get('MAIL_USE_TLS', 'True').lower() in ['true', '1', 't'],
         MAIL_USE_SSL=os.environ.get('MAIL_USE_SSL', 'False').lower() in ['true', '1', 't'],
         MAIL_USERNAME=os.environ.get('MAIL_USERNAME'),
         MAIL_PASSWORD=os.environ.get('MAIL_PASSWORD'),
-        MAIL_DEFAULT_SENDER=os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@example.com'),
+        MAIL_DEFAULT_SENDER=os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@enterprise-trading.com'),
         MAIL_DEBUG=(os.environ.get('FLASK_DEBUG', '0') == '1'),
 
-        DISCORD_CLIENT_ID = os.environ.get('DISCORD_CLIENT_ID'),
-        DISCORD_CLIENT_SECRET = os.environ.get('DISCORD_CLIENT_SECRET'),
-        DISCORD_BOT_TOKEN = os.environ.get('DISCORD_BOT_TOKEN'),
-        DISCORD_GUILD_ID = os.environ.get('DISCORD_GUILD_ID'),
-        DISCORD_REDIRECT_URI = os.environ.get('DISCORD_REDIRECT_URI')
+        # Discord Integration
+        DISCORD_CLIENT_ID=os.environ.get('DISCORD_CLIENT_ID'),
+        DISCORD_CLIENT_SECRET=os.environ.get('DISCORD_CLIENT_SECRET'),
+        DISCORD_BOT_TOKEN=os.environ.get('DISCORD_BOT_TOKEN'),
+        DISCORD_GUILD_ID=os.environ.get('DISCORD_GUILD_ID'),
+        DISCORD_REDIRECT_URI=os.environ.get('DISCORD_REDIRECT_URI')
     )
 
     if config_class:
         app.config.from_object(config_class)
 
+    # Session Configuration
     app.config['SESSION_TYPE'] = 'filesystem'
     app.config['SESSION_FILE_DIR'] = os.path.join(app.instance_path, 'flask_session')
     os.makedirs(app.config['SESSION_FILE_DIR'], exist_ok=True)
+
+    # Create upload folders (remove profile_pics folder creation)
     p12_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'p12_scenarios')
     if not os.path.exists(p12_folder):
         try:
@@ -112,7 +121,8 @@ def create_app(config_class=None):
         except OSError as e:
             app.logger.error(f"Could not create P12_SCENARIOS_FOLDER: {e}")
 
-    image_folders = ['daily_journals', 'trades', 'general', 'user_profile']
+    # Create image folders (removed 'user_profile')
+    image_folders = ['daily_journals', 'trades', 'general']
     for folder in image_folders:
         folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
         if not os.path.exists(folder_path):
@@ -121,6 +131,7 @@ def create_app(config_class=None):
             except OSError as e:
                 app.logger.error(f"Could not create {folder} folder: {e}")
 
+    # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
@@ -129,10 +140,12 @@ def create_app(config_class=None):
 
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
+    # Login manager configuration
     login_manager.login_view = 'auth.login'
     login_manager.login_message = "Please log in to access this page."
     login_manager.login_message_category = "info"
 
+    # Logging configuration
     log_level = logging.DEBUG if app.debug else logging.INFO
     if not app.logger.handlers:
         log_dir = os.path.join(app.instance_path, 'logs')
@@ -145,18 +158,15 @@ def create_app(config_class=None):
         file_handler.setLevel(log_level)
         app.logger.addHandler(file_handler)
         app.logger.setLevel(log_level)
-    app.logger.info('Application startup')
 
+    app.logger.info('Enterprise Trading System startup')
+
+    # Create upload folder
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         try:
             os.makedirs(app.config['UPLOAD_FOLDER'])
         except OSError as e:
             app.logger.error(f"Could not create UPLOAD_FOLDER: {e}")
-    if not os.path.exists(app.config['PROFILE_PICS_SAVE_PATH']):
-        try:
-            os.makedirs(app.config['PROFILE_PICS_SAVE_PATH'])
-        except OSError as e:
-            app.logger.error(f"Could not create PROFILE_PICS_SAVE_PATH: {e}")
 
     app.jinja_env.filters['format_date'] = format_date_filter
     app.jinja_env.filters['file_size'] = format_filesize

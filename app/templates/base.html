@@ -65,44 +65,45 @@
                         {% endif %}
 
                         <li class="nav-item dropdown me-2">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center" id="navbarUserDropdown" href="#"
-                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#"
+                               id="navbarUserDropdown" role="button" data-bs-toggle="dropdown"
+                               aria-expanded="false" style="text-decoration: none;">
+
                                 {% if current_user.discord_linked and current_user.discord_avatar %}
-                                    <!-- Discord Avatar -->
-                                    <img src="https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.webp?size=32"
-                                         alt="Discord Avatar" class="rounded-circle me-2 user-avatar"
+                                    <!-- Discord Avatar Only -->
+                                    <img src="https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.webp?size=64"
+                                         alt="Discord Avatar"
+                                         class="rounded-circle me-2 user-avatar"
+                                         style="width: 32px; height: 32px; object-fit: cover;"
                                          onerror="this.src='https://cdn.discordapp.com/avatars/{{ current_user.discord_id }}/{{ current_user.discord_avatar }}.png';">
-                                {% elif current_user.profile_picture and current_user.profile_picture != 'default.jpg' %}
-                                    <!-- Local Profile Picture -->
-                                    <img src="{{ url_for('static', filename=config.get('PROFILE_PICS_FOLDER_REL', 'profile_pics') + '/' + current_user.profile_picture) }}?v={{ range(1,100000)|random }}"
-                                         alt="User Avatar" class="rounded-circle me-2 user-avatar">
                                 {% else %}
-                                    <!-- Default Icon -->
-                                    <i class="fas fa-user fa-fw me-2"></i>
+                                    <!-- Default User Icon -->
+                                    <i class="fas fa-user-circle fa-lg me-2 text-muted"></i>
                                 {% endif %}
-                                <span class="d-none d-md-inline"></span>
+
+                                <span class="d-none d-md-inline">{{ current_user.username }}</span>
                             </a>
 
                             <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="navbarUserDropdown">
                                 <li><h6 class="dropdown-header">Account Management</h6></li>
                                 <li><a class="dropdown-item d-flex align-items-center" href="{{ url_for('auth.user_profile') }}">
-                                    <i class="fas fa-user-circle me-2"></i>User Profile</a></li>
+                                    <i class="fas fa-user-cog me-2"></i>User Configuration</a></li>
                                 <li><a class="dropdown-item d-flex align-items-center" href="{{ url_for('settings.view_settings') }}">
-                                    <i class="fas fa-cog me-2"></i>System Configuration</a></li>
+                                    <i class="fas fa-sliders-h me-2"></i>System Configuration</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item d-flex align-items-center" href="{{ url_for('auth.logout') }}">
                                     <i class="fas fa-sign-out-alt me-2"></i>Sign Out</a></li>
                             </ul>
                         </li>
                     {% else %}
-                         <li class="nav-item me-2">
-                             <a class="nav-link d-flex align-items-center" href="{{ url_for('auth.login') }}">
-                                 <i class="fas fa-sign-in-alt me-1"></i>Sign In</a>
-                         </li>
-                         <li class="nav-item me-2">
-                             <a class="nav-link d-flex align-items-center" href="{{ url_for('auth.register') }}">
-                                 <i class="fas fa-user-plus me-1"></i>Register Account</a>
-                         </li>
+                        <li class="nav-item me-2">
+                            <a class="nav-link d-flex align-items-center" href="{{ url_for('auth.login') }}">
+                                <i class="fas fa-sign-in-alt me-1"></i>Sign In</a>
+                        </li>
+                        <li class="nav-item me-2">
+                            <a class="nav-link d-flex align-items-center" href="{{ url_for('auth.register') }}">
+                                <i class="fas fa-user-plus me-1"></i>Create Account</a>
+                        </li>
                     {% endif %}
 
                     <li class="nav-item">

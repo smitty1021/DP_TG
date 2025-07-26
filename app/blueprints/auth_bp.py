@@ -592,6 +592,7 @@ def unlink_discord():
 
     return redirect(url_for('auth.user_profile'))
 
+
 @auth_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
 def user_profile():
@@ -607,17 +608,22 @@ def user_profile():
             existing_user_with_email = User.find_by_email(form_email)
             if existing_user_with_email and existing_user_with_email.id != current_user.id:
                 flash('That email address is already in use by another account.', 'danger')
+                return redirect(url_for('auth.user_profile'))
             else:  # Email is new and available or is the same but case changed
                 current_user.is_email_verified = False  # Require re-verification for new email
                 token = generate_token(form_email, salt='email-verification-salt')
                 verification_url = url_for('auth.verify_email', token=token, _external=True)
                 send_email(
-                    to=form_email, subject="Verify Your New Email Address - Trading Journal",
-                    template_name="verify_email.html", username=current_user.username, verification_url=verification_url
+                    to=form_email,
+                    subject="Verify Your New Email Address - Enterprise Trading System",
+                    template_name="verify_email.html",
+                    username=current_user.username,
+                    verification_url=verification_url
                 )
                 flash('Your email has been updated. Please check your new email address for a verification link.',
                       'info')
 
+        # Update user information (no profile picture handling)
         current_user.name = profile_form.name.data
         current_user.email = form_email
         if hasattr(current_user, 'bio'):
@@ -625,11 +631,13 @@ def user_profile():
 
         try:
             db.session.commit()
-            record_activity('profile_update', 'User profile information updated.')
-            flash('Your profile has been updated successfully.', 'success')
+            record_activity('profile_update', 'User configuration updated successfully.')
+            flash('Configuration Updated Successfully', 'success')
         except Exception as e:
             db.session.rollback()
-            flash(f'Failed to update profile. Error: {str(e)}', 'danger')
+            current_app.logger.error(f"Profile update failed for {current_user.username}: {e}", exc_info=True)
+            flash('Configuration Update Failed', 'danger')
+
         return redirect(url_for('auth.user_profile'))
 
     if 'submit_password' in request.form and password_form.validate_on_submit():
@@ -639,7 +647,10 @@ def user_profile():
             current_user.set_password(password_form.new_password.data)
             db.session.commit()
             record_activity('password_change', 'User changed their password.')
-            flash('Your password has been updated successfully.', 'success')
+            flash('Password Updated Successfully', 'success')
         return redirect(url_for('auth.user_profile'))
 
-    return render_template('profile.html', title='Your Profile', profile_form=profile_form, password_form=password_form)
+    return render_template('auth/profile.html',
+                           title='User Configuration Management',
+                           profile_form=profile_form,
+                           password_form=password_form)

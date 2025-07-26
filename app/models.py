@@ -44,7 +44,6 @@ class User(db.Model, UserMixin):
     updated_at = db.Column(db.DateTime, nullable=True, onupdate=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
-    profile_picture = db.Column(db.String(200), nullable=True)
     bio = db.Column(db.Text, nullable=True)
     is_email_verified = db.Column(db.Boolean, nullable=False, server_default='0')
     discord_id = db.Column(db.String(255), unique=True, nullable=True, index=True)
