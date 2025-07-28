@@ -21,7 +21,7 @@ from app.extensions import db
 from app.utils import admin_required, record_activity, generate_token, send_email, smart_flash
 from datetime import datetime
 from app.forms import TradingModelForm
-from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel, P12Scenario
+from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel, P12Scenario, DiscordRolePermission
 admin_bp = Blueprint('admin', __name__,
                      template_folder='../templates/admin',
                      url_prefix='/admin')
@@ -580,6 +580,7 @@ def show_admin_dashboard():
 
     # Get resource data from system_health
     resources = system_health.get('resources', {})
+
 
     return render_template('admin/dashboard.html',
                            title='Administration Center',
@@ -1684,6 +1685,7 @@ def admin_dashboard():
 
         # Trading Model statistics
         default_models_count = TradingModel.query.filter_by(is_default=True).count()
+        configured_roles_count = DiscordRolePermission.query.count()
 
         # ===== NEW SYSTEM HEALTH MONITORING =====
 
@@ -1763,6 +1765,7 @@ def admin_dashboard():
                            tags_by_category=tags_by_category,
                            default_models_count=default_models_count,
                            current_timestamp=current_timestamp,
+                           configured_roles_count=configured_roles_count,
                            # New system health data
                            system_health=system_health,
                            formatted_health=formatted_health,

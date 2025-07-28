@@ -2151,6 +2151,178 @@ Version: 2.0
     --bs-accordion-active-bg: var(--enterprise-white);
 }
 
+/* Dark Theme Accordion Support */
+        html[data-bs-theme="dark"] .accordion {
+            --bs-accordion-color: var(--enterprise-text-primary);
+            --bs-accordion-bg: var(--enterprise-card-bg);
+            --bs-accordion-border-color: var(--enterprise-border);
+            --bs-accordion-btn-color: var(--enterprise-text-primary);
+            --bs-accordion-btn-bg: var(--enterprise-gray-200);
+            --bs-accordion-active-color: var(--enterprise-primary);
+            --bs-accordion-active-bg: var(--enterprise-card-bg);
+            --bs-accordion-btn-focus-border-color: var(--enterprise-primary);
+            --bs-accordion-btn-focus-box-shadow: 0 0 0 0.2rem rgba(77, 166, 255, 0.25);
+        }
+
+        html[data-bs-theme="dark"] .accordion-button {
+            background-color: var(--enterprise-gray-200);
+            color: var(--enterprise-text-primary);
+            border-color: var(--enterprise-border);
+        }
+
+        html[data-bs-theme="dark"] .accordion-button:not(.collapsed) {
+            background-color: rgba(77, 166, 255, 0.1);
+            color: var(--enterprise-primary);
+            border-color: var(--enterprise-border);
+            box-shadow: inset 0 calc(-1px) 0 var(--enterprise-border);
+        }
+
+        html[data-bs-theme="dark"] .accordion-button:hover {
+            background-color: var(--enterprise-gray-300);
+            color: var(--enterprise-text-primary);
+        }
+
+        html[data-bs-theme="dark"] .accordion-button:not(.collapsed):hover {
+            background-color: rgba(77, 166, 255, 0.15);
+            color: var(--enterprise-primary);
+        }
+
+        html[data-bs-theme="dark"] .accordion-item {
+            background-color: var(--enterprise-card-bg);
+            border-color: var(--enterprise-border);
+        }
+
+        html[data-bs-theme="dark"] .accordion-body {
+            background-color: var(--enterprise-card-bg);
+            color: var(--enterprise-text-primary);
+        }
+
+        html[data-bs-theme="dark"] .accordion-flush .accordion-item {
+            border-left: none;
+            border-right: none;
+            background-color: var(--enterprise-card-bg);
+        }
+
+        html[data-bs-theme="dark"] .accordion-flush .accordion-item .accordion-button {
+            background-color: var(--enterprise-gray-200);
+            border-left: none;
+            border-right: none;
+        }
+
+        html[data-bs-theme="dark"] .accordion-flush .accordion-item .accordion-button:not(.collapsed) {
+            background-color: rgba(77, 166, 255, 0.1);
+        }
+
+        /* Dark Theme Status Metrics */
+        html[data-bs-theme="dark"] .status-metric {
+            background: linear-gradient(135deg, rgba(77, 166, 255, 0.15), rgba(77, 166, 255, 0.08));
+            border: 1px solid rgba(77, 166, 255, 0.3);
+        }
+
+        html[data-bs-theme="dark"] .metric-value {
+            color: var(--enterprise-primary);
+        }
+
+        html[data-bs-theme="dark"] .metric-label {
+            color: var(--enterprise-text-secondary);
+        }
+
+        /* Dark Theme Form Controls */
+        html[data-bs-theme="dark"] .form-control,
+        html[data-bs-theme="dark"] .form-select {
+            background-color: var(--enterprise-gray-200) !important;
+            border-color: var(--enterprise-gray-300) !important;
+            color: var(--enterprise-text-primary) !important;
+        }
+
+        html[data-bs-theme="dark"] .form-control:focus,
+        html[data-bs-theme="dark"] .form-select:focus {
+            background-color: var(--enterprise-gray-200) !important;
+            border-color: var(--enterprise-primary) !important;
+            box-shadow: 0 0 0 0.2rem rgba(77, 166, 255, 0.25) !important;
+        }
+
+        html[data-bs-theme="dark"] .form-check-input {
+            background-color: var(--enterprise-gray-300);
+            border-color: var(--enterprise-gray-400);
+        }
+
+        html[data-bs-theme="dark"] .form-check-input:checked {
+            background-color: var(--enterprise-primary);
+            border-color: var(--enterprise-primary);
+        }
+
+        html[data-bs-theme="dark"] .form-check-input:focus {
+            border-color: var(--enterprise-primary);
+            box-shadow: 0 0 0 0.2rem rgba(77, 166, 255, 0.25);
+        }
+
+        /* Dark Theme Role Items */
+        html[data-bs-theme="dark"] .role-item {
+            background-color: var(--enterprise-card-bg);
+            border-color: var(--enterprise-border);
+            color: var(--enterprise-text-primary);
+        }
+
+        html[data-bs-theme="dark"] .role-item:hover {
+            background-color: var(--enterprise-gray-200) !important;
+        }
+
+        html[data-bs-theme="dark"] .role-item.bg-primary {
+            background-color: var(--enterprise-primary) !important;
+            color: var(--enterprise-white) !important;
+        }
+
+        html[data-bs-theme="dark"] .role-item.bg-primary:hover {
+            background-color: var(--enterprise-primary) !important;
+        }
+
+        /* Dark Theme Status Badges */
+        html[data-bs-theme="dark"] .status-badge.text-success {
+            background-color: rgba(74, 222, 128, 0.2);
+            color: rgb(74, 222, 128);
+        }
+
+        html[data-bs-theme="dark"] .status-badge.text-warning {
+            background-color: rgba(251, 191, 36, 0.2);
+            color: rgb(251, 191, 36);
+        }
+
+        html[data-bs-theme="dark"] .status-badge.text-danger {
+            background-color: rgba(248, 113, 113, 0.2);
+            color: rgb(248, 113, 113);
+        }
+
+        /* Dark Theme Badges */
+        html[data-bs-theme="dark"] .badge.bg-danger {
+            background-color: rgba(248, 113, 113, 0.8) !important;
+            color: var(--enterprise-white) !important;
+        }
+
+        /* Dark Theme Enterprise Modules */
+        html[data-bs-theme="dark"] .enterprise-module {
+            background-color: var(--enterprise-card-bg);
+            border-color: var(--enterprise-border);
+        }
+
+        html[data-bs-theme="dark"] .module-header {
+            background-color: var(--enterprise-gray-200);
+            border-color: var(--enterprise-border);
+        }
+
+        html[data-bs-theme="dark"] .module-title {
+            color: var(--enterprise-text-primary);
+        }
+
+        html[data-bs-theme="dark"] .module-meta {
+            color: var(--enterprise-text-secondary);
+        }
+
+        html[data-bs-theme="dark"] .module-content {
+            background-color: var(--enterprise-card-bg);
+            color: var(--enterprise-text-primary);
+        }
+
 .accordion-button {
     position: relative;
     display: flex;
@@ -2862,6 +3034,32 @@ html[data-bs-theme="dark"] .alert-info {
     .progress-bar-animated {
         animation: none;
     }
+}
+
+/*
+===============================================================================
+ACCESS CONTROL CHECKBOX ALIGNMENT FIX
+===============================================================================
+*/
+
+/* Improved checkbox alignment for page access configuration */
+.form-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-check .form-check-input {
+    margin-top: 0.2rem;
+    margin-right: 0;
+    flex-shrink: 0;
+}
+
+.form-check .form-check-label {
+    margin-bottom: 0;
+    flex-grow: 1;
+    cursor: pointer;
 }
 
 /*

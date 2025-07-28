@@ -1131,8 +1131,8 @@ Version: 2.0
 
 .pagination-info {
     color: var(--enterprise-text-secondary);
-    font-size: var(--enterprise-font-size-sm);
-    font-weight: 500;
+    font-size: var(--enterprise-font-size-base);
+    font-weight: 0;
     margin: 0;
     flex-shrink: 0;
 }
@@ -1145,7 +1145,7 @@ Version: 2.0
 .pagination-controls {
     display: flex;
     align-items: center;
-    gap: var(--enterprise-spacing-md);
+    gap: var(--enterprise-spacing-sm);
 }
 
 .pagination-page-size {
@@ -1155,7 +1155,7 @@ Version: 2.0
     border-radius: var(--enterprise-radius);
     background: var(--enterprise-white);
     color: var(--enterprise-text-primary);
-    font-size: var(--enterprise-font-size-sm);
+    font-size: var(--enterprise-font-size-base);
 }
 
 .pagination-page-size:focus {
@@ -1166,8 +1166,8 @@ Version: 2.0
 
 .pagination-label {
     color: var(--enterprise-text-secondary);
-    font-size: var(--enterprise-font-size-sm);
-    font-weight: 500;
+    font-size: var(--enterprise-font-size-base);
+    font-weight: 0;
     margin: 0;
     white-space: nowrap;
 }

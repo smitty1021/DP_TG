@@ -138,47 +138,42 @@ class PageAccessManager:
 
     def _define_page_groups(self):
         """Define logical groups of pages for bulk permission management."""
+        # Get all non-admin pages
+        non_admin_pages = [ep for ep, info in self.pages.items() if not info['admin_only']]
+
         self.page_groups = {
-            'admin_full': {
-                'name': 'Full Administrative Access',
-                'description': 'Complete access to all administrative functions',
-                'pages': [ep for ep, info in self.pages.items() if info['admin_only']]
+            'administration': {
+                'name': 'Administration',
+                'description': 'Complete access to all functions including administrative controls',
+                'pages': [ep for ep, info in self.pages.items()]  # All pages
             },
-            'trading_core': {
-                'name': 'Core Trading Features',
-                'description': 'Essential trading and portfolio management',
+            'pack_member': {
+                'name': 'Pack Member',
+                'description': 'Full access except administrative functions',
+                'pages': non_admin_pages
+            },
+            'squad_leader': {
+                'name': 'Squad Leader',
+                'description': 'Full access except administrative functions',
+                'pages': non_admin_pages
+            },
+            'team_leader_lvl_3': {
+                'name': 'Team Leader Lvl III',
+                'description': 'Advanced access - TBD based on requirements',
                 'pages': [ep for ep, info in self.pages.items()
-                          if info['blueprint'] in ['main', 'trades', 'trading_models']]
+                          if info['blueprint'] in ['main', 'trades', 'trading_models', 'analytics', 'journals']]
             },
-            'analytics_suite': {
-                'name': 'Analytics & Reporting',
-                'description': 'Business intelligence and performance analytics',
+            'team_leader_lvl_2': {
+                'name': 'Team Leader Lvl II',
+                'description': 'Intermediate access - TBD based on requirements',
                 'pages': [ep for ep, info in self.pages.items()
-                          if info['blueprint'] == 'analytics']
+                          if info['blueprint'] in ['main', 'trades', 'trading_models', 'journals']]
             },
-            'journal_system': {
-                'name': 'Journal & Documentation',
-                'description': 'Daily journals, files, and media management',
+            'team_leader_lvl_1': {
+                'name': 'Team Leader Lvl I',
+                'description': 'Basic leadership access - TBD based on requirements',
                 'pages': [ep for ep, info in self.pages.items()
-                          if info['blueprint'] in ['journals', 'files', 'images']]
-            },
-            'basic_access': {
-                'name': 'Basic User Access',
-                'description': 'Minimal access for new users',
-                'pages': ['main.index', 'auth.user_profile', 'main.portfolio_analytics']
-            },
-            'student_tier1': {
-                'name': 'Student Tier 1',
-                'description': 'Limited access for beginning students',
-                'pages': ['main.index', 'auth.user_profile', 'main.portfolio_analytics',
-                          'trades.view_trades_list']
-            },
-            'student_tier2': {
-                'name': 'Student Tier 2',
-                'description': 'Expanded access for advanced students',
-                'pages': ['main.index', 'auth.user_profile', 'main.portfolio_analytics',
-                          'trades.view_trades_list', 'trading_models.view_trading_models_list',
-                          'files.user_my_files']
+                          if info['blueprint'] in ['main', 'trades', 'journals']]
             }
         }
 

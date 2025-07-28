@@ -238,6 +238,63 @@
                 </div>
             </div>
 
+            <!-- Security & Access Control -->
+            <div class="enterprise-module mb-4">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-shield-alt module-icon"></i>
+                        Security & Access Control
+                    </div>
+                    <div class="module-meta">
+                        <span class="status-badge operational">Active</span>
+                    </div>
+                </div>
+                <div class="module-content">
+                    <div class="operation-list">
+                        <a href="{{ url_for('access_control.access_control_dashboard') }}" class="operation-item">
+                            <div class="operation-icon">
+                                <i class="fas fa-users-cog"></i>
+                            </div>
+                            <div class="operation-details">
+                                <div class="operation-name">Access Control Management</div>
+                                <div class="operation-description">Configure Discord role-based page access permissions and user privileges</div>
+                            </div>
+                            <div class="operation-metrics">
+                                <span class="metric-value">{{ configured_roles_count or 0 }}</span>
+                                <span class="metric-label">Configured Roles</span>
+                            </div>
+                            <div class="operation-action">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        <div class="operation-item disabled">
+                            <div class="operation-icon">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <div class="operation-details">
+                                <div class="operation-name">Audit Trail & Compliance</div>
+                                <div class="operation-description">View access logs, security events, and compliance reporting</div>
+                            </div>
+                            <div class="operation-status">
+                                <span class="status-badge planned">Q2 2025</span>
+                            </div>
+                        </div>
+                        <div class="operation-item disabled">
+                            <div class="operation-icon">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <div class="operation-details">
+                                <div class="operation-name">API Key Management</div>
+                                <div class="operation-description">Manage API keys, tokens, and external service integrations</div>
+                            </div>
+                            <div class="operation-status">
+                                <span class="status-badge planned">Q3 2025</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Advanced Configuration -->
             <div class="enterprise-module mb-4">
                 <div class="module-header">
@@ -273,18 +330,6 @@
                             </div>
                             <div class="operation-status">
                                 <span class="status-badge planned">Q2 2025</span>
-                            </div>
-                        </div>
-                        <div class="operation-item disabled">
-                            <div class="operation-icon">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                            <div class="operation-details">
-                                <div class="operation-name">Security & Compliance</div>
-                                <div class="operation-description">Access controls, audit trails, and compliance monitoring</div>
-                            </div>
-                            <div class="operation-status">
-                                <span class="status-badge planned">Q3 2025</span>
                             </div>
                         </div>
                     </div>

@@ -2,26 +2,27 @@
 
 {% block title %}{{ title }}{% endblock %}
 
-{% block content %}
-    <!-- Executive Header -->
-    <div class="executive-header">
-        <div class="enterprise-container">
-            <h1 class="executive-title">
-                <i class="fas fa-shield-alt executive-icon"></i>
-                Access Control Management Center
-            </h1>
-            <div class="executive-subtitle">
-                Discord Role-Based Page Access Configuration
-            </div>
-        </div>
-    </div>
+{% block head_extra %}
+<!-- CSRF Token for JavaScript requests -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
+{% endblock %}
 
-    <!-- Main Content -->
-    <div class="enterprise-container">
-        
-        <!-- Navigation Controls -->
-        <div class="enterprise-module mb-4">
-            <div class="module-content">
+{% block content %}
+    <!-- Executive Header with Integrated Actions -->
+    <div class="executive-header">
+        <div class="container-fluid px-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="executive-title">
+                        <i class="fas fa-shield-alt executive-icon"></i>
+                        Access Control Management Center
+                    </h1>
+                    <div class="executive-subtitle">
+                        Discord Role-Based Page Access Configuration
+                    </div>
+                </div>
+                <!-- Integrated Action Buttons -->
                 <div class="btn-group">
                     <button type="button" class="btn btn-outline-secondary btn-sm"
                             onclick="window.location.href='{{ url_for('main.index') }}'"
@@ -44,64 +45,59 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- System Status -->
-        <div class="enterprise-module">
-            <div class="module-header">
-                <div class="module-title">
-                    <i class="fas fa-info-circle module-icon"></i>
-                    System Status
-                </div>
-            </div>
-            <div class="module-content">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="status-badge text-info">
-                            <i class="fas fa-sitemap"></i>
-                            Total Pages: {{ pages_by_category.values() | map('length') | sum | default(0) }}
+    <!-- Main Content -->
+    <div class="container-fluid px-4">
+
+        <!-- System Status - Integrated Design -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex justify-content-center gap-4 py-3">
+                    <div class="status-metric">
+                        <div class="metric-value">{{ pages_by_category.values() | map('length') | sum | default(0) }}</div>
+                        <div class="metric-label">
+                            <i class="fas fa-sitemap me-1"></i>Total Pages
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="status-badge text-warning">
-                            <i class="fab fa-discord"></i>
-                            Discord Roles: {{ discord_roles | length }}
+                    <div class="status-metric">
+                        <div class="metric-value">{{ discord_roles | length }}</div>
+                        <div class="metric-label">
+                            <i class="fab fa-discord me-1"></i>Discord Roles
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="status-badge text-success">
-                            <i class="fas fa-cog"></i>
-                            Configured Roles: {{ permissions_by_role | length }}
+                    <div class="status-metric">
+                        <div class="metric-value">{{ permissions_by_role | length }}</div>
+                        <div class="metric-label">
+                            <i class="fas fa-cog me-1"></i>Configured Roles
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Discord Roles Configuration Section -->
-        <div class="enterprise-module">
-            <div class="module-header">
-                <div class="module-title">
-                    <i class="fab fa-discord module-icon"></i>
-                    Discord Roles Configuration
-                </div>
-                <div class="module-meta">Configure page access permissions for Discord roles</div>
-            </div>
-            <div class="module-content">
-                
-                <!-- Discord Roles List -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6 class="mb-3">Available Discord Roles</h6>
-                        <div id="discord-roles-list" class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+        <!-- Main 3-Column Layout -->
+        <div class="grid grid-cols-3 gap-4">
+
+            <!-- Column 1: Discord Roles List -->
+            <div class="col-span-1">
+                <div class="enterprise-module h-100">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fab fa-discord module-icon"></i>
+                            Available Discord Roles
+                        </div>
+                        <div class="module-meta">Select a role to configure permissions</div>
+                    </div>
+                    <div class="module-content">
+                        <div id="discord-roles-list" style="max-height: 500px; overflow-y: auto;">
                             {% if discord_roles %}
                                 {% for role in discord_roles %}
-                                    <div class="role-item d-flex justify-content-between align-items-center p-2 mb-2 border rounded cursor-pointer"
+                                    <div class="role-item d-flex justify-content-between align-items-center p-2 mb-2 border rounded cursor-pointer hover-effect"
                                          data-role-id="{{ role.id }}" data-role-name="{{ role.name }}"
                                          onclick="selectRole('{{ role.id }}', '{{ role.name }}')">
-                                        <div>
-                                            <span class="fw-bold">{{ role.name }}</span>
-                                            <br>
-                                            <small class="text-muted">ID: {{ role.id }}</small>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold">{{ role.name }}</div>
                                         </div>
                                         <div>
                                             {% if role.id in permissions_by_role %}
@@ -119,174 +115,192 @@
                             {% else %}
                                 <div class="text-center text-muted p-4">
                                     <i class="fab fa-discord fa-3x mb-3"></i>
-                                    <p>No Discord roles available. Click "Refresh Discord Roles" to load them.</p>
+                                    <p>No Discord roles available.</p>
+                                    <p>Click "Refresh Discord Roles" to load them.</p>
                                 </div>
                             {% endif %}
                         </div>
                     </div>
-                    
-                    <!-- Selected Role Configuration -->
-                    <div class="col-md-6">
-                        <div id="role-config-panel" style="display: none;">
-                            <h6 class="mb-3">Configure Role Permissions</h6>
-                            <div class="border rounded p-3">
-                                
-                                <!-- Role Info -->
-                                <div class="mb-3">
-                                    <h6 id="selected-role-name" class="text-primary"></h6>
-                                    <small id="selected-role-id" class="text-muted"></small>
-                                </div>
-                                
-                                <!-- Access Level -->
-                                <div class="mb-3">
-                                    <label class="form-label">Access Level</label>
-                                    <select id="access-level" class="form-control">
-                                        <option value="basic">Basic Access</option>
-                                        <option value="premium">Premium Access</option>
-                                        <option value="vip">VIP Access</option>
-                                        <option value="admin">Administrator Access</option>
-                                    </select>
-                                </div>
-                                
-                                <!-- Feature Permissions -->
-                                <div class="mb-3">
-                                    <label class="form-label">Feature Access</label>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="can_access_portfolio">
-                                        <label class="form-check-label" for="can_access_portfolio">
-                                            Portfolio Analytics
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="can_access_backtesting">
-                                        <label class="form-check-label" for="can_access_backtesting">
-                                            Backtesting Features
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="can_access_live_trading">
-                                        <label class="form-check-label" for="can_access_live_trading">
-                                            Live Trading Operations
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="can_access_analytics">
-                                        <label class="form-check-label" for="can_access_analytics">
-                                            Advanced Analytics
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="can_access_advanced_features">
-                                        <label class="form-check-label" for="can_access_advanced_features">
-                                            Advanced Features
-                                        </label>
-                                    </div>
-                                </div>
-                                
-                                <!-- Quick Permission Groups -->
-                                <div class="mb-3">
-                                    <label class="form-label">Quick Permission Templates</label>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        {% for group_key, group in available_groups.items() %}
-                                            <button type="button" class="btn btn-outline-primary btn-sm"
-                                                    onclick="applyPermissionGroup('{{ group_key }}')"
-                                                    title="{{ group.description }}">
-                                                {{ group.name }}
-                                            </button>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                
-                                <!-- Action Buttons -->
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-primary" onclick="saveRolePermissions()">
-                                        <i class="fas fa-save"></i> Save Configuration
-                                    </button>
-                                    <button type="button" class="btn btn-outline-info" onclick="testRoleAccess()">
-                                        <i class="fas fa-vial"></i> Test Access
-                                    </button>
-                                </div>
+                </div>
+            </div>
+
+            <!-- Column 2: Role Configuration -->
+            <div class="col-span-1">
+
+                <!-- Role Configuration Panel -->
+                <div id="role-config-panel" class="enterprise-module mb-3" style="display: none;">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-cog module-icon"></i>
+                            Configure Role Permissions
+                        </div>
+                        <div class="module-meta">
+                            <span id="selected-role-name" class="fw-bold"></span>
+                        </div>
+                    </div>
+                    <div class="module-content">
+
+                        <!-- Access Level & Features -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Access Level</label>
+                            <select id="access-level" class="form-control form-control-sm">
+                                <option value="team_leader_lvl_1">Team Leader Lvl I</option>
+                                <option value="team_leader_lvl_2">Team Leader Lvl II</option>
+                                <option value="team_leader_lvl_3">Team Leader Lvl III</option>
+                                <option value="squad_leader">Squad Leader</option>
+                                <option value="pack_member">Pack Member</option>
+                                <option value="administration">Administration</option>
+                            </select>
+                        </div>
+
+                        <!-- Feature Permissions -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Feature Access</label>
+                            <div class="form-check form-check-sm mb-1">
+                                <input class="form-check-input" type="checkbox" id="can_access_portfolio">
+                                <label class="form-check-label" for="can_access_portfolio">Portfolio Analytics</label>
                             </div>
+                            <div class="form-check form-check-sm mb-1">
+                                <input class="form-check-input" type="checkbox" id="can_access_backtesting">
+                                <label class="form-check-label" for="can_access_backtesting">Backtesting Features</label>
+                            </div>
+                            <div class="form-check form-check-sm mb-1">
+                                <input class="form-check-input" type="checkbox" id="can_access_live_trading">
+                                <label class="form-check-label" for="can_access_live_trading">Live Trading Operations</label>
+                            </div>
+                            <div class="form-check form-check-sm mb-1">
+                                <input class="form-check-input" type="checkbox" id="can_access_analytics">
+                                <label class="form-check-label" for="can_access_analytics">Advanced Analytics</label>
+                            </div>
+                            <div class="form-check form-check-sm mb-1">
+                                <input class="form-check-input" type="checkbox" id="can_access_advanced_features">
+                                <label class="form-check-label" for="can_access_advanced_features">Advanced Features</label>
+                            </div>
+                        </div>
+
+                        <!-- Quick Permission Templates -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Quick Templates</label>
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for group_key, group in available_groups.items() %}
+                                    <button type="button" class="btn btn-outline-primary btn-xs"
+                                            onclick="applyPermissionGroup('{{ group_key }}')"
+                                            title="{{ group.description }}">
+                                        {{ group.name }}
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="saveRolePermissions()">
+                                <i class="fas fa-save"></i> Save
+                            </button>
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="testRoleAccess()">
+                                <i class="fas fa-vial"></i> Test
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Page Access Configuration -->
-        <div class="enterprise-module">
-            <div class="module-header">
-                <div class="module-title">
-                    <i class="fas fa-sitemap module-icon"></i>
-                    Page Access Configuration
-                </div>
-                <div class="module-meta">Configure individual page access permissions</div>
-            </div>
-            <div class="module-content">
-                
-                <div id="page-access-config" style="display: none;">
-                    <p class="text-muted mb-3">Select pages this role can access:</p>
-                    
-                    <!-- Pages by Category -->
-                    {% for category, pages in pages_by_category.items() %}
-                        <div class="mb-4">
-                            <h6 class="fw-bold text-primary mb-2">
-                                <i class="fas fa-folder"></i> {{ category }}
-                            </h6>
-                            
-                            <div class="category-pages border rounded p-3">
-                                <div class="mb-2">
-                                    <button type="button" class="btn btn-outline-secondary btn-sm"
-                                            onclick="toggleCategoryPages('{{ category }}', true)">
-                                        <i class="fas fa-check-square"></i> Select All
-                                    </button>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-2"
-                                            onclick="toggleCategoryPages('{{ category }}', false)">
-                                        <i class="fas fa-square"></i> Deselect All
-                                    </button>
-                                </div>
-                                
-                                <div class="row">
-                                    {% for page in pages %}
-                                        <div class="col-md-6 mb-2">
-                                            <div class="form-check">
-                                                <input class="form-check-input page-checkbox" 
-                                                       type="checkbox" 
-                                                       id="page_{{ page.endpoint }}"
-                                                       data-endpoint="{{ page.endpoint }}"
-                                                       data-category="{{ category }}"
-                                                       {% if page.admin_only %}data-admin-only="true"{% endif %}>
-                                                <label class="form-check-label" for="page_{{ page.endpoint }}">
-                                                    {{ page.display_name }}
-                                                    {% if page.admin_only %}
-                                                        <span class="status-badge text-danger ms-1">Admin Only</span>
-                                                    {% endif %}
-                                                </label>
-                                                <br>
-                                                <small class="text-muted">{{ page.url_rule }}</small>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
+                <!-- Access Test Results -->
+                <div id="access-test-results" class="enterprise-module" style="display: none;">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-vial module-icon"></i>
+                            Access Test Results
                         </div>
-                    {% endfor %}
+                    </div>
+                    <div class="module-content">
+                        <div id="test-results-content" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Test results will be populated here -->
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Access Test Results -->
-        <div id="access-test-results" class="enterprise-module" style="display: none;">
-            <div class="module-header">
-                <div class="module-title">
-                    <i class="fas fa-vial module-icon"></i>
-                    Access Test Results
+                <!-- Placeholder when no role selected -->
+                <div id="no-role-selected" class="enterprise-module">
+                    <div class="module-content text-center text-muted p-4">
+                        <i class="fas fa-hand-pointer fa-2x mb-3"></i>
+                        <h6>Select a Discord Role</h6>
+                        <p class="mb-0">Choose a role from the list to configure permissions.</p>
+                    </div>
                 </div>
-                <div class="module-meta">Testing role access permissions</div>
             </div>
-            <div class="module-content">
-                <div id="test-results-content">
-                    <!-- Test results will be populated here -->
+
+            <!-- Column 3: Page Access Configuration -->
+            <div class="col-span-1">
+                <div id="page-access-module" class="enterprise-module h-100" style="display: none;">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-sitemap module-icon"></i>
+                            Page Access Configuration
+                        </div>
+                        <div class="module-meta">Select individual pages</div>
+                    </div>
+                    <div class="module-content">
+
+                        <!-- Accordion for Page Categories -->
+                        <div class="accordion accordion-flush" id="pageAccessAccordion" style="max-height: 600px; overflow-y: auto;">
+                            {% for category, pages in pages_by_category.items() %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading{{ loop.index }}">
+                                        <button class="accordion-button accordion-button-sm {% if not loop.first %}collapsed{% endif %}"
+                                                type="button"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#collapse{{ loop.index }}"
+                                                aria-expanded="{% if loop.first %}true{% else %}false{% endif %}"
+                                                aria-controls="collapse{{ loop.index }}">
+                                            <i class="fas fa-folder me-2"></i>
+                                            <strong>{{ category }}</strong>
+                                            <span class="ms-2 text-muted">({{ pages | length }})</span>
+                                        </button>
+                                    </h2>
+                                    <div id="collapse{{ loop.index }}"
+                                         class="accordion-collapse collapse {% if loop.first %}show{% endif %}"
+                                         aria-labelledby="heading{{ loop.index }}"
+                                         data-bs-parent="#pageAccessAccordion">
+                                        <div class="accordion-body p-2">
+                                            <!-- Category Controls -->
+                                            <div class="mb-2">
+                                                <button type="button" class="btn btn-outline-success btn-xs me-1"
+                                                        onclick="toggleCategoryPages('{{ category }}', true)">
+                                                    <i class="fas fa-check-square"></i> All
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-xs"
+                                                        onclick="toggleCategoryPages('{{ category }}', false)">
+                                                    <i class="fas fa-square"></i> None
+                                                </button>
+                                            </div>
+
+                                            <!-- Pages List -->
+                                            {% for page in pages %}
+                                                <div class="form-check form-check-sm mb-2">
+                                                    <input class="form-check-input page-checkbox"
+                                                           type="checkbox"
+                                                           id="page_{{ page.endpoint }}"
+                                                           data-endpoint="{{ page.endpoint }}"
+                                                           data-category="{{ category }}"
+                                                           {% if page.admin_only %}data-admin-only="true"{% endif %}>
+                                                    <label class="form-check-label" for="page_{{ page.endpoint }}">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <span class="fw-bold small">{{ page.display_name }}</span>
+                                                                {% if page.admin_only %}
+                                                                    <span class="badge bg-danger badge-xs ms-1">Admin</span>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -300,12 +314,52 @@
     let selectedRoleName = null;
     let currentPermissions = null;
 
+    // CSRF Token utility function (consistent with other pages)
+    function getCSRFToken() {
+        let csrfToken = null;
+
+        // Try to get from direct input first (matches other pages)
+        const directInput = document.getElementById('js-csrf-token');
+        if (directInput && directInput.value) {
+            csrfToken = directInput.value;
+        }
+
+        // Try to get from meta tag as fallback
+        if (!csrfToken) {
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            if (metaTag && metaTag.getAttribute('content')) {
+                csrfToken = metaTag.getAttribute('content');
+            }
+        }
+
+        // Try to get from hidden input as last resort
+        if (!csrfToken) {
+            const hiddenInput = document.querySelector('input[name="csrf_token"]');
+            if (hiddenInput && hiddenInput.value) {
+                csrfToken = hiddenInput.value;
+            }
+        }
+
+        console.log('🔐 CSRF Token retrieved:', csrfToken ? 'Yes' : 'No');
+        return csrfToken;
+    }
+
     // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize unsaved changes detection
         if (typeof window.initEnterpriseUnsavedChanges === 'function') {
             window.initEnterpriseUnsavedChanges();
         }
+
+        // Check for CSRF token
+        const csrfToken = getCSRFToken();
+        if (!csrfToken) {
+            console.warn('⚠️ No CSRF token found - operations may fail');
+            showWarning('Security token not found. Some operations may not work properly.');
+        } else {
+            console.log('✅ CSRF token found and ready');
+        }
+
         console.log('Access Control Dashboard initialized');
     });
 
@@ -313,23 +367,25 @@
     function selectRole(roleId, roleName) {
         selectedRoleId = roleId;
         selectedRoleName = roleName;
-        
+
         // Update UI
         document.getElementById('selected-role-name').textContent = roleName;
-        document.getElementById('selected-role-id').textContent = `Role ID: ${roleId}`;
-        
-        // Show configuration panels
+
+        // Show/hide panels
+        document.getElementById('no-role-selected').style.display = 'none';
         document.getElementById('role-config-panel').style.display = 'block';
-        document.getElementById('page-access-config').style.display = 'block';
-        
+        document.getElementById('page-access-module').style.display = 'block';
+
         // Highlight selected role
         document.querySelectorAll('.role-item').forEach(item => {
             item.classList.remove('bg-primary', 'text-white');
         });
         document.querySelector(`[data-role-id="${roleId}"]`).classList.add('bg-primary', 'text-white');
-        
+
         // Load existing permissions
         loadRolePermissions(roleId);
+
+        showInfo(`Selected role: ${roleName}`);
     }
 
     // Load existing permissions for a role
@@ -337,12 +393,14 @@
         try {
             const response = await fetch(`/admin/access-control/permissions/${roleId}`);
             const result = await response.json();
-            
+
             if (result.success && result.permissions) {
                 currentPermissions = result.permissions;
                 populatePermissionForm(result.permissions);
+                showInfo('Existing permissions loaded');
             } else {
                 resetPermissionForm();
+                showInfo('No existing permissions found - using defaults');
             }
         } catch (error) {
             console.error('Error loading permissions:', error);
@@ -358,7 +416,7 @@
         document.getElementById('can_access_live_trading').checked = permissions.can_access_live_trading || false;
         document.getElementById('can_access_analytics').checked = permissions.can_access_analytics || false;
         document.getElementById('can_access_advanced_features').checked = permissions.can_access_advanced_features || false;
-        
+
         const allowedPages = permissions.custom_permissions?.allowed_pages || [];
         document.querySelectorAll('.page-checkbox').forEach(checkbox => {
             checkbox.checked = allowedPages.includes(checkbox.dataset.endpoint);
@@ -378,6 +436,7 @@
         document.querySelectorAll(`[data-category="${category}"]`).forEach(checkbox => {
             checkbox.checked = checked;
         });
+        showInfo(`${checked ? 'Selected' : 'Deselected'} all pages in ${category}`);
     }
 
     // Apply a permission group template
@@ -388,11 +447,19 @@
         }
 
         try {
+            const csrfToken = getCSRFToken();
+            if (!csrfToken) {
+                showError('Security token not found. Please refresh the page.');
+                return;
+            }
+
+            showInfo(`Applying permission template: ${groupKey}`);
+
             const response = await fetch('/admin/access-control/groups/apply', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
+                    'X-CSRFToken': csrfToken
                 },
                 body: JSON.stringify({
                     role_id: selectedRoleId,
@@ -401,7 +468,7 @@
             });
 
             const result = await response.json();
-            
+
             if (result.success) {
                 showSuccess(result.message);
                 document.querySelectorAll('.page-checkbox').forEach(checkbox => {
@@ -424,6 +491,12 @@
         }
 
         try {
+            const csrfToken = getCSRFToken();
+            if (!csrfToken) {
+                showError('Security token not found. Please refresh the page.');
+                return;
+            }
+
             const permissions = {
                 access_level: document.getElementById('access-level').value,
                 can_access_portfolio: document.getElementById('can_access_portfolio').checked,
@@ -438,11 +511,13 @@
                 permissions.pages.push(checkbox.dataset.endpoint);
             });
 
+            showInfo('Saving role permissions...');
+
             const response = await fetch('/admin/access-control/permissions/save', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.content || ''
+                    'X-CSRFToken': csrfToken
                 },
                 body: JSON.stringify({
                     role_id: selectedRoleId,
@@ -452,7 +527,7 @@
             });
 
             const result = await response.json();
-            
+
             if (result.success) {
                 showSuccess(result.message);
                 const roleItem = document.querySelector(`[data-role-id="${selectedRoleId}"]`);
@@ -476,10 +551,13 @@
         }
 
         try {
+            showInfo('Testing role access...');
+
             const response = await fetch(`/admin/access-control/test/page-access/${selectedRoleId}`);
             const result = await response.json();
-            
+
             if (result.success) {
+                showSuccess('Access test completed successfully');
                 displayTestResults(result);
             } else {
                 showError(result.message);
@@ -493,18 +571,17 @@
     // Display access test results
     function displayTestResults(testData) {
         const resultsContainer = document.getElementById('test-results-content');
-        
+
         let html = `
-            <div class="row">
-                <div class="col-md-6">
-                    <h6 class="text-primary">Role: ${testData.role_name}</h6>
-                    <p><strong>Access Level:</strong> ${testData.access_level}</p>
-                    <p><strong>Total Accessible Pages:</strong> ${testData.total_pages}</p>
+            <div class="mb-3">
+                <h6 class="text-primary mb-2">${testData.role_name}</h6>
+                <div class="small">
+                    <strong>Access Level:</strong> ${testData.access_level}<br>
+                    <strong>Total Pages:</strong> ${testData.total_pages}
                 </div>
             </div>
-            <h6 class="mt-3 mb-2">Accessible Pages by Category:</h6>
         `;
-        
+
         const pagesByCategory = {};
         testData.accessible_pages.forEach(page => {
             if (!pagesByCategory[page.category]) {
@@ -512,44 +589,47 @@
             }
             pagesByCategory[page.category].push(page);
         });
-        
+
         Object.keys(pagesByCategory).forEach(category => {
             html += `
                 <div class="mb-3">
-                    <h6 class="fw-bold">${category} (${pagesByCategory[category].length} pages)</h6>
-                    <div class="row">
+                    <h6 class="fw-bold text-success small">
+                        <i class="fas fa-folder-open me-1"></i>${category} (${pagesByCategory[category].length})
+                    </h6>
             `;
-            
+
             pagesByCategory[category].forEach(page => {
                 html += `
-                    <div class="col-md-6 mb-1">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check text-success me-2"></i>
-                            <span>${page.display_name}</span>
-                        </div>
-                        <small class="text-muted ms-3">${page.url_rule}</small>
+                    <div class="d-flex align-items-center mb-1">
+                        <i class="fas fa-check text-success me-2 small"></i>
+                        <span class="small">${page.display_name}</span>
                     </div>
                 `;
             });
-            
-            html += `</div></div>`;
+
+            html += `</div>`;
         });
-        
+
         resultsContainer.innerHTML = html;
         document.getElementById('access-test-results').style.display = 'block';
-        document.getElementById('access-test-results').scrollIntoView({ behavior: 'smooth' });
     }
 
     // Refresh Discord roles from server
     async function refreshDiscordRoles() {
         try {
+            const csrfToken = getCSRFToken();
+            if (!csrfToken) {
+                showError('Security token not found. Please refresh the page.');
+                return;
+            }
+
             showInfo('Refreshing Discord roles...');
-            
+
             const response = await fetch('/admin/access-control/roles/refresh', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.content || ''
+                    'X-CSRFToken': csrfToken
                 }
             });
 
