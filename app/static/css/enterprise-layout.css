@@ -1186,6 +1186,7 @@ Version: 2.0
     border-radius: var(--enterprise-radius);
     transition: all var(--enterprise-transition-fast);
     font-size: var(--enterprise-font-size-sm);
+
 }
 
 .pagination-arrow:hover {
@@ -1205,7 +1206,7 @@ Version: 2.0
     background: transparent;
     border: none;
     color: var(--enterprise-text-secondary);
-    padding: var(--enterprise-spacing-sm);
+    padding: var(--enterprise-spacing-md);
 }
 
 .pagination-arrow-borderless:hover {

@@ -1,0 +1,370 @@
+# Fortune 500 Enterprise HTML Framework Instructions (Updated)
+
+## REQUIREMENTS:
+1. Use enterprise-core.css, enterprise-layout.css, enterprise-components.css, enterprise-specialized.css
+2. Replace all embedded CSS with enterprise classes
+3. Implement executive-header with corporate terminology
+4. Structure content using enterprise-modules
+5. Replace browser alerts with custom modals (handled by base.html)
+6. Include unsaved changes detection (handled by base.html)
+7. Use standard button groups for navigation
+8. Apply Fortune 500 corporate terminology throughout
+9. Ensure we are utilizing window.initEnterpriseUnsavedChanges() in every page that is modified.
+
+## MAINTAIN:
+- All existing functionality and routes
+- Form submissions and data handling
+- JavaScript logic (just replace alerts/confirms)
+- Responsive behavior
+
+---
+
+## 📋 MANDATORY REQUIREMENTS FOR ALL HTML PAGES
+
+### 1. CSS Framework Loading
+Every HTML page MUST include this exact CSS loading structure:
+```html
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+
+<!-- Optional: Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+```
+
+### 2. JavaScript Dependencies
+**⚠️ IMPORTANT: DO NOT DUPLICATE BASE.HTML SCRIPTS**
+
+The following scripts are **ALREADY INCLUDED** in `base.html` and should **NEVER** be duplicated in individual pages:
+- `custom-modals.js` ✅ Already in base.html
+- `notifications.js` ✅ Already in base.html
+- `enterprise-search.js` ✅ Already in base.html
+- `unsaved-changes.js` ✅ Already in base.html
+- `enterprise-base.js` ✅ Already in base.html
+- `script.js` ✅ Already in base.html
+- `theme.js` ✅ Already in base.html
+
+**Only include page-specific JavaScript that is NOT in base.html:**
+```html
+<!-- Only add scripts that are NOT already in base.html -->
+{% block scripts_extra %}
+<script>
+// Page-specific JavaScript only
+// All enterprise functions are already available
+</script>
+{% endblock %}
+```
+
+---
+
+## 🎯 MANDATORY CSS CLASS STRUCTURE
+
+### Page Layout Structure
+```html
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <!-- CSS Framework here -->
+</head>
+<body>
+    <!-- Executive Header (Required on all pages) -->
+    <div class="executive-header">
+        <div class="enterprise-container">
+            <h1 class="executive-title">
+                <i class="fas fa-[icon-name] executive-icon"></i>
+                [Page Title Using Corporate Terminology]
+            </h1>
+            <div class="executive-subtitle">
+                [Professional Description]
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Wrapper -->
+    <div class="enterprise-container">
+        <!-- Content modules here -->
+    </div>
+
+    <!-- NO JAVASCRIPT INCLUDES - Already in base.html -->
+</body>
+</html>
+```
+
+### Module Structure (Required for all content blocks)
+```html
+<div class="enterprise-module">
+    <div class="module-header">
+        <div class="module-title">
+            <i class="fas fa-[icon] module-icon"></i>
+            [Module Title]
+        </div>
+        <div class="module-meta">[Optional metadata]</div>
+    </div>
+    <div class="module-content">
+        <!-- Module content here -->
+    </div>
+</div>
+```
+
+---
+
+## 🚫 STRICTLY PROHIBITED
+
+### Never Use:
+- Inline CSS styles (`style="..."`)
+- `<style>` blocks in HTML
+- Bootstrap classes (use enterprise equivalents)
+- Native browser alerts: `alert()`, `confirm()`, `prompt()`
+- Casual terminology in user-facing text
+- Page-specific CSS files
+- **🔥 DUPLICATE JAVASCRIPT INCLUDES** (base.html handles all enterprise JS)
+
+### Never Include These Scripts (Already in base.html):
+```html
+<!-- ❌ NEVER INCLUDE - ALREADY IN BASE.HTML -->
+<script src="/static/js/custom-modals.js"></script>
+<script src="/static/js/notifications.js"></script>
+<script src="/static/js/enterprise-search.js"></script>
+<script src="/static/js/unsaved-changes.js"></script>
+<script src="/static/js/enterprise-base.js"></script>
+<script src="/static/js/script.js"></script>
+<script src="/static/js/theme.js"></script>
+```
+
+### Always Replace:
+```html
+<!-- ❌ NEVER -->
+<div class="container">
+<div class="row">
+<div class="col-md-6">
+<button class="btn btn-primary" onclick="alert('Saved!')">
+
+<!-- ✅ ALWAYS -->
+<div class="enterprise-container">
+<div class="grid grid-cols-2">
+<div class="col-span-1">
+<button class="btn btn-primary" onclick="showSuccess('Configuration Updated Successfully')">
+```
+
+---
+
+## 📐 REQUIRED CSS CLASSES BY COMPONENT TYPE
+
+### Layout Components
+- **Containers:** `.enterprise-container`, `.enterprise-container-fluid`
+- **Grid System:** `.grid`, `.grid-cols-*`, `.col-span-*`, `.gap-*`
+- **Flexbox:** `.d-flex`, `.justify-content-*`, `.align-items-*`
+
+### Content Modules
+- **Modules:** `.enterprise-module`, `.module-header`, `.module-content`
+- **Headers:** `.executive-header`, `.executive-title`, `.executive-subtitle`
+- **KPIs:** `.kpi-section`, `.kpi-card`, `.metrics-bar`
+
+### Interactive Elements
+- **Buttons:** `.btn`, `.btn-primary`, `.btn-outline-secondary`, `.btn-group`
+- **Forms:** `.form-control`, `.form-label`, `.form-group`
+- **Status:** `.status-badge`, `.system-status`, `.performance-indicator`
+
+### Trading Specific
+- **Lists:** `.operation-list`, `.operation-item`, `.action-grid`
+- **Charts:** `.chart-container`, `.radar-chart-container`
+- **Calendar:** `.calendar-grid`, `.calendar-day`
+
+---
+
+## 💼 CORPORATE TERMINOLOGY REQUIREMENTS
+
+### Page Titles & Headers
+- ❌ Admin Dashboard → ✅ Administration Center
+- ❌ User Management → ✅ User Configuration
+- ❌ Settings → ✅ System Configuration
+- ❌ Dashboard → ✅ Strategic Overview
+- ❌ Reports → ✅ Performance Analytics
+
+### Button Labels & Actions
+- ❌ Delete → ✅ Remove Configuration
+- ❌ Save → ✅ Update Configuration
+- ❌ Add → ✅ Create Configuration
+- ❌ Edit → ✅ Modify Configuration
+- ❌ View → ✅ Review Details
+
+### Modal & Notification Messages
+- ❌ "Success!" → ✅ "Configuration Updated Successfully"
+- ❌ "Are you sure?" → ✅ "Confirm Operational Change"
+- ❌ "Error occurred" → ✅ "Configuration Update Failed"
+- ❌ "Delete this item?" → ✅ "Remove this configuration?"
+
+---
+
+## 🔔 NOTIFICATION & MODAL SYSTEM
+
+### Replace All Browser Alerts
+```javascript
+// ❌ NEVER USE
+alert('Saved successfully!');
+confirm('Delete this item?');
+
+// ✅ ALWAYS USE (Functions available from base.html)
+showSuccess('Configuration Updated Successfully');
+showCustomConfirmation(
+    'Confirm Operational Change',
+    'Remove this configuration?',
+    'btn-danger',
+    'exclamation-triangle'
+);
+```
+
+### Standard Modal Patterns
+```javascript
+// Delete Confirmations
+showCustomConfirmation(
+    'Confirm Configuration Removal',
+    'This action cannot be undone. Remove this configuration?',
+    'btn-danger',
+    'exclamation-triangle'
+);
+
+// Status Changes
+showCustomConfirmation(
+    'Confirm Status Change',
+    'Update the operational status?',
+    'btn-warning',
+    'question-circle'
+);
+
+// Unsaved Changes (Auto-handled by base.html)
+showCustomConfirmation(
+    'Unsaved Changes Detected',
+    'Configuration changes are pending. Continue without saving?',
+    'btn-warning',
+    'exclamation-triangle'
+);
+```
+
+---
+
+## 🎯 STANDARD BUTTON GROUP TEMPLATE
+
+Use this exact structure for page navigation:
+```html
+<div class="btn-group">
+    <button type="button" class="btn btn-outline-secondary btn-sm"
+            onclick="window.location.href='{{ url_for('main.index') }}'"
+            title="Go to Main Dashboard">
+        <i class="fas fa-home"></i>
+    </button>
+    <button type="button" class="btn btn-outline-secondary btn-sm"
+            onclick="location.reload()" title="Refresh Data">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+    <button type="button" class="btn btn-outline-secondary btn-sm"
+            onclick="window.location.href='{{ url_for('admin.show_admin_dashboard') }}'"
+            title="Back to Administration Center">
+        <i class="fas fa-tachometer-alt"></i>
+    </button>
+    <button type="button" class="btn btn-outline-secondary btn-sm"
+            onclick="history.back();" title="Go Back">
+        <i class="fas fa-arrow-left"></i>
+    </button>
+</div>
+```
+
+---
+
+## ✅ QUALITY CHECKLIST
+
+Before submitting any HTML page, verify:
+- ✅ Uses enterprise CSS framework (no style.css)
+- ✅ Has executive-header with corporate terminology
+- ✅ All content wrapped in enterprise-modules
+- ✅ No inline styles or style blocks
+- ✅ Browser alerts replaced with custom modals
+- ✅ Professional button groups included
+- ✅ Corporate terminology throughout
+- ✅ Responsive design maintained
+- ✅ All functionality preserved
+- ✅ **NO DUPLICATE JAVASCRIPT** (base.html handles all enterprise JS)
+- ✅ Only page-specific scripts in `{% block scripts_extra %}`
+
+---
+
+## 🎨 VISUAL CONSISTENCY STANDARDS
+
+### Color Usage
+- **Primary actions:** `btn-primary` (enterprise blue)
+- **Secondary actions:** `btn-outline-secondary` (gray outline)
+- **Success states:** `text-success`, `bg-success`
+- **Warning states:** `text-warning`, `bg-warning`
+- **Danger actions:** `btn-danger`, `text-danger`
+
+### Icon Standards
+- **Home:** `fa-home`
+- **Configuration:** `fa-cog`
+- **Analytics:** `fa-chart-line`
+- **Users:** `fa-users`
+- **Settings:** `fa-sliders-h`
+- **Back:** `fa-arrow-left`
+- **Refresh:** `fa-sync-alt`
+
+### Spacing Standards
+- **Module spacing:** `mb-4` between modules
+- **Content padding:** Use `module-content` (built-in)
+- **Grid gaps:** `gap-4` for standard spacing
+- **Button spacing:** Use `btn-group` (built-in)
+
+---
+
+## 🔧 JAVASCRIPT FUNCTION AVAILABILITY
+
+### Available Functions (from base.html):
+```javascript
+// Notification System (from notifications.js)
+showSuccess(message)
+showError(message)
+showWarning(message)
+showInfo(message)
+
+// Custom Modals (from custom-modals.js)
+showCustomConfirmation(title, message, buttonClass, iconClass)
+
+// Unsaved Changes (from unsaved-changes.js)
+window.initEnterpriseUnsavedChanges()
+
+// Search Functions (from enterprise-search.js)
+// [Various search functions available]
+
+// Base Functions (from enterprise-base.js)
+// [Core enterprise functionality]
+```
+
+### Page-Specific JavaScript Only:
+```html
+{% block scripts_extra %}
+<script>
+// Only include JavaScript that is:
+// 1. Specific to this page
+// 2. NOT already available from base.html
+// 3. Custom business logic for this page only
+
+// Example: Page-specific initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize unsaved changes for this page
+    if (typeof window.initEnterpriseUnsavedChanges === 'function') {
+        window.initEnterpriseUnsavedChanges();
+    }
+
+    // Page-specific functionality here
+});
+</script>
+{% endblock %}
+```
+
+---
+
+## 🚨 CRITICAL REMINDERS
+
+1. **NEVER DUPLICATE BASE.HTML SCRIPTS** - All enterprise JavaScript is already loaded
+2. **ALL ENTERPRISE FUNCTIONS ARE AVAILABLE** - Use `showSuccess()`, `showCustomConfirmation()`, etc. directly
+3. **ONLY ADD PAGE-SPECIFIC JAVASCRIPT** - Use `{% block scripts_extra %}` for custom logic only
+4. **UNSAVED CHANGES AUTO-DETECTION** - Call `window.initEnterpriseUnsavedChanges()` in page-specific scripts
+5. **MAINTAIN ALL EXISTING FUNCTIONALITY** - Only change styling and terminology, not logic
+6. **USE CORPORATE TERMINOLOGY** - Replace all casual language with professional terms
