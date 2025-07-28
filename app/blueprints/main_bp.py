@@ -6,7 +6,7 @@ from collections import defaultdict
 import calendar
 import statistics
 import math
-from ..models import Trade, DailyJournal, TradingModel
+from ..models import Trade, DailyJournal, TradingModel, P12Scenario
 from sqlalchemy import asc, desc, text
 
 from flask import jsonify
@@ -705,6 +705,66 @@ def debug_data():
 
 
 
+def get_p12_intelligence():
+    """Get P12 scenario intelligence data for dashboard."""
+    try:
+        # Get the current active scenario (could be based on time, market conditions, etc.)
+        # For now, we'll get a random active scenario or the first one
+        active_scenario = P12Scenario.query.filter_by(is_active=True).first()
+        
+        if not active_scenario:
+            return {
+                'scenario': 'No Active P12 Scenario',
+                'p12_high': None,
+                'p12_mid': None, 
+                'p12_low': None,
+                'directional_bias': 'Neutral Assessment',
+                'scenario_details': {
+                    'name': 'System Standby',
+                    'description': 'No active P12 scenarios configured.',
+                    'alert_criteria': 'Configure P12 scenarios in admin panel.',
+                    'confirmation_criteria': 'System awaiting configuration.'
+                }
+            }
+        
+        # In a real implementation, you'd calculate these levels based on:
+        # - Previous day's data
+        # - Pre-market activity  
+        # - Globex session data
+        # For now, we'll use placeholder values
+        return {
+            'scenario': f"P12-{active_scenario.scenario_number}: {active_scenario.scenario_name}",
+            'p12_high': 4280.50,  # These would be calculated from market data
+            'p12_mid': 4275.25,
+            'p12_low': 4270.00,
+            'directional_bias': active_scenario.directional_bias or 'Neutral Assessment',
+            'scenario_details': {
+                'name': active_scenario.scenario_name,
+                'description': active_scenario.short_description,
+                'alert_criteria': active_scenario.alert_criteria,
+                'confirmation_criteria': active_scenario.confirmation_criteria,
+                'entry_strategy': active_scenario.entry_strategy,
+                'hod_lod_implication': active_scenario.hod_lod_implication
+            }
+        }
+        
+    except Exception as e:
+        print(f"Error getting P12 intelligence: {e}")
+        return {
+            'scenario': 'System Analysis Error',
+            'p12_high': None,
+            'p12_mid': None,
+            'p12_low': None,
+            'directional_bias': 'System Error',
+            'scenario_details': {
+                'name': 'Error State',
+                'description': 'Unable to load P12 scenario data.',
+                'alert_criteria': 'Check system configuration.',
+                'confirmation_criteria': 'Contact system administrator.'
+            }
+        }
+
+
 @main_bp.route('/api/dashboard-data')
 @login_required
 def dashboard_data():
@@ -726,6 +786,9 @@ def dashboard_data():
 
         # Current date info for calendar
         today = py_date.today()
+        
+        # Get P12 scenario intelligence
+        p12_intelligence = get_p12_intelligence()
 
         response_data = {
             'stats': stats,
@@ -733,6 +796,7 @@ def dashboard_data():
             'trades_data': trades_data,
             'chart_data': chart_data,
             'model_analytics': model_analytics,
+            'p12_intelligence': p12_intelligence,
             'current_month': today.strftime('%B %Y'),
             'current_month_num': today.month,
             'current_year': today.year,
@@ -1011,7 +1075,7 @@ def portfolio_analytics():
         # You can add any portfolio-specific data here
         # For now, we'll just render the template
 
-        return render_template('portfolio_analytics.html',
+        return render_template('portfolio/analytics.html',
                                title='Portfolio Analytics - Trading Journal',
                                user=current_user,
                                permissions=permissions)

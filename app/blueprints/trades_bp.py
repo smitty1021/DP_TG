@@ -8,6 +8,8 @@ import os
 import uuid
 import csv
 import io
+import json
+from datetime import date as py_date, timedelta
 from datetime import date as py_date, datetime as py_datetime, time as py_time
 from datetime import datetime
 from app.extensions import db
@@ -1046,3 +1048,334 @@ def import_trades():
             current_app.logger.error(f"Fatal error during trade import process: {e}", exc_info=True)
 
     return render_template('trades/import_trades.html', title="Import Trades", form=form)
+
+
+# ============================================================================
+# ENTERPRISE-LEVEL EXPORT FUNCTIONALITY
+# ============================================================================
+
+@trades_bp.route('/export_excel', methods=['GET'])
+@login_required
+def export_trades_excel():
+    """Export trades to Excel format with enterprise-level formatting."""
+    try:
+        # For now, create a CSV that can be opened as Excel
+        # In production, you'd use openpyxl for true Excel format
+        filter_form = TradeFilterForm(request.args, meta={'csrf': False})
+        _populate_filter_form_choices(filter_form)
+
+        query = Trade.query.filter_by(user_id=current_user.id)
+        if filter_form.start_date.data: query = query.filter(Trade.trade_date >= filter_form.start_date.data)
+        if filter_form.end_date.data: query = query.filter(Trade.trade_date <= filter_form.end_date.data)
+        if filter_form.instrument.data: query = query.filter(Trade.instrument == filter_form.instrument.data)
+        if filter_form.direction.data: query = query.filter(Trade.direction == filter_form.direction.data)
+        if filter_form.trading_model_id.data and filter_form.trading_model_id.data != 0:
+            query = query.filter(Trade.trading_model_id == filter_form.trading_model_id.data)
+
+        trades_to_export = query.order_by(Trade.trade_date.asc()).all()
+
+        if not trades_to_export:
+            flash('No trades found matching current filters to export.', 'warning')
+            return redirect(url_for('trades.view_trades_list', **request.args))
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Enhanced headers for Excel export
+        headers = [
+            'Trade ID', 'Date', 'Day of Week', 'Instrument', 'Direction', 'Point Value',
+            'Total Entry Contracts', 'Avg Entry Price', 'Total Exit Contracts', 'Avg Exit Price',
+            'Gross P&L', 'R-Value', 'Dollar Risk', 'Win/Loss', 'Strike Rate Contribution',
+            'Initial SL', 'Terminus Target', 'MAE', 'MFE', 'How Closed',
+            'Trading Model', 'Tags', 'Trade Notes', 'Analysis Notes', 'Management Notes',
+            'Errors', 'Improvements', 'Screenshot Link'
+        ]
+        writer.writerow(headers)
+        
+        for trade in trades_to_export:
+            writer.writerow([
+                trade.id, 
+                trade.trade_date.strftime('%Y-%m-%d'), 
+                trade.trade_date.strftime('%A'),
+                trade.instrument, 
+                trade.direction, 
+                trade.point_value,
+                trade.total_contracts_entered, 
+                trade.average_entry_price,
+                trade.total_contracts_exited, 
+                trade.average_exit_price,
+                trade.pnl, 
+                trade.pnl_in_r, 
+                trade.dollar_risk,
+                'Win' if trade.pnl and trade.pnl > 0 else 'Loss' if trade.pnl and trade.pnl < 0 else 'Breakeven',
+                '1' if trade.pnl and trade.pnl > 0 else '0',
+                trade.initial_stop_loss, 
+                trade.terminus_target, 
+                trade.mae, 
+                trade.mfe,
+                trade.how_closed, 
+                trade.trading_model.name if trade.trading_model else '',
+                ', '.join([tag.name for tag in trade.tags]) if trade.tags else '', 
+                trade.trade_notes, 
+                trade.overall_analysis_notes, 
+                trade.trade_management_notes,
+                trade.errors_notes, 
+                trade.improvements_notes, 
+                trade.screenshot_link
+            ])
+        
+        output.seek(0)
+        filename = f"trades_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(output, mimetype="text/csv",
+                        headers={"Content-Disposition": f"attachment;filename={filename}"})
+
+    except Exception as e:
+        flash(f'Error exporting to Excel: {str(e)}', 'danger')
+        return redirect(url_for('trades.view_trades_list'))
+
+
+@trades_bp.route('/export_json', methods=['GET'])
+@login_required
+def export_trades_json():
+    """Export trades to JSON format for API integration."""
+    try:
+        filter_form = TradeFilterForm(request.args, meta={'csrf': False})
+        _populate_filter_form_choices(filter_form)
+
+        query = Trade.query.filter_by(user_id=current_user.id)
+        if filter_form.start_date.data: query = query.filter(Trade.trade_date >= filter_form.start_date.data)
+        if filter_form.end_date.data: query = query.filter(Trade.trade_date <= filter_form.end_date.data)
+        if filter_form.instrument.data: query = query.filter(Trade.instrument == filter_form.instrument.data)
+        if filter_form.direction.data: query = query.filter(Trade.direction == filter_form.direction.data)
+        if filter_form.trading_model_id.data and filter_form.trading_model_id.data != 0:
+            query = query.filter(Trade.trading_model_id == filter_form.trading_model_id.data)
+
+        trades_to_export = query.order_by(Trade.trade_date.asc()).all()
+
+        if not trades_to_export:
+            flash('No trades found matching current filters to export.', 'warning')
+            return redirect(url_for('trades.view_trades_list', **request.args))
+
+        # Build comprehensive JSON structure
+        export_data = {
+            'export_metadata': {
+                'exported_by': current_user.username,
+                'export_date': datetime.now().isoformat(),
+                'total_trades': len(trades_to_export),
+                'filters_applied': {
+                    'start_date': filter_form.start_date.data.isoformat() if filter_form.start_date.data else None,
+                    'end_date': filter_form.end_date.data.isoformat() if filter_form.end_date.data else None,
+                    'instrument': filter_form.instrument.data,
+                    'direction': filter_form.direction.data
+                }
+            },
+            'trades': []
+        }
+
+        for trade in trades_to_export:
+            trade_data = {
+                'id': trade.id,
+                'trade_date': trade.trade_date.isoformat(),
+                'instrument': trade.instrument,
+                'direction': trade.direction,
+                'point_value': float(trade.point_value) if trade.point_value else None,
+                'contracts': {
+                    'total_entered': trade.total_contracts_entered,
+                    'total_exited': trade.total_contracts_exited
+                },
+                'prices': {
+                    'average_entry': float(trade.average_entry_price) if trade.average_entry_price else None,
+                    'average_exit': float(trade.average_exit_price) if trade.average_exit_price else None
+                },
+                'performance': {
+                    'gross_pnl': float(trade.pnl) if trade.pnl else None,
+                    'r_value': float(trade.pnl_in_r) if trade.pnl_in_r else None,
+                    'dollar_risk': float(trade.dollar_risk) if trade.dollar_risk else None,
+                    'mae': float(trade.mae) if trade.mae else None,
+                    'mfe': float(trade.mfe) if trade.mfe else None
+                },
+                'levels': {
+                    'initial_stop_loss': float(trade.initial_stop_loss) if trade.initial_stop_loss else None,
+                    'terminus_target': float(trade.terminus_target) if trade.terminus_target else None
+                },
+                'metadata': {
+                    'how_closed': trade.how_closed,
+                    'trading_model': trade.trading_model.name if trade.trading_model else None,
+                    'tags': [tag.name for tag in trade.tags] if trade.tags else [],
+                    'notes': {
+                        'trade_notes': trade.trade_notes,
+                        'analysis_notes': trade.overall_analysis_notes,
+                        'management_notes': trade.trade_management_notes,
+                        'errors_notes': trade.errors_notes,
+                        'improvements_notes': trade.improvements_notes
+                    },
+                    'screenshot_link': trade.screenshot_link
+                },
+                'entries': [
+                    {
+                        'entry_time': entry.entry_time.isoformat() if entry.entry_time else None,
+                        'contracts': entry.contracts,
+                        'entry_price': float(entry.entry_price) if entry.entry_price else None
+                    } for entry in trade.entry_points
+                ],
+                'exits': [
+                    {
+                        'exit_time': exit.exit_time.isoformat() if exit.exit_time else None,
+                        'contracts': exit.contracts,
+                        'exit_price': float(exit.exit_price) if exit.exit_price else None
+                    } for exit in trade.exit_points
+                ]
+            }
+            export_data['trades'].append(trade_data)
+
+        json_str = json.dumps(export_data, indent=2, default=str)
+        filename = f"trades_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        
+        return Response(json_str, mimetype="application/json",
+                        headers={"Content-Disposition": f"attachment;filename={filename}"})
+
+    except Exception as e:
+        flash(f'Error exporting to JSON: {str(e)}', 'danger')
+        return redirect(url_for('trades.view_trades_list'))
+
+
+@trades_bp.route('/export_tax_report', methods=['GET'])
+@login_required
+def export_tax_report():
+    """Export tax-compliant trading report."""
+    try:
+        # Get all trades for current tax year (or allow date range)
+        current_year = datetime.now().year
+        start_date = py_date(current_year, 1, 1)
+        end_date = py_date(current_year, 12, 31)
+        
+        trades = Trade.query.filter_by(user_id=current_user.id).filter(
+            Trade.trade_date >= start_date,
+            Trade.trade_date <= end_date
+        ).order_by(Trade.trade_date.asc()).all()
+
+        if not trades:
+            flash(f'No trades found for tax year {current_year}.', 'warning')
+            return redirect(url_for('trades.view_trades_list'))
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Tax report headers
+        headers = [
+            'Trade Date', 'Security', 'Quantity', 'Price', 'Proceeds', 'Cost Basis', 
+            'Gain/Loss', 'Short/Long Term', 'Days Held', 'Trade Type'
+        ]
+        writer.writerow(headers)
+        
+        for trade in trades:
+            # All futures trades are typically Section 1256 contracts (60/40 rule)
+            writer.writerow([
+                trade.trade_date.strftime('%Y-%m-%d'),
+                trade.instrument,
+                trade.total_contracts_entered,
+                trade.average_entry_price or 0,
+                (trade.average_exit_price or 0) * (trade.total_contracts_exited or 0) * (trade.point_value or 1),
+                (trade.average_entry_price or 0) * (trade.total_contracts_entered or 0) * (trade.point_value or 1),
+                trade.pnl or 0,
+                'Section 1256',  # Futures contracts
+                '1',  # Futures are marked-to-market
+                'Future'
+            ])
+        
+        # Add summary row
+        total_pnl = sum(trade.pnl for trade in trades if trade.pnl)
+        writer.writerow([])
+        writer.writerow(['TOTAL P&L', '', '', '', '', '', total_pnl, '', '', ''])
+        
+        output.seek(0)
+        filename = f"tax_report_{current_year}_{datetime.now().strftime('%Y%m%d')}.csv"
+        return Response(output, mimetype="text/csv",
+                        headers={"Content-Disposition": f"attachment;filename={filename}"})
+
+    except Exception as e:
+        flash(f'Error generating tax report: {str(e)}', 'danger')
+        return redirect(url_for('trades.view_trades_list'))
+
+
+@trades_bp.route('/export_performance_report', methods=['GET'])
+@login_required
+def export_performance_report():
+    """Export comprehensive performance analysis report."""
+    try:
+        trades = Trade.query.filter_by(user_id=current_user.id).order_by(Trade.trade_date.asc()).all()
+
+        if not trades:
+            flash('No trades found for performance report.', 'warning')
+            return redirect(url_for('trades.view_trades_list'))
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Performance Report Header
+        writer.writerow(['ENTERPRISE TRADING PERFORMANCE ANALYSIS'])
+        writer.writerow([f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
+        writer.writerow([f'Account: {current_user.username}'])
+        writer.writerow([])
+        
+        # Summary Statistics
+        total_trades = len(trades)
+        profitable_trades = len([t for t in trades if t.pnl and t.pnl > 0])
+        losing_trades = len([t for t in trades if t.pnl and t.pnl < 0])
+        strike_rate = (profitable_trades / total_trades * 100) if total_trades > 0 else 0
+        total_pnl = sum(trade.pnl for trade in trades if trade.pnl)
+        
+        writer.writerow(['SUMMARY STATISTICS'])
+        writer.writerow(['Total Trades', total_trades])
+        writer.writerow(['Profitable Trades', profitable_trades])
+        writer.writerow(['Losing Trades', losing_trades])
+        writer.writerow(['Strike Rate', f'{strike_rate:.2f}%'])
+        writer.writerow(['Total P&L', f'${total_pnl:.2f}'])
+        writer.writerow(['Avg P&L per Trade', f'${total_pnl/total_trades:.2f}' if total_trades > 0 else '$0.00'])
+        writer.writerow([])
+        
+        # Model Performance Breakdown
+        writer.writerow(['MODEL PERFORMANCE BREAKDOWN'])
+        model_stats = {}
+        for trade in trades:
+            model_name = trade.trading_model.name if trade.trading_model else 'No Model'
+            if model_name not in model_stats:
+                model_stats[model_name] = {'trades': 0, 'pnl': 0, 'wins': 0}
+            model_stats[model_name]['trades'] += 1
+            if trade.pnl:
+                model_stats[model_name]['pnl'] += trade.pnl
+                if trade.pnl > 0:
+                    model_stats[model_name]['wins'] += 1
+        
+        writer.writerow(['Model', 'Trades', 'Total P&L', 'Win Rate', 'Avg P&L'])
+        for model, stats in model_stats.items():
+            win_rate = (stats['wins'] / stats['trades'] * 100) if stats['trades'] > 0 else 0
+            avg_pnl = stats['pnl'] / stats['trades'] if stats['trades'] > 0 else 0
+            writer.writerow([model, stats['trades'], f"${stats['pnl']:.2f}", f"{win_rate:.1f}%", f"${avg_pnl:.2f}"])
+        
+        writer.writerow([])
+        
+        # Monthly Performance
+        writer.writerow(['MONTHLY PERFORMANCE'])
+        monthly_stats = {}
+        for trade in trades:
+            month_key = trade.trade_date.strftime('%Y-%m')
+            if month_key not in monthly_stats:
+                monthly_stats[month_key] = {'trades': 0, 'pnl': 0}
+            monthly_stats[month_key]['trades'] += 1
+            if trade.pnl:
+                monthly_stats[month_key]['pnl'] += trade.pnl
+        
+        writer.writerow(['Month', 'Trades', 'P&L', 'Avg per Trade'])
+        for month, stats in sorted(monthly_stats.items()):
+            avg_pnl = stats['pnl'] / stats['trades'] if stats['trades'] > 0 else 0
+            writer.writerow([month, stats['trades'], f"${stats['pnl']:.2f}", f"${avg_pnl:.2f}"])
+        
+        output.seek(0)
+        filename = f"performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(output, mimetype="text/csv",
+                        headers={"Content-Disposition": f"attachment;filename={filename}"})
+
+    except Exception as e:
+        flash(f'Error generating performance report: {str(e)}', 'danger')
+        return redirect(url_for('trades.view_trades_list'))

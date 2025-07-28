@@ -226,9 +226,25 @@ def access_control_dashboard():
             {'id': 'mock_basic', 'name': 'Basic User', 'member_count': 200}
         ]
 
-    # Get existing role permissions
-    existing_permissions = DiscordRolePermission.query.all()
-    permissions_by_role = {perm.discord_role_id: perm for perm in existing_permissions}
+    # Get existing role permissions and filter out any with invalid access_level values
+    try:
+        existing_permissions = DiscordRolePermission.query.all()
+        # Filter out any permissions with invalid access_level values
+        valid_permissions = []
+        for perm in existing_permissions:
+            if perm.access_level and perm.access_level in ['basic', 'premium', 'vip', 'admin']:
+                valid_permissions.append(perm)
+            else:
+                # Fix invalid access_level values
+                current_app.logger.warning(f"Fixing invalid access_level for role {perm.discord_role_id}")
+                perm.access_level = 'basic'
+                db.session.add(perm)
+        
+        db.session.commit()
+        permissions_by_role = {perm.discord_role_id: perm for perm in valid_permissions}
+    except Exception as e:
+        current_app.logger.error(f"Error loading role permissions: {e}")
+        permissions_by_role = {}
 
     # Get pages by category
     pages_by_category = manager.get_pages_by_category()
@@ -301,14 +317,18 @@ def save_role_permissions():
         if not role_permission:
             role_permission = DiscordRolePermission(
                 discord_role_id=role_id,
-                discord_role_name=role_name
+                discord_role_name=role_name,
+                access_level='basic'  # Ensure a valid default value
             )
             db.session.add(role_permission)
         else:
             role_permission.discord_role_name = role_name
 
-        # Update permissions
-        role_permission.access_level = permissions.get('access_level', 'basic')
+        # Update permissions - ensure access_level is valid
+        access_level = permissions.get('access_level', 'basic')
+        if not access_level or access_level not in ['basic', 'premium', 'vip', 'admin']:
+            access_level = 'basic'
+        role_permission.access_level = access_level
         role_permission.can_access_portfolio = permissions.get('can_access_portfolio', False)
         role_permission.can_access_backtesting = permissions.get('can_access_backtesting', False)
         role_permission.can_access_live_trading = permissions.get('can_access_live_trading', False)

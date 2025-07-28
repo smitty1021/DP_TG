@@ -2,7 +2,7 @@
 {% from "macros/_form_helpers.html" import render_field, render_checkbox %}
 
 {% block title %}
-    {{ title or "System Access Portal" }} - Trading Journal
+    {{ title or "Enterprise Authentication Portal" }} - Strategic Trading Platform
 {% endblock %}
 
 {% block head_extra %}
@@ -14,110 +14,125 @@
 {% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="en" data-bs-theme="light">
-<body>
-    <!-- Main Content Wrapper -->
-    <div class="enterprise-container">
-        <div class="d-flex justify-content-center py-5">
-            <div class="col-md-6 col-lg-5 col-xl-4">
-                <!-- Login Card -->
-                <div class="enterprise-module">
-                    <div class="module-content">
-                        <!-- Welcome Message -->
-                        <div class="text-center mb-4">
-                            <h2 class="mb-3">Welcome to the Pack Trade Group!</h2>
-                            <p class="text-muted">Login to continue to the Pack Trade Group Trading Journal</p>
+<!-- Executive Header -->
+<!-- Main Content Wrapper -->
+<div class="enterprise-container-fluid">
+    <div class="d-flex justify-content-center py-5">
+        <div class="col-md-6 col-lg-5 col-xl-4">
+            <!-- Authentication Module -->
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-key module-icon"></i>
+                        System Access Configuration
+                    </div>
+                    <div class="module-meta"></div>
+                </div>
+                <div class="module-content">
+                    <!-- Corporate Welcome Message -->
+                    <div class="text-center mb-4">
+                        <h2 class="mb-3">Pack Trade Group Enterprise Portal</h2>
+                        <p class="text-muted">Please authenticate to access your strategic trading operations dashboard</p>
+                    </div>
+
+                    <!-- Enterprise Authentication Form -->
+                    <form method="POST" action="{{ url_for('auth.login') }}{{ '?next=' + request.args.get('next', '') if request.args.get('next') else '' }}" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <!-- Credentials Configuration -->
+                        <div class="form-group mb-3">
+                            {{ render_field(form.username,
+                                            label_visible=true,
+                                            input_class="form-control form-control-lg",
+                                            placeholder="Corporate Email or Username") }}
                         </div>
 
-                        <!-- Primary Authentication Form -->
-                        <form method="POST" action="{{ url_for('auth.login') }}{{ '?next=' + request.args.get('next', '') if request.args.get('next') else '' }}" novalidate>
-                            {{ form.hidden_tag() }}
+                        <div class="form-group mb-3">
+                            {{ render_field(form.password,
+                                            label_visible=true,
+                                            input_class="form-control form-control-lg",
+                                            placeholder="Enter your authentication credentials",
+                                            type="password") }}
+                        </div>
 
-                            <!-- Username Field -->
-                            <div class="form-group mb-3">
-                                {{ render_field(form.username,
-                                                label_visible=true,
-                                                input_class="form-control form-control-lg",
-                                                placeholder="Email or Username") }}
+                        <!-- Session Persistence Configuration -->
+                        {% if form.remember %}
+                            <div class="form-check mb-4">
+                                {{ render_checkbox(form.remember, label_visible=true, input_class="form-check-input") }}
                             </div>
+                        {% endif %}
 
-                            <!-- Password Field -->
-                            <div class="form-group mb-3">
-                                {{ render_field(form.password,
-                                                label_visible=true,
-                                                input_class="form-control form-control-lg",
-                                                placeholder="Please enter your password",
-                                                type="password") }}
-                            </div>
+                        <!-- Authentication Actions -->
+                        <div class="btn-group d-flex mb-3" role="group">
+                            <button type="submit" class="btn btn-primary btn-lg flex-fill">
+                                <i class="fas fa-sign-in-alt me-2"></i>Authenticate Access
+                            </button>
+                        </div>
 
-                            <!-- Remember Me Option -->
-                            {% if form.remember %}
-                                <div class="form-check mb-4">
-                                    {{ render_checkbox(form.remember, label_visible=true, input_class="form-check-input") }}
-                                </div>
-                            {% endif %}
+                        <!-- Alternative Authentication Methods -->
+                        <div class="text-center mb-4">
+                            <div class="module-meta mb-2">Alternative Authentication</div>
+                            <a href="{{ url_for('auth.discord_login') }}" class="btn btn-outline-secondary p-2" title="Discord Enterprise Integration">
+                                <i class="fab fa-discord" style="font-size: 1.5rem; color: #5865F2;"></i>
+                                <span class="ms-2">Discord Integration</span>
+                            </a>
+                        </div>
 
-                            <!-- Login Button -->
-                            <div class="d-grid mb-3">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    Log in
-                                </button>
-                            </div>
-
-                            <!-- Discord Button -->
-                            <div class="text-center mb-4">
-                                <a href="{{ url_for('auth.discord_login') }}" class="btn p-2">
-                                    <i class="fab fa-discord" style="font-size: 2rem; color: #5865F2;"></i>
-                                </a>
-                            </div>
-
-                            <!-- Account Recovery and Registration -->
-                            <div class="text-center">
-                                <a href="{{ url_for('auth.request_password_reset') }}" class="text-primary d-block mb-3">
+                        <!-- System Recovery and Access Management -->
+                        <div class="text-center">
+                            <div class="btn-group d-flex gap-2" role="group">
+                                <a href="{{ url_for('auth.request_password_reset') }}" class="btn btn-outline-secondary flex-fill">
                                     <i class="fas fa-key me-1"></i>
-                                    Reset Password
+                                    Reset Credentials
                                 </a>
-
-                                <p class="text-muted mb-2">New to the trading journal platform?</p>
-                                <a href="{{ url_for('auth.register') }}" class="text-primary">
-                                    <i class="fas fa-clipboard-list me-2"></i>
-                                    Request System Access
+                                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary flex-fill">
+                                    <i class="fas fa-user-plus me-1"></i>
+                                    Request Access
                                 </a>
                             </div>
-                        </form>
-                    </div>
+                            <div class="module-meta mt-3">
+                                New enterprise users require system provisioning approval
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <!-- Enterprise JavaScript Framework -->
-<script src="/static/js/custom-modals.js"></script>
-<script src="/static/js/notifications.js"></script>
-
+{% block scripts_extra %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // ONLY ADDITION: Check if we need to show verification notification
+    // Initialize enterprise unsaved changes detection
+    if (typeof window.initEnterpriseUnsavedChanges === 'function') {
+        window.initEnterpriseUnsavedChanges();
+    }
+
+    // Check for verification notifications
     {% if session.pop('show_verification_required', False) %}
-        // Wait a moment for the page to fully load
         setTimeout(() => {
-            showVerificationRequired('{{ session.pop("verification_email", "") }}');
+            showCustomConfirmation(
+                'Account Verification Required',
+                'Please verify your email address: {{ session.pop("verification_email", "") }}',
+                'btn-info',
+                'envelope'
+            );
         }, 500);
     {% endif %}
 
-    // Handle form submission with enterprise notifications
+    // Enterprise form submission handling
     const form = document.querySelector('form');
     if (form) {
         form.addEventListener('submit', function(e) {
-            // Show loading indicator
             const submitButton = form.querySelector('button[type="submit"]');
             const originalText = submitButton.innerHTML;
 
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Authenticating...';
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Authentication...';
             submitButton.disabled = true;
 
-            // Re-enable button after a short delay if form validation fails
+            // Re-enable if validation fails
             setTimeout(() => {
                 if (submitButton.disabled) {
                     submitButton.innerHTML = originalText;
@@ -127,18 +142,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Enhanced username validation
+    // Enhanced credential validation
     const usernameField = document.querySelector('input[name="username"]');
     if (usernameField) {
         usernameField.addEventListener('blur', function() {
             const username = this.value.trim();
             if (username && username.length < 4) {
-                showWarning('Username must be at least 4 characters long', 'Validation Notice');
+                showWarning('Corporate credentials must be at least 4 characters', 'Authentication Validation');
             }
         });
     }
 
-    console.log('Enterprise Authentication Portal initialized');
+    console.log('✅ Enterprise Authentication Portal initialized successfully');
 });
 </script>
 {% endblock %}

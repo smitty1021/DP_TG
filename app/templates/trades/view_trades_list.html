@@ -3,7 +3,8 @@
 {% block title %}Trading Operations Center{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
 {% endblock %}
 
 {% block page_header %}
@@ -36,19 +37,35 @@
                     title="Go Back">
                 <i class="fas fa-arrow-left"></i>
             </button>
-            <a href="{{ url_for('trades.import_trades') }}" class="btn btn-outline-secondary btn-sm" title="Import Trades">
-                    <i class="fas fa-upload me-1"></i>
-                </a>
-            <a href="{{ url_for('trades.export_trades_csv') }}" class="btn btn-outline-secondary btn-sm" title="Export Trades">
-                <i class="fas fa-download me-1"></i>
+            <a href="{{ url_for('trades.import_trades') }}" class="btn btn-outline-secondary btn-sm" title="Import Trading Data">
+                <i class="fas fa-upload me-1"></i>
             </a>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+                        data-bs-toggle="dropdown" aria-expanded="false" title="Export Trading Data">
+                    <i class="fas fa-download me-1"></i>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ url_for('trades.export_trades_csv') }}">
+                        <i class="fas fa-file-csv me-2"></i>Export as CSV</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('trades.export_trades_excel') }}">
+                        <i class="fas fa-file-excel me-2"></i>Export as Excel</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('trades.export_trades_json') }}">
+                        <i class="fas fa-file-code me-2"></i>Export as JSON</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{{ url_for('trades.export_tax_report') }}">
+                        <i class="fas fa-file-invoice me-2"></i>Tax Report Export</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('trades.export_performance_report') }}">
+                        <i class="fas fa-chart-bar me-2"></i>Performance Analysis</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="enterprise-container-fluid mt-4">
+<div class="enterprise-container-fluid mt-4" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
     <!-- Performance KPI Section -->
     {% if trades %}
     <div class="kpi-section mb-4">

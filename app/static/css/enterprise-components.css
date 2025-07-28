@@ -2669,6 +2669,34 @@ html[data-bs-theme="dark"] .table-danger {
     background-color: rgba(248, 113, 113, 0.1) !important;
 }
 
+/* Dark theme support for Bootstrap table classes */
+html[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > td,
+html[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > th {
+    background-color: var(--enterprise-gray-200);
+    color: var(--enterprise-text-primary);
+}
+
+html[data-bs-theme="dark"] .table-hover > tbody > tr:hover > td,
+html[data-bs-theme="dark"] .table-hover > tbody > tr:hover > th {
+    background-color: rgba(77, 166, 255, 0.1);
+    color: var(--enterprise-text-primary);
+}
+
+html[data-bs-theme="dark"] .table thead th {
+    background-color: var(--enterprise-gray-300);
+    border-color: var(--enterprise-border);
+    color: var(--enterprise-text-primary);
+}
+
+html[data-bs-theme="dark"] .table tbody tr:hover {
+    background-color: rgba(77, 166, 255, 0.1);
+}
+
+html[data-bs-theme="dark"] .table tbody td {
+    color: var(--enterprise-text-primary);
+    border-color: var(--enterprise-border);
+}
+
 html[data-bs-theme="dark"] .dropdown-menu {
     background-color: var(--enterprise-content-bg);
     border-color: var(--enterprise-border);

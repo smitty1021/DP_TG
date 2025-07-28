@@ -1,9 +1,14 @@
 {% extends "base.html" %}
 {% import "macros/_form_helpers.html" as forms %}
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ title }} - Enterprise Tag Management{% endblock %}
+
+{% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
     <h1>{{ title }}</h1>
     <!-- FIX: Change the form action to edit_tag and button text to "Update Tag" -->
     <form method="POST" action="{{ url_for('tags.edit_tag', tag_id=tag.id) }}" novalidate>

@@ -1984,3 +1984,264 @@ def test_post_route():
             'status': 'error',
             'message': f'Test route error: {str(e)}'
         }), 500
+
+
+# ============================================================================
+# ENTERPRISE-LEVEL ADMIN EXPORT FUNCTIONALITY
+# ============================================================================
+
+@admin_bp.route('/export_system_report', methods=['GET'])
+@login_required
+@admin_required
+def export_system_report():
+    """Export comprehensive system performance report."""
+    import csv
+    import io
+    from datetime import datetime, timedelta
+    from flask import Response
+    
+    try:
+        # Get system-wide statistics
+        total_users = User.query.count()
+        active_users = User.query.filter(User.last_login_date >= datetime.now() - timedelta(days=30)).count()
+        total_instruments = Instrument.query.count()
+        total_tags = Tag.query.count()
+        total_models = TradingModel.query.count()
+        total_scenarios = P12Scenario.query.count()
+        
+        # Get recent activity
+        recent_activities = Activity.query.order_by(Activity.timestamp.desc()).limit(100).all()
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # System Report Header
+        writer.writerow(['ENTERPRISE TRADING SYSTEM PERFORMANCE REPORT'])
+        writer.writerow([f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
+        writer.writerow([f'Administrator: {current_user.username}'])
+        writer.writerow([])
+        
+        # System Statistics
+        writer.writerow(['SYSTEM STATISTICS'])
+        writer.writerow(['Total Users', total_users])
+        writer.writerow(['Active Users (30 days)', active_users])
+        writer.writerow(['Total Instruments', total_instruments])
+        writer.writerow(['Total Tags', total_tags])
+        writer.writerow(['Total Trading Models', total_models])
+        writer.writerow(['Total P12 Scenarios', total_scenarios])
+        writer.writerow(['User Activity Rate', f'{(active_users/total_users*100):.1f}%' if total_users > 0 else '0%'])
+        writer.writerow([])
+        
+        # Recent System Activity
+        writer.writerow(['RECENT SYSTEM ACTIVITY'])
+        writer.writerow(['Timestamp', 'User', 'Action', 'Details'])
+        for activity in recent_activities:
+            writer.writerow([
+                activity.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                activity.user.username if activity.user else 'System',
+                activity.activity_type,
+                activity.description[:100] + '...' if len(activity.description) > 100 else activity.description
+            ])
+        
+        output.seek(0)
+        filename = f"system_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(output, mimetype="text/csv",
+                        headers={"Content-Disposition": f"attachment;filename={filename}"})
+
+    except Exception as e:
+        flash(f'Error generating system report: {str(e)}', 'danger')
+        return redirect(url_for('admin_bp.show_admin_dashboard'))
+
+
+@admin_bp.route('/export_user_activity', methods=['GET'])
+@login_required
+@admin_required
+def export_user_activity():
+    """Export detailed user activity report."""
+    import csv
+    import io
+    from datetime import datetime, timedelta
+    from flask import Response
+    
+    try:
+        # Get user activity data
+        users = User.query.all()
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # User Activity Report Header
+        writer.writerow(['USER ACTIVITY ANALYSIS REPORT'])
+        writer.writerow([f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
+        writer.writerow([f'Administrator: {current_user.username}'])
+        writer.writerow([])
+        
+        # User Activity Summary
+        writer.writerow(['USER ACTIVITY SUMMARY'])
+        writer.writerow(['Username', 'Role', 'Created Date', 'Last Login', 'Login Count', 'Status'])
+        
+        for user in users:
+            last_login = user.last_login_date.strftime('%Y-%m-%d %H:%M:%S') if user.last_login_date else 'Never'
+            status = 'Active' if user.last_login_date and user.last_login_date >= datetime.now() - timedelta(days=30) else 'Inactive'
+            
+            writer.writerow([
+                user.username,
+                user.role.value,
+                user.created_date.strftime('%Y-%m-%d'),
+                last_login,
+                user.login_count or 0,
+                status
+            ])
+        
+        output.seek(0)
+        filename = f"user_activity_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(output, mimetype="text/csv",
+                        headers={"Content-Disposition": f"attachment;filename={filename}"})
+
+    except Exception as e:
+        flash(f'Error generating user activity report: {str(e)}', 'danger')
+        return redirect(url_for('admin_bp.show_admin_dashboard'))
+
+
+@admin_bp.route('/export_audit_log', methods=['GET'])
+@login_required
+@admin_required
+def export_audit_log():
+    """Export comprehensive system audit log."""
+    import csv
+    import io
+    from datetime import datetime, timedelta
+    from flask import Response
+    
+    try:
+        # Get audit trail data (last 90 days)
+        cutoff_date = datetime.now() - timedelta(days=90)
+        activities = Activity.query.filter(
+            Activity.timestamp >= cutoff_date
+        ).order_by(Activity.timestamp.desc()).all()
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Audit Log Header
+        writer.writerow(['SYSTEM AUDIT LOG'])
+        writer.writerow([f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
+        writer.writerow([f'Administrator: {current_user.username}'])
+        writer.writerow([f'Period: Last 90 days'])
+        writer.writerow([])
+        
+        # Audit Log Entries
+        writer.writerow(['Timestamp', 'User ID', 'Username', 'Activity Type', 'Description', 'IP Address'])
+        
+        for activity in activities:
+            writer.writerow([
+                activity.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                activity.user_id or 'System',
+                activity.user.username if activity.user else 'System',
+                activity.activity_type,
+                activity.description,
+                getattr(activity, 'ip_address', 'N/A')  # In case IP tracking isn't implemented
+            ])
+        
+        output.seek(0)
+        filename = f"audit_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(output, mimetype="text/csv",
+                        headers={"Content-Disposition": f"attachment;filename={filename}"})
+
+    except Exception as e:
+        flash(f'Error generating audit log: {str(e)}', 'danger')
+        return redirect(url_for('admin_bp.show_admin_dashboard'))
+
+
+@admin_bp.route('/backup_system_data', methods=['GET'])
+@login_required
+@admin_required  
+def backup_system_data():
+    """Create comprehensive system backup."""
+    import json
+    import io
+    from datetime import datetime
+    from flask import Response
+    
+    try:
+        # Create comprehensive data backup
+        backup_data = {
+            'backup_metadata': {
+                'created_by': current_user.username,
+                'created_at': datetime.now().isoformat(),
+                'system_version': getattr(current_app, 'version', '1.0.0'),
+                'backup_type': 'full_system'
+            },
+            'users': [],
+            'instruments': [],
+            'tags': [],
+            'trading_models': [],
+            'p12_scenarios': []
+        }
+        
+        # Backup Users (excluding sensitive data)
+        users = User.query.all()
+        for user in users:
+            backup_data['users'].append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role.value,
+                'created_date': user.created_date.isoformat(),
+                'last_login_date': user.last_login_date.isoformat() if user.last_login_date else None,
+                'is_active': True  # Simplified status
+            })
+        
+        # Backup Instruments
+        instruments = Instrument.query.all()
+        for instrument in instruments:
+            backup_data['instruments'].append({
+                'id': instrument.id,
+                'symbol': instrument.symbol,
+                'name': instrument.name,
+                'point_value': float(instrument.point_value) if instrument.point_value else None,
+                'created_date': instrument.created_date.isoformat() if hasattr(instrument, 'created_date') else None
+            })
+        
+        # Backup Tags
+        tags = Tag.query.all()
+        for tag in tags:
+            backup_data['tags'].append({
+                'id': tag.id,
+                'name': tag.name,
+                'category': tag.category.value if tag.category else None,
+                'is_default': tag.is_default,
+                'user_id': tag.user_id
+            })
+        
+        # Backup Trading Models
+        models = TradingModel.query.all()
+        for model in models:
+            backup_data['trading_models'].append({
+                'id': model.id,
+                'name': model.name,
+                'description': model.description,
+                'is_default': model.is_default,
+                'user_id': model.user_id
+            })
+        
+        # Backup P12 Scenarios
+        scenarios = P12Scenario.query.all()
+        for scenario in scenarios:
+            backup_data['p12_scenarios'].append({
+                'id': scenario.id,
+                'scenario_number': scenario.scenario_number,
+                'scenario_name': scenario.scenario_name,
+                'short_description': scenario.short_description,
+                'is_active': scenario.is_active
+            })
+        
+        json_str = json.dumps(backup_data, indent=2, default=str)
+        filename = f"system_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        
+        return Response(json_str, mimetype="application/json",
+                        headers={"Content-Disposition": f"attachment;filename={filename}"})
+
+    except Exception as e:
+        flash(f'Error creating system backup: {str(e)}', 'danger')
+        return redirect(url_for('admin_bp.show_admin_dashboard'))

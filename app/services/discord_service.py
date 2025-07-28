@@ -1,4 +1,4 @@
-# Replace your app/services/discord_service.py with this corrected version:
+
 
 import os
 import discord

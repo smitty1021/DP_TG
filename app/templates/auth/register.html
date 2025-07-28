@@ -1,34 +1,54 @@
 {% extends "base.html" %}
-{# This path MUST match the location of your _form_helpers.html #}
 {% from "macros/_form_helpers.html" import render_field, render_checkbox %}
 
 {% block title %}
-    {{ title or "Account Provisioning Request" }} - Strategic Authentication Center
+    {{ title or "Enterprise Account Provisioning" }} - Strategic Trading Platform
+{% endblock %}
+
+{% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+
+<!-- Optional: Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 {% endblock %}
 
 {% block content %}
-<!-- Main Content Wrapper -->
-<div class="enterprise-container">
-    <div class="grid grid-cols-1 justify-items-center">
-        <div class="col-span-1" style="max-width: 600px; width: 100%;">
+<!-- Executive Header -->
+<div class="executive-header">
+    <div class="enterprise-container-fluid">
+        <h1 class="executive-title">
+            <i class="fas fa-user-shield executive-icon"></i>
+            Enterprise Account Provisioning Portal
+        </h1>
+        <div class="executive-subtitle">
+            Strategic Trading Platform User Registration & Access Request System
+        </div>
+    </div>
+</div>
 
-            <!-- Account Creation Module -->
+<!-- Main Content Wrapper -->
+<div class="enterprise-container-fluid">
+    <div class="d-flex justify-content-center py-5">
+        <div class="col-md-8 col-lg-6 col-xl-5">
+            <!-- Account Provisioning Module -->
             <div class="enterprise-module">
                 <div class="module-header">
                     <div class="module-title">
                         <i class="fas fa-user-plus module-icon"></i>
-                        User Account Provisioning Portal
+                        Enterprise User Configuration
                     </div>
+                    <div class="module-meta">Corporate Account Registration System</div>
                 </div>
                 <div class="module-content">
 
-                    <!-- Flash Messages Container -->
+                    <!-- System Notification Container -->
                     {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
-                            <div id="flash-messages-container" class="mb-4">
+                            <div id="enterprise-notifications-container" class="mb-4">
                                 {% for category, message in messages %}
                                     <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                        {{ message|safe }}
+                                        <i class="fas fa-info-circle me-2"></i>{{ message|safe }}
                                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                     </div>
                                 {% endfor %}
@@ -36,79 +56,99 @@
                         {% endif %}
                     {% endwith %}
 
-                    <!-- Account Registration Form -->
-                    <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+                    <!-- Enterprise User Registration Form -->
+                    <form method="POST" action="{{ url_for('auth.register') }}" novalidate id="registrationForm">
                         {{ form.hidden_tag() }}
 
-                        <div class="form-group mb-3">
-                            {{ render_field(form.username,
-                                            label_visible=true,
-                                            input_class="form-control form-control-lg",
-                                            placeholder="Choose a unique username") }}
+                        <!-- Corporate Identity Configuration -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group mb-3">
+                                {{ render_field(form.username,
+                                                label_visible=true,
+                                                input_class="form-control form-control-lg",
+                                                placeholder="Corporate username identifier") }}
+                            </div>
+                            <div class="form-group mb-3">
+                                {{ render_field(form.email,
+                                                label_visible=true,
+                                                input_class="form-control form-control-lg",
+                                                placeholder="corporate.email@enterprise.com",
+                                                type="email") }}
+                            </div>
                         </div>
 
-                        <div class="form-group mb-3">
-                            {{ render_field(form.email,
-                                            label_visible=true,
-                                            input_class="form-control form-control-lg",
-                                            placeholder="your.email@enterprise.com",
-                                            type="email") }}
+                        <!-- Security Credentials Configuration -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group mb-3">
+                                {{ render_field(form.password,
+                                                label_visible=true,
+                                                input_class="form-control form-control-lg",
+                                                placeholder="Enterprise security credentials",
+                                                type="password") }}
+                            </div>
+                            <div class="form-group mb-4">
+                                {{ render_field(form.confirm_password,
+                                                label_visible=true,
+                                                input_class="form-control form-control-lg",
+                                                placeholder="Verify security credentials",
+                                                type="password") }}
+                            </div>
                         </div>
 
-                        <div class="form-group mb-3">
-                            {{ render_field(form.password,
-                                            label_visible=true,
-                                            input_class="form-control form-control-lg",
-                                            placeholder="Create a strong password",
-                                            type="password") }}
-                        </div>
-
-                        <div class="form-group mb-4">
-                            {{ render_field(form.confirm_password,
-                                            label_visible=true,
-                                            input_class="form-control form-control-lg",
-                                            placeholder="Confirm your password",
-                                            type="password") }}
-                        </div>
-
-                        {# Example if you had a 'remember me' checkbox on registration form #}
-                        {# {{ render_checkbox(form.remember_me, input_class="custom-checkbox-class") }} #}
-
-                        <div class="d-grid gap-2 mt-4 pt-2">
-                            {{ form.submit(class="btn btn-primary btn-lg w-100") }}
+                        <!-- Account Provisioning Actions -->
+                        <div class="btn-group d-flex gap-2 mt-4 pt-2" role="group">
+                            {{ form.submit(class="btn btn-primary btn-lg flex-fill") }}
+                            <button type="button" class="btn btn-outline-secondary btn-lg" onclick="handleCancelRegistration()">
+                                <i class="fas fa-times me-2"></i>Cancel Request
+                            </button>
                         </div>
                     </form>
 
-                    <!-- Navigation Actions -->
+                    <!-- System Navigation Actions -->
                     <div class="text-center mt-4">
-                        <p class="mb-0">Already have an account?<br>
-                            <a href="{{ url_for('auth.login') }}" class="btn btn-link">
-                                <i class="fas fa-sign-in-alt me-1"></i>Return to Login Portal
+                        <div class="module-meta mb-3">
+                            Account provisioning requests require administrative approval
+                        </div>
+                        <div class="btn-group">
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-sign-in-alt me-1"></i>Return to Authentication Portal
                             </a>
-                        </p>
+                        </div>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
 
-<!-- Enterprise JavaScript Framework -->
-<script src="/static/js/custom-modals.js"></script>
-<script src="/static/js/notifications.js"></script>
-<script src="/static/js/unsaved-changes.js"></script>
 
+{% block scripts_extra %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize enterprise unsaved changes detection for registration form
-    const unsavedChanges = window.initEnterpriseUnsavedChanges({
-        formSelector: 'form',
-        excludeInputs: ['input[type="hidden"]', 'input[name="csrf_token"]']
+// Enterprise registration form management
+function handleCancelRegistration() {
+    showCustomConfirmation(
+        'Confirm Registration Cancellation',
+        'Cancel the enterprise account provisioning request? All entered information will be lost.',
+        'btn-warning',
+        'exclamation-triangle'
+    ).then(confirmed => {
+        if (confirmed) {
+            window.location.href = '{{ url_for("auth.login") }}';
+        }
     });
+}
 
-    // Handle form submission with enterprise notifications
-    const form = document.querySelector('form');
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize enterprise unsaved changes detection
+    if (typeof window.initEnterpriseUnsavedChanges === 'function') {
+        window.initEnterpriseUnsavedChanges({
+            formSelector: '#registrationForm',
+            excludeInputs: ['input[type="hidden"]', 'input[name="csrf_token"]']
+        });
+    }
+
+    // Enhanced form submission handling
+    const form = document.getElementById('registrationForm');
     if (form) {
         form.addEventListener('submit', function(e) {
             // Mark as submitting to prevent warnings
@@ -116,19 +156,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.enterpriseUnsavedChanges.markAsSubmitting();
             }
 
-            // Show loading indicator
             const submitButton = form.querySelector('button[type="submit"]');
             const originalText = submitButton.innerHTML;
 
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Account Request...';
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Enterprise Account Request...';
             submitButton.disabled = true;
 
-            // Re-enable button after delay if form validation fails
+            // Re-enable if validation fails
             setTimeout(() => {
                 if (submitButton.disabled) {
                     submitButton.innerHTML = originalText;
                     submitButton.disabled = false;
-                    // Reset unsaved changes state if form didn't submit
                     if (window.enterpriseUnsavedChanges) {
                         window.enterpriseUnsavedChanges.reset();
                     }
@@ -137,29 +175,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-
-
-    // Add email format validation
+    // Corporate email validation
     const emailField = document.querySelector('input[type="email"]');
     if (emailField) {
         emailField.addEventListener('blur', function() {
             const email = this.value.trim();
             if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                showWarning('Please enter a valid corporate email address', 'Email Format Notice');
+                showWarning('Please provide a valid corporate email address', 'Enterprise Email Validation');
             }
         });
     }
 
-    // Add password confirmation validation
+    // Password confirmation validation
+    const passwordField = document.querySelector('input[name="password"]');
+    const confirmPasswordField = document.querySelector('input[name="confirm_password"]');
+    
     if (confirmPasswordField && passwordField) {
         confirmPasswordField.addEventListener('blur', function() {
             if (this.value && passwordField.value && this.value !== passwordField.value) {
-                showWarning('Password confirmation does not match', 'Validation Notice');
+                showWarning('Security credential confirmation does not match', 'Password Validation');
             }
         });
     }
 
-    // Username availability feedback
+    // Username format validation
     const usernameField = document.querySelector('input[name="username"]');
     if (usernameField) {
         let usernameTimeout;
@@ -169,15 +208,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (username.length >= 3) {
                 usernameTimeout = setTimeout(() => {
-                    // This would typically check availability via AJAX
-                    // For now, just provide format guidance
                     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-                        showWarning('Username should contain only letters, numbers, and underscores', 'Format Notice');
+                        showWarning('Corporate username must contain only letters, numbers, and underscores', 'Username Format Validation');
                     }
                 }, 500);
             }
         });
     }
+
+    console.log('✅ Enterprise Account Provisioning Portal initialized successfully');
 });
 </script>
 {% endblock %}

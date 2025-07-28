@@ -1,41 +1,101 @@
 {% extends "base.html" %}
 {% from "macros/_form_helpers.html" import render_field, render_checkbox %}
 
-{% block title %}{{ title or "Edit Trading Model" }}{% endblock %}
+{% block title %}
+    {{ title or "Strategic Trading Model Configuration Update" }} - Enterprise Trading Platform
+{% endblock %}
+
+{% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+{% endblock %}
+
+{% block page_header %}
+<div class="executive-header">
+    <div class="enterprise-container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="header-content">
+                <h1 class="executive-title">
+                    <i class="fas fa-edit executive-icon"></i>
+                    Strategic Trading Model Update Center
+                </h1>
+                <div class="executive-subtitle">
+                    Editing: {{ model.name }} - Enterprise Trading Strategy Configuration Management
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('trading_models.models_list') }}'"
+                        title="Return to Models Dashboard">
+                    <i class="fas fa-list"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Form">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();" title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4 mb-5">
-    <h1>{{ title or "Edit Trading Model" }}: {{ model.name }}</h1> {# Displays the current model's name being edited #}
-    <hr>
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
+    <!-- Enterprise Trading Model Update Form -->
     <form method="POST" action="{{ url_for('trading_models.edit_trading_model', model_id=model.id) }}" novalidate>
-        {{ form.hidden_tag() }} {# CSRF token and other hidden fields #}
+        {{ form.hidden_tag() }}
 
-        {# All these fields will be pre-populated by WTForms because 'form' was initialized with obj=model in the route #}
-        <div class="row mb-3">
-            <div class="col-md-7">
-                {{ render_field(form.name, label_visible=true, input_class="form-control form-control-lg", placeholder="e.g., 0930 Open ES Strategy") }}
+        <!-- Model Identification Module -->
+        <div class="enterprise-module mb-4">
+            <div class="module-header">
+                <div class="module-title">
+                    <i class="fas fa-tag module-icon"></i>
+                    Model Identification & Configuration Update
+                </div>
+                <div class="module-meta">Strategic Trading Model Core Information Management</div>
             </div>
-            <div class="col-md-3">
-                {{ render_field(form.version, label_visible=true, input_class="form-control", placeholder="e.g., 1.1") }}
-            </div>
-            <div class="col-md-2 d-flex align-items-end pb-2">
-                {# Ensure form.is_active is a BooleanField for render_checkbox #}
-                {{ render_checkbox(form.is_active, label_visible=true, input_class="form-check-input-lg") }}
+            <div class="module-content">
+                <div class="row mb-3">
+                    <div class="col-md-7">
+                        {{ render_field(form.name, label_visible=true, input_class="form-control form-control-lg", placeholder="e.g., 0930 Open ES Strategy") }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ render_field(form.version, label_visible=true, input_class="form-control", placeholder="e.g., 1.1") }}
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end pb-2">
+                        {{ render_checkbox(form.is_active, label_visible=true, input_class="form-check-input-lg") }}
+                    </div>
+                </div>
+                {{ render_field(form.overview_logic, label_visible=true, input_class="form-control", rows="3", placeholder="Brief description of the model's core logic and purpose.") }}
             </div>
         </div>
 
-        {{ render_field(form.overview_logic, label_visible=true, input_class="form-control", rows="3", placeholder="Brief description of the model's core logic and purpose.") }}
-
-        <h5 class="mt-4">Timeframes</h5>
-        <div class="row">
-            <div class="col-md-4">
-                {{ render_field(form.primary_chart_tf, label_visible=true, input_class="form-control", placeholder="e.g., 15-Minute (Analysis/Setup)") }}
+        <!-- Timeframe Configuration Module -->
+        <div class="enterprise-module mb-4">
+            <div class="module-header">
+                <div class="module-title">
+                    <i class="fas fa-clock module-icon"></i>
+                    Timeframe Configuration Matrix Update
+                </div>
+                <div class="module-meta">Multi-Timeframe Analysis Framework Configuration</div>
             </div>
-            <div class="col-md-4">
-                {{ render_field(form.execution_chart_tf, label_visible=true, input_class="form-control", placeholder="e.g., 1-Minute (Entry/Fine-tuning)") }}
-            </div>
-            <div class="col-md-4">
-                {{ render_field(form.context_chart_tf, label_visible=true, input_class="form-control", placeholder="e.g., 1-Hour (Context/Trend)") }}
+            <div class="module-content">
+                <div class="row">
+                    <div class="col-md-4">
+                        {{ render_field(form.primary_chart_tf, label_visible=true, input_class="form-control", placeholder="e.g., 15-Minute (Analysis/Setup)") }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ render_field(form.execution_chart_tf, label_visible=true, input_class="form-control", placeholder="e.g., 1-Minute (Entry/Fine-tuning)") }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ render_field(form.context_chart_tf, label_visible=true, input_class="form-control", placeholder="e.g., 1-Hour (Context/Trend)") }}
+                    </div>
+                </div>
             </div>
         </div>
 

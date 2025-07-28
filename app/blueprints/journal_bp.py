@@ -410,3 +410,230 @@ def update_p12_outcome(usage_id):
             'success': False,
             'message': 'Error updating outcome'
         }), 500
+
+
+# ============================================================================
+# ENTERPRISE-LEVEL JOURNAL EXPORT FUNCTIONALITY
+# ============================================================================
+
+@journal_bp.route('/export_daily_journals_csv', methods=['GET'])
+@login_required
+def export_daily_journals_csv():
+    """Export daily journals to CSV format."""
+    import csv
+    import io
+    from datetime import datetime
+    from flask import Response
+    
+    try:
+        # Get all daily journals for current user
+        journals = DailyJournal.query.filter_by(user_id=current_user.id).order_by(DailyJournal.journal_date.asc()).all()
+        
+        if not journals:
+            flash('No daily journals found to export.', 'warning')
+            return redirect(url_for('journal.manage_daily_journal'))
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # CSV Headers
+        headers = [
+            'Date', 'Key Events Today', 'Key Tasks Today', 'On My Mind', 'Important Focus Today',
+            'Mental Feeling Rating', 'Mental Mind Rating', 'Mental Energy Rating', 'Mental Motivation Rating',
+            'P12 Scenario', 'Four Steps Analysis', 'Session Analysis', 'HOD/LOD Analysis', 'ADR Analysis',
+            'Market Notes', 'Trading Notes', 'Lessons Learned', 'Improvements', 'Tomorrow Preparation',
+            'Overall Day Rating', 'Created At', 'Updated At'
+        ]
+        writer.writerow(headers)
+        
+        for journal in journals:
+            writer.writerow([
+                journal.journal_date.strftime('%Y-%m-%d'),
+                journal.key_events_today or '',
+                journal.key_tasks_today or '',
+                journal.on_my_mind or '',
+                journal.important_focus_today or '',
+                journal.mental_feeling_rating or '',
+                journal.mental_mind_rating or '',
+                journal.mental_energy_rating or '',
+                journal.mental_motivation_rating or '',
+                journal.p12_scenario.scenario_name if journal.p12_scenario else '',
+                journal.four_steps_analysis or '',
+                journal.session_analysis or '',
+                journal.hod_lod_analysis or '',
+                journal.adr_analysis or '',
+                journal.market_notes or '',
+                journal.trading_notes or '',
+                journal.lessons_learned or '',
+                journal.improvements or '',
+                journal.tomorrow_preparation or '',
+                journal.overall_day_rating or '',
+                journal.created_date.strftime('%Y-%m-%d %H:%M:%S') if journal.created_date else '',
+                journal.updated_date.strftime('%Y-%m-%d %H:%M:%S') if journal.updated_date else ''
+            ])
+        
+        output.seek(0)
+        filename = f"daily_journals_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(output, mimetype="text/csv",
+                        headers={"Content-Disposition": f"attachment;filename={filename}"})
+
+    except Exception as e:
+        flash(f'Error exporting daily journals: {str(e)}', 'danger')
+        return redirect(url_for('journal.manage_daily_journal'))
+
+
+@journal_bp.route('/export_journal_analytics', methods=['GET'])
+@login_required
+def export_journal_analytics():
+    """Export comprehensive journal analytics report."""
+    import csv
+    import io
+    from datetime import datetime, timedelta
+    from flask import Response
+    from collections import Counter
+    
+    try:
+        # Get all daily journals for analytics
+        journals = DailyJournal.query.filter_by(user_id=current_user.id).order_by(DailyJournal.journal_date.asc()).all()
+        
+        if not journals:
+            flash('No journal data found for analytics export.', 'warning')
+            return redirect(url_for('journal.manage_daily_journal'))
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Report Header
+        writer.writerow(['ENTERPRISE JOURNAL ANALYTICS REPORT'])
+        writer.writerow([f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
+        writer.writerow([f'User: {current_user.username}'])
+        writer.writerow([f'Period: {journals[0].journal_date.strftime("%Y-%m-%d")} to {journals[-1].journal_date.strftime("%Y-%m-%d")}'])
+        writer.writerow([])
+        
+        # Journal Statistics
+        total_journals = len(journals)
+        journals_with_ratings = [j for j in journals if j.overall_day_rating]
+        avg_day_rating = sum(j.overall_day_rating for j in journals_with_ratings) / len(journals_with_ratings) if journals_with_ratings else 0
+        
+        # Mental state analysis
+        mental_ratings = []
+        for journal in journals:
+            if all([journal.mental_feeling_rating, journal.mental_mind_rating, journal.mental_energy_rating, journal.mental_motivation_rating]):
+                avg_mental = (journal.mental_feeling_rating + journal.mental_mind_rating + 
+                             journal.mental_energy_rating + journal.mental_motivation_rating) / 4
+                mental_ratings.append(avg_mental)
+        
+        avg_mental_state = sum(mental_ratings) / len(mental_ratings) if mental_ratings else 0
+        
+        # P12 Scenario usage
+        p12_usage = Counter()
+        for journal in journals:
+            if journal.p12_scenario:
+                p12_usage[journal.p12_scenario.scenario_name] += 1
+        
+        writer.writerow(['JOURNAL STATISTICS SUMMARY'])
+        writer.writerow(['Total Journal Entries', total_journals])
+        writer.writerow(['Entries with Day Ratings', len(journals_with_ratings)])
+        writer.writerow(['Average Day Rating', f'{avg_day_rating:.2f}' if avg_day_rating else 'N/A'])
+        writer.writerow(['Average Mental State', f'{avg_mental_state:.2f}' if avg_mental_state else 'N/A'])
+        writer.writerow(['Most Used P12 Scenario', p12_usage.most_common(1)[0][0] if p12_usage else 'None'])
+        writer.writerow([])
+        
+        # P12 Scenario Breakdown
+        writer.writerow(['P12 SCENARIO USAGE'])
+        writer.writerow(['Scenario', 'Usage Count', 'Percentage'])
+        for scenario, count in p12_usage.most_common():
+            percentage = (count / total_journals * 100) if total_journals > 0 else 0
+            writer.writerow([scenario, count, f'{percentage:.1f}%'])
+        writer.writerow([])
+        
+        # Monthly Analysis
+        writer.writerow(['MONTHLY ANALYSIS'])
+        monthly_stats = {}
+        for journal in journals:
+            month_key = journal.journal_date.strftime('%Y-%m')
+            if month_key not in monthly_stats:
+                monthly_stats[month_key] = {'count': 0, 'ratings': []}
+            monthly_stats[month_key]['count'] += 1
+            if journal.overall_day_rating:
+                monthly_stats[month_key]['ratings'].append(journal.overall_day_rating)
+        
+        writer.writerow(['Month', 'Entry Count', 'Avg Day Rating'])
+        for month, stats in sorted(monthly_stats.items()):
+            avg_rating = sum(stats['ratings']) / len(stats['ratings']) if stats['ratings'] else 0
+            writer.writerow([month, stats['count'], f'{avg_rating:.2f}' if avg_rating else 'N/A'])
+        
+        output.seek(0)
+        filename = f"journal_analytics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(output, mimetype="text/csv",
+                        headers={"Content-Disposition": f"attachment;filename={filename}"})
+
+    except Exception as e:
+        flash(f'Error generating journal analytics: {str(e)}', 'danger')
+        return redirect(url_for('journal.manage_daily_journal'))
+
+
+@journal_bp.route('/export_p12_statistics', methods=['GET'])
+@login_required
+def export_p12_statistics():
+    """Export P12 scenario usage and performance statistics."""
+    import csv
+    import io
+    from datetime import datetime
+    from flask import Response
+    
+    try:
+        # Get P12 usage statistics
+        p12_stats = P12UsageStats.query.filter_by(user_id=current_user.id).all()
+        
+        if not p12_stats:
+            flash('No P12 statistics found to export.', 'warning')
+            return redirect(url_for('journal.p12_statistics'))
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # P12 Statistics Report Header
+        writer.writerow(['P12 SCENARIO PERFORMANCE ANALYSIS'])
+        writer.writerow([f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
+        writer.writerow([f'User: {current_user.username}'])
+        writer.writerow([])
+        
+        # P12 Usage Statistics
+        writer.writerow(['P12 USAGE STATISTICS'])
+        writer.writerow(['Scenario', 'Selection Count', 'Last Selected', 'Outcome Successful', 'Success Rate', 'Notes'])
+        
+        for stat in p12_stats:
+            success_rate = 'N/A'
+            if stat.outcome_successful is not None:
+                success_rate = 'Yes' if stat.outcome_successful else 'No'
+            
+            writer.writerow([
+                stat.scenario.scenario_name if stat.scenario else 'Unknown',
+                stat.selection_count or 0,
+                stat.last_selected.strftime('%Y-%m-%d') if stat.last_selected else 'Never',
+                success_rate,
+                '100%' if stat.outcome_successful else '0%' if stat.outcome_successful is False else 'N/A',
+                stat.outcome_notes or ''
+            ])
+        
+        # Summary Statistics
+        total_selections = sum(stat.selection_count or 0 for stat in p12_stats)
+        successful_outcomes = len([s for s in p12_stats if s.outcome_successful is True])
+        total_outcomes = len([s for s in p12_stats if s.outcome_successful is not None])
+        
+        writer.writerow([])
+        writer.writerow(['SUMMARY STATISTICS'])
+        writer.writerow(['Total P12 Selections', total_selections])
+        writer.writerow(['Total Outcomes Recorded', total_outcomes])
+        writer.writerow(['Successful Outcomes', successful_outcomes])
+        writer.writerow(['Overall Success Rate', f'{(successful_outcomes/total_outcomes*100):.1f}%' if total_outcomes > 0 else 'N/A'])
+        
+        output.seek(0)
+        filename = f"p12_statistics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(output, mimetype="text/csv",
+                        headers={"Content-Disposition": f"attachment;filename={filename}"})
+
+    except Exception as e:
+        flash(f'Error exporting P12 statistics: {str(e)}', 'danger')
+        return redirect(url_for('journal.p12_statistics'))

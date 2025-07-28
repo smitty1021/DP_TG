@@ -6,6 +6,8 @@
 {% endblock %}
 
 {% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
@@ -15,7 +17,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
     <!-- Executive Header -->
     <div class="executive-header">
         <div class="d-flex justify-content-between align-items-center">
@@ -58,7 +60,7 @@
     </div>
 
     <!-- Main Content Grid -->
-    <div class="container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 300px);">
+    <div class="enterprise-container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 300px); width: 100%; max-width: none;">
         <div class="row g-0">
             <!-- Executive KPI Section -->
             <div class="col-12">

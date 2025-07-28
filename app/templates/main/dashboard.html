@@ -1,479 +1,591 @@
 {% extends "base.html" %}
 
-{% block title %}Strategic Trading Intelligence Center{% endblock %}
+{% block title %}Executive Trading Command Center{% endblock %}
 
 {% block head_extra %}
-{{ super() }}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+
+<!-- Optional: Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- Chart.js for enterprise analytics -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 {% endblock %}
 
-{% block page_header %}
+{% block content %}
+<!-- Executive Header (Required on all pages) -->
 <div class="executive-header">
-    <div class="container-fluid">
+    <div class="enterprise-container">
         <div class="d-flex justify-content-between align-items-center">
-            <div>
+            <div class="header-content">
                 <h1 class="executive-title">
-                    <i class="fas fa-chart-line executive-icon"></i>
-                    Strategic Trading Intelligence Center
+                    <i class="fas fa-tachometer-alt executive-icon"></i>
+                    Executive Trading Command Center
                 </h1>
-                <p class="executive-subtitle">
-                    Comprehensive Performance Intelligence & Risk Analytics Framework
-                    <span class="user-context">• {{ current_user.username }} • Real-time Data Feed</span>
-                </p>
-            </div>
-            <div class="d-flex align-items-center gap-3">
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-download me-1"></i>Export Strategic Report
-                    </button>
-                    <a href="{{ url_for('trades.add_trade') }}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i>Log Trade Execution
-                    </a>
+                <div class="executive-subtitle">
+                    Real-Time Performance Intelligence & Strategic Risk Management Platform
                 </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Return to Overview">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Analytics">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('analytics.tag_usage_analytics') }}'"
+                        title="Advanced Analytics Center">
+                    <i class="fas fa-chart-bar"></i>
+                </button>
+                <button type="button" class="btn btn-primary btn-sm"
+                        onclick="window.location.href='{{ url_for('trades.add_trade') }}'"
+                        title="Create New Trade Configuration">
+                    <i class="fas fa-plus"></i>
+                    New Trade
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="exportStrategicReport()" title="Export Strategic Analytics">
+                    <i class="fas fa-download"></i>
+                </button>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block content %}
-<div class="container-fluid">
-    <div style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 120px);">
+<!-- Main Content Wrapper -->
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
 
-        <!-- Executive KPI Dashboard -->
-        <div class="row mb-0">
-            <div class="col-12">
-                <div class="kpi-section">
-                    <div class="row g-0">
-                        <!-- Total P&L -->
-                        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                            <div class="kpi-card">
-                                <div class="kpi-content">
-                                    <div class="kpi-header">
-                                        <span class="kpi-label">Total P&L</span>
-                                        <i class="fas fa-chart-line kpi-icon"></i>
-                                    </div>
-                                    <div class="kpi-value" id="totalPnl">$+0.00</div>
-                                    <div class="kpi-meta"><span id="totalTrades">0</span> total executions</div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Win Rate -->
-                        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                            <div class="kpi-card">
-                                <div class="kpi-content">
-                                    <div class="kpi-header">
-                                        <span class="kpi-label">Success Rate</span>
-                                        <i class="fas fa-percentage kpi-icon"></i>
-                                    </div>
-                                    <div class="kpi-value" id="winRate">0.0%</div>
-                                    <div class="kpi-meta"><span id="winLoss">0W / 0L</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Profit Factor -->
-                        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                            <div class="kpi-card">
-                                <div class="kpi-content">
-                                    <div class="kpi-header">
-                                        <span class="kpi-label">Profit Factor</span>
-                                        <i class="fas fa-balance-scale kpi-icon"></i>
-                                    </div>
-                                    <div class="kpi-value" id="profitFactor">0.00</div>
-                                    <div class="kpi-meta">Gross <span id="grossProfitLoss">$0/$0</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Expectancy -->
-                        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                            <div class="kpi-card">
-                                <div class="kpi-content">
-                                    <div class="kpi-header">
-                                        <span class="kpi-label">Expectancy</span>
-                                        <i class="fas fa-target kpi-icon"></i>
-                                    </div>
-                                    <div class="kpi-value" id="expectancy">$0.00</div>
-                                    <div class="kpi-meta">Per execution edge</div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Average Trade -->
-                        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                            <div class="kpi-card">
-                                <div class="kpi-content">
-                                    <div class="kpi-header">
-                                        <span class="kpi-label">Avg Execution</span>
-                                        <i class="fas fa-calculator kpi-icon"></i>
-                                    </div>
-                                    <div class="kpi-value" id="avgTrade">$+0.00</div>
-                                    <div class="kpi-meta">Per position</div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- System Quality -->
-                        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                            <div class="kpi-card">
-                                <div class="kpi-content">
-                                    <div class="kpi-header">
-                                        <span class="kpi-label">SQN Score</span>
-                                        <i class="fas fa-award kpi-icon"></i>
-                                    </div>
-                                    <div class="kpi-value" id="sqnScore">0.1</div>
-                                    <div class="kpi-meta">System quality</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Executive KPI Performance Dashboard -->
+    <div class="enterprise-module mb-4 mt-3">
+        <div class="module-header">
+            <div class="module-title">
+                <i class="fas fa-chart-line module-icon"></i>
+                Executive Performance Metrics
             </div>
+            <div class="module-meta">Live Trading Intelligence Dashboard</div>
         </div>
-
-        <!-- Strategic Analytics Row -->
-        <div class="row g-3 mb-3">
-
-            <!-- Execution Calendar -->
-            <div class="col-lg-4">
-                <div class="enterprise-module h-100">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-calendar-alt module-icon"></i>
-                            Execution Calendar
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <button class="btn btn-outline-secondary btn-sm" onclick="changeMonth(-1)">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <span class="module-meta" id="currentMonth">July 2025</span>
-                            <button class="btn btn-outline-secondary btn-sm" onclick="changeMonth(1)">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="module-content p-0">
-                        <div class="calendar-grid" id="calendarGrid">
-                            <!-- Calendar generated by JavaScript -->
+        <div class="module-content">
+            <div class="grid grid-cols-6 gap-4">
+                <!-- Total Portfolio P&L -->
+                <div class="col-span-1">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-header">
+                                <i class="fas fa-chart-line kpi-icon text-success"></i>
+                                <span class="kpi-label">Portfolio P&L</span>
+                            </div>
+                            <div class="kpi-value text-success" id="totalPnl">$0.00</div>
+                            <div class="kpi-meta"><span id="totalTrades">0</span> Total Positions</div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Daily Performance Metrics -->
-            <div class="col-lg-4">
-                <div class="enterprise-module h-100">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-chart-bar module-icon"></i>
-                            Daily Performance
-                        </div>
-                        <div class="module-meta">Session Analytics</div>
-                    </div>
-                    <div class="module-content">
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <div class="metric-item">
-                                    <div class="metric-label">Profitable Sessions</div>
-                                    <div class="metric-value text-success" id="winDays">0</div>
-                                </div>
+                
+                <!-- Success Rate -->
+                <div class="col-span-1">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-header">
+                                <i class="fas fa-bullseye kpi-icon text-primary"></i>
+                                <span class="kpi-label">Success Rate</span>
                             </div>
-                            <div class="col-6">
-                                <div class="metric-item">
-                                    <div class="metric-label">Loss Sessions</div>
-                                    <div class="metric-value text-danger" id="lossDays">0</div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="metric-item">
-                                    <div class="metric-label">Session Success Rate</div>
-                                    <div class="metric-value" id="dailyWinRate">0.0%</div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="metric-item">
-                                    <div class="metric-label">Avg Wins/Session</div>
-                                    <div class="metric-value" id="avgWinsPerDay">0.0</div>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="metric-item">
-                                    <div class="metric-label">Session Expectancy</div>
-                                    <div class="metric-value" id="dailyExpectancy">$0.00</div>
-                                </div>
-                            </div>
+                            <div class="kpi-value text-primary" id="winRate">0.0%</div>
+                            <div class="kpi-meta"><span id="winLoss">0W / 0L</span> Positions</div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Strategy Analytics -->
-            <div class="col-lg-4">
-                <div class="enterprise-module h-100">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-cogs module-icon"></i>
-                            Strategy Analytics
-                        </div>
-                        <div class="module-meta">Model Performance</div>
-                    </div>
-                    <div class="module-content">
-                        <div class="model-performance-list" id="modelPerformance">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Performance Charts Row -->
-        <div class="row g-3 mb-3">
-            <div class="col-lg-4">
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-chart-line module-icon"></i>
-                            Equity Curve
-                        </div>
-                    </div>
-                    <div class="module-content">
-                        <canvas id="equityChart" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4">
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-chart-bar module-icon"></i>
-                            Daily P&L Distribution
-                        </div>
-                    </div>
-                    <div class="module-content">
-                        <canvas id="dailyPnlChart" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4">
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-chart-pie module-icon"></i>
-                            Monthly Performance
-                        </div>
-                    </div>
-                    <div class="module-content">
-                        <canvas id="monthlyChart" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Trade Execution Records -->
-        <div class="row">
-            <div class="col-12">
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-database module-icon"></i>
-                            Trade Execution Records
-                        </div>
-                    </div>
-                    <div class="module-content">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0 enterprise-table">
-                                <thead class="table-header">
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Symbol</th>
-                                        <th>Strategy</th>
-                                        <th>Position</th>
-                                        <th>Contracts</th>
-                                        <th>P&L</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tradesTableBody">
-                                    <!-- Populated by JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="mt-3 text-center">
-                            <div class="pagination-summary">
-                                <strong>Showing <span id="showingRecords">0</span> recent executions</strong>
+                
+                <!-- Profit Factor -->
+                <div class="col-span-1">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-header">
+                                <i class="fas fa-balance-scale kpi-icon text-warning"></i>
+                                <span class="kpi-label">Profit Factor</span>
                             </div>
+                            <div class="kpi-value text-warning" id="profitFactor">0.00</div>
+                            <div class="kpi-meta">Gross: <span id="grossProfitLoss">$0/$0</span></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Expectancy -->
+                <div class="col-span-1">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-header">
+                                <i class="fas fa-target kpi-icon text-info"></i>
+                                <span class="kpi-label">Trade Expectancy</span>
+                            </div>
+                            <div class="kpi-value text-info" id="expectancy">$0.00</div>
+                            <div class="kpi-meta">Per Position Edge</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Average Trade -->
+                <div class="col-span-1">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-header">
+                                <i class="fas fa-calculator kpi-icon text-secondary"></i>
+                                <span class="kpi-label">Avg Position</span>
+                            </div>
+                            <div class="kpi-value text-secondary" id="avgTrade">$0.00</div>
+                            <div class="kpi-meta">Mean Performance</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- System Quality -->
+                <div class="col-span-1">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-header">
+                                <i class="fas fa-award kpi-icon text-success"></i>
+                                <span class="kpi-label">SQN Rating</span>
+                            </div>
+                            <div class="kpi-value text-success" id="sqnScore">0.0</div>
+                            <div class="kpi-meta">System Quality</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Strategic Intelligence Grid -->
+    <div class="grid grid-cols-12 gap-4 mb-4">
+        
+        <!-- Trading Calendar Intelligence -->
+        <div class="col-span-4">
+            <div class="enterprise-module h-100">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-calendar-alt module-icon"></i>
+                        Trading Calendar Intelligence
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="changeMonth(-1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="module-meta" id="currentMonth">Loading...</span>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="changeMonth(1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="module-content p-0">
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- Dynamic calendar content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- P12 Scenario Intelligence Center -->
+        <div class="col-span-4">
+            <div class="enterprise-module h-100">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-brain module-icon"></i>
+                        P12 Scenario Intelligence
+                    </div>
+                    <div class="module-meta">Random's Four Steps Framework</div>
+                </div>
+                <div class="module-content">
+                    <div class="p12-dashboard">
+                        <div class="scenario-current mb-3">
+                            <div class="scenario-badge-container">
+                                <span class="scenario-label">Active Scenario:</span>
+                                <span class="scenario-badge" id="currentScenario">Analyzing Market Structure...</span>
+                            </div>
+                        </div>
+                        
+                        <div class="p12-levels">
+                            <div class="level-row">
+                                <span class="level-label">P12 High:</span>
+                                <span class="level-value" id="p12High">-</span>
+                            </div>
+                            <div class="level-row">
+                                <span class="level-label">P12 Mid:</span>
+                                <span class="level-value" id="p12Mid">-</span>
+                            </div>
+                            <div class="level-row">
+                                <span class="level-label">P12 Low:</span>
+                                <span class="level-value" id="p12Low">-</span>
+                            </div>
+                        </div>
+                        
+                        <div class="directional-bias mt-3">
+                            <span class="bias-label">Market Bias:</span>
+                            <span class="bias-indicator" id="directionalBias">Neutral Assessment</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Management Framework -->
+        <div class="col-span-4">
+            <div class="enterprise-module h-100">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-shield-alt module-icon"></i>
+                        Risk Management Framework
+                    </div>
+                    <div class="module-meta">Live Risk Monitoring</div>
+                </div>
+                <div class="module-content">
+                    <div class="risk-metrics-grid">
+                        <div class="risk-metric">
+                            <div class="metric-label">Maximum Drawdown</div>
+                            <div class="metric-value text-danger" id="maxDrawdown">-$0.00</div>
+                            <div class="progress mt-2">
+                                <div class="progress-bar bg-danger" id="drawdownProgress" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="risk-metric">
+                            <div class="metric-label">Kelly Fraction</div>
+                            <div class="metric-value" id="kellyFraction">0.000</div>
+                            <div class="metric-detail">Optimal Position Size</div>
+                        </div>
+                        
+                        <div class="risk-metric">
+                            <div class="metric-label">Sharpe Ratio</div>
+                            <div class="metric-value" id="sharpeRatio">0.00</div>
+                            <div class="metric-detail">Risk-Adjusted Returns</div>
+                        </div>
+                        
+                        <div class="risk-metric">
+                            <div class="metric-label">Calmar Ratio</div>
+                            <div class="metric-value" id="calmarRatio">0.00</div>
+                            <div class="metric-detail">Return/Drawdown Ratio</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Analytics Dashboard -->
+    <div class="grid grid-cols-3 gap-4 mb-4">
+        <!-- Equity Curve Performance -->
+        <div class="col-span-1">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-line module-icon"></i>
+                        Equity Curve Analysis
+                    </div>
+                    <div class="module-meta">Portfolio Growth Trajectory</div>
+                </div>
+                <div class="module-content">
+                    <div class="chart-container">
+                        <canvas id="equityChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily P&L Distribution -->
+        <div class="col-span-1">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-bar module-icon"></i>
+                        Daily P&L Distribution
+                    </div>
+                    <div class="module-meta">Session Performance Analysis</div>
+                </div>
+                <div class="module-content">
+                    <div class="chart-container">
+                        <canvas id="dailyPnlChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics Summary -->
+        <div class="col-span-1">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-pie module-icon"></i>
+                        Performance Summary
+                    </div>
+                    <div class="module-meta">Key Performance Indicators</div>
+                </div>
+                <div class="module-content">
+                    <div class="performance-summary">
+                        <div class="summary-metric">
+                            <div class="metric-label">Profitable Sessions</div>
+                            <div class="metric-value text-success" id="winDays">0</div>
+                        </div>
+                        <div class="summary-metric">
+                            <div class="metric-label">Loss Sessions</div>
+                            <div class="metric-value text-danger" id="lossDays">0</div>
+                        </div>
+                        <div class="summary-metric">
+                            <div class="metric-label">Session Success Rate</div>
+                            <div class="metric-value" id="dailyWinRate">0.0%</div>
+                        </div>
+                        <div class="summary-metric">
+                            <div class="metric-label">Average Daily Expectancy</div>
+                            <div class="metric-value" id="dailyExpectancy">$0.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trading Model Performance Matrix -->
+    <div class="enterprise-module mb-4">
+        <div class="module-header">
+            <div class="module-title">
+                <i class="fas fa-trophy module-icon"></i>
+                Trading Model Performance Matrix
+            </div>
+            <div class="module-meta">Random's Six Model Performance Comparison</div>
+        </div>
+        <div class="module-content">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover enterprise-table">
+                    <thead>
+                        <tr>
+                            <th>Model Configuration</th>
+                            <th>Trade Count</th>
+                            <th>Success Rate</th>
+                            <th>Avg R-Multiple</th>
+                            <th>Total P&L</th>
+                            <th>Operational Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modelComparisonBody">
+                        <!-- Dynamic model performance data -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Health & Operational Status -->
+    <div class="grid grid-cols-4 gap-4 mb-4">
+        <!-- System Health Monitor -->
+        <div class="col-span-1">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-heartbeat module-icon"></i>
+                        System Health Monitor
+                    </div>
+                    <div class="module-meta">Operational Status</div>
+                </div>
+                <div class="module-content">
+                    <div class="system-status-grid">
+                        <div class="status-item">
+                            <div class="status-indicator status-online"></div>
+                            <div class="status-info">
+                                <div class="status-label">Trading Engine</div>
+                                <div class="status-value">Operational</div>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator status-online"></div>
+                            <div class="status-info">
+                                <div class="status-label">Data Feed</div>
+                                <div class="status-value">Connected</div>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator status-warning"></div>
+                            <div class="status-info">
+                                <div class="status-label">Risk Limits</div>
+                                <div class="status-value" id="riskStatus">Monitor</div>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator status-online"></div>
+                            <div class="status-info">
+                                <div class="status-label">Journal Sync</div>
+                                <div class="status-value">Current</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Trading Activity -->
+        <div class="col-span-3">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-clock module-icon"></i>
+                        Today's Trading Activity
+                    </div>
+                    <div class="module-meta">Current Session Overview</div>
+                </div>
+                <div class="module-content">
+                    <div class="activity-summary-grid">
+                        <div class="activity-metric">
+                            <div class="metric-label">Positions Today</div>
+                            <div class="metric-value" id="todayTrades">0</div>
+                        </div>
+                        <div class="activity-metric">
+                            <div class="metric-label">Session P&L</div>
+                            <div class="metric-value" id="todayPnl">$0.00</div>
+                        </div>
+                        <div class="activity-metric">
+                            <div class="metric-label">Active Models</div>
+                            <div class="metric-value" id="activeModels">0</div>
+                        </div>
+                        <div class="activity-metric">
+                            <div class="metric-label">Last Update</div>
+                            <div class="metric-value" id="lastUpdate">--:--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Trade Execution Records -->
+    <div class="enterprise-module">
+        <div class="module-header">
+            <div class="module-title">
+                <i class="fas fa-database module-icon"></i>
+                Recent Trade Execution Records
+            </div>
+            <div class="module-meta">Latest Transaction Activity</div>
+        </div>
+        <div class="module-content">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover enterprise-table">
+                    <thead>
+                        <tr>
+                            <th>Execution Date</th>
+                            <th>Instrument</th>
+                            <th>Strategy Model</th>
+                            <th>Position Direction</th>
+                            <th>Contract Volume</th>
+                            <th>P&L Result</th>
+                            <th>Configuration Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tradesTableBody">
+                        <!-- Dynamic trade records -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="pagination-summary">
+                        <strong>Displaying <span id="showingRecords">0</span> recent trade executions</strong>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                onclick="window.location.href='{{ url_for('trades.view_trades_list') }}'">
+                            View All Configurations
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                onclick="exportTradeData()">
+                            Export Configuration Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
 
 {% block scripts_extra %}
 <script>
 // ============================================================================
-// CALENDAR NAVIGATION & ANIMATION FIXES
-// Replace the JavaScript section in your dashboard.html
+// ENTERPRISE DASHBOARD INITIALIZATION
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Loading Strategic Trading Intelligence Center...');
-
-    // ANIMATION: Initialize dashboard animations
-    initializeDashboardAnimations();
-
-    // CALENDAR: Initialize calendar navigation
-    initializeCalendarNavigation();
-
-    // Load dashboard data from API
-    fetch('/api/dashboard-data')
-        .then(response => response.json())
-        .then(data => {
-            console.log('📊 Dashboard data loaded:', data);
-
-            // Update KPI cards with animation
-            if (data.stats) {
-                updateKPICards(data.stats);
-            }
-
-            // Update daily metrics
-            if (data.stats) {
-                updateDailyMetrics(data.stats);
-            }
-
-            // Update model performance
-            if (data.model_analytics) {
-                updateModelPerformance(data.model_analytics);
-            }
-
-            // Update calendar
-            if (data.calendar_data) {
-                updateCalendar(data.calendar_data, data.current_year, data.current_month_num);
-            }
-
-            // Update charts
-            if (data.chart_data) {
-                updateCharts(data.chart_data);
-            }
-
-            // Update trade table
-            if (data.trades_data) {
-                updateTradeTable(data.trades_data);
-            }
-
-            console.log('✅ Strategic Dashboard loaded successfully!');
-        })
-        .catch(error => {
-            console.error('❌ Error loading dashboard:', error);
-        });
+    console.log('🚀 Initializing Executive Trading Command Center...');
+    
+    // Initialize unsaved changes detection (required by Claude_instructions)
+    if (typeof window.initEnterpriseUnsavedChanges === 'function') {
+        window.initEnterpriseUnsavedChanges();
+    }
+    
+    // Initialize dashboard animations
+    initializeEnterpriseAnimations();
+    
+    // Initialize calendar system
+    initializeCalendarSystem();
+    
+    // Load dashboard data
+    loadDashboardIntelligence();
 });
 
 // ============================================================================
-// ANIMATION SYSTEM - Same as Admin Dashboard
+// ENTERPRISE ANIMATION SYSTEM
 // ============================================================================
 
-function initializeDashboardAnimations() {
-    // ANIMATION 1: KPI Cards - Staggered fade-in
+function initializeEnterpriseAnimations() {
+    // Staggered KPI card animations
     const kpiCards = document.querySelectorAll('.kpi-card');
     kpiCards.forEach((card, index) => {
         card.style.opacity = '0';
         card.style.transform = 'translateY(20px)';
-        card.style.transition = 'all 0.6s ease';
-        card.style.animationDelay = `${index * 0.1}s`;
-
+        card.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+        
         setTimeout(() => {
             card.style.opacity = '1';
             card.style.transform = 'translateY(0)';
         }, index * 100);
     });
-
-    // ANIMATION 2: Module Cards - Slide in from right
+    
+    // Module slide-in animations
     const modules = document.querySelectorAll('.enterprise-module');
     modules.forEach((module, index) => {
         module.style.opacity = '0';
         module.style.transform = 'translateX(30px)';
-        module.style.transition = 'all 0.6s ease';
-
+        module.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+        
         setTimeout(() => {
             module.style.opacity = '1';
             module.style.transform = 'translateX(0)';
-        }, 200 + (index * 150));
+        }, 300 + (index * 100));
     });
-
-    // ANIMATION 3: Enhanced hover effects for operation items
-    const operationItems = document.querySelectorAll('.operation-item:not(.disabled), .model-performance-item');
-    operationItems.forEach(item => {
-        item.addEventListener('mouseenter', function() {
-            this.style.backgroundColor = 'var(--enterprise-gray-50)';
-            this.style.borderLeft = '4px solid var(--enterprise-primary)';
-            this.style.paddingLeft = 'calc(0.75rem - 4px + 0.5rem)';
-            this.style.transition = 'all 0.2s ease';
-        });
-
-        item.addEventListener('mouseleave', function() {
-            this.style.backgroundColor = '';
-            this.style.borderLeft = '';
-            this.style.paddingLeft = '';
-        });
-    });
-
-    // ANIMATION 4: Professional loading states for metrics
-    setTimeout(() => {
-        animateMetricValues();
-    }, 800);
-
-    console.log('Enterprise dashboard animations initialized');
-}
-
-function animateMetricValues() {
-    const metrics = document.querySelectorAll('.metric-value, .kpi-value');
-    metrics.forEach(metric => {
-        const text = metric.textContent;
-        const numberMatch = text.match(/[\d,.]+/);
-
-        if (numberMatch) {
-            const finalValue = parseFloat(numberMatch[0].replace(/,/g, ''));
-            if (finalValue > 0) {
-                let currentValue = 0;
-                const increment = Math.ceil(finalValue / 30);
-                const timer = setInterval(() => {
-                    currentValue += increment;
-                    if (currentValue >= finalValue) {
-                        metric.textContent = text; // Restore original formatting
-                        clearInterval(timer);
-                    } else {
-                        metric.textContent = text.replace(/[\d,.]+/, currentValue.toLocaleString());
-                    }
-                }, 50);
-            }
-        }
-    });
+    
+    console.log('✅ Enterprise animations initialized');
 }
 
 // ============================================================================
-// CALENDAR NAVIGATION SYSTEM - Fixed
+// CALENDAR SYSTEM
 // ============================================================================
 
-// Global calendar state
 let currentCalendarYear = new Date().getFullYear();
-let currentCalendarMonth = new Date().getMonth() + 1; // 1-based month
-let currentCalendarData = {};
+let currentCalendarMonth = new Date().getMonth() + 1;
+let calendarData = {};
 
-function initializeCalendarNavigation() {
-    // Set initial calendar state
+function initializeCalendarSystem() {
     const today = new Date();
     currentCalendarYear = today.getFullYear();
     currentCalendarMonth = today.getMonth() + 1;
-
-    console.log(`Calendar initialized: ${currentCalendarMonth}/${currentCalendarYear}`);
+    
+    updateMonthDisplay();
 }
 
 function changeMonth(direction) {
-    console.log(`Calendar navigation: ${direction > 0 ? 'next' : 'previous'} month`);
-
-    // Update month/year
     currentCalendarMonth += direction;
-
+    
     if (currentCalendarMonth > 12) {
         currentCalendarMonth = 1;
         currentCalendarYear++;
@@ -481,259 +593,184 @@ function changeMonth(direction) {
         currentCalendarMonth = 12;
         currentCalendarYear--;
     }
-
-    console.log(`New calendar date: ${currentCalendarMonth}/${currentCalendarYear}`);
-
-    // Update calendar display with animation
-    animateCalendarTransition(() => {
-        updateCalendar(currentCalendarData, currentCalendarYear, currentCalendarMonth);
-    });
-
-    // Optional: Fetch new calendar data for the month (if you want to load data dynamically)
-    // fetchCalendarDataForMonth(currentCalendarYear, currentCalendarMonth);
+    
+    updateMonthDisplay();
+    updateCalendarGrid();
 }
 
-function animateCalendarTransition(callback) {
-    const calendarGrid = document.getElementById('calendarGrid');
-
-    // Fade out animation
-    calendarGrid.style.opacity = '0.3';
-    calendarGrid.style.transform = 'translateX(10px)';
-    calendarGrid.style.transition = 'all 0.2s ease';
-
-    setTimeout(() => {
-        // Execute the callback (update calendar)
-        callback();
-
-        // Fade in animation
-        calendarGrid.style.opacity = '1';
-        calendarGrid.style.transform = 'translateX(0)';
-    }, 200);
+function updateMonthDisplay() {
+    const monthDisplay = document.getElementById('currentMonth');
+    if (monthDisplay) {
+        monthDisplay.textContent = new Date(currentCalendarYear, currentCalendarMonth - 1).toLocaleDateString('en-US', {
+            month: 'long',
+            year: 'numeric'
+        });
+    }
 }
 
-// ============================================================================
-// ENHANCED CALENDAR UPDATE FUNCTION
-// ============================================================================
-
-function updateCalendar(calendarData, year, month) {
-    currentCalendarData = calendarData; // Store for navigation
-
+function updateCalendarGrid() {
     const grid = document.getElementById('calendarGrid');
-    const currentDate = new Date(year, month - 1, 1);
-
+    if (!grid) return;
+    
     grid.innerHTML = '';
-
-    // Add day headers with animation
+    
+    // Add day headers
     const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    dayHeaders.forEach((day, index) => {
+    dayHeaders.forEach(day => {
         const header = document.createElement('div');
         header.className = 'calendar-day-header';
         header.textContent = day;
-        header.style.opacity = '0';
-        header.style.transform = 'translateY(-10px)';
         grid.appendChild(header);
-
-        // Animate header
-        setTimeout(() => {
-            header.style.transition = 'all 0.3s ease';
-            header.style.opacity = '1';
-            header.style.transform = 'translateY(0)';
-        }, index * 50);
     });
-
+    
     // Add calendar days
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const firstDayOfWeek = new Date(year, month - 1, 1).getDay();
-
+    const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth, 0).getDate();
+    const firstDayOfWeek = new Date(currentCalendarYear, currentCalendarMonth - 1, 1).getDay();
+    
     // Empty cells before month starts
     for (let i = 0; i < firstDayOfWeek; i++) {
         const emptyDay = document.createElement('div');
         emptyDay.className = 'calendar-day other-month';
         grid.appendChild(emptyDay);
     }
-
-    // Days of the month with staggered animation
+    
+    // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
         const dayElement = document.createElement('div');
         dayElement.className = 'calendar-day';
-        dayElement.style.opacity = '0';
-        dayElement.style.transform = 'scale(0.8)';
-
-        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        const dateStr = `${currentCalendarYear}-${String(currentCalendarMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const dayData = calendarData[dateStr];
-
+        
         if (dayData && dayData.trades > 0) {
             dayElement.classList.add('has-trades');
             dayElement.innerHTML = `
-                <div style="font-weight: 600;">${day}</div>
+                <div class="calendar-day-number">${day}</div>
                 <div class="calendar-pnl ${dayData.pnl >= 0 ? 'positive' : 'negative'}">
                     $${dayData.pnl.toFixed(0)}
                 </div>
-                <div class="calendar-trades">${dayData.trades} executions</div>
+                <div class="calendar-trades">${dayData.trades} trades</div>
             `;
-
+            
             dayElement.addEventListener('click', () => {
-                // Add click animation
-                dayElement.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    dayElement.style.transform = '';
-                    window.location.href = `/journal/daily/${dateStr}`;
-                }, 100);
+                window.location.href = `/journal/daily/${dateStr}`;
             });
         } else {
-            dayElement.innerHTML = `<div style="font-weight: 600;">${day}</div>`;
+            dayElement.innerHTML = `<div class="calendar-day-number">${day}</div>`;
         }
-
+        
         grid.appendChild(dayElement);
-
-        // Animate day appearance
-        setTimeout(() => {
-            dayElement.style.transition = 'all 0.3s ease';
-            dayElement.style.opacity = '1';
-            dayElement.style.transform = 'scale(1)';
-        }, 350 + (day * 20));
     }
-
-    // Update month display with animation
-    const monthDisplay = document.getElementById('currentMonth');
-    monthDisplay.style.opacity = '0.5';
-    setTimeout(() => {
-        monthDisplay.textContent = new Date(year, month - 1).toLocaleDateString('en-US', {
-            month: 'long',
-            year: 'numeric'
-        });
-        monthDisplay.style.transition = 'opacity 0.3s ease';
-        monthDisplay.style.opacity = '1';
-    }, 100);
 }
 
 // ============================================================================
-// ENHANCED UPDATE FUNCTIONS WITH ANIMATIONS
+// DATA LOADING & UPDATES
 // ============================================================================
 
-function updateKPICards(stats) {
-    // Total P&L with animation
-    const totalPnlElement = document.getElementById('totalPnl');
+function loadDashboardIntelligence() {
+    fetch('/api/dashboard-data')
+        .then(response => response.json())
+        .then(data => {
+            console.log('📊 Dashboard intelligence loaded:', data);
+            
+            // Update all dashboard components
+            updateKPIMetrics(data.stats || {});
+            updateP12Intelligence(data.p12_intelligence || {});
+            updateRiskMetrics(data.risk_metrics || {});
+            updatePerformanceCharts(data.chart_data || {});
+            updateModelPerformanceMatrix(data.model_analytics || {});
+            updateTradeRecords(data.trades_data || []);
+            updateTodayActivity(data.today_activity || {});
+            
+            // Update calendar data
+            if (data.calendar_data) {
+                calendarData = data.calendar_data;
+                updateCalendarGrid();
+            }
+            
+            console.log('✅ Executive Trading Command Center loaded successfully');
+        })
+        .catch(error => {
+            console.error('❌ Error loading dashboard intelligence:', error);
+            showError('Configuration Update Failed - Unable to load dashboard intelligence');
+        });
+}
+
+// ============================================================================
+// UPDATE FUNCTIONS
+// ============================================================================
+
+function updateKPIMetrics(stats) {
     const totalPnl = stats.total_pnl || 0;
-
-    animateValueChange(totalPnlElement, `$${totalPnl >= 0 ? '' : ''}${totalPnl.toFixed(2)}`);
-    totalPnlElement.className = totalPnl >= 0 ? 'kpi-value text-success' : 'kpi-value text-danger';
-
-    // Other KPIs with animation
-    animateValueChange(document.getElementById('totalTrades'), stats.total_trades || 0);
-    animateValueChange(document.getElementById('winRate'), `${(stats.win_rate || 0).toFixed(1)}%`);
-    animateValueChange(document.getElementById('winLoss'), `${stats.winning_trades || 0}W / ${stats.losing_trades || 0}L`);
-    animateValueChange(document.getElementById('profitFactor'), (stats.profit_factor || 0).toFixed(2));
-    animateValueChange(document.getElementById('grossProfitLoss'), `$${(stats.gross_profit || 0).toFixed(0)}/$${(stats.gross_loss || 0).toFixed(0)}`);
-    animateValueChange(document.getElementById('expectancy'), `$${(stats.expectancy || 0).toFixed(2)}`);
-
-    const avgTrade = stats.average_trade || 0;
-    animateValueChange(document.getElementById('avgTrade'), `$${avgTrade >= 0 ? '' : ''}${avgTrade.toFixed(2)}`);
-    animateValueChange(document.getElementById('sqnScore'), (stats.sqn || 0).toFixed(1));
+    animateValueUpdate('totalPnl', `$${totalPnl.toFixed(2)}`, totalPnl >= 0 ? 'text-success' : 'text-danger');
+    animateValueUpdate('totalTrades', stats.total_trades || 0);
+    animateValueUpdate('winRate', `${(stats.win_rate || 0).toFixed(1)}%`);
+    animateValueUpdate('winLoss', `${stats.winning_trades || 0}W / ${stats.losing_trades || 0}L`);
+    animateValueUpdate('profitFactor', (stats.profit_factor || 0).toFixed(2));
+    animateValueUpdate('grossProfitLoss', `$${(stats.gross_profit || 0).toFixed(0)}/$${Math.abs(stats.gross_loss || 0).toFixed(0)}`);
+    animateValueUpdate('expectancy', `$${(stats.expectancy || 0).toFixed(2)}`);
+    animateValueUpdate('avgTrade', `$${(stats.average_trade || 0).toFixed(2)}`);
+    animateValueUpdate('sqnScore', (stats.sqn || 0).toFixed(1));
 }
 
-function animateValueChange(element, newValue) {
-    if (!element) return;
-
-    element.style.transform = 'scale(1.05)';
-    element.style.transition = 'transform 0.2s ease';
-
-    setTimeout(() => {
-        element.textContent = newValue;
-        element.style.transform = 'scale(1)';
-    }, 100);
+function updateP12Intelligence(p12Data) {
+    animateValueUpdate('currentScenario', p12Data.scenario || 'Analyzing Market Structure...');
+    animateValueUpdate('p12High', p12Data.p12_high ? p12Data.p12_high.toFixed(2) : '-');
+    animateValueUpdate('p12Mid', p12Data.p12_mid ? p12Data.p12_mid.toFixed(2) : '-');
+    animateValueUpdate('p12Low', p12Data.p12_low ? p12Data.p12_low.toFixed(2) : '-');
+    animateValueUpdate('directionalBias', p12Data.directional_bias || 'Neutral Assessment');
 }
 
-function updateDailyMetrics(stats) {
-    animateValueChange(document.getElementById('winDays'), stats.win_days || 0);
-    animateValueChange(document.getElementById('lossDays'), stats.loss_days || 0);
-    animateValueChange(document.getElementById('dailyWinRate'), `${(stats.daily_win_rate || 0).toFixed(1)}%`);
-    animateValueChange(document.getElementById('avgWinsPerDay'), (stats.avg_wins_per_day || 0).toFixed(1));
-    animateValueChange(document.getElementById('dailyExpectancy'), `$${(stats.daily_expectancy || 0).toFixed(2)}`);
-}
-
-function updateModelPerformance(models) {
-    const container = document.getElementById('modelPerformance');
-    if (!models || Object.keys(models).length === 0) {
-        container.innerHTML = '<div class="text-center p-4 text-muted">No strategy data available</div>';
-        return;
+function updateRiskMetrics(riskData) {
+    animateValueUpdate('maxDrawdown', `-$${Math.abs(riskData.max_drawdown || 0).toFixed(2)}`);
+    animateValueUpdate('kellyFraction', (riskData.kelly_fraction || 0).toFixed(3));
+    animateValueUpdate('sharpeRatio', (riskData.sharpe_ratio || 0).toFixed(2));
+    animateValueUpdate('calmarRatio', (riskData.calmar_ratio || 0).toFixed(2));
+    
+    // Update drawdown progress bar
+    const drawdownProgress = document.getElementById('drawdownProgress');
+    if (drawdownProgress && riskData.drawdown_percentage) {
+        const percentage = Math.min(Math.abs(riskData.drawdown_percentage), 100);
+        drawdownProgress.style.width = `${percentage}%`;
     }
-
-    // Fade out animation
-    container.style.opacity = '0.3';
-    container.style.transition = 'opacity 0.2s ease';
-
-    setTimeout(() => {
-        container.innerHTML = '';
-        Object.entries(models).forEach(([model, stats], index) => {
-            const winRate = stats.trades > 0 ? ((stats.wins / stats.trades) * 100).toFixed(1) : 0;
-            const avgPnl = stats.trades > 0 ? (stats.total_pnl / stats.trades).toFixed(2) : 0;
-
-            const item = document.createElement('div');
-            item.className = 'model-performance-item';
-            item.style.opacity = '0';
-            item.style.transform = 'translateX(-20px)';
-            item.innerHTML = `
-                <div>
-                    <div class="model-name">${model}</div>
-                    <div class="model-stats">${stats.trades} executions • ${winRate}% SR</div>
-                </div>
-                <div>
-                    <div class="model-pnl ${stats.total_pnl >= 0 ? 'text-success' : 'text-danger'}">
-                        $${stats.total_pnl.toFixed(2)}
-                    </div>
-                    <div class="model-stats">Avg: $${avgPnl}</div>
-                </div>
-            `;
-
-            container.appendChild(item);
-
-            // Animate item appearance
-            setTimeout(() => {
-                item.style.transition = 'all 0.3s ease';
-                item.style.opacity = '1';
-                item.style.transform = 'translateX(0)';
-            }, index * 100);
-        });
-
-        // Fade container back in
-        container.style.opacity = '1';
-    }, 200);
 }
 
-// ============================================================================
-// KEEP YOUR EXISTING FUNCTIONS (updateCharts, updateTradeTable)
-// ============================================================================
-
-function updateCharts(chartData) {
-    // Simple chart setup - equity curve
-    const ctx = document.getElementById('equityChart');
-    if (ctx && chartData.equity_data) {
-        new Chart(ctx, {
+function updatePerformanceCharts(chartData) {
+    // Equity curve chart
+    const equityCtx = document.getElementById('equityChart');
+    if (equityCtx && chartData.equity_data) {
+        new Chart(equityCtx, {
             type: 'line',
             data: {
                 labels: chartData.equity_labels || [],
                 datasets: [{
-                    label: 'Equity',
+                    label: 'Portfolio Equity',
                     data: chartData.equity_data || [],
-                    borderColor: '#0066cc',
-                    backgroundColor: 'rgba(0, 102, 204, 0.1)',
-                    borderWidth: 2,
-                    fill: true
+                    borderColor: 'rgba(34, 197, 94, 1)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } }
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(0,0,0,0.1)' } },
+                    x: { grid: { color: 'rgba(0,0,0,0.1)' } }
+                }
             }
         });
     }
-
+    
     // Daily P&L chart
     const dailyCtx = document.getElementById('dailyPnlChart');
     if (dailyCtx && chartData.daily_pnl) {
-        const colors = chartData.daily_pnl.map(val => val >= 0 ? '#28a745' : '#dc3545');
+        const colors = chartData.daily_pnl.map(val => 
+            val >= 0 ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)'
+        );
         new Chart(dailyCtx, {
             type: 'bar',
             data: {
@@ -741,80 +778,215 @@ function updateCharts(chartData) {
                 datasets: [{
                     label: 'Daily P&L',
                     data: chartData.daily_pnl || [],
-                    backgroundColor: colors
+                    backgroundColor: colors,
+                    borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
-
-    // Monthly P&L chart
-    const monthlyCtx = document.getElementById('monthlyChart');
-    if (monthlyCtx && chartData.monthly_pnl) {
-        const colors = chartData.monthly_pnl.map(val => val >= 0 ? '#28a745' : '#dc3545');
-        new Chart(monthlyCtx, {
-            type: 'bar',
-            data: {
-                labels: chartData.monthly_labels || [],
-                datasets: [{
-                    label: 'Monthly P&L',
-                    data: chartData.monthly_pnl || [],
-                    backgroundColor: colors
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } }
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(0,0,0,0.1)' } },
+                    x: { grid: { display: false } }
+                }
             }
         });
     }
 }
 
-function updateTradeTable(tradesData) {
+function updateModelPerformanceMatrix(modelsData) {
+    const tbody = document.getElementById('modelComparisonBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (!modelsData || Object.keys(modelsData).length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No model performance data available</td></tr>';
+        return;
+    }
+    
+    Object.entries(modelsData).forEach(([modelName, stats]) => {
+        const successRate = stats.trades > 0 ? ((stats.wins / stats.trades) * 100).toFixed(1) : 0;
+        const avgR = stats.trades > 0 ? (stats.total_r / stats.trades).toFixed(2) : 0;
+        const statusClass = stats.active ? 'status-online' : 'status-offline';
+        const statusText = stats.active ? 'Active' : 'Inactive';
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <div class="model-name-display">
+                    <strong>${modelName}</strong>
+                    <div class="text-muted small">Version ${stats.version || '1.0'}</div>
+                </div>
+            </td>
+            <td class="text-center">${stats.trades || 0}</td>
+            <td class="text-center">
+                <span class="badge ${successRate >= 60 ? 'bg-success' : successRate >= 40 ? 'bg-warning' : 'bg-danger'}">
+                    ${successRate}%
+                </span>
+            </td>
+            <td class="text-center">${avgR}R</td>
+            <td class="text-end">
+                <span class="badge ${stats.total_pnl >= 0 ? 'bg-success' : 'bg-danger'}">
+                    $${(stats.total_pnl || 0).toFixed(2)}
+                </span>
+            </td>
+            <td class="text-center">
+                <div class="d-flex align-items-center justify-content-center">
+                    <div class="status-indicator ${statusClass}"></div>
+                    <span class="ms-2">${statusText}</span>
+                </div>
+            </td>
+            <td class="text-center">
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" onclick="viewModelConfiguration('${modelName}')" title="Review Model Configuration">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="editModelConfiguration('${modelName}')" title="Modify Configuration">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateTradeRecords(tradesData) {
     const tbody = document.getElementById('tradesTableBody');
-    tbody.style.opacity = '0.3';
-    tbody.style.transition = 'opacity 0.2s ease';
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    const recentTrades = tradesData.slice(-10).reverse();
+    
+    recentTrades.forEach(trade => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${new Date(trade.trade_date).toLocaleDateString()}</td>
+            <td><span class="badge bg-secondary">${trade.instrument || 'N/A'}</span></td>
+            <td><span class="text-muted">${trade.trading_model || 'Manual'}</span></td>
+            <td>
+                <span class="badge ${trade.direction === 'Long' ? 'bg-success' : 'bg-danger'}">
+                    ${trade.direction || 'N/A'}
+                </span>
+            </td>
+            <td class="text-center">${trade.total_contracts_entered || 0}</td>
+            <td class="text-end">
+                <span class="badge ${(trade.pnl || 0) >= 0 ? 'bg-success' : 'bg-danger'}">
+                    $${(trade.pnl || 0).toFixed(2)}
+                </span>
+            </td>
+            <td class="text-center">
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" onclick="reviewTradeConfiguration(${trade.id})" title="Review Configuration">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="modifyTradeConfiguration(${trade.id})" title="Modify Configuration">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    document.getElementById('showingRecords').textContent = recentTrades.length;
+}
 
+function updateTodayActivity(activityData) {
+    animateValueUpdate('todayTrades', activityData.trades_today || 0);
+    animateValueUpdate('todayPnl', `$${(activityData.pnl_today || 0).toFixed(2)}`);
+    animateValueUpdate('activeModels', activityData.active_models || 0);
+    animateValueUpdate('lastUpdate', new Date().toLocaleTimeString());
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+function animateValueUpdate(elementId, newValue, additionalClass = '') {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    element.style.transform = 'scale(1.05)';
+    element.style.transition = 'all 0.3s ease';
+    
     setTimeout(() => {
-        tbody.innerHTML = '';
+        element.textContent = newValue;
+        if (additionalClass) {
+            element.className = element.className.split(' ').filter(c => !c.startsWith('text-')).join(' ');
+            element.classList.add(additionalClass);
+        }
+        element.style.transform = 'scale(1)';
+    }, 150);
+}
 
-        // Show last 20 trades
-        const recentTrades = tradesData.slice(-20).reverse();
+// ============================================================================
+// ACTION FUNCTIONS (Required by Claude_instructions)
+// ============================================================================
 
-        recentTrades.forEach((trade, index) => {
-            const row = document.createElement('tr');
-            row.style.opacity = '0';
-            row.style.transform = 'translateY(10px)';
-            row.innerHTML = `
-                <td>${new Date(trade.trade_date).toLocaleDateString()}</td>
-                <td><span class="badge bg-secondary">${trade.instrument || 'N/A'}</span></td>
-                <td><span class="text-muted small">${trade.trading_model || 'N/A'}</span></td>
-                <td><span class="badge ${trade.direction === 'Long' ? 'bg-success' : 'bg-danger'}">${trade.direction || 'N/A'}</span></td>
-                <td class="text-center">${trade.total_contracts_entered || 0}</td>
-                <td class="text-end">
-                    <span class="badge ${(trade.pnl || 0) >= 0 ? 'bg-success' : 'bg-danger'}">
-                        $${(trade.pnl || 0).toFixed(2)}
-                    </span>
-                </td>
-            `;
-            tbody.appendChild(row);
+function exportStrategicReport() {
+    showCustomConfirmation(
+        'Confirm Strategic Analytics Export',
+        'Generate comprehensive performance analytics report?',
+        'btn-primary',
+        'download'
+    ).then(confirmed => {
+        if (confirmed) {
+            showSuccess('Strategic Analytics Export Processing Successfully');
+            window.location.href = '/api/export/strategic-report';
+        }
+    });
+}
 
-            // Animate row appearance
-            setTimeout(() => {
-                row.style.transition = 'all 0.2s ease';
-                row.style.opacity = '1';
-                row.style.transform = 'translateY(0)';
-            }, index * 30);
-        });
+function exportTradeData() {
+    showCustomConfirmation(
+        'Confirm Configuration Data Export',
+        'Export trade configuration data to CSV format?',
+        'btn-primary',
+        'download'
+    ).then(confirmed => {
+        if (confirmed) {
+            showSuccess('Configuration Data Export Processing Successfully');
+            window.location.href = '/api/export/trades';
+        }
+    });
+}
 
-        document.getElementById('showingRecords').textContent = recentTrades.length;
-        tbody.style.opacity = '1';
-    }, 200);
+function reviewTradeConfiguration(tradeId) {
+    window.location.href = `/trades/view/${tradeId}`;
+}
+
+function modifyTradeConfiguration(tradeId) {
+    showCustomConfirmation(
+        'Confirm Configuration Modification',
+        'Access trade configuration modification interface?',
+        'btn-warning',
+        'edit'
+    ).then(confirmed => {
+        if (confirmed) {
+            window.location.href = `/trades/edit/${tradeId}`;
+        }
+    });
+}
+
+function viewModelConfiguration(modelName) {
+    window.location.href = `/models/view/${encodeURIComponent(modelName)}`;
+}
+
+function editModelConfiguration(modelName) {
+    showCustomConfirmation(
+        'Confirm Model Configuration Modification',
+        'Access model configuration modification interface?',
+        'btn-warning',
+        'cog'
+    ).then(confirmed => {
+        if (confirmed) {
+            window.location.href = `/models/edit/${encodeURIComponent(modelName)}`;
+        }
+    });
 }
 </script>
 {% endblock %}

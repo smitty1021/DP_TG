@@ -1,11 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Dashboard - Trading Journal{% endblock %}
-{# Remove block header if not used, or define it as needed #}
-{# {% block header %}Dashboard{% endblock %} #}
+{% block title %}Enterprise Trading Dashboard - Strategic Operations Center{% endblock %}
+
+{% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+{% endblock %}
 
 {% block content %}
 
-<div class="container mt-4">
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
     <div class="card shadow-sm mb-4 welcome-section"> {# Added 'card', removed 'p-3 bg-light rounded' #}
         <div class="card-body"> {# Added card-body for padding #}
             <h2 class="card-title">Welcome back, {{ current_user.username }}!</h2> {# Optionally make h2 a card-title #}

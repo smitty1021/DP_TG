@@ -1,111 +1,270 @@
 {% extends "base.html" %}
 
 {% block title %}
-    {{ title or "User Settings" }} - Trading Journal
+    {{ title or "System Configuration Management" }} - Enterprise Trading Platform
 {% endblock %}
 
-{% block content %}
-<div class="container mt-4 mb-5">
-    <div class="row mb-3">
-        <div class="col">
-            <h1 class="display-5"><i class="fas fa-user-cog me-2"></i>User Settings</h1>
-            <p class="lead">Manage your personal preferences and configurations.</p>
-        </div>
-    </div>
-    <hr class="mb-4">
+{% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+{% endblock %}
 
-    <!-- Configuration Sections -->
-    <div class="row gy-4">
-        <!-- Left Column: Settings Menu -->
-        <div class="col-md-8">
-            <h4>Personal Settings:</h4>
-            <div class="list-group mb-4">
-                <a href="{{ url_for('settings.manage_personal_tags') }}" class="list-group-item list-group-item-action">
-                    <div class="d-flex w-100 justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-user-tag me-2"></i>
-                            <strong>Manage Personal Tags</strong>
-                            <p class="mb-1 text-muted">Create and manage your custom trading tags</p>
-                        </div>
-                        <span class="badge bg-secondary">{{ total_personal_tags }} Custom</span>
-                    </div>
-                </a>
-            </div>
-
-            <h4>Account Settings:</h4>
-            <div class="list-group">
-                <a href="#" class="list-group-item list-group-item-action disabled" aria-disabled="true">
-                    <i class="fas fa-user-circle me-2"></i>Profile Settings (Coming Soon)
-                </a>
-                <a href="#" class="list-group-item list-group-item-action disabled" aria-disabled="true">
-                    <i class="fas fa-key me-2"></i>Change Password (Coming Soon)
-                </a>
-                <a href="#" class="list-group-item list-group-item-action disabled" aria-disabled="true">
-                    <i class="fas fa-bell me-2"></i>Notification Preferences (Coming Soon)
-                </a>
-            </div>
-        </div>
-
-        <!-- Right Column: Statistics Overview -->
-        <div class="col-md-4">
-            <h4>Your Overview:</h4>
-
-            <!-- Tag Statistics Card -->
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-muted">Tag Statistics</h6>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span>Available Tags:</span>
-                        <span class="fw-bold text-primary">{{ total_available_tags }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span>Default Tags:</span>
-                        <span class="fw-bold text-info">{{ total_default_tags }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span>Custom Tags:</span>
-                        <span class="fw-bold text-success">{{ total_personal_tags }}</span>
-                    </div>
-
-                    {% if tags_by_category %}
-                    <h6 class="card-subtitle mb-2 text-muted">Available by Category:</h6>
-                        {% for category, count in tags_by_category %}
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            {% if 'Setup' in category %}
-                                <span class="badge bg-primary-subtle text-primary-emphasis me-2" style="font-size: 0.7rem;">{{ category }}</span>
-                            {% elif 'Market' in category %}
-                                <span class="badge bg-success-subtle text-success-emphasis me-2" style="font-size: 0.7rem;">{{ category }}</span>
-                            {% elif 'Execution' in category %}
-                                <span class="badge bg-warning-subtle text-warning-emphasis me-2" style="font-size: 0.7rem;">{{ category }}</span>
-                            {% elif 'Psychology' in category %}
-                                <span class="badge bg-danger-subtle text-danger-emphasis me-2" style="font-size: 0.7rem;">{{ category }}</span>
-                            {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary-emphasis me-2" style="font-size: 0.7rem;">{{ category }}</span>
-                            {% endif %}
-                            <span class="fw-bold">{{ count }}</span>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <p class="text-muted">No tags available.</p>
-                    {% endif %}
+{% block page_header %}
+<div class="executive-header">
+    <div class="enterprise-container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="header-content">
+                <h1 class="executive-title">
+                    <i class="fas fa-cog executive-icon"></i>
+                    System Configuration Management Center
+                </h1>
+                <div class="executive-subtitle">
+                    Strategic User Preferences & Enterprise Settings Administration
                 </div>
             </div>
 
-            <!-- User Activity Card -->
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2 text-muted">Account Information</h6>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span>Username:</span>
-                        <span class="fw-bold">{{ current_user.username }}</span>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Configuration">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+                            data-bs-toggle="dropdown" aria-expanded="false" title="Export User Configuration">
+                        <i class="fas fa-download me-1"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('settings.export_user_settings') }}">
+                            <i class="fas fa-file-export me-2"></i>Export User Configuration</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('settings.export_personal_tags') }}">
+                            <i class="fas fa-tags me-2"></i>Export Personal Tags</a></li>
+                    </ul>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();" title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
+    <!-- Configuration Management Grid -->
+    <div class="grid grid-cols-3 gap-4">
+        <!-- Personal Configuration Module -->
+        <div class="col-span-2">
+            <div class="enterprise-module mb-4">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-user-cog module-icon"></i>
+                        Personal Configuration Management
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span>Current Theme:</span>
-                        <span class="fw-bold">{{ session.get('theme', 'dark')|title }}</span>
+                    <div class="module-meta">Strategic User Preferences & Custom Settings</div>
+                </div>
+                <div class="module-content">
+                    <div class="operation-list">
+                        <div class="operation-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="operation-info">
+                                    <div class="operation-title">
+                                        <i class="fas fa-user-tag operation-icon"></i>
+                                        Personal Trading Tags Management
+                                    </div>
+                                    <div class="operation-description">
+                                        Configure and maintain custom trading classification tags
+                                    </div>
+                                </div>
+                                <div class="operation-actions">
+                                    <span class="badge bg-secondary me-2">{{ total_personal_tags or 0 }} Tags</span>
+                                    <button type="button" class="btn btn-primary btn-sm"
+                                            onclick="window.location.href='{{ url_for('settings.manage_personal_tags') }}'">
+                                        <i class="fas fa-arrow-right me-1"></i>Configure
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="operation-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="operation-info">
+                                    <div class="operation-title">
+                                        <i class="fas fa-user-circle operation-icon"></i>
+                                        Profile Configuration Management
+                                    </div>
+                                    <div class="operation-description">
+                                        Update enterprise profile settings and personal information
+                                    </div>
+                                </div>
+                                <div class="operation-actions">
+                                    <button type="button" class="btn btn-primary btn-sm"
+                                            onclick="window.location.href='{{ url_for('auth.user_profile') }}'">
+                                        <i class="fas fa-arrow-right me-1"></i>Configure
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="operation-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="operation-info">
+                                    <div class="operation-title">
+                                        <i class="fas fa-key operation-icon"></i>
+                                        Security Credentials Management
+                                    </div>
+                                    <div class="operation-description">
+                                        Update authentication credentials and security settings
+                                    </div>
+                                </div>
+                                <div class="operation-actions">
+                                    <button type="button" class="btn btn-primary btn-sm"
+                                            onclick="window.location.href='{{ url_for('auth.request_password_reset') }}'">
+                                        <i class="fas fa-arrow-right me-1"></i>Configure
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="operation-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="operation-info">
+                                    <div class="operation-title">
+                                        <i class="fas fa-palette operation-icon"></i>
+                                        Display Theme Configuration
+                                    </div>
+                                    <div class="operation-description">
+                                        Configure enterprise theme preferences and display settings
+                                    </div>
+                                </div>
+                                <div class="operation-actions">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                onclick="setTheme('light')" title="Light Theme">
+                                            <i class="fas fa-sun"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                onclick="setTheme('dark')" title="Dark Theme">
+                                            <i class="fas fa-moon"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                onclick="setTheme('auto')" title="Auto Theme">
+                                            <i class="fas fa-adjust"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span>Role:</span>
-                        <span class="badge bg-info">{{ current_user.role.value|title }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Analytics Module -->
+        <div class="col-span-1">
+            <div class="enterprise-module mb-4">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-bar module-icon"></i>
+                        Configuration Analytics Overview
+                    </div>
+                    <div class="module-meta">Strategic Settings & User Metrics Dashboard</div>
+                </div>
+                <div class="module-content">
+                    <!-- Tag Statistics Section -->
+                    <div class="operation-list">
+                        <div class="operation-item">
+                            <div class="operation-info">
+                                <div class="operation-title">
+                                    <i class="fas fa-tags operation-icon"></i>
+                                    Tag Management Statistics
+                                </div>
+                                <div class="operation-description">
+                                    Enterprise trading tag allocation and utilization metrics
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="ps-3 mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">Available Tags:</span>
+                                <span class="badge bg-primary">{{ total_available_tags or 0 }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">Default Tags:</span>
+                                <span class="badge bg-info">{{ total_default_tags or 0 }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-muted">Custom Tags:</span>
+                                <span class="badge bg-success">{{ total_personal_tags or 0 }}</span>
+                            </div>
+
+                            {% if tags_by_category %}
+                            <div class="mb-3">
+                                <div class="text-muted mb-2">Category Distribution:</div>
+                                {% for category, count in tags_by_category %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    {% if 'Setup' in category %}
+                                        <span class="badge bg-primary me-2">{{ category }}</span>
+                                    {% elif 'Market' in category %}
+                                        <span class="badge bg-success me-2">{{ category }}</span>
+                                    {% elif 'Execution' in category %}
+                                        <span class="badge bg-warning me-2">{{ category }}</span>
+                                    {% elif 'Psychology' in category %}
+                                        <span class="badge bg-danger me-2">{{ category }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary me-2">{{ category }}</span>
+                                    {% endif %}
+                                    <span class="text-muted">{{ count }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                                <div class="text-muted">No tag categories configured.</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Account Information Section -->
+                        <div class="operation-item">
+                            <div class="operation-info">
+                                <div class="operation-title">
+                                    <i class="fas fa-user-shield operation-icon"></i>
+                                    Account Configuration Status
+                                </div>
+                                <div class="operation-description">
+                                    Enterprise user account and security configuration overview
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ps-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">Username:</span>
+                                <span class="badge bg-secondary">{{ current_user.username }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">Current Theme:</span>
+                                <span class="badge bg-dark">{{ session.get('theme', 'dark')|title }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">User Role:</span>
+                                <span class="badge bg-info">{{ current_user.role.value|title }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">Account Status:</span>
+                                {% if current_user.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

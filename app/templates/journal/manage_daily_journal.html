@@ -6,94 +6,96 @@
 
 {% block head_extra %}
 {{ super() }}
-<style>
-    .journal-section {
-        border: 1px solid var(--bs-border-color);
-        padding: 20px;
-        margin-bottom: 25px;
-        border-radius: 0.375rem;
-        background-color: var(--bs-body-bg);
-    }
-    .journal-section h3 {
-        color: var(--bs-body-color);
-        margin-top: 0;
-        border-bottom: 1px solid var(--bs-border-color);
-        padding-bottom: 10px;
-        margin-bottom: 20px;
-        font-size: 1.5em;
-    }
-    .journal-section h4 {
-        font-size: 1.2em;
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-        color: var(--bs-body-color);
-    }
-    .grid-layout-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
-    .grid-layout-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-
-    .quill-editor-container {
-        height: 200px;
-        background-color: var(--bs-body-bg);
-        color: var(--bs-body-color);
-        border: 1px solid var(--bs-border-color);
-        border-radius: .25rem;
-        margin-bottom: 0.5rem;
-    }
-
-    [data-bs-theme="dark"] .ql-snow .ql-stroke { stroke: #adb5bd !important; }
-    [data-bs-theme="dark"] .ql-snow .ql-fill,
-    [data-bs-theme="dark"] .ql-snow .ql-picker-label::before { fill: #adb5bd !important; }
-    [data-bs-theme="dark"] .ql-snow .ql-picker-label { color: #adb5bd !important; }
-    [data-bs-theme="dark"] .ql-snow .ql-toolbar button:hover .ql-stroke,
-    [data-bs-theme="dark"] .ql-snow .ql-toolbar button:hover .ql-fill { stroke: #e9ecef !important; fill: #e9ecef !important; }
-    [data-bs-theme="dark"] .ql-snow .ql-toolbar button.ql-active .ql-stroke,
-    [data-bs-theme="dark"] .ql-snow .ql-toolbar button.ql-active .ql-fill { stroke: var(--bs-primary) !important; fill: var(--bs-primary) !important; }
-    [data-bs-theme="dark"] .ql-snow .ql-picker-options {
-        background-color: var(--bs-dark-bg-subtle, #343a40) !important;
-        color: var(--bs-body-color) !important;
-        border-color: var(--bs-border-color) !important;
-    }
-    [data-bs-theme="dark"] .ql-snow .ql-picker-options .ql-picker-item:hover {
-        background-color: var(--bs-primary-bg-subtle, #3b3f44) !important;
-        color: var(--bs-primary) !important;
-    }
-    [data-bs-theme="dark"] .ql-editor.ql-blank::before {
-        color: rgba(255, 255, 255, 0.4) !important;
-    }
-
-    .existing-image-preview { max-width: 100px; max-height: 100px; margin-right: 10px; object-fit: cover; }
-    .image-delete-item { display: flex; align-items: center; margin-bottom: 0.5rem; }
-    .trades-for-day-table th, .trades-for-day-table td { font-size: 0.9rem; padding: 0.5rem; }
-</style>
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
 {% endblock %}
 
 
 {% block page_header %}
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-        <h1 class="mb-0">{{ title }}</h1>
-        <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
-            <a href="{{ url_for('journal.manage_daily_journal', date_str=prev_day_str) }}" class="btn btn-outline-secondary btn-sm" title="Previous Day"><i class="fas fa-chevron-left"></i></a>
-            <form method="GET" action="#" id="datePickerForm" class="d-inline-block mb-0">
-                 <input type="date" name="date_str_picker" id="date_str_picker" value="{{ journal_date.strftime('%Y-%m-%d') }}" class="form-control form-control-sm" style="width: auto; display: inline-block;">
-            </form>
-            <a href="{{ url_for('journal.manage_daily_journal', date_str=next_day_str) }}" class="btn btn-outline-secondary btn-sm" title="Next Day"><i class="fas fa-chevron-right"></i></a>
-            {% if journal_date.strftime('%Y-%m-%d') != today_str %}
-                <a href="{{ url_for('journal.manage_daily_journal') }}" class="btn btn-outline-primary btn-sm ms-2">Go to Today</a>
-            {% endif %}
+<div class="executive-header">
+    <div class="enterprise-container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="header-content">
+                <h1 class="executive-title">
+                    <i class="fas fa-journal-whills executive-icon"></i>
+                    {{ title or "Trading Journal Management Center" }}
+                </h1>
+                <div class="executive-subtitle">
+                    Strategic Daily Performance Analysis & Learning Framework
+                    <span class="journal-date-indicator ms-3">
+                        <i class="fas fa-calendar-day"></i>
+                        {{ journal_date.strftime('%A, %B %d, %Y') }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('journal.manage_daily_journal', date_str=prev_day_str) }}'"
+                        title="Previous Day">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <form method="GET" action="#" id="datePickerForm" class="d-inline-block mb-0">
+                    <input type="date" name="date_str_picker" id="date_str_picker" 
+                           value="{{ journal_date.strftime('%Y-%m-%d') }}" 
+                           class="form-control form-control-sm btn-outline-secondary" 
+                           style="width: auto; display: inline-block; height: 31px;">
+                </form>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('journal.manage_daily_journal', date_str=next_day_str) }}'"
+                        title="Next Day">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                {% if journal_date.strftime('%Y-%m-%d') != today_str %}
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('journal.manage_daily_journal') }}'"
+                        title="Navigate to Today">
+                    <i class="fas fa-calendar-day"></i>
+                </button>
+                {% endif %}
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+                            data-bs-toggle="dropdown" aria-expanded="false" title="Export Journal Data">
+                        <i class="fas fa-download me-1"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('journal.export_daily_journals_csv') }}">
+                            <i class="fas fa-file-csv me-2"></i>Export All Journals (CSV)</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('journal.export_journal_analytics') }}">
+                            <i class="fas fa-chart-bar me-2"></i>Journal Analytics Report</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('journal.export_p12_statistics') }}">
+                            <i class="fas fa-chart-pie me-2"></i>P12 Statistics Export</a></li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block content %}
+
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
 
 <form method="POST" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
     {{ form.journal_date(class="d-none", value=journal_date.strftime('%Y-%m-%d')) }}
 
     {# Part 1: Pre-market Preparation #}
-    <div class="journal-section">
-        <h3><i class="fas fa-clipboard-check me-2"></i>1. Pre-Market Preparation</h3> {# ADDED icon #}
-        <div class="grid-layout-2">
+    <div class="enterprise-module mb-4">
+        <div class="module-header">
+            <div class="module-title">
+                <i class="fas fa-clipboard-check module-icon"></i>
+                1. Pre-Market Preparation
+            </div>
+        </div>
+        <div class="module-content">
+            <div class="grid grid-cols-2 gap-3">
             {{ forms.render_field(form.key_events_today, input_class="form-control", rows="3") }}
             {{ forms.render_field(form.key_tasks_today, input_class="form-control", rows="3") }}
         </div>

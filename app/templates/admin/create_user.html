@@ -5,8 +5,13 @@
     {{ title or "User Resource Provisioning" }} - Administration Center
 {% endblock %}
 
+{% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
     <!-- Executive Header -->
     <div class="executive-header">
         <div class="d-flex justify-content-between align-items-center">
@@ -29,7 +34,7 @@
     </div>
 
     <!-- Main Content Grid -->
-    <div class="container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 200px);">
+    <div class="enterprise-container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 200px); width: 100%; max-width: none;">
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-7">
                 <!-- User Provisioning Module -->
