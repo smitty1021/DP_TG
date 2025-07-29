@@ -28,6 +28,33 @@ def get_tag_color_class(tag_or_name):
         return "tag-neutral"
 
 
+def eastern_time_filter(utc_datetime):
+    """Convert UTC datetime to Eastern time with proper EST/EDT handling"""
+    from datetime import timezone, timedelta
+    import pytz
+    
+    if not utc_datetime:
+        return 'Never'
+    
+    try:
+        # Ensure the datetime is timezone-aware (UTC)
+        if utc_datetime.tzinfo is None:
+            utc_datetime = utc_datetime.replace(tzinfo=timezone.utc)
+        
+        # Convert to Eastern timezone
+        eastern_tz = pytz.timezone('US/Eastern')
+        eastern_time = utc_datetime.astimezone(eastern_tz)
+        
+        # Format as "DD MMM YY HH:MM EST/EDT"
+        # pytz automatically handles EST/EDT based on the date
+        return eastern_time.strftime('%d %b %y %H:%M %Z')
+        
+    except Exception as e:
+        # Fallback to original format if conversion fails
+        return utc_datetime.strftime('%d %b %y %H:%M UTC') if utc_datetime else 'Never'
+
+
 def register_template_filters(app):
     """Register custom template filters"""
     app.jinja_env.filters['tag_color'] = get_tag_color_class
+    app.jinja_env.filters['eastern_time'] = eastern_time_filter

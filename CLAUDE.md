@@ -146,6 +146,7 @@ The application uses a custom enterprise-grade CSS framework with strict convent
 - Custom modal system (no browser alerts)
 - Comprehensive unsaved changes detection
 - Professional button groups and navigation
+- Standardized pagination controls with enterprise styling
 
 **JavaScript Architecture:**
 - `enterprise-base.js` - Core enterprise functionality
@@ -187,6 +188,33 @@ The application uses a custom enterprise-grade CSS framework with strict convent
 - Static files organized by type (css/js/images)
 - Upload folders auto-created for different content types
 - Migration files track all database schema changes
+
+**Standard Pagination Pattern:**
+All templates with pagination MUST use the following standardized pattern (reference: instruments_list.html):
+- Pagination controls bar with enterprise styling: `background: var(--enterprise-gray-50); border-radius: var(--enterprise-radius); border: 1px solid var(--enterprise-border-light)`
+- Left side: Records per page selector, results summary, navigation controls
+- Right side: Action buttons (search/filter toggles)
+- Navigation uses `pagination-arrow-borderless` buttons with Font Awesome icons
+- Results summary format: "X - Y of Z" with `fw-semibold text-secondary` styling
+- Page size selector with Bootstrap form-select-sm styling
+
+**Standard Table Design Pattern:**
+All data tables MUST follow this standardized pattern (reference: users.html):
+- Scrollable container: `max-height: 600px; overflow-y: auto` for vertical scrolling
+- Sticky headers: `sticky-top` class on thead for header persistence during scroll
+- Compact rows: `table-sm` class for reduced row height and better data density
+- Consistent striping: Table striping uses subtle contrast `rgba(108, 117, 125, 0.15)` for readability without distraction
+- Circular avatars: 32x32px using `rounded-circle` class for profile images
+- Sortable headers: Include sortable class and appropriate ARIA labels
+- Action buttons: Use `btn-group btn-group-sm` for compact action controls
+
+**Standard Spacing Pattern:**
+All elements MUST follow consistent spacing standards:
+- Bottom margin on all cards and modules: `mb-3` class (equivalent to 1rem spacing)
+- Module content padding: `mb-3` class inside module-content for consistent internal spacing
+- Form element alignment: Use `align-items-end` for form controls to align inputs and buttons on same horizontal plane
+- Gap spacing: Use `gap-3` for consistent spacing between flex items (equivalent to 1rem)
+- Search and filter forms: All inputs, selectors, and action buttons must align horizontally using flexbox with `align-items-end`
 
 ## Default Credentials
 

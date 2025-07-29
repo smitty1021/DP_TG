@@ -17,7 +17,7 @@ from app.utils import (generate_token, verify_token, send_email, record_activity
 import asyncio
 import secrets
 import aiohttp
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from datetime import datetime, timedelta
 from app.models import User, DiscordRolePermission, UserSession
 from app.services.discord_service import discord_service

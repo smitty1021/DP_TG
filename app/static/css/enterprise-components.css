@@ -594,6 +594,34 @@ Version: 2.0
     color: var(--enterprise-white);
 }
 
+/* 
+===============================================================================
+BORDERLESS BUTTON TOGGLE (Easy Reversal)
+===============================================================================
+To remove borders from action buttons, uncomment the section below.
+To restore borders, simply comment it back out.
+*/
+
+
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-outline-success,
+.btn-outline-danger,
+.btn-outline-warning,
+.btn-outline-info {
+    border: none !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-secondary:hover,
+.btn-outline-success:hover,
+.btn-outline-danger:hover,
+.btn-outline-warning:hover,
+.btn-outline-info:hover {
+    border: none !important;
+}
+
+
 /*
 ===============================================================================
 8. OPERATION & ACTION LISTS
@@ -1038,7 +1066,7 @@ Version: 2.0
 .form-select {
     display: block;
     width: 100%;
-    padding: 0.5rem 2.25rem 0.5rem 0.75rem;
+    padding: 0.25rem 0.25rem 0.25rem 0.25rem;
     font-size: var(--enterprise-font-size-base);
     font-weight: 400;
     line-height: 1.5;
@@ -2672,7 +2700,7 @@ html[data-bs-theme="dark"] .table-danger {
 /* Dark theme support for Bootstrap table classes */
 html[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > td,
 html[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > th {
-    background-color: var(--enterprise-gray-200);
+    background-color: rgba(70, 72, 78, 0.15);
     color: var(--enterprise-text-primary);
 }
 
@@ -3111,3 +3139,42 @@ Component Library Summary:
 - Performance optimizations
 - Enterprise-grade styling throughout
 */
+
+/*
+===============================================================================
+FORM ELEMENT HEIGHT STANDARDIZATION
+===============================================================================
+Ensures all form controls have identical heights for perfect alignment
+*/
+
+/* Force identical heights for all form elements */
+.form-control,
+.form-select,
+.btn {
+    height: 38px !important;
+    line-height: 1.5 !important;
+    padding-top: 0.375rem !important;
+    padding-bottom: 0.375rem !important;
+}
+
+/* Ensure input groups maintain the same height */
+.input-group .form-control,
+.input-group .form-select,
+.input-group .btn {
+    height: 38px !important;
+}
+
+/* Override any conflicting Bootstrap sizing */
+.form-control:not(.form-control-sm):not(.form-control-lg),
+.form-select:not(.form-select-sm):not(.form-select-lg) {
+    height: 38px !important;
+    min-height: 38px !important;
+}
+
+/* Search and filter form specific alignment */
+#search-filter-form .form-control,
+#search-filter-form .form-select,
+#search-filter-form .btn {
+    height: 38px !important;
+    box-sizing: border-box !important;
+}

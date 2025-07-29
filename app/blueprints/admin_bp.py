@@ -639,7 +639,8 @@ def admin_users_list():
                 db.or_(
                     User.username.ilike(search_term),
                     User.email.ilike(search_term),
-                    User.name.ilike(search_term)
+                    User.name.ilike(search_term),
+                    User.discord_username.ilike(search_term)
                 )
             )
 
@@ -687,8 +688,29 @@ def admin_users_list():
         # Get overall counts (for KPI cards)
         total_users_count = User.query.count()
         active_users_count = User.query.filter_by(is_active=True).count()
-        admin_users_count = User.query.filter_by(role=UserRole.ADMIN).count()
-        verified_users_count = User.query.filter_by(is_email_verified=True).count()
+        admin_users_count = User.query.filter_by(role=UserRole.ADMIN).count()  # Still needed for delete logic
+        
+        # New enhanced KPI metrics
+        discord_connected_count = User.query.filter_by(discord_linked=True).count()
+        
+        # Recent activity (last 7 days)
+        from datetime import datetime, timedelta
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        recent_activity_count = User.query.filter(User.last_login >= seven_days_ago).count()
+        
+        # New users this month
+        first_of_month = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        new_users_this_month = User.query.filter(User.created_at >= first_of_month).count()
+        
+        # Inactive accounts (90+ days)
+        ninety_days_ago = datetime.utcnow() - timedelta(days=90)
+        inactive_accounts_count = User.query.filter(
+            db.or_(
+                User.last_login.is_(None),
+                User.last_login < ninety_days_ago
+            ),
+            User.is_active == True  # Only count active accounts that are inactive
+        ).count()
 
         # Log the admin action
         search_info = f" with search='{search}'" if search else ""
@@ -700,7 +722,7 @@ def admin_users_list():
     except Exception as e:
         current_app.logger.error(f"Error fetching user list for admin: {e}", exc_info=True)
         flash("Could not load user list.", "danger")
-        total_users_count = active_users_count = admin_users_count = verified_users_count = "Error"
+        total_users_count = active_users_count = admin_users_count = discord_connected_count = recent_activity_count = new_users_this_month = inactive_accounts_count = "Error"
 
     return render_template('admin/users.html',
                            title='User Administration Console',
@@ -709,7 +731,10 @@ def admin_users_list():
                            total_users_count=total_users_count,
                            active_users_count=active_users_count,
                            admin_users_count=admin_users_count,
-                           verified_users_count=verified_users_count,
+                           discord_connected_count=discord_connected_count,
+                           recent_activity_count=recent_activity_count,
+                           new_users_this_month=new_users_this_month,
+                           inactive_accounts_count=inactive_accounts_count,
                            UserRole=UserRole)
 
 
