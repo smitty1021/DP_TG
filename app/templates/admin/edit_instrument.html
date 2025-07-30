@@ -4,13 +4,14 @@
 {% block title %}Instrument Configuration Management - {{ instrument.symbol }} - Administration Center{% endblock %}
 
 {% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 <script>
-
-
-// Unsaved changes detection
+// Unsaved changes detection for edit instrument form
 let hasUnsavedChanges = false;
 let originalFormData = {};
 let isSubmitting = false;
@@ -24,37 +25,22 @@ document.addEventListener('DOMContentLoaded', function() {
         if (input.type === 'checkbox') {
             originalFormData[input.name] = input.checked;
         } else {
-            originalFormData[input.name] = input.value;
+            originalFormData[input.name] = input.value || '';
         }
     });
 
-    // Monitor form changes
+    // Monitor form changes and show/hide indicator
     inputs.forEach(input => {
-        input.addEventListener('change', function() {
-            checkForChanges();
-        });
-
-        input.addEventListener('input', function() {
-            checkForChanges();
-        });
+        input.addEventListener('change', checkForChanges);
+        input.addEventListener('input', checkForChanges);
     });
 
     // Check if form has changes
     function checkForChanges() {
         hasUnsavedChanges = false;
-
         inputs.forEach(input => {
-            let currentValue;
-            let originalValue;
-
-            if (input.type === 'checkbox') {
-                currentValue = input.checked;
-                originalValue = originalFormData[input.name];
-            } else {
-                currentValue = input.value;
-                originalValue = originalFormData[input.name] || '';
-            }
-
+            let currentValue = (input.type === 'checkbox') ? input.checked : input.value;
+            let originalValue = (input.type === 'checkbox') ? originalFormData[input.name] : originalFormData[input.name] || '';
             if (currentValue !== originalValue) {
                 hasUnsavedChanges = true;
             }
@@ -62,56 +48,93 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Show/hide unsaved changes indicator
         const indicator = document.getElementById('unsaved-indicator');
-        if (hasUnsavedChanges) {
-            indicator.style.display = 'block';
-        } else {
-            indicator.style.display = 'none';
-        }
+        indicator.style.display = hasUnsavedChanges ? 'block' : 'none';
     }
 
-    // Warn before leaving page with unsaved changes
-    window.addEventListener('beforeunload', function(e) {
+    // Get list of changed fields for better user feedback
+    function getChangedFields() {
+        const changes = [];
+        const fieldMappings = {
+            'symbol': 'Trading Symbol',
+            'name': 'Instrument Name',
+            'exchange': 'Exchange',
+            'asset_class': 'Asset Class',
+            'product_group': 'Product Group',
+            'point_value': 'Point Value',
+            'tick_size': 'Tick Size',
+            'currency': 'Currency',
+            'is_active': 'Active Status'
+        };
+
+        inputs.forEach(input => {
+            let currentValue = (input.type === 'checkbox') ? input.checked : input.value;
+            let originalValue = (input.type === 'checkbox') ? originalFormData[input.name] : originalFormData[input.name] || '';
+
+            if (currentValue !== originalValue && fieldMappings[input.name]) {
+                changes.push(fieldMappings[input.name]);
+            }
+        });
+        return changes;
+    }
+
+    // Enhanced beforeunload handler
+    function beforeUnloadHandler(e) {
         if (hasUnsavedChanges && !isSubmitting) {
-            const message = 'Instrument configuration changes are pending. Proceed without saving?';
+            const message = 'Configuration changes are pending. Proceed without saving?';
             e.preventDefault();
             e.returnValue = message;
             return message;
         }
-    });
+    }
+    
+    window.addEventListener('beforeunload', beforeUnloadHandler);
 
     // Clear unsaved changes flag when form is submitted
-    form.addEventListener('submit', function() {
+    form.addEventListener('submit', function(e) {
         isSubmitting = true;
         hasUnsavedChanges = false;
 
-        // Show saving notification
-        showInfo('Saving instrument configuration changes...', 'Configuration Update');
+        // Note: Success notification will be shown on instruments_list.html page after redirect
     });
 
-    // Handle navigation links with custom modal
-    document.querySelectorAll('a[href]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            if (hasUnsavedChanges && !link.href.includes('#')) {
+    // Enhanced navigation handler with custom modal
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[href]');
+        if (link && hasUnsavedChanges && !isSubmitting) {
+            const href = link.getAttribute('href');
+            if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
                 e.preventDefault();
+                e.stopPropagation();
+
+                const changedFields = getChangedFields();
+                const changesText = changedFields.length > 0
+                    ? `<br><br><strong>Modified parameters:</strong><br>• ${changedFields.join('<br>• ')}`
+                    : '';
 
                 showCustomConfirmation({
-                    title: 'Unsaved Changes Detected',
-                    message: 'You have unsaved configuration changes that will be lost. Are you sure you want to leave this page?',
+                    title: 'Unsaved Configuration Changes',
+                    message: `Instrument configuration changes are pending and will be lost if you navigate away.${changesText}<br><br>Proceed without saving?`,
                     confirmText: 'Leave Page',
-                    cancelText: 'Stay Here',
+                    cancelText: 'Continue Editing',
                     confirmClass: 'btn-warning',
                     icon: 'exclamation-triangle',
                     onConfirm: function() {
-                        hasUnsavedChanges = false; // Prevent double confirmation
-                        window.location.href = link.href;
-                    },
-                    onCancel: function() {
-                        // Stay on page - no action needed
+                        console.log('🔗 Navigation confirmed, target:', href);
+                        // Reset form to original state to prevent browser popup
+                        resetFormToOriginalState();
+                        // Small delay to ensure reset is processed before navigation
+                        setTimeout(function() {
+                            console.log('🚀 Navigating to:', href);
+                            window.location.href = href;
+                        }, 100);
                     }
                 });
+                return false;
             }
-        });
+        }
     });
+
+    // Handle button clicks that navigate
     document.querySelectorAll('button[onclick]').forEach(button => {
         const originalOnclick = button.onclick;
         button.onclick = function(e) {
@@ -119,17 +142,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 e.stopPropagation();
 
+                const changedFields = getChangedFields();
+                const changesText = changedFields.length > 0
+                    ? `<br><br><strong>Modified parameters:</strong><br>• ${changedFields.join('<br>• ')}`
+                    : '';
+
                 showCustomConfirmation({
                     title: 'Unsaved Configuration Changes',
-                    message: 'Instrument configuration changes are pending and will be lost if you navigate away.<br><br>Proceed without saving?',
+                    message: `Instrument configuration changes are pending and will be lost if you navigate away.${changesText}<br><br>Proceed without saving?`,
                     confirmText: 'Leave Page',
                     cancelText: 'Continue Editing',
                     confirmClass: 'btn-warning',
                     icon: 'exclamation-triangle',
                     onConfirm: function() {
-                        isSubmitting = true;
-                        hasUnsavedChanges = false;
-                        originalOnclick.call(button, e);
+                        console.log('🔘 Button action confirmed');
+                        // Reset form to original state to prevent browser popup
+                        resetFormToOriginalState();
+                        // Small delay to ensure reset is processed before action
+                        setTimeout(function() {
+                            console.log('🚀 Executing button action');
+                            originalOnclick.call(button, e);
+                        }, 100);
                     }
                 });
                 return false;
@@ -139,6 +172,50 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     });
 
+    // Reset form to original state to prevent browser beforeunload popup
+    function resetFormToOriginalState() {
+        console.log('🔄 Resetting form to original state...');
+        
+        // FIRST: Remove local beforeunload handler
+        window.removeEventListener('beforeunload', beforeUnloadHandler);
+        
+        // SECOND: Disable the global enterprise unsaved changes handler
+        if (window.enterpriseUnsavedChanges) {
+            console.log('🎯 Disabling global enterprise unsaved changes handler');
+            window.enterpriseUnsavedChanges.hasUnsavedChanges = false;
+            window.enterpriseUnsavedChanges.isSubmitting = true;
+            window.enterpriseUnsavedChanges.markAsSubmitting();
+        }
+        
+        // THIRD: Nuclear option for any other handlers
+        window.onbeforeunload = null;
+        
+        console.log('🗑️ Disabled all beforeunload handlers');
+        
+        // Reset all form inputs to original values
+        inputs.forEach(input => {
+            if (input.type === 'checkbox') {
+                input.checked = originalFormData[input.name] || false;
+            } else {
+                input.value = originalFormData[input.name] || '';
+            }
+        });
+        
+        // Immediately update the unsaved changes state
+        hasUnsavedChanges = false;
+        isSubmitting = true; // Set submitting flag to prevent further prompts
+        
+        // Hide the unsaved changes indicator
+        const indicator = document.getElementById('unsaved-indicator');
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+        
+        // Force a recheck to ensure state is consistent
+        checkForChanges();
+        
+        console.log('✅ Form reset complete - hasUnsavedChanges:', hasUnsavedChanges, 'isSubmitting:', isSubmitting);
+    }
 
     console.log('Enterprise Instrument Configuration Management initialized');
 });
@@ -146,17 +223,17 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Executive Header -->
-    <div class="executive-header">
+<!-- Executive Header -->
+<div class="executive-header">
+    <div class="enterprise-container-fluid">
         <div class="d-flex justify-content-between align-items-center">
             <div class="header-content">
                 <h1 class="executive-title">
                     <i class="fas fa-edit executive-icon"></i>
-                    Instrument Configuration Management
+                    Instrument Configuration Management: {{ instrument.symbol }}
                 </h1>
                 <div class="executive-subtitle">
-                    Trading Asset Specification Framework • {{ instrument.symbol }} - {{ instrument.name }}
+                    Trading Asset Specification Framework • {{ instrument.name }}
                 </div>
             </div>
             <div class="btn-group">
@@ -175,194 +252,247 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class="fas fa-tachometer-alt"></i>
                 </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
-                        onclick="history.back();"
-                        title="Go Back">
+                        onclick="window.location.href='{{ url_for('admin.instruments_list') }}'"
+                        title="Back to Instrument Administration">
                     <i class="fas fa-arrow-left"></i>
                 </button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Main Content Grid -->
-    <div class="container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 200px);">
-        <!-- Executive KPI Section -->
-        <div class="kpi-section">
-            <div class="row g-0">
-                <div class="col-md-3">
-                    <div class="kpi-card">
-                        <div class="kpi-content">
-                            <div class="kpi-header">
-                                <span class="kpi-label">Created</span>
-                                <i class="fas fa-calendar-plus kpi-icon"></i>
-                            </div>
-                            <div class="kpi-value">{{ instrument.created_at.strftime('%Y-%m-%d') if instrument.created_at else 'N/A' }}</div>
-                            <div class="kpi-trend">
-                                <span class="trend-indicator">Initial Setup</span>
-                            </div>
+<!-- Main Content Wrapper -->
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
+    <!-- KPI Cards Section -->
+    <div class="kpi-section mt-3">
+        <div class="grid grid-cols-4 gap-4">
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Created</span>
+                            <i class="fas fa-calendar-plus kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ instrument.created_at.strftime('%Y-%m-%d') if instrument.created_at else 'N/A' }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">
+                                <i class="fas fa-plus"></i> Initial Setup
+                            </span>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="kpi-card">
-                        <div class="kpi-content">
-                            <div class="kpi-header">
-                                <span class="kpi-label">Last Updated</span>
-                                <i class="fas fa-clock kpi-icon"></i>
-                            </div>
-                            <div class="kpi-value">{{ instrument.updated_at.strftime('%Y-%m-%d') if instrument.updated_at else 'N/A' }}</div>
-                            <div class="kpi-trend">
-                                <span class="trend-indicator">Configuration Revision</span>
-                            </div>
+            </div>
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Last Updated</span>
+                            <i class="fas fa-clock kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ instrument.updated_at.strftime('%Y-%m-%d') if instrument.updated_at else 'N/A' }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">
+                                <i class="fas fa-edit"></i> Configuration Revision
+                            </span>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="kpi-card">
-                        <div class="kpi-content">
-                            <div class="kpi-header">
-                                <span class="kpi-label">Associated Trades</span>
-                                <i class="fas fa-chart-bar kpi-icon"></i>
-                            </div>
-                            <div class="kpi-value">{{ instrument.trades.count() }}</div>
-                            <div class="kpi-trend">
-                                <span class="trend-indicator">Execution Records</span>
-                            </div>
+            </div>
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Associated Trades</span>
+                            <i class="fas fa-chart-bar kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ instrument.trades.count() }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">
+                                <i class="fas fa-chart-line"></i> Execution Records
+                            </span>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="kpi-card">
-                        <div class="kpi-content">
-                            <div class="kpi-header">
-                                <span class="kpi-label">Operational Status</span>
-                                <i class="fas fa-toggle-on kpi-icon"></i>
-                            </div>
-                            <div class="kpi-value">
-                                <span class="status-badge {{ 'operational' if instrument.is_active else 'maintenance' }}">
-                                    {{ 'Active' if instrument.is_active else 'Inactive' }}
-                                </span>
-                            </div>
-                            <div class="kpi-trend">
-                                <span class="trend-indicator">System Status</span>
-                            </div>
+            </div>
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Operational Status</span>
+                            <i class="fas fa-toggle-on kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">
+                            <span class="status-badge {{ 'operational' if instrument.is_active else 'maintenance' }}">
+                                {{ 'Active' if instrument.is_active else 'Inactive' }}
+                            </span>
+                        </div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">
+                                <i class="fas fa-{{ 'check' if instrument.is_active else 'pause' }}"></i> System Status
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Unsaved Changes Indicator -->
-        <div id="unsaved-indicator" class="alert alert-warning alert-dismissible fade show" role="alert" style="display: none;">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            <strong>Unsaved Changes:</strong> You have made changes that have not been saved yet.
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+    <!-- Unsaved Changes Indicator -->
+    <div id="unsaved-indicator" class="alert alert-warning alert-dismissible fade show mt-3 mb-3" role="alert" style="display: none;">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Unsaved Changes:</strong> You have made changes that have not been saved yet.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 
-        <!-- Centered Configuration Card -->
-        <div class="row justify-content-center">
-            <div class="col-lg-8 col-xl-7">
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-cog module-icon"></i>
-                            Complete Instrument Configuration
-                        </div>
-                        <div class="module-meta">
-                            Comprehensive Asset Setup & Management
+    <!-- Enterprise Grid Layout for Instrument Configuration -->
+    <div class="grid grid-cols-2 gap-4 align-items-start mt-3">
+        <!-- Instrument Configuration Module -->
+        <div class="enterprise-module">
+            <div class="module-header">
+                <div class="module-title">
+                    <i class="fas fa-cog module-icon"></i>
+                    Instrument Configuration Management
+                </div>
+                <div class="module-meta">
+                    Asset Specification & Parameter Modification
+                </div>
+            </div>
+            <div class="module-content mb-3">
+                <!-- Flash Messages (Hidden - converted to notifications) -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert" style="display: none;">
+                                {{ message|safe }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Configuration Form -->
+                <form method="POST" action="{{ url_for('admin.edit_instrument', instrument_id=instrument.id) }}" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <!-- Basic Information Section -->
+                    <div class="mb-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ forms.render_field(form.symbol, label_visible=true, input_class="form-control") }}
+                                <div class="form-text"><span class="text-danger">*</span> Trading symbol identifier (e.g., NQ, MES, YM).</div>
+                            </div>
+                            <div class="col-md-6">
+                                {{ forms.render_field(form.name, label_visible=true, input_class="form-control") }}
+                                <div class="form-text"><span class="text-danger">*</span> Full descriptive name of the trading instrument.</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="module-content">
-                        <form method="POST" action="{{ url_for('admin.edit_instrument', instrument_id=instrument.id) }}" novalidate>
-                            {{ form.hidden_tag() }}
 
-                            <!-- Basic Information Section -->
-                            <div class="row g-3 mb-4">
-                                <div class="col-12">
-                                    <h6 class="text-muted mb-3 border-bottom pb-2">
-                                        <i class="fas fa-info-circle me-2"></i>Basic Information
-                                    </h6>
-                                </div>
-                                <div class="col-md-6">
-                                    {{ forms.render_field(form.symbol, input_class="form-control") }}
-                                    <div class="form-text"><span class="text-danger">*</span> Trading symbol identifier (e.g., NQ, MES, YM).</div>
-                                </div>
-                                <div class="col-md-6">
-                                    {{ forms.render_field(form.name, input_class="form-control") }}
-                                    <div class="form-text"><span class="text-danger">*</span> Full descriptive name of the trading instrument.</div>
-                                </div>
+                    <!-- Market Classification Section -->
+                    <div class="mb-4">
+                        <div class="row">
+                            <div class="col-md-4">
+                                {{ forms.render_field(form.exchange, label_visible=true, input_class="form-select") }}
                             </div>
+                            <div class="col-md-4">
+                                {{ forms.render_field(form.asset_class, label_visible=true, input_class="form-select") }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ forms.render_field(form.product_group, label_visible=true, input_class="form-select") }}
+                            </div>
+                        </div>
+                    </div>
 
-                            <!-- Classification Section -->
-                            <div class="row g-3 mb-4">
-                                <div class="col-12">
-                                    <h6 class="text-muted mb-3 border-bottom pb-2">
-                                        <i class="fas fa-tags me-2"></i>Market Classification
-                                    </h6>
-                                </div>
-                                <div class="col-md-4">
-                                    {{ forms.render_field(form.exchange, input_class="form-select") }}
-                                </div>
-                                <div class="col-md-4">
-                                    {{ forms.render_field(form.asset_class, input_class="form-select") }}
-                                </div>
-                                <div class="col-md-4">
-                                    {{ forms.render_field(form.product_group, input_class="form-select") }}
-                                </div>
+                    <!-- Trading Specifications Section -->
+                    <div class="mb-4">
+                        <div class="row">
+                            <div class="col-md-4">
+                                {{ forms.render_field(form.point_value, label_visible=true, input_class="form-control") }}
+                                <div class="form-text"><span class="text-danger">*</span> Dollar value per point movement.</div>
                             </div>
+                            <div class="col-md-4">
+                                {{ forms.render_field(form.tick_size, label_visible=true, input_class="form-control") }}
+                                <div class="form-text"><span class="text-danger">*</span> Minimum price movement increment.</div>
+                            </div>
+                            <div class="col-md-4">
+                                {{ forms.render_field(form.currency, label_visible=true, input_class="form-select") }}
+                                <div class="form-text"><span class="text-danger">*</span> Base currency for the instrument.</div>
+                            </div>
+                        </div>
+                    </div>
 
-                            <!-- Trading Specifications Section -->
-                            <div class="row g-3 mb-4">
-                                <div class="col-12">
-                                    <h6 class="text-muted mb-3 border-bottom pb-2">
-                                        <i class="fas fa-calculator me-2"></i>Trading Specifications
-                                    </h6>
-                                </div>
-                                <div class="col-md-4">
-                                    {{ forms.render_field(form.point_value, input_class="form-control") }}
-                                    <div class="form-text"><span class="text-danger">*</span> Dollar value per point movement.</div>
-                                </div>
-                                <div class="col-md-4">
-                                    {{ forms.render_field(form.tick_size, input_class="form-control") }}
-                                    <div class="form-text"><span class="text-danger">*</span> Minimum price movement increment.</div>
-                                </div>
-                                <div class="col-md-4">
-                                    {{ forms.render_field(form.currency, input_class="form-select") }}
-                                    <div class="form-text"><span class="text-danger">*</span> Base currency for the instrument.</div>
-                                </div>
-                            </div>
+                    <!-- Operational Status Section -->
+                    <div class="mb-4">
+                        <h5 class="module-title mb-3">
+                            <i class="fas fa-toggle-on me-2"></i>Operational Status
+                        </h5>
+                        <div class="form-check">
+                            {{ form.is_active(class="form-check-input") }}
+                            {{ form.is_active.label(class="form-check-label") }}
+                        </div>
+                        <div class="form-text mt-2">
+                            Only active instruments will appear in trading forms and execution interfaces.
+                        </div>
+                    </div>
 
-                            <!-- Status Section -->
-                            <div class="row g-3 mb-4">
-                                <div class="col-12">
-                                    <h6 class="text-muted mb-3 border-bottom pb-2">
-                                        <i class="fas fa-toggle-on me-2"></i>Operational Status
-                                    </h6>
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-check fs-5">
-                                        {{ form.is_active(class="form-check-input") }}
-                                        {{ form.is_active.label(class="form-check-label") }}
-                                    </div>
-                                    <div class="form-text mt-2">
-                                        Only active instruments will appear in trading forms and execution interfaces.
-                                    </div>
-                                </div>
-                            </div>
+                    <!-- Action Controls -->
+                    <div class="mt-4">
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                            <a href="{{ url_for('admin.instruments_list') }}" class="btn btn-outline-secondary btn-lg">
+                                Cancel Configuration
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-                            <!-- Action Buttons -->
-                            <div class="row">
-                                <div class="col-12 text-end pt-3" style="border-top: 1px solid var(--enterprise-border);">
-                                    <div class="btn-group">
-                                        <a href="{{ url_for('admin.instruments_list') }}" class="btn btn-outline-secondary">
-                                            <i class="fas fa-times me-2"></i>Cancel Configuration
-                                        </a>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-save me-2"></i>Update Instrument Configuration
-                                        </button>
-                                    </div>
-                                </div>
+        <!-- Configuration Guidelines Module -->
+        <div class="enterprise-module">
+            <div class="module-header">
+                <div class="module-title">
+                    <i class="fas fa-info-circle module-icon"></i>
+                    Modification Guidelines
+                </div>
+                <div class="module-meta">
+                    Strategic Overview
+                </div>
+            </div>
+            <div class="module-content mb-3">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="d-flex align-items-start">
+                            <div class="bg-warning-soft me-3 p-2 rounded">
+                                <i class="fas fa-exclamation-triangle"></i>
                             </div>
-                        </form>
+                            <div>
+                                <h6 class="mb-1">Trade Impact Warning</h6>
+                                <p class="text-muted small mb-0">This instrument has {{ instrument.trades.count() }} associated trades. Configuration changes may affect historical calculations</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-start">
+                            <div class="bg-primary-soft me-3 p-2 rounded">
+                                <i class="fas fa-calculator"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Point Value Precision</h6>
+                                <p class="text-muted small mb-0">Changes to point values will affect P&L calculations for future trades only</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-start">
+                            <div class="bg-primary-soft me-3 p-2 rounded">
+                                <i class="fas fa-toggle-on"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Status Management</h6>
+                                <p class="text-muted small mb-0">Deactivating this instrument will hide it from new trade entries while preserving historical data</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

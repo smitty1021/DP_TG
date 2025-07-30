@@ -8,6 +8,338 @@
 {% block head_extra %}
 <!-- Fortune 500 Enterprise CSS Framework -->
 <link rel="stylesheet" href="/static/css/enterprise-all.css">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script>
+// Unsaved changes detection for create user form
+let hasUnsavedChanges = false;
+let originalFormData = {};
+let isSubmitting = false;
+
+// The 'bypassBeforeUnload' flag is no longer needed with this approach.
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, select, textarea');
+
+    // Store original form data (empty for create form)
+    inputs.forEach(input => {
+        if (input.type === 'checkbox') {
+            originalFormData[input.name] = input.checked;
+        } else {
+            originalFormData[input.name] = input.value || '';
+        }
+    });
+
+    // Monitor form changes
+    inputs.forEach(input => {
+        input.addEventListener('change', checkForChanges);
+        input.addEventListener('input', checkForChanges);
+    });
+
+    // Check if form has changes
+    function checkForChanges() {
+        hasUnsavedChanges = false;
+        inputs.forEach(input => {
+            let currentValue = (input.type === 'checkbox') ? input.checked : input.value;
+            let originalValue = (input.type === 'checkbox') ? originalFormData[input.name] : originalFormData[input.name] || '';
+            if (currentValue !== originalValue) {
+                hasUnsavedChanges = true;
+            }
+        });
+
+        // Show/hide unsaved changes indicator
+        const indicator = document.getElementById('unsaved-indicator');
+        indicator.style.display = hasUnsavedChanges ? 'block' : 'none';
+    }
+
+    // Get list of changed fields for better user feedback
+    function getChangedFields() {
+        const changes = [];
+        const fieldMappings = {
+            'username': 'Username',
+            'email': 'Email Address',
+            'name': 'Full Name',
+            'password': 'Password',
+            'confirm_password': 'Password Confirmation',
+            'role': 'User Role',
+            'is_active': 'Account Status',
+            'is_email_verified': 'Email Verification'
+        };
+
+        inputs.forEach(input => {
+            let currentValue = (input.type === 'checkbox') ? input.checked : input.value;
+            let originalValue = (input.type === 'checkbox') ? originalFormData[input.name] : originalFormData[input.name] || '';
+
+            if (currentValue !== originalValue && fieldMappings[input.name]) {
+                changes.push(fieldMappings[input.name]);
+            }
+        });
+        return changes;
+    }
+
+    // Reset form to original state to prevent browser beforeunload popup
+    function resetFormToOriginalState() {
+        console.log('🔄 Resetting form to original state...');
+        
+        // FIRST: Remove local beforeunload handler
+        window.removeEventListener('beforeunload', beforeUnloadHandler);
+        
+        // SECOND: Disable the global enterprise unsaved changes handler
+        if (window.enterpriseUnsavedChanges) {
+            console.log('🎯 Disabling global enterprise unsaved changes handler');
+            window.enterpriseUnsavedChanges.hasUnsavedChanges = false;
+            window.enterpriseUnsavedChanges.isSubmitting = true;
+            window.enterpriseUnsavedChanges.markAsSubmitting();
+        }
+        
+        // THIRD: Nuclear option for any other handlers
+        window.onbeforeunload = null;
+        
+        console.log('🗑️ Disabled all beforeunload handlers');
+        
+        // Reset all form inputs to original values
+        inputs.forEach(input => {
+            if (input.type === 'checkbox') {
+                input.checked = originalFormData[input.name] || false;
+            } else {
+                input.value = originalFormData[input.name] || '';
+            }
+        });
+        
+        // Immediately update the unsaved changes state
+        hasUnsavedChanges = false;
+        isSubmitting = true; // Set submitting flag to prevent further prompts
+        
+        // Hide the unsaved changes indicator
+        const indicator = document.getElementById('unsaved-indicator');
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+        
+        // Force a recheck to ensure state is consistent
+        checkForChanges();
+        
+        console.log('✅ Form reset complete - hasUnsavedChanges:', hasUnsavedChanges, 'isSubmitting:', isSubmitting);
+    }
+
+    // The beforeunload handler that triggers the native browser pop-up
+    function beforeUnloadHandler(e) {
+        if (hasUnsavedChanges && !isSubmitting) {
+            const message = 'User provisioning data will be lost. Proceed without saving?';
+            e.preventDefault();
+            e.returnValue = message;
+            return message;
+        }
+    }
+
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+
+    // Clear unsaved changes flag when form is submitted
+    form.addEventListener('submit', function(e) {
+        isSubmitting = true;
+        hasUnsavedChanges = false;
+        // Note: Success notification will be shown on users.html page after redirect
+    });
+
+    // Enhanced navigation handler with custom modal for anchor tags
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[href]');
+        if (link && hasUnsavedChanges && !isSubmitting) {
+            const href = link.getAttribute('href');
+            if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const changedFields = getChangedFields();
+                const changesText = changedFields.length > 0
+                    ? `<br><br><strong>Entered information:</strong><br>• ${changedFields.join('<br>• ')}`
+                    : '';
+
+                showCustomConfirmation({
+                    title: 'Unsaved User Data',
+                    message: `User provisioning data has been entered and will be lost if you navigate away.${changesText}<br><br>Proceed without saving?`,
+                    confirmText: 'Leave Page',
+                    cancelText: 'Continue Editing',
+                    confirmClass: 'btn-warning',
+                    icon: 'exclamation-triangle',
+                    onConfirm: function() {
+                        // Reset form to original state to prevent browser popup
+                        resetFormToOriginalState();
+                        // Small delay to ensure reset is processed before navigation
+                        setTimeout(function() {
+                            window.location.href = href;
+                        }, 100);
+                    }
+                });
+                return false;
+            }
+        }
+    });
+
+    // Enhanced navigation handler with custom modal for buttons with onclick
+    document.querySelectorAll('button[onclick]').forEach(button => {
+        const originalOnclick = button.onclick;
+        button.onclick = function(e) {
+            if (hasUnsavedChanges && !isSubmitting) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const changedFields = getChangedFields();
+                const changesText = changedFields.length > 0
+                    ? `<br><br><strong>Entered information:</strong><br>• ${changedFields.join('<br>• ')}`
+                    : '';
+
+                showCustomConfirmation({
+                    title: 'Unsaved User Data',
+                    message: `User provisioning data has been entered and will be lost if you navigate away.${changesText}<br><br>Proceed without saving?`,
+                    confirmText: 'Leave Page',
+                    cancelText: 'Continue Editing',
+                    confirmClass: 'btn-warning',
+                    icon: 'exclamation-triangle',
+                    onConfirm: function() {
+                        // Reset form to original state to prevent browser popup
+                        resetFormToOriginalState();
+                        // Small delay to ensure reset is processed before action
+                        setTimeout(function() {
+                            originalOnclick.call(button, e);
+                        }, 100);
+                    }
+                });
+                return false;
+            } else {
+                return originalOnclick.call(button, e);
+            }
+        };
+    });
+
+    // Initialize password strength meter
+    initializePasswordStrengthMeter();
+
+    // Initialize password match validator
+    initializePasswordMatchValidator();
+
+    console.log('Enterprise User Provisioning Form - Unsaved changes detection initialized');
+});
+
+// Password Strength Meter Implementation
+function initializePasswordStrengthMeter() {
+    const passwordField = document.getElementById('password');
+    const strengthContainer = document.getElementById('password-strength-container');
+    const strengthBar = document.getElementById('password-strength-bar');
+    const strengthText = document.getElementById('password-strength-text');
+
+    if (!passwordField || !strengthContainer) return;
+
+    passwordField.addEventListener('input', function() {
+        const password = this.value;
+
+        if (password.length === 0) {
+            strengthContainer.style.display = 'none';
+            return;
+        }
+
+        strengthContainer.style.display = 'block';
+
+        // Calculate password strength
+        let score = 0;
+        const requirements = {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[^A-Za-z0-9]/.test(password)
+        };
+
+        // Update requirement badges
+        Object.keys(requirements).forEach(req => {
+            const badge = document.getElementById(`req-${req}`);
+            if (badge) {
+                if (requirements[req]) {
+                    badge.className = 'badge bg-success';
+                    score++;
+                } else {
+                    badge.className = 'badge bg-secondary';
+                }
+            }
+        });
+
+        // Update strength bar and text
+        let strengthClass = 'bg-danger';
+        let strengthLabel = 'Very Weak';
+        let percentage = 0;
+
+        if (score === 0) {
+            strengthClass = 'bg-danger';
+            strengthLabel = 'Very Weak';
+            percentage = 10;
+        } else if (score === 1) {
+            strengthClass = 'bg-danger';
+            strengthLabel = 'Weak';
+            percentage = 20;
+        } else if (score === 2) {
+            strengthClass = 'bg-warning';
+            strengthLabel = 'Fair';
+            percentage = 40;
+        } else if (score === 3) {
+            strengthClass = 'bg-info';
+            strengthLabel = 'Good';
+            percentage = 60;
+        } else if (score === 4) {
+            strengthClass = 'bg-primary';
+            strengthLabel = 'Strong';
+            percentage = 80;
+        } else if (score === 5) {
+            strengthClass = 'bg-success';
+            strengthLabel = 'Very Strong';
+            percentage = 100;
+        }
+
+        strengthBar.className = `progress-bar ${strengthClass}`;
+        strengthBar.style.width = `${percentage}%`;
+        strengthText.textContent = strengthLabel;
+    });
+}
+
+// Password Match Validator Implementation
+function initializePasswordMatchValidator() {
+    const passwordField = document.getElementById('password');
+    const confirmPasswordField = document.getElementById('confirm_password');
+    const matchIndicator = document.getElementById('password-match-indicator');
+    const matchText = document.getElementById('password-match-text');
+    const submitBtn = document.querySelector('input[type="submit"], button[type="submit"]');
+
+    if (!passwordField || !confirmPasswordField || !matchIndicator) return;
+
+    function checkPasswordMatch() {
+        const password = passwordField.value;
+        const confirmPassword = confirmPasswordField.value;
+
+        if (confirmPassword.length === 0) {
+            matchIndicator.style.display = 'none';
+            return;
+        }
+
+        matchIndicator.style.display = 'block';
+
+        if (password === confirmPassword && password.length > 0) {
+            matchText.innerHTML = '<i class="fas fa-check me-1 text-success"></i><span class="text-success">Passwords match</span>';
+            confirmPasswordField.style.borderColor = '#28a745';
+            if (submitBtn) submitBtn.disabled = false;
+        } else {
+            matchText.innerHTML = '<i class="fas fa-times me-1 text-danger"></i><span class="text-danger">Passwords do not match</span>';
+            confirmPasswordField.style.borderColor = '#dc3545';
+            if (submitBtn) submitBtn.disabled = true;
+        }
+    }
+
+    // Add event listeners
+    confirmPasswordField.addEventListener('input', checkPasswordMatch);
+    passwordField.addEventListener('input', checkPasswordMatch);
+}
+</script>
 {% endblock %}
 
 {% block content %}
@@ -25,179 +357,223 @@
                 </div>
             </div>
             <div class="btn-group">
-                <a href="{{ url_for('admin.admin_users_list') }}"
-                   class="btn btn-outline-secondary btn-sm" title="Return to User Administration Console">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Data">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.show_admin_dashboard') }}'"
+                        title="Back to Administration Center">
+                    <i class="fas fa-tachometer-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();"
+                        title="Go Back">
                     <i class="fas fa-arrow-left"></i>
-                </a>
+                </button>
             </div>
         </div>
     </div>
 
     <!-- Main Content Grid -->
-    <div class="enterprise-container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 200px); width: 100%; max-width: none;">
-        <div class="row justify-content-center">
-            <div class="col-md-8 col-lg-7">
-                <!-- User Provisioning Module -->
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-user-cog module-icon"></i>
-                            New User Resource Provisioning
-                        </div>
+    <div class="enterprise-container-fluid mt-3">
+        <!-- Unsaved Changes Indicator -->
+        <div id="unsaved-indicator" class="alert alert-warning alert-dismissible fade show mb-3" role="alert" style="display: none;">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Unsaved Changes:</strong> You have entered user data that has not been saved yet.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Enterprise Grid Layout for User Provisioning -->
+        <div class="grid grid-cols-2 gap-4 align-items-start">
+            <!-- User Provisioning Module -->
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-user-cog module-icon"></i>
+                        New User Provisioning
                     </div>
-                    <div class="module-content">
-                        <!-- Flash Messages -->
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                        {{ message|safe }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                        {% endwith %}
-
-                        <!-- Provisioning Form -->
-                        <form method="POST" action="{{ url_for('admin.admin_create_user') }}" novalidate>
-                            {{ form.hidden_tag() }}
-
-                            <!-- Identity Provisioning Section -->
-                            <div class="mb-4">
-                                <h5 class="module-title">
-                                    <i class="fas fa-id-card module-icon"></i>Identity Provisioning
-                                </h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        {{ render_field(form.username,
-                                                        label_visible=true,
-                                                        input_class="form-control",
-                                                        placeholder="Enter unique identifier (3-25 characters)") }}
-                                    </div>
-                                    <div class="col-md-6">
-                                        {{ render_field(form.email,
-                                                        label_visible=true,
-                                                        input_class="form-control",
-                                                        placeholder="E-Mail address",
-                                                        type="email") }}
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        {{ render_field(form.name,
-                                                        label_visible=true,
-                                                        input_class="form-control",
-                                                        placeholder="Full Name (optional)") }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Security Framework Section -->
-                            <div class="mb-4">
-                                <h5 class="module-title">
-                                    <i class="fas fa-shield-alt module-icon"></i>Security Framework Configuration
-                                </h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        {{ render_field(form.password,
-                                                        label_visible=true,
-                                                        input_class="form-control",
-                                                        placeholder="Initial authentication credentials (min 8 chars)",
-                                                        type="password") }}
-                                    </div>
-                                    <div class="col-md-6">
-                                        {{ render_field(form.confirm_password,
-                                                        label_visible=true,
-                                                        input_class="form-control",
-                                                        placeholder="Confirm authentication credentials",
-                                                        type="password") }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Access Control Section -->
-                            <div class="mb-4">
-                                <h5 class="module-title">
-                                    <i class="fas fa-user-shield module-icon"></i>Access Control Framework
-                                </h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        {{ render_field(form.role,
-                                                        label_visible=true,
-                                                        input_class="form-select") }}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            {{ render_checkbox(form.is_active,
-                                                               label_visible=true,
-                                                               input_class="form-check-input") }}
-                                        </div>
-                                        <div class="mb-3">
-                                            {{ render_checkbox(form.is_email_verified,
-                                                               label_visible=true,
-                                                               input_class="form-check-input") }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Provisioning Controls -->
-                            <div class="mt-4">
-                                <div class="d-grid gap-2">
-                                    {{ form.submit(class="btn btn-primary btn-lg") }}
-                                    <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary btn-lg">
-                                        Cancel Provisioning
-                                    </a>
-                                </div>
-                            </div>
-                        </form>
+                    <div class="module-meta">
+                        User Onboarding & Account Creation Framework
                     </div>
                 </div>
+                <div class="module-content mb-3">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message|safe }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
 
-                <!-- Provisioning Guidelines Module -->
-                <div class="enterprise-module mt-4">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-info-circle module-icon"></i>
-                            Provisioning Guidelines
+                    <!-- Provisioning Form -->
+                    <form method="POST" action="{{ url_for('admin.admin_create_user') }}" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <!-- Identity Provisioning Section -->
+                        <div class="mb-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ render_field(form.username,
+                                                    label_visible=true,
+                                                    input_class="form-control",
+                                                    placeholder="Enter unique identifier (3-25 characters)") }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ render_field(form.email,
+                                                    label_visible=true,
+                                                    input_class="form-control",
+                                                    placeholder="E-Mail address",
+                                                    type="email") }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    {{ render_field(form.name,
+                                                    label_visible=true,
+                                                    input_class="form-control",
+                                                    placeholder="Full Name (optional)") }}
+                                </div>
+                            </div>
                         </div>
-                        <div class="module-meta">
-                            Strategic Overview
+
+                        <!-- Security Framework Section -->
+                        <div class="mb-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ render_field(form.password,
+                                                    label_visible=true,
+                                                    input_class="form-control",
+                                                    placeholder="Initial authentication credentials (min 8 chars)",
+                                                    type="password",
+                                                    id="password") }}
+
+                                    <!-- Password Strength Indicator -->
+                                    <div id="password-strength-container" class="mt-2" style="display: none;">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <small class="text-muted me-2">Strength:</small>
+                                            <div class="progress flex-grow-1" style="height: 6px;">
+                                                <div id="password-strength-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                            <small id="password-strength-text" class="text-muted ms-2">Weak</small>
+                                        </div>
+                                        <div id="password-requirements" class="small text-muted">
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <span id="req-length" class="badge bg-secondary">8+ chars</span>
+                                                <span id="req-uppercase" class="badge bg-secondary">A-Z</span>
+                                                <span id="req-lowercase" class="badge bg-secondary">a-z</span>
+                                                <span id="req-number" class="badge bg-secondary">0-9</span>
+                                                <span id="req-special" class="badge bg-secondary">Special</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    {{ render_field(form.confirm_password,
+                                                    label_visible=true,
+                                                    input_class="form-control",
+                                                    placeholder="Confirm authentication credentials",
+                                                    type="password",
+                                                    id="confirm_password") }}
+
+                                    <!-- Password Match Indicator -->
+                                    <div id="password-match-indicator" class="mt-2" style="display: none;">
+                                        <small id="password-match-text" class="text-muted">
+                                            <i id="password-match-icon" class="fas fa-times me-1"></i>
+                                            Passwords do not match
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                        <!-- Access Control Section -->
+                        <div class="mb-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ render_field(form.role,
+                                                    label_visible=true,
+                                                    input_class="form-select") }}
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        {{ render_checkbox(form.is_active,
+                                                           label_visible=true,
+                                                           input_class="form-check-input") }}
+                                    </div>
+                                    <div class="mb-3">
+                                        {{ render_checkbox(form.is_email_verified,
+                                                           label_visible=true,
+                                                           input_class="form-check-input") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Provisioning Controls -->
+                        <div class="mt-4">
+                            <div class="d-grid gap-2">
+                                {{ form.submit(class="btn btn-primary btn-lg") }}
+                                <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary btn-lg">
+                                    Cancel Provisioning
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Provisioning Guidelines Module -->
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-info-circle module-icon"></i>
+                        Provisioning Guidelines
                     </div>
-                    <div class="module-content">
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <div class="d-flex align-items-start">
-                                    <div class="bg-primary-soft me-3 p-2 rounded">
-                                        <i class="fas fa-user-check"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Identity Standards</h6>
-                                        <p class="text-muted small mb-0">Username must be unique, 3-25 characters, alphanumeric with underscores permitted</p>
-                                    </div>
+                    <div class="module-meta">
+                        Strategic Overview
+                    </div>
+                </div>
+                <div class="module-content mb-3">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-primary-soft me-3 p-2 rounded">
+                                    <i class="fas fa-user-check"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Identity Standards</h6>
+                                    <p class="text-muted small mb-0">Username must be unique, 3-25 characters, alphanumeric with underscores permitted</p>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="d-flex align-items-start">
-                                    <div class="bg-primary-soft me-3 p-2 rounded">
-                                        <i class="fas fa-lock"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Security Requirements</h6>
-                                        <p class="text-muted small mb-0">Password minimum 8 characters with complexity requirements for enterprise security</p>
-                                    </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-primary-soft me-3 p-2 rounded">
+                                    <i class="fas fa-lock"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Security Requirements</h6>
+                                    <p class="text-muted small mb-0">Password minimum 8 characters with complexity requirements for enterprise security</p>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="d-flex align-items-start">
-                                    <div class="bg-primary-soft me-3 p-2 rounded">
-                                        <i class="fas fa-shield-alt"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Access Classification</h6>
-                                        <p class="text-muted small mb-0">Role assignment determines system access levels and operational capabilities</p>
-                                    </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-primary-soft me-3 p-2 rounded">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Access Classification</h6>
+                                    <p class="text-muted small mb-0">Role assignment determines system access levels and operational capabilities</p>
                                 </div>
                             </div>
                         </div>

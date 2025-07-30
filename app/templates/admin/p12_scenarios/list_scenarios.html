@@ -1,7 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ title }} - Administration Center{% endblock %}
 
 {% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/p12-images.js') }}"></script>
@@ -9,9 +11,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Executive Header -->
-    <div class="executive-header">
+<!-- Executive Header -->
+<div class="executive-header">
+    <div class="enterprise-container-fluid">
         <div class="d-flex justify-content-between align-items-center">
             <div class="header-content">
                 <h1 class="executive-title">
@@ -47,18 +49,89 @@
                     <i class="fas fa-arrow-left"></i>
                 </button>
             </div>
+        </div>
+    </div>
+</div>
 
-
+<!-- Main Content Wrapper -->
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
+    <!-- KPI Cards Section -->
+    <div class="kpi-section mt-3">
+        <div class="grid grid-cols-4 gap-4">
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Total Scenarios</span>
+                            <i class="fas fa-chart-line kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ scenarios|length }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">
+                                <i class="fas fa-cogs"></i> Configured
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Active Scenarios</span>
+                            <i class="fas fa-check-circle kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ scenarios|selectattr('is_active')|list|length }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator operational">
+                                <i class="fas fa-play"></i> Operational
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">With Images</span>
+                            <i class="fas fa-image kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ scenarios|selectattr('images')|list|length }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">
+                                <i class="fas fa-photo-video"></i> Documented
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Directional Bias</span>
+                            <i class="fas fa-compass kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ scenarios|selectattr('directional_bias')|list|length }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">
+                                <i class="fas fa-arrows-alt"></i> Defined
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Hidden CSRF Token for JavaScript -->
     <input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
 
-    <!-- Main Content Row -->
-    <div class="row mt-4">
-        <!-- Left Column - Strategic Frameworks Table -->
-        <div class="col-lg-8">
+    <!-- Enterprise Grid Layout for P12 Scenarios -->
+    <div class="grid grid-cols-3 gap-4 align-items-start mt-3">
+        <!-- Strategic Frameworks Table -->
+        <div class="col-span-2">
             <div class="enterprise-module">
                 <div class="module-header">
                     <div class="module-title">
@@ -67,27 +140,27 @@
                     </div>
                     <div class="module-meta">Active Frameworks</div>
                 </div>
-                <div class="module-content p-0">
+                <div class="module-content mb-3">
                     {% if scenarios %}
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead>
+                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                        <table class="table table-striped table-hover table-sm mb-0">
+                            <thead class="table-dark sticky-top">
                                 <tr>
                                     <th width="80" class="text-center">Scenario</th>
                                     <th>Strategic Framework</th>
                                     <th width="120" class="text-center">Directional Bias</th>
                                     <th width="100" class="text-center">Image</th>
                                     <th width="80" class="text-center">Operational Status</th>
-                                    <th width="150" class="text-center"></th>
+                                    <th width="150" class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for scenario in scenarios %}
-                                <tr class="{% if not scenario.is_active %}opacity-50{% endif %}">
+                                <tr class="fade-in {% if not scenario.is_active %}opacity-50{% endif %}">
                                     <td class="text-center">
-                                        <span class="badge bg-primary text-black fs-6">{{ scenario.scenario_number }}</span>
+                                        <span class="badge bg-primary text-white fw-semibold">{{ scenario.scenario_number }}</span>
                                     </td>
-                                    <td>
+                                    <td class="fw-semibold">
                                         {{ scenario.scenario_name }}
                                     </td>
                                     <td class="text-center">
@@ -121,41 +194,40 @@
                                                 <img src="{{ url_for('images.serve_image', image_id=primary_image.id) }}"
                                                      alt="Strategic Framework {{ scenario.scenario_number }} Analysis"
                                                      class="img-fluid rounded"
-                                                     style="max-width: 60px; max-height: 60px; object-fit: cover; cursor: pointer;"
+                                                     style="max-width: 40px; max-height: 40px; object-fit: cover; cursor: pointer;"
                                                      onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Strategic Framework {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')">
                                             </div>
                                             {% else %}
                                             <div class="image-preview">
                                                 <div class="text-muted" style="position: relative;">
-                                                    <i class="fas fa-image" style="font-size: 24px; opacity: 0.3;"></i>
+                                                    <i class="fas fa-image" style="font-size: 20px; opacity: 0.3;"></i>
                                                 </div>
                                             </div>
                                             {% endif %}
                                         </div>
                                     </td>
                                     <td class="text-center">
-                                        {% if scenario.is_active %}
-                                            <span class="status-indicator active">Operational</span>
-                                        {% else %}
-                                            <span class="status-indicator inactive">Standby</span>
-                                        {% endif %}
+                                        <span class="status-badge {{ 'operational' if scenario.is_active else 'inactive' }}">
+                                            <i class="fas {{ 'fa-check-circle' if scenario.is_active else 'fa-times-circle' }} me-1"></i>
+                                            {{ 'OPERATIONAL' if scenario.is_active else 'STANDBY' }}
+                                        </span>
                                     </td>
-                                    <td class="text-end" onclick="event.stopPropagation();" role="gridcell">
-                                        <div class="btn-group" role="group">
-                                            <a href="{{ url_for('p12_scenarios.view_scenario', scenario_id=scenario.id) }}"
-                                                class="btn btn-outline-secondary btn-sm" title="View Framework"
-                                                aria-label="View Strategic Framework">
-                                                <i class="fas fa-eye" aria-hidden="true"></i>
-                                            </a>
-                                            <a href="{{ url_for('p12_scenarios.edit_scenario', scenario_id=scenario.id) }}"
-                                                class="btn btn-outline-secondary btn-sm" title="Edit Framework"
-                                                aria-label="Edit Strategic Framework">
-                                                <i class="fas fa-edit" aria-hidden="true"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-outline-secondary btn-sm" title="Decommission Framework"
-                                                    aria-label="Decommission Strategic Framework"
-                                                    onclick="confirmDelete({{ scenario.id }}, '{{ scenario.scenario_name }}')">
-                                                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    onclick="window.location.href='{{ url_for('p12_scenarios.view_scenario', scenario_id=scenario.id) }}'"
+                                                    title="View Framework">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    onclick="window.location.href='{{ url_for('p12_scenarios.edit_scenario', scenario_id=scenario.id) }}'"
+                                                    title="Edit Framework">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    onclick="confirmDelete({{ scenario.id }}, '{{ scenario.scenario_name }}')"
+                                                    title="Decommission Framework">
+                                                <i class="fas fa-trash-alt"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -165,11 +237,10 @@
                         </table>
                     </div>
                     {% else %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-chart-line fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
-                        <h5 class="text-muted">No P12 Strategic Frameworks Found</h5>
-                        <p class="text-muted">Create your first strategic framework to get started.</p>
-                        <a href="{{ url_for('p12_scenarios.create_scenario') }}" class="btn btn-primary">
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-line fa-2x text-muted mb-3" style="opacity: 0.3;"></i>
+                        <p class="text-muted fst-italic">No P12 Strategic Frameworks found matching your criteria.</p>
+                        <a href="{{ url_for('p12_scenarios.create_scenario') }}" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus me-2"></i>Create First Framework
                         </a>
                     </div>
@@ -178,16 +249,19 @@
             </div>
         </div>
 
-        <!-- Right Column - P12 Strategic Overview -->
-        <div class="col-lg-4">
+        <!-- P12 Strategic Overview -->
+        <div class="col-span-1">
             <div class="enterprise-module">
                 <div class="module-header">
                     <div class="module-title">
                         <i class="fas fa-lightbulb module-icon"></i>
                         P12 Strategic Overview
                     </div>
+                    <div class="module-meta">
+                        Master Framework
+                    </div>
                 </div>
-                <div class="module-content">
+                <div class="module-content mb-3">
                     <div class="text-center">
                         {% if current_user.is_admin() %}
                         <div class="mb-2">
@@ -217,7 +291,7 @@
                         </p>
                         {% else %}
                         <div class="py-4">
-                            <i class="fas fa-image fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
+                            <i class="fas fa-image fa-2x text-muted mb-3" style="opacity: 0.3;"></i>
                             <p class="text-muted mb-0">No overview analysis uploaded</p>
                             {% if current_user.is_admin() %}
                             <button class="btn btn-primary btn-sm mt-2" onclick="showMainImageUploadDialog()">
@@ -517,6 +591,20 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn('No CSRF token found - uploads may fail');
     }
 
+    // Enterprise fade-in animation for table rows
+    const tableRows = document.querySelectorAll('tbody tr');
+    tableRows.forEach((row, index) => {
+        row.style.animationDelay = `${index * 0.05}s`;
+    });
+
+    // Initialize module animations
+    const modules = document.querySelectorAll('.enterprise-module');
+    modules.forEach((module, index) => {
+        module.style.animationDelay = `${index * 0.1}s`;
+        module.classList.add('fade-in');
+    });
+
+    console.log('Enterprise P12 Strategic Framework Administration initialized');
     console.log('====================================');
 });
 </script>

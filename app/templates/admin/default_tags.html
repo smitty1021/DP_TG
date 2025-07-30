@@ -11,9 +11,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Executive Header -->
-    <div class="executive-header">
+<!-- Executive Header -->
+<div class="executive-header">
+    <div class="enterprise-container-fluid">
         <div class="d-flex justify-content-between align-items-center">
             <div class="header-content">
                 <h1 class="executive-title">
@@ -31,7 +31,7 @@
                     <i class="fas fa-home"></i>
                 </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
-                        onclick="showOperationalConfigurationForm()"
+                        onclick="showNewConfigurationModal()"
                         title="Add Configuration Entry">
                     <i class="fas fa-plus"></i>
                 </button>
@@ -65,9 +65,82 @@
             </form>
         </div>
     </div>
+</div>
+
+<!-- Main Content Wrapper -->
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
+    <!-- KPI Cards Section -->
+    <div class="kpi-section mt-3">
+        <div class="grid grid-cols-4 gap-4">
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Total Tags</span>
+                            <i class="fas fa-tags kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ tags_by_category.values() | map('length') | sum }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">
+                                <i class="fas fa-list"></i> Classifications
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Active Tags</span>
+                            <i class="fas fa-check-circle kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ tags_by_category.values() | map('selectattr', 'is_active') | map('list') | map('length') | sum }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator operational">
+                                <i class="fas fa-play"></i> Operational
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Categories</span>
+                            <i class="fas fa-layer-group kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ tags_by_category.keys() | length }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">
+                                <i class="fas fa-folder"></i> Frameworks
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Performance Tags</span>
+                            <i class="fas fa-chart-line kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ tags_by_category.values() | map('selectattr', 'color_category', 'defined') | map('selectattr', 'color_category', 'ne', 'neutral') | map('list') | map('length') | sum }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">
+                                <i class="fas fa-tachometer-alt"></i> Evaluated
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Bulk Operations Control Panel -->
-    <div id="bulk-operations-toolbar" class="enterprise-module" style="display: none;">
+    <div id="bulk-operations-toolbar" class="enterprise-module mt-3" style="display: none;">
         <div class="module-header">
             <div class="module-title">
                 <i class="fas fa-cogs module-icon"></i>
@@ -81,7 +154,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div class="operation-status">
                     <span class="fw-bold">Available Operations:</span>
-                    <span class="text-muted ms-2">Execute operations on selected configurations</span>
+                    <span class="text-muted ms-2">Execute operations on selected tags</span>
                 </div>
                 <div class="btn-group">
                     <button type="button" class="btn btn-outline-warning btn-sm" onclick="bulkStatusModification()">
@@ -98,63 +171,10 @@
         </div>
     </div>
 
-    <!-- Configuration Entry Form -->
-    <div id="operational-configuration-form" class="enterprise-module" style="display: none;">
-        <div class="module-header">
-            <div class="module-title">
-                <i class="fas fa-plus module-icon"></i>
-                New Configuration Entry
-            </div>
-        </div>
-        <div class="module-content">
-            <form method="POST" action="{{ url_for('admin.create_default_tag') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label for="new-configuration-name" class="form-label">Classification Name</label>
-                        <input type="text" class="form-control" id="new-configuration-name" name="name"
-                               placeholder="Enter classification identifier...">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="new-configuration-category" class="form-label">Operational Category</label>
-                        <select class="form-select" id="new-configuration-category" name="category">
-                            {% for category in TagCategory %}
-                            <option value="{{ category.name }}">{{ category.value }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="new-configuration-performance" class="form-label">Performance Classification</label>
-                        <select class="form-select" id="new-configuration-performance" name="color_category">
-                            <option value="neutral">Neutral Assessment</option>
-                            <option value="good">Positive Performance</option>
-                            <option value="bad">Negative Performance</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="new-configuration-status" class="form-label">Operational Status</label>
-                        <select class="form-select" id="new-configuration-status" name="is_active">
-                            <option value="true">Active</option>
-                            <option value="false">Inactive</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-outline-secondary" title="Save Configuration">
-                            <i class="fas fa-save"></i>
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" title="Cancel" onclick="hideOperationalConfigurationForm()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- Configuration Categories -->
-    <div class="mt-4"></div>
     {% for category_display, tags in tags_by_category.items() %}
-    <div class="enterprise-module">
+    <div class="enterprise-module mt-3">
         <div class="module-header">
             <div class="module-title">
                 <i class="fas fa-folder module-icon"></i>
@@ -170,7 +190,7 @@
             'Execution & Management': 'EXECUTION_MANAGEMENT',
             'Psychological & Emotional Factors': 'PSYCHOLOGICAL_EMOTIONAL'
         }[category_display] %}
-        <div class="module-content" id="category-{{ category_id }}">
+        <div class="module-content mb-3" id="category-{{ category_id }}">
             {% if tags %}
                 {% for tag in tags %}
                 <div class="tag-item {% if not tag.is_active %}inactive{% endif %} {{ tag|tag_color }}" data-tag-id="{{ tag.id }}">
@@ -205,59 +225,6 @@
 </div>
 
 
-
-<!-- Configuration Modification Modal -->
-<div class="modal fade" id="editConfigurationModal" tabindex="-1" aria-labelledby="editConfigurationModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editConfigurationModalLabel">
-                    <i class="fas fa-edit me-2"></i>Modify System Configuration
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="edit-configuration-form">
-                    <input type="hidden" id="edit-configuration-id">
-                    <div class="mb-3">
-                        <label for="edit-configuration-name" class="form-label">Classification Name</label>
-                        <input type="text" class="form-control" id="edit-configuration-name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit-configuration-category" class="form-label">Operational Category</label>
-                        <select class="form-select" id="edit-configuration-category" required>
-                            {% for category in TagCategory %}
-                            <option value="{{ category.name }}">{{ category.value }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit-configuration-status" class="form-label">Operational Status</label>
-                        <select class="form-select" id="edit-configuration-status">
-                            <option value="true">Active</option>
-                            <option value="false">Inactive</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit-configuration-performance" class="form-label">Performance Classification</label>
-                        <select class="form-select" id="edit-configuration-performance">
-                            <option value="neutral">Neutral Assessment - Informational</option>
-                            <option value="good">Positive Performance - Enhanced Results</option>
-                            <option value="bad">Negative Performance - Risk Factors</option>
-                        </select>
-                        <small class="form-text text-muted">Classification based on operational performance impact</small>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="updateConfiguration()">
-                    <i class="fas fa-save me-1"></i>Update Configuration
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts_extra %}
@@ -266,20 +233,55 @@ document.addEventListener('DOMContentLoaded', function() {
     let bulkOperationsMode = false;
 
     // --- UI Management Functions ---
-    const operationalForm = document.getElementById('operational-configuration-form');
     const bulkOperationsToolbar = document.getElementById('bulk-operations-toolbar');
     const tagCheckboxes = document.querySelectorAll('.tag-checkbox');
     const selectedCountSpan = document.getElementById('selected-count');
 
-    window.showOperationalConfigurationForm = () => {
-        operationalForm.style.display = 'block';
-        operationalForm.classList.add('fade-in');
-        document.getElementById('new-configuration-name').focus();
-    };
-
-    window.hideOperationalConfigurationForm = () => {
-        operationalForm.style.display = 'none';
-        operationalForm.querySelector('form')?.reset();
+    // NEW Configuration Modal (replaces the card form)
+    window.showNewConfigurationModal = () => {
+        const formHtml = `
+            <form id="new-configuration-form-custom">
+                <div class="mb-3">
+                    <label for="new-name-custom" class="form-label">Classification Name</label>
+                    <input type="text" class="form-control" id="new-name-custom" placeholder="Enter classification identifier..." required>
+                </div>
+                <div class="mb-3">
+                    <label for="new-category-custom" class="form-label">Operational Category</label>
+                    <select class="form-select" id="new-category-custom" required>
+                        <option value="SETUP_STRATEGY">Setup & Strategy</option>
+                        <option value="MARKET_CONDITIONS">Market Conditions</option>
+                        <option value="EXECUTION_MANAGEMENT">Execution & Management</option>
+                        <option value="PSYCHOLOGICAL_EMOTIONAL">Psychological & Emotional Factors</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="new-performance-custom" class="form-label">Performance Classification</label>
+                    <select class="form-select" id="new-performance-custom">
+                        <option value="neutral" selected>Neutral Assessment</option>
+                        <option value="good">Positive Performance</option>
+                        <option value="bad">Negative Performance</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="new-status-custom" class="form-label">Operational Status</label>
+                    <select class="form-select" id="new-status-custom">
+                        <option value="true" selected>Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+            </form>
+        `;
+        
+        showCustomConfirmation({
+            title: 'New Configuration Entry',
+            message: formHtml,
+            confirmText: 'Create Configuration',
+            confirmClass: 'btn-primary',
+            icon: 'plus',
+            onConfirm: () => {
+                createNewConfiguration();
+            }
+        });
     };
 
     window.toggleBulkOperations = () => {
@@ -312,55 +314,154 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Configuration Management Functions ---
 
-    // EDIT Configuration (Opens Modal)
+    // EDIT Configuration (Uses Custom Modal System)
     window.editConfiguration = (configId, configName, categoryName, isActive, performanceCategory) => {
-        document.getElementById('edit-configuration-id').value = configId;
-        document.getElementById('edit-configuration-name').value = configName;
-        document.getElementById('edit-configuration-category').value = categoryName;
-        document.getElementById('edit-configuration-status').value = String(isActive);
-        document.getElementById('edit-configuration-performance').value = performanceCategory || 'neutral';
-        const modal = new bootstrap.Modal(document.getElementById('editConfigurationModal'));
-        modal.show();
+        const formHtml = `
+            <form id="edit-configuration-form-custom">
+                <div class="mb-3">
+                    <label for="edit-name-custom" class="form-label">Classification Name</label>
+                    <input type="text" class="form-control" id="edit-name-custom" value="${configName}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="edit-category-custom" class="form-label">Operational Category</label>
+                    <select class="form-select" id="edit-category-custom" required>
+                        <option value="SETUP_STRATEGY" ${categoryName === 'SETUP_STRATEGY' ? 'selected' : ''}>Setup & Strategy</option>
+                        <option value="MARKET_CONDITIONS" ${categoryName === 'MARKET_CONDITIONS' ? 'selected' : ''}>Market Conditions</option>
+                        <option value="EXECUTION_MANAGEMENT" ${categoryName === 'EXECUTION_MANAGEMENT' ? 'selected' : ''}>Execution & Management</option>
+                        <option value="PSYCHOLOGICAL_EMOTIONAL" ${categoryName === 'PSYCHOLOGICAL_EMOTIONAL' ? 'selected' : ''}>Psychological & Emotional Factors</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="edit-status-custom" class="form-label">Operational Status</label>
+                    <select class="form-select" id="edit-status-custom">
+                        <option value="true" ${isActive === 'true' ? 'selected' : ''}>Active</option>
+                        <option value="false" ${isActive === 'false' ? 'selected' : ''}>Inactive</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="edit-performance-custom" class="form-label">Performance Classification</label>
+                    <select class="form-select" id="edit-performance-custom">
+                        <option value="neutral" ${(performanceCategory || 'neutral') === 'neutral' ? 'selected' : ''}>Neutral Assessment - Informational</option>
+                        <option value="good" ${performanceCategory === 'good' ? 'selected' : ''}>Positive Performance - Enhanced Results</option>
+                        <option value="bad" ${performanceCategory === 'bad' ? 'selected' : ''}>Negative Performance - Risk Factors</option>
+                    </select>
+                    <small class="form-text text-muted">Classification based on operational performance impact</small>
+                </div>
+            </form>
+        `;
+        
+        showCustomConfirmation({
+            title: 'Modify System Configuration',
+            message: formHtml,
+            confirmText: 'Update Configuration',
+            confirmClass: 'btn-primary',
+            icon: 'edit',
+            onConfirm: () => {
+                updateConfigurationCustom(configId);
+            }
+        });
     };
 
-    // UPDATE Configuration (From Modal)
-    window.updateConfiguration = () => {
-        const configId = document.getElementById('edit-configuration-id').value;
-        const nameInput = document.getElementById('edit-configuration-name');
-        const name = nameInput.value.trim();
+    // UPDATE Configuration (Form Submission for Post-Refresh Notification)
+    window.updateConfigurationCustom = (configId) => {
+        const name = document.getElementById('edit-name-custom').value.trim();
         if (!name) {
             showError('Configuration name cannot be empty.', 'Configuration Error');
             return;
         }
 
-        const payload = {
-            name: name,
-            category: document.getElementById('edit-configuration-category').value,
-            is_active: document.getElementById('edit-configuration-status').value === 'true',
-            color_category: document.getElementById('edit-configuration-performance').value
-        };
+        // Create form and submit (ensuring notification appears after redirect)
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `{{ url_for("admin.edit_default_tag", tag_id=0) }}`.replace('0', configId);
 
-        const url = `{{ url_for("admin.edit_default_tag", tag_id=0) }}`.replace('0', configId);
-        fetch(url, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
-            body: JSON.stringify(payload)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('editConfigurationModal'));
-                modalInstance.hide();
-                showSuccess(`Configuration "${data.tag.name}" updated successfully.`, 'Configuration Updated');
-                setTimeout(() => location.reload(), 500);
-            } else {
-                showError(data.message || 'Configuration update failed.', 'Update Error');
-            }
-        })
-        .catch(err => {
-            console.error('Update Configuration Error:', err);
-            showError('An unexpected system error occurred.', 'System Error');
-        });
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = '{{ csrf_token() }}';
+        form.appendChild(csrfInput);
+
+        // Add form data
+        const nameInput = document.createElement('input');
+        nameInput.type = 'hidden';
+        nameInput.name = 'name';
+        nameInput.value = name;
+        form.appendChild(nameInput);
+
+        const categoryInput = document.createElement('input');
+        categoryInput.type = 'hidden';
+        categoryInput.name = 'category';
+        categoryInput.value = document.getElementById('edit-category-custom').value;
+        form.appendChild(categoryInput);
+
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'is_active';
+        statusInput.value = document.getElementById('edit-status-custom').value;
+        form.appendChild(statusInput);
+
+        const colorInput = document.createElement('input');
+        colorInput.type = 'hidden';
+        colorInput.name = 'color_category';
+        colorInput.value = document.getElementById('edit-performance-custom').value;
+        form.appendChild(colorInput);
+
+        // Submit form (will redirect and show notification after refresh)
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    };
+
+    // CREATE New Configuration (Form Submission for Post-Refresh Notification)
+    window.createNewConfiguration = () => {
+        const name = document.getElementById('new-name-custom').value.trim();
+        if (!name) {
+            showError('Configuration name cannot be empty.', 'Configuration Error');
+            return;
+        }
+
+        // Create form and submit (ensuring notification appears after redirect)
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("admin.create_default_tag") }}';
+
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = '{{ csrf_token() }}';
+        form.appendChild(csrfInput);
+
+        // Add form data
+        const nameInput = document.createElement('input');
+        nameInput.type = 'hidden';
+        nameInput.name = 'name';
+        nameInput.value = name;
+        form.appendChild(nameInput);
+
+        const categoryInput = document.createElement('input');
+        categoryInput.type = 'hidden';
+        categoryInput.name = 'category';
+        categoryInput.value = document.getElementById('new-category-custom').value;
+        form.appendChild(categoryInput);
+
+        const colorInput = document.createElement('input');
+        colorInput.type = 'hidden';
+        colorInput.name = 'color_category';
+        colorInput.value = document.getElementById('new-performance-custom').value;
+        form.appendChild(colorInput);
+
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'is_active';
+        statusInput.value = document.getElementById('new-status-custom').value;
+        form.appendChild(statusInput);
+
+        // Submit form (will redirect and show notification after refresh)
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
     };
 
     // REMOVE Configuration
@@ -372,25 +473,21 @@ document.addEventListener('DOMContentLoaded', function() {
             confirmClass: 'btn-danger',
             icon: 'exclamation-triangle',
             onConfirm: () => {
-                const url = `{{ url_for("admin.delete_default_tag", tag_id=0) }}`.replace('0', configId);
-                fetch(url, {
-                    method: 'POST',
-                    headers: {'X-CSRFToken': '{{ csrf_token() }}'}
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showSuccess(`Configuration "${configName}" removed successfully.`, 'Configuration Removed');
-                        const configElement = document.querySelector(`.tag-item[data-tag-id='${configId}']`);
-                        configElement?.remove();
-                    } else {
-                        showError(data.message || 'Configuration removal failed.', 'Removal Error');
-                    }
-                })
-                .catch(err => {
-                    console.error('Remove Configuration Error:', err);
-                    showError('An unexpected system error occurred.', 'System Error');
-                });
+                // Create form and submit (ensuring notification appears after redirect)
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `{{ url_for("admin.delete_default_tag", tag_id=0) }}`.replace('0', configId);
+
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = '{{ csrf_token() }}';
+                form.appendChild(csrfInput);
+
+                // Submit form (will redirect and show notification after refresh)
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
             }
         });
     };

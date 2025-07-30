@@ -119,7 +119,7 @@ def delete_default_trading_model(model_id):
         if request.headers.get('Content-Type') == 'application/json' or request.is_json:
             return jsonify({
                 'success': True,
-                'message': f'Strategic framework "{model_name}" has been removed successfully.'
+                'message': f"Strategic framework '{model_name}' has been removed successfully."
             })
 
     except Exception as e:
@@ -146,7 +146,7 @@ def toggle_default_trading_model_status(model_id):
     model = TradingModel.query.get_or_404(model_id)
 
     if not model.is_default:
-        flash('This is not a default model.', 'warning')
+        flash("This is not a default model.", 'warning')
         return redirect(url_for('admin.manage_default_trading_models'))
 
     try:
@@ -154,11 +154,11 @@ def toggle_default_trading_model_status(model_id):
         status_text = "activated" if model.is_active else "deactivated"
 
         db.session.commit()
-        flash(f'Strategic framework "{model.name}" has been {status_text} successfully.', 'success')
+        flash(f"Strategic framework '{model.name}' has been {status_text} successfully.", 'success')
 
     except Exception as e:
         db.session.rollback()
-        flash(f'Error updating status: {str(e)}', 'danger')
+        flash(f"Error updating status: {str(e)}", 'danger')
 
     return redirect(url_for('admin.manage_default_trading_models'))
 
@@ -178,7 +178,7 @@ def create_default_tag():
         # --- MODIFICATION END ---
 
         if not name or not category_name:
-            flash('Name and category are required.', 'danger')
+            flash("Name and category are required.", 'danger')
             return redirect(url_for('admin.manage_default_tags'))
 
         # Validate category
@@ -213,7 +213,7 @@ def create_default_tag():
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error creating default tag: {e}", exc_info=True)
-        flash(f'An unexpected error occurred while creating the tag.', 'danger')
+        flash(f"An unexpected error occurred while creating the tag.", 'danger')
         return redirect(url_for('admin.manage_default_tags'))
 
 
@@ -221,68 +221,104 @@ def create_default_tag():
 @login_required
 @admin_required
 def edit_default_tag(tag_id):
-    """Edit a default tag via AJAX"""
+    """Edit a default tag via AJAX or Form submission"""
     try:
         tag = Tag.query.get_or_404(tag_id)
 
         if not tag.is_default:
-            return jsonify({'success': False, 'message': 'Can only edit default tags'})
+            if request.is_json:
+                return jsonify({'success': False, 'message': 'Can only edit default tags'})
+            else:
+                flash("Can only edit default tags", 'danger')
+                return redirect(url_for('admin.manage_default_tags'))
 
-        data = request.get_json()
-        name = data.get('name', '').strip()
-        category_name = data.get('category', '')
-        is_active = data.get('is_active', True)
-        color_category = data.get('color_category', 'neutral')  # Get color category
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.get_json()
+            name = data.get('name', '').strip()
+            category_name = data.get('category', '')
+            is_active = data.get('is_active', True)
+            color_category = data.get('color_category', 'neutral')
+        else:
+            # Form data
+            name = request.form.get('name', '').strip()
+            category_name = request.form.get('category', '')
+            is_active = request.form.get('is_active', 'false').lower() == 'true'
+            color_category = request.form.get('color_category', 'neutral')
 
         if not name or not category_name:
-            return jsonify({'success': False, 'message': 'Name and category are required'})
+            if request.is_json:
+                return jsonify({'success': False, 'message': 'Name and category are required'})
+            else:
+                flash("Name and category are required", 'danger')
+                return redirect(url_for('admin.manage_default_tags'))
 
         # Validate category
         try:
             category = TagCategory[category_name]
         except KeyError:
-            return jsonify({'success': False, 'message': 'Invalid category'})
+            if request.is_json:
+                return jsonify({'success': False, 'message': 'Invalid category'})
+            else:
+                flash("Invalid category", 'danger')
+                return redirect(url_for('admin.manage_default_tags'))
 
         # Check for duplicates (excluding current tag)
         existing = Tag.query.filter_by(name=name, is_default=True).filter(Tag.id != tag_id).first()
         if existing:
-            return jsonify({'success': False, 'message': 'Another default tag with this name already exists'})
+            if request.is_json:
+                return jsonify({'success': False, 'message': 'Another default tag with this name already exists'})
+            else:
+                flash('Another default tag with this name already exists', 'danger')
+                return redirect(url_for('admin.manage_default_tags'))
 
         # Update tag
         tag.name = name
         tag.category = category
         tag.is_active = is_active
-        tag.color_category = color_category  # Update color category
+        tag.color_category = color_category
 
         db.session.commit()
 
-        return jsonify({
-            'success': True,
-            'message': 'Tag updated successfully',
-            'tag': {
-                'id': tag.id,
-                'name': tag.name,
-                'category': tag.category.name,
-                'is_active': tag.is_active,
-                'color_category': tag.color_category  # Return color category
-            }
-        })
+        if request.is_json:
+            return jsonify({
+                'success': True,
+                'message': 'Tag updated successfully',
+                'tag': {
+                    'id': tag.id,
+                    'name': tag.name,
+                    'category': tag.category.name,
+                    'is_active': tag.is_active,
+                    'color_category': tag.color_category
+                }
+            })
+        else:
+            flash(f"Configuration '{tag.name}' updated successfully", 'success')
+            return redirect(url_for('admin.manage_default_tags'))
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'Error updating tag: {str(e)}'})
+        if request.is_json:
+            return jsonify({'success': False, 'message': f'Error updating tag: {str(e)}'})
+        else:
+            flash("Error updating configuration", 'danger')
+            return redirect(url_for('admin.manage_default_tags'))
 
 
 @admin_bp.route('/default-tags/<int:tag_id>/delete', methods=['POST'])
 @login_required
 @admin_required
 def delete_default_tag(tag_id):
-    """Delete a default tag via AJAX"""
+    """Delete a default tag via AJAX or Form submission"""
     try:
         tag = Tag.query.get_or_404(tag_id)
 
         if not tag.is_default:
-            return jsonify({'success': False, 'message': 'Can only delete default tags'})
+            if request.is_json:
+                return jsonify({'success': False, 'message': 'Can only delete default tags'})
+            else:
+                flash('Can only delete default tags', 'danger')
+                return redirect(url_for('admin.manage_default_tags'))
 
         tag_name = tag.name
 
@@ -292,15 +328,23 @@ def delete_default_tag(tag_id):
 
         current_app.logger.info(f"Admin {current_user.username} deleted default tag: {tag_name}")
 
-        return jsonify({
-            'success': True,
-            'message': f'Default tag "{tag_name}" deleted successfully'
-        })
+        if request.is_json:
+            return jsonify({
+                'success': True,
+                'message': f"Default tag '{tag_name}' deleted successfully"
+            })
+        else:
+            flash(f"Configuration '{tag_name}' removed successfully", 'success')
+            return redirect(url_for('admin.manage_default_tags'))
 
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error deleting default tag {tag_id}: {e}")
-        return jsonify({'success': False, 'message': 'Error deleting default tag'})
+        if request.is_json:
+            return jsonify({'success': False, 'message': 'Error deleting default tag'})
+        else:
+            flash("Error removing configuration", 'danger')
+            return redirect(url_for('admin.manage_default_tags'))
 
 
 @admin_bp.route('/default-tags/bulk-actions', methods=['POST'])
@@ -314,7 +358,7 @@ def bulk_default_tags_actions():
     tag_ids = request.form.getlist('tag_ids')
 
     if not tag_ids:
-        flash('No tags were selected for the bulk action.', 'warning')
+        flash("No tags were selected for the bulk action.", 'warning')
         return redirect(url_for('admin.manage_default_tags'))
 
     if action == 'delete_selected':
@@ -325,7 +369,7 @@ def bulk_default_tags_actions():
                 db.session.delete(tag)
                 deleted_count += 1
         db.session.commit()
-        flash(f'Successfully deleted {deleted_count} tags.', 'success')
+        flash(f"Successfully deleted {deleted_count} tags.", 'success')
 
     elif action == 'toggle_status':
         updated_count = 0
@@ -335,7 +379,7 @@ def bulk_default_tags_actions():
                 tag.is_active = not tag.is_active
                 updated_count += 1
         db.session.commit()
-        flash(f'Successfully updated the status for {updated_count} tags.', 'success')
+        flash(f"Successfully updated the status for {updated_count} tags.", 'success')
 
     else:
         flash('An invalid bulk action was specified.', 'danger')
@@ -357,13 +401,13 @@ def seed_default_tags():
         created_count = Tag.create_default_tags()
 
         db.session.commit()
-        flash(f'Successfully created {created_count} trading tags!', 'success')
+        flash(f"Successfully created {created_count} trading tags!", 'success')
         current_app.logger.info(f"Admin {current_user.username} seeded default tags")
 
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error seeding default tags: {e}")
-        flash('Error creating default tags. Please try again.', 'danger')
+        flash("Error creating default tags. Please try again.", 'danger')
 
     return redirect(url_for('admin.manage_default_tags'))
 
@@ -761,7 +805,7 @@ def admin_create_user():
                 new_user.set_password(form.password.data)
                 db.session.add(new_user)
                 db.session.commit()
-                flash_message = f'User "{new_user.username}" created successfully'
+                flash_message = f"User {new_user.username} created successfully"
                 flash_category = 'success'
                 if not new_user.is_email_verified:
                     token = generate_token(new_user.email, salt='email-verification-salt')
@@ -829,7 +873,7 @@ def admin_edit_user(user_id):
                 record_activity('admin_user_edit',
                                 f"Admin {current_user.username} edited user: {user_to_edit.username}",
                                 user_id_for_activity=current_user.id)
-                flash(f'User "{user_to_edit.username}" updated.', 'success')
+                flash(f"User {user_to_edit.username} updated.", 'success')
                 return redirect(url_for('admin.admin_users_list'))
             except ValueError:
                 flash('Invalid role selected.', 'danger')
@@ -858,8 +902,26 @@ def admin_delete_user(user_id):
 
     try:
         username_for_log = user_to_delete.username
+        current_app.logger.info(f"Deleting related records for user {user_id}")
+        
+        # Delete related records first (avoid foreign key constraints)
         Activity.query.filter_by(user_id=user_id).delete()
 
+        # Delete P12UsageStats records to avoid NOT NULL constraint error
+        from app.models import P12UsageStats
+        P12UsageStats.query.filter_by(user_id=user_id).delete()
+
+        # Delete other user-related records to avoid foreign key constraints
+        from app.models import GlobalImage, TagUsageStats, UserSession, UserAccessLog, TradeImage, DailyJournalImage
+        GlobalImage.query.filter_by(user_id=user_id).delete()
+        TagUsageStats.query.filter_by(user_id=user_id).delete()
+        UserSession.query.filter_by(user_id=user_id).delete()
+        UserAccessLog.query.filter_by(user_id=user_id).delete()
+        TradeImage.query.filter_by(user_id=user_id).delete()
+        DailyJournalImage.query.filter_by(user_id=user_id).delete()
+
+        # Note: Other models with proper cascade relationships will be handled automatically
+        current_app.logger.info(f"Deleting user record: {username_for_log}")
         db.session.delete(user_to_delete)
         db.session.commit()
         record_activity('admin_user_delete', f"Admin {current_user.username} deleted user: {username_for_log}",
@@ -946,11 +1008,34 @@ def admin_bulk_delete_users():
                 current_app.logger.info(f"Deleting activities for user {user_id}")
                 Activity.query.filter_by(user_id=user_id).delete()
 
-                # Add any other related data cleanup here if needed
-                # For example, if you have other models with foreign keys to User:
-                # TradingModel.query.filter_by(user_id=user_id).delete()
-                # Trade.query.filter_by(user_id=user_id).delete()
-                # DailyJournal.query.filter_by(user_id=user_id).delete()
+                # Delete P12UsageStats records to avoid NOT NULL constraint error
+                current_app.logger.info(f"Deleting P12 usage stats for user {user_id}")
+                from app.models import P12UsageStats
+                P12UsageStats.query.filter_by(user_id=user_id).delete()
+
+                # Delete other user-related records to avoid foreign key constraints
+                current_app.logger.info(f"Deleting global images for user {user_id}")
+                from app.models import GlobalImage
+                GlobalImage.query.filter_by(user_id=user_id).delete()
+
+                current_app.logger.info(f"Deleting tag usage stats for user {user_id}")
+                from app.models import TagUsageStats
+                TagUsageStats.query.filter_by(user_id=user_id).delete()
+
+                # Delete session and access log records
+                current_app.logger.info(f"Deleting user sessions for user {user_id}")
+                from app.models import UserSession, UserAccessLog
+                UserSession.query.filter_by(user_id=user_id).delete()
+                UserAccessLog.query.filter_by(user_id=user_id).delete()
+
+                # Delete image records that might not cascade properly
+                current_app.logger.info(f"Deleting trade images for user {user_id}")
+                from app.models import TradeImage, DailyJournalImage
+                TradeImage.query.filter_by(user_id=user_id).delete()
+                DailyJournalImage.query.filter_by(user_id=user_id).delete()
+
+                # Note: Other models with proper cascade relationships will be handled automatically
+                # These include: TradingModel, Trade, DailyJournal, Files, Settings, etc.
 
                 # Delete the user
                 current_app.logger.info(f"Deleting user record: {username_for_log}")
@@ -1411,7 +1496,7 @@ def system_config():
 @login_required
 @admin_required
 def instruments_list():
-    """List all instruments with filtering"""
+    """List all instruments with filtering and sorting"""
     try:
         from app.models import Instrument
         from app.forms import InstrumentFilterForm
@@ -1445,28 +1530,64 @@ def instruments_list():
         elif filter_form.status.data == 'inactive':
             query = query.filter(Instrument.is_active == False)
 
+        # Calculate KPI data from FULL dataset (before filtering)
+        all_instruments = Instrument.query.all()
+        active_instruments_count = len([i for i in all_instruments if i.is_active])
+        unique_asset_classes_count = len(set(i.asset_class for i in all_instruments if i.asset_class))
+        unique_exchanges_count = len(set(i.exchange for i in all_instruments if i.exchange))
+        total_count = len(all_instruments)
+
+        # Sorting
+        sort_field = request.args.get('sort', 'symbol')
+        sort_order = request.args.get('order', 'asc')
+        
+        # Map sort fields to model attributes
+        sort_mapping = {
+            'symbol': Instrument.symbol,
+            'name': Instrument.name,
+            'exchange': Instrument.exchange,
+            'asset_class': Instrument.asset_class,
+            'point_value': Instrument.point_value,
+            'is_active': Instrument.is_active
+        }
+        
+        sort_column = sort_mapping.get(sort_field, Instrument.symbol)
+        
+        if sort_order == 'desc':
+            query = query.order_by(sort_column.desc())
+        else:
+            query = query.order_by(sort_column.asc())
+
         # Pagination
         page = request.args.get('page', 1, type=int)
-        per_page = current_app.config.get('ITEMS_PER_PAGE', 25)
+        per_page = request.args.get('per_page', 10, type=int)  # Default 10, allow override
+        
+        # Ensure per_page is within reasonable limits
+        per_page = max(10, min(per_page, 100))
 
-        instruments_pagination = query.order_by(
-            Instrument.is_active.desc(),  # Active instruments first
-            Instrument.symbol.asc()
-        ).paginate(page=page, per_page=per_page, error_out=False)
+        instruments_pagination = query.paginate(
+            page=page, 
+            per_page=per_page, 
+            error_out=False
+        )
 
-        current_app.logger.info(f"Admin {current_user.username} accessed instruments list.")
+        current_app.logger.info(f"Admin {current_user.username} accessed instruments list (page {page}, {per_page} per page).")
 
-        return render_template('instruments_list.html',
+        return render_template('admin/instruments_list.html',
                                title='Instrument Management',
                                instruments=instruments_pagination.items,
                                pagination=instruments_pagination,
                                filter_form=filter_form,
-                               total_count=instruments_pagination.total)
+                               total_count=total_count,
+                               # KPI data for cards
+                               active_instruments_count=active_instruments_count,
+                               unique_asset_classes_count=unique_asset_classes_count,
+                               unique_exchanges_count=unique_exchanges_count)
 
     except Exception as e:
         current_app.logger.error(f"Error loading instruments list: {e}", exc_info=True)
         flash("Could not load instruments list.", "danger")
-        return redirect(url_for('admin.system_config'))
+        return redirect(url_for('admin.show_admin_dashboard'))
 
 
 @admin_bp.route('/instruments/create', methods=['GET', 'POST'])

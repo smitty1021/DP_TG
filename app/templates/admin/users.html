@@ -75,7 +75,7 @@
                                     </div>
                                     <div class="kpi-value">{{ total_users_count if total_users_count is not none and total_users_count != "Error" else 'N/A' }}</div>
                                     <div class="kpi-trend">
-                                        <span class="trend-indicator">User Accounts</span>
+                                        <span class="trend-indicator positive">User Accounts</span>
                                     </div>
                                 </div>
                             </div>
@@ -153,7 +153,7 @@
                                     </div>
                                     <div class="kpi-value">{{ inactive_accounts_count if inactive_accounts_count is not none and inactive_accounts_count != "Error" else 'N/A' }}</div>
                                     <div class="kpi-trend">
-                                        <span class="trend-indicator neutral">
+                                        <span class="trend-indicator positive">
                                             <i class="fas fa-exclamation-triangle"></i> Cleanup Target
                                         </span>
                                     </div>
@@ -164,7 +164,7 @@
                 </div>
             </div>
             <!-- Bulk Operations Module (Hidden by default) -->
-            <div class="col-12 mb-3" id="bulk-operations-module" style="display: none;">
+            <div class="col-12 mt-3" id="bulk-operations-module" style="display: none;">
                 <div class="enterprise-module">
                     <div class="module-header">
                         <div class="module-title">
@@ -201,7 +201,7 @@
             </div>
 
             <!-- Search and Filter Module (Hidden by default) -->
-            <div class="col-12 mb-3" id="search-filter-module" style="display: none;">
+            <div class="col-12 mt-3" id="search-filter-module" style="display: none;">
                 <div class="enterprise-module">
                     <div class="module-header">
                         <div class="module-title">
@@ -261,7 +261,7 @@
                                         <button type="submit" class="btn btn-primary">
                                             <i class="fas fa-search me-1"></i> Apply Filters
                                         </button>
-                                        <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary">
+                                        <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-secondary">
                                             <i class="fas fa-times me-1"></i> Clear All
                                         </a>
                                     </div>
@@ -269,117 +269,6 @@
                             </div>
                         </form>
                     </div>
-                </div>
-            </div>
-            <!-- Pagination and Controls Bar (No Module Box) -->
-            <div class="d-flex justify-content-between align-items-center mt-3 p-3">
-                <!-- Left Side: Page Size, Summary, and Navigation -->
-                <div class="d-flex align-items-center gap-4">
-                    <!-- Page Size Selector -->
-                    <div class="d-flex align-items-center gap-2">
-                        Records per Page:
-                        <select class="form-select form-select-sm" style="width: auto;"
-                                id="page-size"
-                                onchange="changePageSize(this.value)">
-                            <option value="10" {{ 'selected' if request.args.get('per_page', '10')|string == '10' else '' }}>10</option>
-                            <option value="25" {{ 'selected' if request.args.get('per_page', '10')|string == '25' else '' }}>25</option>
-                            <option value="50" {{ 'selected' if request.args.get('per_page', '10')|string == '50' else '' }}>50</option>
-                            <option value="100" {{ 'selected' if request.args.get('per_page', '10')|string == '100' else '' }}>100</option>
-                        </select>
-                    </div>
-
-                    <!-- Results Summary -->
-                    {% if pagination %}
-                        {{ ((pagination.page - 1) * pagination.per_page + 1) }} - {{ (pagination.page * pagination.per_page if pagination.page < pagination.pages else pagination.total) }} of {{ pagination.total }}
-                    {% endif %}
-
-                    <!-- Navigation Controls -->
-                    {% if pagination and pagination.pages > 1 %}
-                    <div class="btn-group">
-                        <!-- First Page -->
-                        {% if pagination.page > 1 %}
-                            {% set first_args = request.args.copy() %}
-                            {% set _ = first_args.pop('page', None) %}
-                            <button type="button" class="pagination-arrow-borderless"
-                                    onclick="window.location.href='{{ url_for('admin.admin_users_list', page=1, **first_args) }}'"
-                                    title="First Page">
-                                <i class="fas fa-angle-double-left"></i>
-                            </button>
-                        {% else %}
-                            <button type="button" class="pagination-arrow-borderless" disabled>
-                                <i class="fas fa-angle-double-left"></i>
-                            </button>
-                        {% endif %}
-
-                        <!-- Previous Page -->
-                        {% if pagination.has_prev %}
-                            {% set prev_args = request.args.copy() %}
-                            {% set _ = prev_args.pop('page', None) %}
-                            <button type="button" class="pagination-arrow-borderless"
-                                    onclick="window.location.href='{{ url_for('admin.admin_users_list', page=pagination.prev_num, **prev_args) }}'"
-                                    title="Previous Page">
-                                <i class="fas fa-angle-left"></i>
-                            </button>
-                        {% else %}
-                            <button type="button" class="pagination-arrow-borderless" disabled>
-                                <i class="fas fa-angle-left"></i>
-                            </button>
-                        {% endif %}
-
-                        <!-- Page Information -->
-                        <span class="pagination-controls">
-                            Page {{ pagination.page }} of {{ pagination.pages }}
-                        </span>
-
-                        <!-- Next Page -->
-                        {% if pagination.has_next %}
-                            {% set next_args = request.args.copy() %}
-                            {% set _ = next_args.pop('page', None) %}
-                            <button type="button" class="pagination-arrow-borderless"
-                                    onclick="window.location.href='{{ url_for('admin.admin_users_list', page=pagination.next_num, **next_args) }}'"
-                                    title="Next Page">
-                                <i class="fas fa-angle-right"></i>
-                            </button>
-                        {% else %}
-                            <button type="button" class="pagination-arrow-borderless" disabled>
-                                <i class="fas fa-angle-right"></i>
-                            </button>
-                        {% endif %}
-
-                        <!-- Last Page -->
-                        {% if pagination.page < pagination.pages %}
-                            {% set last_args = request.args.copy() %}
-                            {% set _ = last_args.pop('page', None) %}
-                            <button type="button" class="pagination-arrow-borderless"
-                                    onclick="window.location.href='{{ url_for('admin.admin_users_list', page=pagination.pages, **last_args) }}'"
-                                    title="Last Page">
-                                <i class="fas fa-angle-double-right"></i>
-                            </button>
-                        {% else %}
-                            <button type="button" class="pagination-arrow-borderless" disabled>
-                                <i class="fas fa-angle-double-right"></i>
-                            </button>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- Right Side: Action Button Group -->
-                <div class="btn-group">
-                    <button type="button"
-                            id="search-filter-toggle"
-                            class="btn btn-outline-secondary btn-sm"
-                            onclick="toggleSearchFilters()"
-                            title="Toggle Search & Filter Options">
-                        <i class="fas fa-search"></i>
-                    </button>
-                    <button type="button"
-                            id="bulk-ops-toggle"
-                            class="btn btn-outline-secondary btn-sm"
-                            onclick="toggleBulkOperations()"
-                            title="Toggle Bulk Operations">
-                        <i class="fas fa-tasks"></i>
-                    </button>
                 </div>
             </div>
 
@@ -408,10 +297,10 @@
             {% endif %}
 
             {% if active_filters %}
-            <div class="col-12">
+            <div class="col-12 mt-3">
                 <div class="d-flex align-items-center justify-content-between py-2 px-3 mb-2" style="background-color: rgba(13, 110, 253, 0.08); border: 1px solid rgba(13, 110, 253, 0.2); border-radius: 0.375rem; font-size: 0.875rem;">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <i class="fas fa-filter text-primary"></i>
+                        <i class="fas fa-filter text-primary ms-2"></i>
                         <span class="fw-semibold text-primary">Resource Database Filtered by:</span>
                         {% for filter in active_filters %}
                             <span class="badge bg-primary text-white" style="font-size: 0.75rem;">{{ filter }}</span>
@@ -425,15 +314,122 @@
             {% endif %}
 
             <!-- User Resource Management Module -->
-            <div class="col-12">
+            <div class="col-12 mt-3">
                 <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-database module-icon"></i>
-                            User Resource Database
+                    <div class="module-header" style="position: relative; display: flex; align-items: center; padding: 1rem;">
+                        <!-- Left: Title with inline summary -->
+                        <div style="flex: 1;">
+                            <div class="module-title">
+                                <i class="fas fa-database module-icon"></i>
+                                User Resource Database
+                                {% if pagination %}
+                                    <span style="font-weight: 400; color: var(--enterprise-text-muted); margin-left: 1rem; font-size: 0.875rem;">
+                                        {{ ((pagination.page - 1) * pagination.per_page + 1) }} - {{ (pagination.page * pagination.per_page if pagination.page < pagination.pages else pagination.total) }} of {{ pagination.total }} Records
+                                    </span>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="module-meta">
-                            User Resource Management Overview
+
+                        <!-- Center: Pagination Controls (Absolutely Centered) -->
+                        {% if pagination and pagination.pages > 1 %}
+                        <div class="btn-group" style="position: absolute; left: 50%; transform: translateX(-50%);">
+                            <!-- First Page -->
+                            {% if pagination.page > 1 %}
+                                {% set first_args = request.args.copy() %}
+                                {% set _ = first_args.pop('page', None) %}
+                                <button type="button" class="pagination-arrow-borderless"
+                                        onclick="window.location.href='{{ url_for('admin.admin_users_list', page=1, **first_args) }}'"
+                                        title="First Page">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </button>
+                            {% else %}
+                                <button type="button" class="pagination-arrow-borderless" disabled>
+                                    <i class="fas fa-angle-double-left"></i>
+                                </button>
+                            {% endif %}
+
+                            <!-- Previous Page -->
+                            {% if pagination.has_prev %}
+                                {% set prev_args = request.args.copy() %}
+                                {% set _ = prev_args.pop('page', None) %}
+                                <button type="button" class="pagination-arrow-borderless"
+                                        onclick="window.location.href='{{ url_for('admin.admin_users_list', page=pagination.prev_num, **prev_args) }}'"
+                                        title="Previous Page">
+                                    <i class="fas fa-angle-left"></i>
+                                </button>
+                            {% else %}
+                                <button type="button" class="pagination-arrow-borderless" disabled>
+                                    <i class="fas fa-angle-left"></i>
+                                </button>
+                            {% endif %}
+
+                            <!-- Page Information -->
+                            <span class="pagination-controls">
+                                Page {{ pagination.page }} of {{ pagination.pages }}
+                            </span>
+
+                            <!-- Next Page -->
+                            {% if pagination.has_next %}
+                                {% set next_args = request.args.copy() %}
+                                {% set _ = next_args.pop('page', None) %}
+                                <button type="button" class="pagination-arrow-borderless"
+                                        onclick="window.location.href='{{ url_for('admin.admin_users_list', page=pagination.next_num, **next_args) }}'"
+                                        title="Next Page">
+                                    <i class="fas fa-angle-right"></i>
+                                </button>
+                            {% else %}
+                                <button type="button" class="pagination-arrow-borderless" disabled>
+                                    <i class="fas fa-angle-right"></i>
+                                </button>
+                            {% endif %}
+
+                            <!-- Last Page -->
+                            {% if pagination.page < pagination.pages %}
+                                {% set last_args = request.args.copy() %}
+                                {% set _ = last_args.pop('page', None) %}
+                                <button type="button" class="pagination-arrow-borderless"
+                                        onclick="window.location.href='{{ url_for('admin.admin_users_list', page=pagination.pages, **last_args) }}'"
+                                        title="Last Page">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </button>
+                            {% else %}
+                                <button type="button" class="pagination-arrow-borderless" disabled>
+                                    <i class="fas fa-angle-double-right"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Right: Records per Page Selector and Action Buttons -->
+                        <div class="d-flex align-items-center gap-3" style="flex: 1; justify-content: flex-end;">
+                            <div class="d-flex align-items-center gap-2">
+                                <span style="font-size: 0.875rem;">Records per Page:</span>
+                                <select class="form-select form-select-sm" style="width: auto;"
+                                        id="page-size"
+                                        onchange="changePageSize(this.value)">
+                                    <option value="10" {{ 'selected' if request.args.get('per_page', '10')|string == '10' else '' }}>10</option>
+                                    <option value="25" {{ 'selected' if request.args.get('per_page', '10')|string == '25' else '' }}>25</option>
+                                    <option value="50" {{ 'selected' if request.args.get('per_page', '10')|string == '50' else '' }}>50</option>
+                                    <option value="100" {{ 'selected' if request.args.get('per_page', '10')|string == '100' else '' }}>100</option>
+                                </select>
+                            </div>
+                            <!-- Action Button Group -->
+                            <div class="btn-group">
+                                <button type="button"
+                                        id="search-filter-toggle"
+                                        class="btn btn-outline-secondary btn-sm"
+                                        onclick="toggleSearchFilters()"
+                                        title="Toggle Search & Filter Options">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                <button type="button"
+                                        id="bulk-ops-toggle"
+                                        class="btn btn-outline-secondary btn-sm"
+                                        onclick="toggleBulkOperations()"
+                                        title="Toggle Bulk Operations">
+                                    <i class="fas fa-tasks"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="module-content">
@@ -461,10 +457,13 @@
                                             Status
                                         </th>
                                         <th scope="col" class="sortable text-start" data-sort="is_email_verified" role="columnheader" tabindex="0" aria-label="Sort by Verification">
-                                            Verified
+                                            Email Verified
                                         </th>
                                         <th scope="col" class="sortable text-start" data-sort="last_login" role="columnheader" tabindex="0" aria-label="Sort by Last Login">
                                             Last Access
+                                        </th>
+                                        <th scope="col" class="sortable text-start" data-sort="created_at" role="columnheader" tabindex="0" aria-label="Sort by Provisioned Date">
+                                            Provisioned
                                         </th>
                                         <th scope="col"></th>
                                     </tr>
@@ -526,7 +525,7 @@
                                             {% if user_item.is_active %}
                                                 <span class="status-badge operational">Active</span>
                                             {% else %}
-                                                <span class="status-badge suspended">Inactive</span>
+                                                <span class="status-badge suspended">Suspended</span>
                                             {% endif %}
                                         </td>
                                         <td>
@@ -537,7 +536,10 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <small class="text-muted">{{ user_item.last_login|eastern_time if user_item.last_login else 'Never' }}</small>
+                                            <span class="fw-semibold">{{ user_item.last_login|eastern_time if user_item.last_login else 'Never' }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="fw-semibold">{{ user_item.created_at|eastern_time if user_item.created_at else 'N/A' }}</span>
                                         </td>
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm">
@@ -570,7 +572,7 @@
                         </div>
                         {% else %}
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-4">
+                            <td colspan="10" class="text-center text-muted py-4">
                                 <i class="fas fa-info-circle me-2"></i>
                                 No user configurations found matching your criteria.
                             </td>

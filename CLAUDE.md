@@ -189,32 +189,408 @@ The application uses a custom enterprise-grade CSS framework with strict convent
 - Upload folders auto-created for different content types
 - Migration files track all database schema changes
 
-**Standard Pagination Pattern:**
-All templates with pagination MUST use the following standardized pattern (reference: instruments_list.html):
-- Pagination controls bar with enterprise styling: `background: var(--enterprise-gray-50); border-radius: var(--enterprise-radius); border: 1px solid var(--enterprise-border-light)`
-- Left side: Records per page selector, results summary, navigation controls
-- Right side: Action buttons (search/filter toggles)
-- Navigation uses `pagination-arrow-borderless` buttons with Font Awesome icons
-- Results summary format: "X - Y of Z" with `fw-semibold text-secondary` styling
-- Page size selector with Bootstrap form-select-sm styling
+## ENTERPRISE TEMPLATE STANDARDS - USERS.HTML REFERENCE
 
-**Standard Table Design Pattern:**
-All data tables MUST follow this standardized pattern (reference: users.html):
-- Scrollable container: `max-height: 600px; overflow-y: auto` for vertical scrolling
-- Sticky headers: `sticky-top` class on thead for header persistence during scroll
-- Compact rows: `table-sm` class for reduced row height and better data density
-- Consistent striping: Table striping uses subtle contrast `rgba(108, 117, 125, 0.15)` for readability without distraction
-- Circular avatars: 32x32px using `rounded-circle` class for profile images
-- Sortable headers: Include sortable class and appropriate ARIA labels
-- Action buttons: Use `btn-group btn-group-sm` for compact action controls
+**CRITICAL:** The `app/templates/admin/users.html` page is the GOLD STANDARD template. ALL future page modifications with similar components MUST follow this exact layout, styling, and functionality. Reference this page for:
 
-**Standard Spacing Pattern:**
-All elements MUST follow consistent spacing standards:
-- Bottom margin on all cards and modules: `mb-3` class (equivalent to 1rem spacing)
-- Module content padding: `mb-3` class inside module-content for consistent internal spacing
-- Form element alignment: Use `align-items-end` for form controls to align inputs and buttons on same horizontal plane
-- Gap spacing: Use `gap-3` for consistent spacing between flex items (equivalent to 1rem)
-- Search and filter forms: All inputs, selectors, and action buttons must align horizontally using flexbox with `align-items-end`
+### **Executive Header Pattern (MANDATORY)**
+```html
+<div class="executive-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="header-content">
+            <h1 class="executive-title">
+                <i class="fas fa-[icon] executive-icon"></i>
+                {{ title }}
+            </h1>
+            <div class="executive-subtitle">
+                [Descriptive subtitle using enterprise terminology]
+            </div>
+        </div>
+        <div class="btn-group">
+            <!-- Action buttons using btn-outline-secondary btn-sm -->
+        </div>
+    </div>
+</div>
+```
+
+### **KPI Cards Section (MANDATORY)**
+```html
+<div class="kpi-section">
+    <div class="grid grid-cols-6 gap-4">
+        <div class="col-span-1">
+            <div class="kpi-card">
+                <div class="kpi-content">
+                    <div class="kpi-header">
+                        <span class="kpi-label">[Label]</span>
+                        <i class="fas fa-[icon] kpi-icon"></i>
+                    </div>
+                    <div class="kpi-value">{{ value }}</div>
+                    <div class="kpi-trend">
+                        <span class="trend-indicator positive">[Description]</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+### **Module Header with Integrated Controls (NEW STANDARD)**
+```html
+<div class="module-header" style="position: relative; display: flex; align-items: center; padding: 1rem;">
+    <!-- Left: Title with inline summary -->
+    <div style="flex: 1;">
+        <div class="module-title">
+            <i class="fas fa-[icon] module-icon"></i>
+            [Module Title]
+            <span style="font-weight: 400; color: var(--enterprise-text-muted); margin-left: 1rem; font-size: 0.875rem;">
+                {{ records_summary }}
+            </span>
+        </div>
+    </div>
+    
+    <!-- Center: Pagination Controls (Absolutely Centered) -->
+    <div class="btn-group" style="position: absolute; left: 50%; transform: translateX(-50%);">
+        <!-- Pagination buttons using pagination-arrow-borderless class -->
+    </div>
+    
+    <!-- Right: Records per Page + Action Buttons -->
+    <div class="d-flex align-items-center gap-3" style="flex: 1; justify-content: flex-end;">
+        <div class="d-flex align-items-center gap-2">
+            <span style="font-size: 0.875rem;">Records per Page:</span>
+            <select class="form-select form-select-sm" style="width: auto;">...</select>
+        </div>
+        <div class="btn-group">
+            <!-- Action buttons (search, bulk ops, etc.) -->
+        </div>
+    </div>
+</div>
+```
+
+### **Data Table with Sticky Headers (MANDATORY)**
+```html
+<div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+    <table class="table table-striped table-hover table-sm mb-0">
+        <thead class="table-dark sticky-top">
+            <tr>
+                <th class="sortable text-start" data-sort="[field]" role="columnheader" tabindex="0">
+                    [Column Header]
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Table rows -->
+        </tbody>
+    </table>
+</div>
+```
+
+### **Status Badge System (MANDATORY)**
+```css
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--enterprise-radius);
+    font-size: var(--enterprise-font-size-sm);
+    font-weight: 600;
+    text-align: center;
+    display: inline-block;
+    border: 1px solid transparent;
+}
+
+.status-badge.operational {
+    background: rgba(0, 112, 192, 0.1);
+    color: var(--enterprise-success);
+    border: 1px solid rgba(0, 112, 192, 0.2);
+}
+
+.status-badge.suspended {
+    background: rgba(209, 52, 56, 0.1);
+    color: var(--enterprise-danger);
+    border: 1px solid rgba(209, 52, 56, 0.2);
+}
+```
+
+### **Search & Filter Modules (HIDDEN BY DEFAULT)**
+```html
+<div class="col-12 mt-3" id="search-filter-module" style="display: none;">
+    <div class="enterprise-module">
+        <div class="module-header">
+            <div class="module-title">
+                <i class="fas fa-filter module-icon"></i>
+                Search & Filter Operations
+            </div>
+        </div>
+        <div class="module-content">
+            <!-- Search form with align-items-end for horizontal alignment -->
+        </div>
+    </div>
+</div>
+```
+
+### **Active Filters Indicator**
+```html
+<div class="d-flex align-items-center justify-content-between py-2 px-3 mb-2" 
+     style="background-color: rgba(13, 110, 253, 0.08); border: 1px solid rgba(13, 110, 253, 0.2); border-radius: 0.375rem;">
+    <div class="d-flex align-items-center gap-2">
+        <i class="fas fa-filter text-primary"></i>
+        <span class="fw-semibold text-primary">Resource Database Filtered by:</span>
+        <span class="badge bg-primary text-white">{{ filter }}</span>
+    </div>
+    <a href="[clear_url]" class="btn btn-outline-primary btn-sm">Clear Filters</a>
+</div>
+```
+
+### **Spacing Standards (MANDATORY)**
+- **Module spacing**: `mt-3` between all major sections
+- **Card spacing**: `mb-3` on all cards and modules
+- **Flex gaps**: `gap-3` (1rem) for consistent spacing
+- **Form alignment**: `align-items-end` for horizontal form control alignment
+- **Table container**: `max-height: 600px; overflow-y: auto` for scrollable tables
+
+### **Color Consistency**
+- **Primary Enterprise Blue**: `#0066cc` (buttons, links, highlights)
+- **Success Green**: `#0070c0` (positive indicators)
+- **Danger Red**: `#d13438` (warnings, errors, suspended status)
+- **Muted Text**: `var(--enterprise-text-muted)` for secondary information
+- **Background**: `var(--enterprise-gray-50)` for module headers
+
+### **Interactive Elements**
+- **Pagination**: `pagination-arrow-borderless` class for navigation buttons
+- **Action Buttons**: `btn-outline-secondary btn-sm` for standard actions
+- **Sortable Headers**: Include `sortable` class with ARIA labels
+- **Selection**: Checkbox-based with master select functionality
+- **Modals**: Use `custom-modals.js` instead of browser alerts
+
+### **Unsaved Changes Notification System (MANDATORY)**
+**CRITICAL:** ALL form-based pages MUST implement the unsaved changes detection and notification system as demonstrated in `edit_user.html` and `create_user.html`.
+
+#### **Required Components:**
+```html
+<!-- Unsaved Changes Indicator (place after main content grid start) -->
+<div id="unsaved-indicator" class="alert alert-warning alert-dismissible fade show mb-3" role="alert" style="display: none;">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Unsaved Changes:</strong> You have [context-specific message] that have not been saved yet.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+```
+
+#### **Required JavaScript Implementation:**
+```javascript
+// Unsaved changes detection - MANDATORY for all forms
+let hasUnsavedChanges = false;
+let originalFormData = {};
+let isSubmitting = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, select, textarea');
+
+    // Store original form data
+    inputs.forEach(input => {
+        if (input.type === 'checkbox') {
+            originalFormData[input.name] = input.checked;
+        } else {
+            originalFormData[input.name] = input.value || '';
+        }
+    });
+
+    // Monitor form changes and show/hide indicator
+    // Implementation details in edit_user.html and create_user.html
+});
+```
+
+#### **Required Scripts:**
+```html
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+```
+
+#### **Context-Specific Messages:**
+- **Create Forms**: "You have entered [entity] data that has not been saved yet."
+- **Edit Forms**: "You have made changes that have not been saved yet."
+- **Navigation Warnings**: "[Entity] data will be lost if you navigate away."
+
+#### **Field Mapping Requirements:**
+Each form MUST define appropriate field mappings for user feedback:
+```javascript
+const fieldMappings = {
+    'username': 'Username',
+    'email': 'Email Address',
+    'name': 'Full Name',
+    // ... context-specific fields
+};
+```
+
+#### **Double Popup Prevention (CRITICAL):**
+To prevent both custom modal AND browser beforeunload from firing, implement this reset function:
+```javascript
+function resetFormToOriginalState() {
+    console.log('🔄 Resetting form to original state...');
+    
+    // FIRST: Remove local beforeunload handler
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+    
+    // SECOND: Disable the global enterprise unsaved changes handler
+    if (window.enterpriseUnsavedChanges) {
+        window.enterpriseUnsavedChanges.hasUnsavedChanges = false;
+        window.enterpriseUnsavedChanges.isSubmitting = true;
+        window.enterpriseUnsavedChanges.markAsSubmitting();
+    }
+    
+    // THIRD: Nuclear option for any other handlers
+    window.onbeforeunload = null;
+    
+    // Reset form inputs and state flags
+    hasUnsavedChanges = false;
+    isSubmitting = true;
+    
+    // Hide indicator and reset inputs to original values
+}
+```
+
+#### **Navigation Handler Pattern (MANDATORY):**
+```javascript
+// Must use NAMED function (not anonymous) for beforeUnloadHandler
+function beforeUnloadHandler(e) {
+    if (hasUnsavedChanges && !isSubmitting) {
+        const message = '[Context-specific warning message]';
+        e.preventDefault();
+        e.returnValue = message;
+        return message;
+    }
+}
+window.addEventListener('beforeunload', beforeUnloadHandler);
+```
+
+### **Side-by-Side Card Layout System**
+
+#### **Enterprise Grid System for Card Layout:**
+```html
+<!-- Use enterprise grid system for side-by-side cards -->
+<div class="grid grid-cols-2 gap-4 align-items-start">
+    <!-- Left Card: Main functionality -->
+    <div class="enterprise-module">
+        <div class="module-header">
+            <div class="module-title">
+                <i class="fas fa-[icon] module-icon"></i>
+                [Primary Module Title]
+            </div>
+            <div class="module-meta">
+                [Primary Module Description]
+            </div>
+        </div>
+        <div class="module-content mb-3">
+            <!-- Main form or content -->
+        </div>
+    </div>
+
+    <!-- Right Card: Guidelines/supplementary information -->
+    <div class="enterprise-module">
+        <div class="module-header">
+            <div class="module-title">
+                <i class="fas fa-info-circle module-icon"></i>
+                [Guidelines/Info Title]
+            </div>
+            <div class="module-meta">
+                Strategic Overview
+            </div>
+        </div>
+        <div class="module-content mb-3">
+            <!-- Guidelines content using row g-3 pattern -->
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="d-flex align-items-start">
+                        <div class="bg-primary-soft me-3 p-2 rounded">
+                            <i class="fas fa-[icon]"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">[Guideline Title]</h6>
+                            <p class="text-muted small mb-0">[Guideline Description]</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+#### **Card Width Adjustments:**
+For narrower side-by-side cards, use Bootstrap column classes within the grid:
+```html
+<div class="grid grid-cols-2 gap-4 align-items-start">
+    <div class="col-lg-6 col-xl-5"> <!-- Slightly narrower left card -->
+        <div class="enterprise-module">...</div>
+    </div>
+    <div class="col-lg-6 col-xl-7"> <!-- Slightly wider right card -->
+        <div class="enterprise-module">...</div>
+    </div>
+</div>
+```
+
+### **Password Validation System (MANDATORY)**
+
+#### **Password Strength Meter Implementation:**
+Reference `create_user.html` and `edit_user.html` for complete implementation. Key components:
+```html
+<!-- Password Strength Indicator -->
+<div id="password-strength-container" class="mt-2" style="display: none;">
+    <div class="d-flex align-items-center mb-2">
+        <small class="text-muted me-2">Strength:</small>
+        <div class="progress flex-grow-1" style="height: 6px;">
+            <div id="password-strength-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+        </div>
+        <small id="password-strength-text" class="text-muted ms-2">Weak</small>
+    </div>
+    <div id="password-requirements" class="small text-muted">
+        <div class="d-flex flex-wrap gap-2">
+            <span id="req-length" class="badge bg-secondary">8+ chars</span>
+            <span id="req-uppercase" class="badge bg-secondary">A-Z</span>
+            <span id="req-lowercase" class="badge bg-secondary">a-z</span>
+            <span id="req-number" class="badge bg-secondary">0-9</span>
+            <span id="req-special" class="badge bg-secondary">Special</span>
+        </div>
+    </div>
+</div>
+```
+
+#### **Password Match Validator:**
+```html
+<!-- Password Match Indicator -->
+<div id="password-match-indicator" class="mt-2" style="display: none;">
+    <small id="password-match-text" class="text-muted">
+        <i id="password-match-icon" class="fas fa-times me-1"></i>
+        Passwords do not match
+    </small>
+</div>
+```
+
+#### **JavaScript Functions (MANDATORY):**
+```javascript
+// Initialize both systems - MUST be called in DOMContentLoaded
+initializePasswordStrengthMeter();
+initializePasswordMatchValidator();
+```
+
+### **Success Message Flow Pattern**
+- **Create pages**: Remove success notification from create page, let it display on destination page after redirect
+- **Edit pages**: Success message appears after form submission and page reload
+- **Flash message conversion**: Hide flash messages in create forms to prevent duplication
+
+### **CRITICAL IMPLEMENTATION NOTES:**
+1. **NEVER deviate** from this layout for pages with similar functionality
+2. **Always use** the exact same CSS classes and styling patterns
+3. **Always implement** the same JavaScript functionality for pagination, sorting, and selection
+4. **Always implement** the unsaved changes notification system for ALL forms
+5. **Always implement** proper double popup prevention using resetFormToOriginalState()
+6. **Always use** NAMED functions for beforeUnloadHandler (never anonymous)
+7. **Always implement** password strength and match validators for password fields
+8. **Always use** enterprise grid system for side-by-side card layouts
+9. **Always follow** the enterprise terminology and professional appearance
+10. **Always test** sticky headers, pagination, responsive behavior, and unsaved changes detection
+11. **Reference users.html, edit_user.html, and create_user.html** directly when implementing similar features
+
+This template represents the PERFECT implementation of enterprise-grade administrative interfaces with comprehensive user experience features, proper form handling, and bulletproof popup management.
 
 ## Default Credentials
 

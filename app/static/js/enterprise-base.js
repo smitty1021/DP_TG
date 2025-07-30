@@ -7,6 +7,10 @@
 // Global flag to prevent duplicate flash message processing
 let flashMessagesProcessed = false;
 
+// Global unsaved changes management system
+let globalBeforeUnloadHandler = null;
+let beforeUnloadBypass = false;
+
 // Enterprise notification system initialization
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔧 Enterprise base initialization starting...');
@@ -25,6 +29,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize media preview system
     initializeMediaPreviewSystem();
+
+    // Initialize global unsaved changes system
+    initializeGlobalUnsavedChangesSystem();
 
     console.log('✅ Enterprise base initialization complete');
 });
@@ -204,3 +211,57 @@ function downloadCurrentImage() {
         document.body.removeChild(link);
     }
 }
+
+/**
+ * Initialize global unsaved changes management system
+ * Provides centralized control over beforeunload events
+ */
+function initializeGlobalUnsavedChangesSystem() {
+    console.log('🔧 Initializing global unsaved changes system...');
+    
+    // Create a global beforeunload handler that can be bypassed
+    globalBeforeUnloadHandler = function(e) {
+        // Check if bypass is active
+        if (beforeUnloadBypass) {
+            console.log('🚫 Beforeunload bypassed - allowing navigation');
+            return undefined;
+        }
+        
+        // Let individual pages handle their own unsaved changes logic
+        // This is just a fallback safety net
+        return undefined;
+    };
+    
+    // Install the global handler
+    window.addEventListener('beforeunload', globalBeforeUnloadHandler);
+    console.log('✅ Global unsaved changes system initialized');
+}
+
+/**
+ * Globally disable beforeunload prompts
+ * Call this before programmatic navigation to prevent double prompts
+ */
+window.disableBeforeUnloadPrompts = function() {
+    console.log('🔒 Disabling beforeunload prompts globally');
+    beforeUnloadBypass = true;
+    
+    // Automatically re-enable after a short delay to prevent permanent bypass
+    setTimeout(function() {
+        beforeUnloadBypass = false;
+        console.log('🔓 Re-enabled beforeunload prompts');
+    }, 1000);
+};
+
+/**
+ * Force navigation without any beforeunload prompts
+ * Safer alternative to direct window.location changes
+ */
+window.safeNavigate = function(url) {
+    console.log('🧭 Safe navigation to:', url);
+    window.disableBeforeUnloadPrompts();
+    
+    // Small delay to ensure bypass is active
+    setTimeout(function() {
+        window.location.href = url;
+    }, 50);
+};

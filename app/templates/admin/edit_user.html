@@ -9,6 +9,7 @@
 <!-- Fortune 500 Enterprise CSS Framework -->
 <link rel="stylesheet" href="/static/css/enterprise-all.css">
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 <script>
@@ -106,22 +107,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Enhanced beforeunload handler
-    window.addEventListener('beforeunload', function(e) {
+    function beforeUnloadHandler(e) {
         if (hasUnsavedChanges && !isSubmitting) {
             const message = 'Configuration changes are pending. Proceed without saving?';
             e.preventDefault();
             e.returnValue = message;
             return message;
         }
-    });
+    }
+    
+    window.addEventListener('beforeunload', beforeUnloadHandler);
 
     // Clear unsaved changes flag when form is submitted
     form.addEventListener('submit', function(e) {
         isSubmitting = true;
         hasUnsavedChanges = false;
 
-        // Show saving notification
-        showInfo('Saving user configuration changes...', 'Configuration Update');
+        // Note: Success notification will be shown on users.html page after redirect
     });
 
     // Enhanced navigation handler with custom modal
@@ -146,9 +148,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     confirmClass: 'btn-warning',
                     icon: 'exclamation-triangle',
                     onConfirm: function() {
-                        isSubmitting = true;
-                        hasUnsavedChanges = false;
-                        window.location.href = href;
+                        console.log('🔗 Navigation confirmed, target:', href);
+                        // Reset form to original state to prevent browser popup
+                        resetFormToOriginalState();
+                        // Small delay to ensure reset is processed before navigation
+                        setTimeout(function() {
+                            console.log('🚀 Navigating to:', href);
+                            window.location.href = href;
+                        }, 100);
                     }
                 });
                 return false;
@@ -177,9 +184,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     confirmClass: 'btn-warning',
                     icon: 'exclamation-triangle',
                     onConfirm: function() {
-                        isSubmitting = true;
-                        hasUnsavedChanges = false;
-                        originalOnclick.call(button, e);
+                        console.log('🔘 Button action confirmed');
+                        // Reset form to original state to prevent browser popup
+                        resetFormToOriginalState();
+                        // Small delay to ensure reset is processed before action
+                        setTimeout(function() {
+                            console.log('🚀 Executing button action');
+                            originalOnclick.call(button, e);
+                        }, 100);
                     }
                 });
                 return false;
@@ -189,8 +201,175 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     });
 
+    // Reset form to original state to prevent browser beforeunload popup
+    function resetFormToOriginalState() {
+        console.log('🔄 Resetting form to original state...');
+        
+        // FIRST: Remove local beforeunload handler
+        window.removeEventListener('beforeunload', beforeUnloadHandler);
+        
+        // SECOND: Disable the global enterprise unsaved changes handler
+        if (window.enterpriseUnsavedChanges) {
+            console.log('🎯 Disabling global enterprise unsaved changes handler');
+            window.enterpriseUnsavedChanges.hasUnsavedChanges = false;
+            window.enterpriseUnsavedChanges.isSubmitting = true;
+            window.enterpriseUnsavedChanges.markAsSubmitting();
+        }
+        
+        // THIRD: Nuclear option for any other handlers
+        window.onbeforeunload = null;
+        
+        console.log('🗑️ Disabled all beforeunload handlers');
+        
+        // Reset all form inputs to original values
+        inputs.forEach(input => {
+            if (input.type === 'checkbox') {
+                input.checked = originalFormData[input.name] || false;
+            } else {
+                input.value = originalFormData[input.name] || '';
+            }
+        });
+        
+        // Immediately update the unsaved changes state
+        hasUnsavedChanges = false;
+        isSubmitting = true; // Set submitting flag to prevent further prompts
+        
+        // Hide the unsaved changes indicator
+        const indicator = document.getElementById('unsaved-indicator');
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+        
+        // Force a recheck to ensure state is consistent
+        checkForChanges();
+        
+        console.log('✅ Form reset complete - hasUnsavedChanges:', hasUnsavedChanges, 'isSubmitting:', isSubmitting);
+    }
+
+    // Initialize password strength meter
+    initializePasswordStrengthMeter();
+
+    // Initialize password match validator
+    initializePasswordMatchValidator();
+
     console.log('Enterprise User Configuration Management initialized');
 });
+
+// Password Strength Meter Implementation
+function initializePasswordStrengthMeter() {
+    const passwordField = document.getElementById('new_password');
+    const strengthContainer = document.getElementById('password-strength-container');
+    const strengthBar = document.getElementById('password-strength-bar');
+    const strengthText = document.getElementById('password-strength-text');
+
+    if (!passwordField || !strengthContainer) return;
+
+    passwordField.addEventListener('input', function() {
+        const password = this.value;
+
+        if (password.length === 0) {
+            strengthContainer.style.display = 'none';
+            return;
+        }
+
+        strengthContainer.style.display = 'block';
+
+        // Calculate password strength
+        let score = 0;
+        const requirements = {
+            length: password.length >= 8,
+            uppercase: /[A-Z]/.test(password),
+            lowercase: /[a-z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[^A-Za-z0-9]/.test(password)
+        };
+
+        // Update requirement badges
+        Object.keys(requirements).forEach(req => {
+            const badge = document.getElementById(`req-${req}`);
+            if (badge) {
+                if (requirements[req]) {
+                    badge.className = 'badge bg-success';
+                    score++;
+                } else {
+                    badge.className = 'badge bg-secondary';
+                }
+            }
+        });
+
+        // Update strength bar and text
+        let strengthClass = 'bg-danger';
+        let strengthLabel = 'Very Weak';
+        let percentage = 0;
+
+        if (score === 0) {
+            strengthClass = 'bg-danger';
+            strengthLabel = 'Very Weak';
+            percentage = 10;
+        } else if (score === 1) {
+            strengthClass = 'bg-danger';
+            strengthLabel = 'Weak';
+            percentage = 20;
+        } else if (score === 2) {
+            strengthClass = 'bg-warning';
+            strengthLabel = 'Fair';
+            percentage = 40;
+        } else if (score === 3) {
+            strengthClass = 'bg-info';
+            strengthLabel = 'Good';
+            percentage = 60;
+        } else if (score === 4) {
+            strengthClass = 'bg-primary';
+            strengthLabel = 'Strong';
+            percentage = 80;
+        } else if (score === 5) {
+            strengthClass = 'bg-success';
+            strengthLabel = 'Very Strong';
+            percentage = 100;
+        }
+
+        strengthBar.className = `progress-bar ${strengthClass}`;
+        strengthBar.style.width = `${percentage}%`;
+        strengthText.textContent = strengthLabel;
+    });
+}
+
+// Password Match Validator Implementation
+function initializePasswordMatchValidator() {
+    const passwordField = document.getElementById('new_password');
+    const confirmPasswordField = document.getElementById('confirm_new_password');
+    const matchIndicator = document.getElementById('password-match-indicator');
+    const matchText = document.getElementById('password-match-text');
+    const submitBtn = document.querySelector('input[type="submit"], button[type="submit"]');
+
+    if (!passwordField || !confirmPasswordField || !matchIndicator) return;
+
+    function checkPasswordMatch() {
+        const password = passwordField.value;
+        const confirmPassword = confirmPasswordField.value;
+
+        if (confirmPassword.length === 0) {
+            matchIndicator.style.display = 'none';
+            return;
+        }
+
+        matchIndicator.style.display = 'block';
+
+        if (password === confirmPassword && password.length > 0) {
+            matchText.innerHTML = '<i class="fas fa-check me-1 text-success"></i><span class="text-success">Passwords match</span>';
+            confirmPasswordField.style.borderColor = '#28a745';
+            if (submitBtn) submitBtn.disabled = false;
+        } else {
+            matchText.innerHTML = '<i class="fas fa-times me-1 text-danger"></i><span class="text-danger">Passwords do not match</span>';
+            confirmPasswordField.style.borderColor = '#dc3545';
+            if (submitBtn) submitBtn.disabled = true;
+        }
+    }
+
+    // Add event listeners
+    confirmPasswordField.addEventListener('input', checkPasswordMatch);
+    passwordField.addEventListener('input', checkPasswordMatch);
+}
 </script>
 {% endblock %}
 
@@ -233,108 +412,178 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 
     <!-- Main Content Grid -->
-    <div class="enterprise-container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 200px); width: 100%; max-width: none;">
-
+    <div class="enterprise-container-fluid mt-3">
         <!-- Unsaved Changes Indicator -->
-        <div id="unsaved-indicator" class="alert alert-warning alert-dismissible fade show" role="alert" style="display: none;">
+        <div id="unsaved-indicator" class="alert alert-warning alert-dismissible fade show mb-3" role="alert" style="display: none;">
             <i class="fas fa-exclamation-triangle me-2"></i>
             <strong>Unsaved Changes:</strong> You have made changes that have not been saved yet.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
 
-        <div class="row justify-content-center">
-            <div class="col-md-8 col-lg-7">
-                <!-- User Configuration Module -->
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-cog module-icon"></i>
-                            User Resource Configuration
-                        </div>
+        <!-- Enterprise Grid Layout for User Configuration -->
+        <div class="grid grid-cols-2 gap-4 align-items-start">
+            <!-- User Configuration Module -->
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-user-edit module-icon"></i>
+                        User Configuration Management
                     </div>
-                    <div class="module-content">
-                        <!-- Flash Messages (Hidden - converted to notifications) -->
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert" style="display: none;">
-                                        {{ message|safe }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                        {% endwith %}
-
-                        <!-- Configuration Form -->
-                        <form method="POST" action="{{ url_for('admin.admin_edit_user', user_id=user_id) }}" novalidate>
-                            {{ form.hidden_tag() }}
-
-                            <!-- Identity Configuration Section -->
-                            <div class="mb-4">
-                                <h5 class="module-title">
-                                    <i class="fas fa-id-card module-icon"></i>Identity Configuration
-                                </h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        {{ render_field(form.username, label_visible=true, input_class="form-control") }}
-                                    </div>
-                                    <div class="col-md-6">
-                                        {{ render_field(form.email, label_visible=true, input_class="form-control", type="email") }}
-                                    </div>
+                    <div class="module-meta">
+                        User Account Modification & Access Control Framework
+                    </div>
+                </div>
+                <div class="module-content mb-3">
+                    <!-- Flash Messages (Hidden - converted to notifications) -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert" style="display: none;">
+                                    {{ message|safe }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        {{ render_field(form.name, label_visible=true, input_class="form-control") }}
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Configuration Form -->
+                    <form method="POST" action="{{ url_for('admin.admin_edit_user', user_id=user_id) }}" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <!-- Identity Configuration Section -->
+                        <div class="mb-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ render_field(form.username, label_visible=true, input_class="form-control") }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ render_field(form.email, label_visible=true, input_class="form-control", type="email") }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    {{ render_field(form.name, label_visible=true, input_class="form-control") }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Access Control Section -->
+                        <div class="mb-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ render_field(form.role, label_visible=true, input_class="form-select") }}
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        {{ render_checkbox(form.is_active, label_visible=true, input_class="form-check-input") }}
+                                    </div>
+                                    <div class="mb-3">
+                                        {{ render_checkbox(form.is_email_verified, label_visible=true, input_class="form-check-input") }}
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Access Control Section -->
-                            <div class="mb-4">
-                                <h5 class="module-title">
-                                    <i class="fas fa-shield-alt module-icon"></i>Access Control Framework
-                                </h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        {{ render_field(form.role, label_visible=true, input_class="form-select") }}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            {{ render_checkbox(form.is_active, label_visible=true, input_class="form-check-input") }}
+                        <!-- Security Configuration Section -->
+                        <div class="mb-4">
+                            <p class="text-muted mb-3">Leave password fields blank to maintain current authentication credentials</p>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ render_field(form.new_password, label_visible=true, input_class="form-control", placeholder="New password authentication", type="password", id="new_password") }}
+                                    
+                                    <!-- Password Strength Indicator -->
+                                    <div id="password-strength-container" class="mt-2" style="display: none;">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <small class="text-muted me-2">Strength:</small>
+                                            <div class="progress flex-grow-1" style="height: 6px;">
+                                                <div id="password-strength-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                            <small id="password-strength-text" class="text-muted ms-2">Weak</small>
                                         </div>
-                                        <div class="mb-3">
-                                            {{ render_checkbox(form.is_email_verified, label_visible=true, input_class="form-check-input") }}
+                                        <div id="password-requirements" class="small text-muted">
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <span id="req-length" class="badge bg-secondary">8+ chars</span>
+                                                <span id="req-uppercase" class="badge bg-secondary">A-Z</span>
+                                                <span id="req-lowercase" class="badge bg-secondary">a-z</span>
+                                                <span id="req-number" class="badge bg-secondary">0-9</span>
+                                                <span id="req-special" class="badge bg-secondary">Special</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <!-- Security Configuration Section -->
-                            <div class="mb-4">
-                                <h5 class="module-title">
-                                    <i class="fas fa-key module-icon"></i>Security Configuration (Optional)
-                                </h5>
-                                <p class="text-muted mb-3">Leave password fields blank to maintain current authentication credentials</p>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        {{ render_field(form.new_password, label_visible=true, input_class="form-control", placeholder="New password authentication", type="password") }}
-                                    </div>
-                                    <div class="col-md-6">
-                                        {{ render_field(form.confirm_new_password, label_visible=true, input_class="form-control", placeholder="Confirm password authentication", type="password") }}
+                                <div class="col-md-6">
+                                    {{ render_field(form.confirm_new_password, label_visible=true, input_class="form-control", placeholder="Confirm password authentication", type="password", id="confirm_new_password") }}
+                                    
+                                    <!-- Password Match Indicator -->
+                                    <div id="password-match-indicator" class="mt-2" style="display: none;">
+                                        <small id="password-match-text" class="text-muted">
+                                            <i id="password-match-icon" class="fas fa-times me-1"></i>
+                                            Passwords do not match
+                                        </small>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Action Controls -->
-                            <div class="mt-4">
-                                <div class="d-grid gap-2">
-                                    {{ form.submit(class="btn btn-primary btn-lg") }}
-                                    <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary btn-lg">
-                                        Cancel Configuration
-                                    </a>
+                        <!-- Action Controls -->
+                        <div class="mt-4">
+                            <div class="d-grid gap-2">
+                                {{ form.submit(class="btn btn-primary btn-lg") }}
+                                <a href="{{ url_for('admin.admin_users_list') }}" class="btn btn-outline-secondary btn-lg">
+                                    Cancel Configuration
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Configuration Guidelines Module -->
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-info-circle module-icon"></i>
+                        Configuration Guidelines
+                    </div>
+                    <div class="module-meta">
+                        Strategic Overview
+                    </div>
+                </div>
+                <div class="module-content mb-3">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-primary-soft me-3 p-2 rounded">
+                                    <i class="fas fa-user-edit"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Identity Management</h6>
+                                    <p class="text-muted small mb-0">Username and email modifications require administrative validation</p>
                                 </div>
                             </div>
-                        </form>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-primary-soft me-3 p-2 rounded">
+                                    <i class="fas fa-key"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Password Updates</h6>
+                                    <p class="text-muted small mb-0">Leave password fields empty to maintain current credentials</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-primary-soft me-3 p-2 rounded">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Access Control</h6>
+                                    <p class="text-muted small mb-0">Role changes affect system permissions and operational capabilities</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

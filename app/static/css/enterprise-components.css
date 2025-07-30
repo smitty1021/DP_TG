@@ -71,6 +71,33 @@ Version: 2.0
     text-align: center;
 }
 
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--enterprise-radius);
+    font-size: var(--enterprise-font-size-sm);
+    font-weight: 600;
+    text-align: center;
+    display: inline-block;
+    border: 1px solid transparent;
+}
+
+.status-badge.operational {
+    background: rgba(0, 112, 192, 0.1);
+    color: var(--enterprise-success);
+    border: 1px solid rgba(0, 112, 192, 0.2);
+}
+
+.status-badge.suspended {
+    background: rgba(209, 52, 56, 0.1);
+    color: var(--enterprise-danger);
+    border: 1px solid rgba(209, 52, 56, 0.2);
+}
+
+.status-badge.inactive {
+    background: rgba(108, 117, 125, 0.1);
+    color: var(--enterprise-text-muted);
+}
+
 .scenario-subtitle {
     color: var(--enterprise-text-secondary);
     font-size: 1rem;
@@ -167,7 +194,6 @@ Version: 2.0
 .kpi-section {
     background: var(--enterprise-white);
     border-bottom: 1px solid var(--enterprise-border);
-    margin-bottom: var(--enterprise-spacing-lg);
     padding: 0;
 }
 
@@ -1197,9 +1223,10 @@ To restore borders, simply comment it back out.
 
 .table th,
 .table td {
-    padding: 0.75rem;
+    padding: 0.5rem;
     vertical-align: middle;
     border-bottom: 1px solid var(--enterprise-border);
+    padding-left: 1.5rem;
 }
 
 .table thead th {

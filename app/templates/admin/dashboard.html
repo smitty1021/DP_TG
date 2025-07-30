@@ -43,30 +43,28 @@
                         title="Go Back">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" 
-                            data-bs-toggle="dropdown" aria-expanded="false" title="System Export Options">
-                        <i class="fas fa-download me-1"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url_for('admin.export_system_report') }}">
-                            <i class="fas fa-chart-bar me-2"></i>System Performance Report</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('admin.export_user_activity') }}">
-                            <i class="fas fa-users me-2"></i>User Activity Report</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('admin.export_audit_log') }}">
-                            <i class="fas fa-clipboard-check me-2"></i>System Audit Log</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{{ url_for('admin.backup_system_data') }}">
-                            <i class="fas fa-database me-2"></i>Full System Backup</a></li>
-                    </ul>
-                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                        data-bs-toggle="dropdown" aria-expanded="false" title="System Export Options">
+                    <i class="fas fa-download me-1"></i>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ url_for('admin.export_system_report') }}">
+                        <i class="fas fa-chart-bar me-2"></i>System Performance Report</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('admin.export_user_activity') }}">
+                        <i class="fas fa-users me-2"></i>User Activity Report</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('admin.export_audit_log') }}">
+                        <i class="fas fa-clipboard-check me-2"></i>System Audit Log</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{{ url_for('admin.backup_system_data') }}">
+                        <i class="fas fa-database me-2"></i>Full System Backup</a></li>
+                </ul>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Main Content Wrapper -->
-<div class="enterprise-container-fluid mt-4" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
+<div class="enterprise-container-fluid mt-3" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
     <!-- Executive KPI Row -->
     <div class="kpi-section">
         <div class="grid grid-cols-4 gap-4">
@@ -128,7 +126,7 @@
                         <div class="kpi-value">{{ default_models_count or 0 }}</div>
                         <div class="kpi-trend">
                             <span class="trend-indicator">
-                                Methodology: Random
+                                Pack Trade Group Methodology
                             </span>
                         </div>
                     </div>
@@ -138,11 +136,11 @@
     </div>
 
     <!-- Main Dashboard Grid -->
-    <div class="grid grid-cols-12 gap-4">
+    <div class="grid grid-cols-12 gap-4 mt-3">
         <!-- Primary Operations -->
         <div class="col-span-8">
             <!-- User Administration -->
-            <div class="enterprise-module mb-4">
+            <div class="enterprise-module">
                 <div class="module-header">
                     <div class="module-title">
                         <i class="fas fa-users-cog module-icon"></i>
@@ -175,7 +173,7 @@
             </div>
 
             <!-- System Configuration -->
-            <div class="enterprise-module mb-4">
+            <div class="enterprise-module mt-3">
                 <div class="module-header">
                     <div class="module-title">
                         <i class="fas fa-cogs module-icon"></i>
@@ -256,7 +254,7 @@
             </div>
 
             <!-- Security & Access Control -->
-            <div class="enterprise-module mb-4">
+            <div class="enterprise-module mt-3">
                 <div class="module-header">
                     <div class="module-title">
                         <i class="fas fa-shield-alt module-icon"></i>
@@ -313,7 +311,7 @@
             </div>
 
             <!-- Advanced Configuration -->
-            <div class="enterprise-module mb-4">
+            <div class="enterprise-module mt-3">
                 <div class="module-header">
                     <div class="module-title">
                         <i class="fas fa-wrench module-icon"></i>
@@ -357,7 +355,7 @@
         <!-- Executive Summary Sidebar -->
         <div class="col-span-4">
             <!-- System Health -->
-            <div class="enterprise-module mb-4">
+            <div class="enterprise-module">
                 <div class="module-header">
                     <div class="module-title">
                         <i class="fas fa-heartbeat module-icon"></i>
@@ -378,7 +376,7 @@
                             <div class="health-details d-flex justify-content-between align-items-center">
                                 <div class="health-name">Application Status</div>
                                 <div class="health-value" id="app-status">
-                                    <span class="status-badge text-success">OPERATIONAL</span>
+                                    <span class="btn btn-outline-success">OPERATIONAL</span>
                                 </div>
                             </div>
                         </div>
@@ -390,7 +388,7 @@
                             <div class="health-details d-flex justify-content-between align-items-center">
                                 <div class="health-name">Database Connection</div>
                                 <div class="health-value" id="db-status">
-                                    <span class="status-badge text-success">CONNECTED</span>
+                                    <span class="btn btn-outline-success">CONNECTED</span>
                                 </div>
                             </div>
                         </div>
@@ -402,7 +400,7 @@
                             <div class="health-details d-flex justify-content-between align-items-center">
                                 <div class="health-name">P12 Engine</div>
                                 <div class="health-value" id="p12-status">
-                                    <span class="status-badge text-success">ACTIVE</span>
+                                    <span class="btn btn-outline-success">ACTIVE</span>
                                 </div>
                             </div>
                         </div>
@@ -414,7 +412,7 @@
                             <div class="health-details d-flex justify-content-between align-items-center">
                                 <div class="health-name">Analytics Engine</div>
                                 <div class="health-value" id="analytics-status">
-                                    <span class="status-badge text-warning">SCHEDULED DEPLOYMENT</span>
+                                    <span class="btn btn-outline-warning">SCHEDULED DEPLOYMENT</span>
                                 </div>
                             </div>
                         </div>
@@ -423,7 +421,7 @@
             </div>
 
             <!-- Business Intelligence -->
-            <div class="enterprise-module mb-4">
+            <div class="enterprise-module mt-3">
                 <div class="module-header">
                     <div class="module-title">
                         <i class="fas fa-brain module-icon"></i>
@@ -459,7 +457,7 @@
             </div>
 
             <!-- System Information -->
-            <div class="enterprise-module">
+            <div class="enterprise-module mt-3">
                 <div class="module-header">
                     <div class="module-title">
                         <i class="fas fa-info-circle module-icon"></i>
