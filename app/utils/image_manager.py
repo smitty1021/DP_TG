@@ -19,6 +19,10 @@ class ImageManager:
 
     # Entity-specific configurations
     ENTITY_CONFIGS = {
+        'trading_model': {
+            'subfolder': 'trading_models',
+            'max_size': 10 * 1024 * 1024,  # 10MB
+        },
         'p12_scenario': {
             'subfolder': 'p12_scenarios',
             'max_size': 5 * 1024 * 1024,  # 5MB

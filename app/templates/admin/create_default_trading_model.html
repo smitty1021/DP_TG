@@ -1,15 +1,296 @@
 {% extends "base.html" %}
 {% from "macros/_form_helpers.html" import render_field, render_checkbox %}
 
-{% block title %}Strategic Framework Configuration - {{ model.name }}{% endblock %}
+{% block title %}Strategic Framework Configuration{% if model %} - {{ model.name }}{% endif %}{% endblock %}
 
 {% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+
+<style>
+/* Enhanced Visual Styling */
+.strategy-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.strategy-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    border-radius: 12px 12px 0 0;
+}
+
+.strategy-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+.card-header-enhanced {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #dee2e6;
+    padding: 1.25rem 1.5rem;
+    border-radius: 8px 8px 0 0;
+}
+
+.card-title-enhanced {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-title-enhanced i {
+    color: #007bff;
+    font-size: 1.2rem;
+}
+
+.card-subtitle-enhanced {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0.25rem 0 0 0;
+    font-weight: 400;
+}
+
+.form-control-enhanced {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background-color: #ffffff;
+}
+
+.form-control-enhanced:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.1);
+    background-color: #ffffff;
+}
+
+.form-label-enhanced {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.section-divider {
+    height: 2px;
+    background: linear-gradient(90deg, #007bff, transparent);
+    margin: 2rem 0;
+    border-radius: 1px;
+}
+
+.image-upload-zone {
+    border: 2px dashed #007bff;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.image-upload-zone:hover {
+    border-color: #0056b3;
+    background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: #007bff;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+}
+
+.section-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.section-header p {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.field-group {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.field-group::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #007bff, #0056b3);
+    border-radius: 0 0 0 8px;
+}
+
+.preview-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.preview-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.preview-item:hover {
+    transform: scale(1.05);
+}
+
+.preview-item img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+}
+
+.save-button-enhanced {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    border-radius: 50px;
+    padding: 1rem 3rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.save-button-enhanced:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+}
+
+.cancel-button-enhanced {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    border: none;
+    border-radius: 50px;
+    padding: 1rem 3rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cancel-button-enhanced:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
+}
+
+.floating-action-bar {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 50px;
+    padding: 1rem 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    display: flex;
+    gap: 1rem;
+    z-index: 1000;
+}
+
+.progress-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #007bff 0%, #0056b3 50%, #007bff 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+    z-index: 9999;
+    display: none;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.form-group-enhanced {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.required-indicator {
+    color: #dc3545;
+    font-weight: bold;
+    margin-left: 0.25rem;
+}
+
+.help-text {
+    font-size: 0.825rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+    font-style: italic;
+}
+
+.visual-separator {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #dee2e6, transparent);
+    margin: 2rem 0;
+}
+</style>
 {% endblock %}
 
 {% block content %}
+<!-- Progress Indicator -->
+<div id="progressIndicator" class="progress-indicator"></div>
+
 <!-- Executive Header -->
 <div class="executive-header">
     <div class="d-flex justify-content-between align-items-center">
@@ -19,7 +300,11 @@
                 Strategic Framework Configuration
             </h1>
             <div class="executive-subtitle">
-                Modify Strategic Trading Framework: {{ model.name }}
+                {% if model %}
+                    Modify Strategic Trading Framework: {{ model.name }}
+                {% else %}
+                    Create New Strategic Trading Framework
+                {% endif %}
             </div>
         </div>
         <div class="btn-group">
@@ -28,6 +313,13 @@
                     title="Go to Main Dashboard">
                 <i class="fas fa-home"></i>
             </button>
+            {% if model %}
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    onclick="window.location.href='{{ url_for('admin.view_default_trading_model', model_id=model.id) }}'"
+                    title="View Trading Model">
+                <i class="fas fa-eye"></i>
+            </button>
+            {% endif %}
             <button type="button" class="btn btn-outline-secondary btn-sm"
                     onclick="window.location.href='{{ url_for('admin.create_default_trading_model') }}'"
                     title="New Trading Model Configuration">
@@ -39,7 +331,7 @@
             </button>
             <button type="button" class="btn btn-outline-secondary btn-sm"
                     onclick="window.location.href='{{ url_for('admin.manage_default_trading_models') }}'"
-                    title="Back to Strategic Framework Administration">
+                    title="Back to Model Administration">
                 <i class="fas fa-tachometer-alt"></i>
             </button>
             <button type="button" class="btn btn-outline-secondary btn-sm"
@@ -51,315 +343,749 @@
     </div>
 </div>
 
-<!-- Main Content Grid -->
-<div class="container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 300px);">
-    <div class="row g-4">
-        <!-- System Notice Module -->
-        <div class="col-12">
-            <div class="enterprise-module fade-in">
-                <div class="module-header">
-                    <div class="module-title">
-                        <i class="fas fa-exclamation-circle module-icon text-warning"></i>
-                        Administrative Configuration Notice
+<!-- Main Content Wrapper -->
+<div class="enterprise-container-fluid mt-3" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem; padding-bottom: 8rem;">
+    
+    <form method="POST" enctype="multipart/form-data" novalidate id="trading-model-form">
+        {{ form.hidden_tag() }}
+
+        <!-- Section 1: Strategic Foundation -->
+        <div class="section-header">
+            <h3><i class="fas fa-chess-king"></i> Strategic Foundation</h3>
+            <p>Core model identification and strategic overview</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-info-circle"></i>
+                            Basic Information
+                        </h4>
+                        <p class="card-subtitle-enhanced">Model identity and version control</p>
                     </div>
-                    <div class="module-meta">System-wide Impact</div>
-                </div>
-                <div class="module-content">
-                    <div class="alert alert-warning border-0 mb-0" style="background: rgba(255, 193, 7, 0.1);">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-shield-alt text-warning me-3" style="font-size: 1.5rem;"></i>
-                            <div>
-                                <div class="fw-bold text-warning">Enterprise Configuration Update</div>
-                                <div class="text-muted mt-1">
-                                    This strategic framework configuration affects all system users. Changes will be immediately available across the enterprise platform.
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Model Name <span class="required-indicator">*</span></label>
+                            {{ form.name(class="form-control form-control-enhanced" + (" is-invalid" if form.name.errors else ""), placeholder="Enter strategic model name") }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.name.errors %}{{ error }}{% endfor %}
                                 </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Version</label>
+                            {{ form.version(class="form-control form-control-enhanced" + (" is-invalid" if form.version.errors else ""), placeholder="e.g., v1.0, v2.1") }}
+                            {% if form.version.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.version.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group-enhanced">
+                            <div class="form-check">
+                                {{ form.is_active(class="form-check-input" + (" is-invalid" if form.is_active.errors else "")) }}
+                                {{ form.is_active.label(class="form-check-label fw-semibold") }}
+                                {% if form.is_active.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.is_active.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
+                            <div class="help-text">Enable this model for active trading operations</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-brain"></i>
+                            Strategic Logic
+                        </h4>
+                        <p class="card-subtitle-enhanced">Core model framework and philosophy</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Strategic Overview</label>
+                            {{ form.overview_logic(class="form-control form-control-enhanced textarea-7" + (" is-invalid" if form.overview_logic.errors else ""), placeholder="Describe the core logic and methodology of this trading model...") }}
+                            {% if form.overview_logic.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.overview_logic.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="help-text">Explain the fundamental approach and reasoning behind this model</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-chart-area"></i>
+                            Chart Examples
+                        </h4>
+                        <p class="card-subtitle-enhanced">Visual examples and patterns</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Upload Chart Examples</label>
+                            <div class="image-upload-zone">
+                                <div class="upload-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                {{ form.chart_examples(class="form-control" + (" is-invalid" if form.chart_examples.errors else ""), accept="image/*", multiple=true, id="chartExamplesFile", onchange="previewImages(this)") }}
+                                {% if form.chart_examples.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.chart_examples.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                                <p class="mt-2 mb-0">
+                                    <strong>Drag & Drop</strong> or <strong>Click to Upload</strong><br>
+                                    <small class="text-muted">Supported: JPG, PNG, GIF, WebP (Max 5MB each)</small>
+                                </p>
+                            </div>
+                            <div id="imagePreviewContainer" class="preview-container" style="display: none;"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Configuration Form Module -->
-        <div class="col-12">
-            <div class="enterprise-module fade-in">
-                <div class="module-header">
-                    <div class="module-title">
-                        <i class="fas fa-edit module-icon"></i>
-                        Framework Configuration Interface
+        <div class="visual-separator"></div>
+
+        <!-- Section 2: Technical Analysis Framework -->
+        <div class="section-header">
+            <h3><i class="fas fa-chart-line"></i> Technical Analysis Framework</h3>
+            <p>Timeframes, indicators, and analysis methodology</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-clock"></i>
+                            Timeframe Structure
+                        </h4>
+                        <p class="card-subtitle-enhanced">Multi-timeframe analysis setup</p>
                     </div>
-                    <div class="module-meta">Strategic Trading Model Parameters</div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Primary Chart (Analysis)</label>
+                            {{ form.primary_chart_tf(class="form-control form-control-enhanced" + (" is-invalid" if form.primary_chart_tf.errors else ""), placeholder="e.g., 15m, 1H, 4H") }}
+                            <div class="help-text">Main timeframe for trade setup analysis</div>
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Execution Chart</label>
+                            {{ form.execution_chart_tf(class="form-control form-control-enhanced" + (" is-invalid" if form.execution_chart_tf.errors else ""), placeholder="e.g., 1m, 5m, 15m") }}
+                            <div class="help-text">Timeframe for precise entry timing</div>
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Context Chart</label>
+                            {{ form.context_chart_tf(class="form-control form-control-enhanced" + (" is-invalid" if form.context_chart_tf.errors else ""), placeholder="e.g., 1D, 4H, 1H") }}
+                            <div class="help-text">Higher timeframe for trend context</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="module-content">
-                    <form method="POST" action="{{ url_for('admin.edit_default_trading_model', model_id=model.id) }}"
-                          novalidate id="configuration-form" class="needs-validation">
-                        {{ form.hidden_tag() }}
+            </div>
 
-                        <!-- Primary Configuration Section -->
-                        <div class="enterprise-module mb-4">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-id-card module-icon"></i>
-                                    Primary Framework Identity
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                <div class="row mb-3">
-                                    <div class="col-md-7">
-                                        {{ render_field(form.name, label_visible=true, input_class="form-control form-control-lg", placeholder="Strategic Framework Name") }}
-                                    </div>
-                                    <div class="col-md-3">
-                                        {{ render_field(form.version, label_visible=true, input_class="form-control", placeholder="Version") }}
-                                    </div>
-                                    <div class="col-md-2 d-flex align-items-end pb-2">
-                                        {{ render_checkbox(form.is_active, label_visible=true, input_class="form-check-input-lg") }}
-                                    </div>
-                                </div>
-                                {{ render_field(form.overview_logic, label_visible=true, input_class="form-control", rows="3", placeholder="Strategic framework core logic and operational purpose") }}
-                            </div>
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-calculator"></i>
+                            Technical Indicators
+                        </h4>
+                        <p class="card-subtitle-enhanced">Indicators and technical tools</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Technical Indicators</label>
+                            {{ form.technical_indicators_used(class="form-control form-control-enhanced textarea-4" + (" is-invalid" if form.technical_indicators_used.errors else ""), placeholder="List indicators and their settings (e.g., EMA 20/50, RSI 14, MACD 12,26,9)") }}
+                            <div class="help-text">Include specific settings and parameters</div>
                         </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Chart Patterns</label>
+                            {{ form.chart_patterns_used(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.chart_patterns_used.errors else ""), placeholder="Patterns this model identifies and trades") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                        <!-- Timeframe Configuration -->
-                        <div class="enterprise-module mb-4">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-clock module-icon"></i>
-                                    Operational Timeframe Configuration
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        {{ render_field(form.primary_chart_tf, label_visible=true, input_class="form-control", placeholder="Primary Analysis Timeframe") }}
-                                    </div>
-                                    <div class="col-md-4">
-                                        {{ render_field(form.execution_chart_tf, label_visible=true, input_class="form-control", placeholder="Execution Timeframe") }}
-                                    </div>
-                                    <div class="col-md-4">
-                                        {{ render_field(form.context_chart_tf, label_visible=true, input_class="form-control", placeholder="Context Analysis Timeframe") }}
-                                    </div>
-                                </div>
-                            </div>
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-search"></i>
+                            Price Action Analysis
+                        </h4>
+                        <p class="card-subtitle-enhanced">Price behavior and levels</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Price Action Signals</label>
+                            {{ form.price_action_signals(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.price_action_signals.errors else ""), placeholder="Key price action patterns and signals") }}
                         </div>
-
-                        <!-- Analytical Framework -->
-                        <div class="enterprise-module mb-4">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-chart-bar module-icon"></i>
-                                    Analytical Framework Configuration
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                {{ render_field(form.technical_indicators_used, label_visible=true, input_class="form-control", rows="3", placeholder="Technical indicator specifications and parameters") }}
-                                {{ render_field(form.chart_patterns_used, label_visible=true, input_class="form-control", rows="2", placeholder="Chart pattern recognition criteria") }}
-                                {{ render_field(form.price_action_signals, label_visible=true, input_class="form-control", rows="2", placeholder="Price action signal identification") }}
-                                {{ render_field(form.key_levels_identification, label_visible=true, input_class="form-control", rows="2", placeholder="Key level identification methodology") }}
-                                {{ render_field(form.volume_analysis_notes, label_visible=true, input_class="form-control", rows="2", placeholder="Volume analysis integration") }}
-                                {{ render_field(form.fundamental_analysis_notes, label_visible=true, input_class="form-control", rows="2", placeholder="Fundamental analysis considerations") }}
-                            </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Key Levels</label>
+                            {{ form.key_levels_identification(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.key_levels_identification.errors else ""), placeholder="How to identify and use key levels") }}
                         </div>
-
-                        <!-- Execution Criteria -->
-                        <div class="enterprise-module mb-4">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-target module-icon"></i>
-                                    Execution Criteria & Market Conditions
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                {{ render_field(form.instrument_applicability, label_visible=true, input_class="form-control", rows="2", placeholder="Applicable instrument classifications") }}
-                                {{ render_field(form.session_applicability, label_visible=true, input_class="form-control", rows="2", placeholder="Operational session requirements") }}
-                                {{ render_field(form.optimal_market_conditions, label_visible=true, input_class="form-control", rows="3", placeholder="Optimal market environment specifications") }}
-                                {{ render_field(form.sub_optimal_market_conditions, label_visible=true, input_class="form-control", rows="3", placeholder="Sub-optimal conditions to avoid") }}
-                            </div>
-                        </div>
-
-                        <!-- Strategic Implementation -->
-                        <div class="enterprise-module mb-4">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-chess module-icon"></i>
-                                    Strategic Implementation Framework
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                {{ render_field(form.entry_trigger_description, label_visible=true, input_class="form-control", rows="4", placeholder="Precise entry trigger conditions and execution criteria") }}
-                                {{ render_field(form.stop_loss_strategy, label_visible=true, input_class="form-control", rows="3", placeholder="Stop loss implementation strategy") }}
-                                {{ render_field(form.take_profit_strategy, label_visible=true, input_class="form-control", rows="3", placeholder="Profit realization strategy") }}
-                                {{ render_field(form.min_risk_reward_ratio, label_visible=true, input_class="form-control", type="number", step="0.1", placeholder="Minimum acceptable risk-reward ratio") }}
-                            </div>
-                        </div>
-
-                        <!-- Risk Management Framework -->
-                        <div class="enterprise-module mb-4">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-shield-alt module-icon"></i>
-                                    Risk Management & Trade Administration
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                {{ render_field(form.position_sizing_rules, label_visible=true, input_class="form-control", rows="3", placeholder="Position sizing methodology and limits") }}
-                                {{ render_field(form.scaling_in_out_rules, label_visible=true, input_class="form-control", rows="2", placeholder="Position scaling protocols") }}
-                                {{ render_field(form.trade_management_breakeven_rules, label_visible=true, input_class="form-control", rows="2", placeholder="Breakeven management procedures") }}
-                                {{ render_field(form.trade_management_trailing_stop_rules, label_visible=true, input_class="form-control", rows="2", placeholder="Trailing stop implementation") }}
-                                {{ render_field(form.trade_management_partial_profit_rules, label_visible=true, input_class="form-control", rows="2", placeholder="Partial profit realization rules") }}
-                                {{ render_field(form.trade_management_adverse_price_action, label_visible=true, input_class="form-control", rows="2", placeholder="Adverse price action response protocols") }}
-                            </div>
-                        </div>
-
-                        <!-- Risk Parameters -->
-                        <div class="enterprise-module mb-4">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-exclamation-triangle module-icon"></i>
-                                    Framework Risk Parameters
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        {{ render_field(form.model_max_loss_per_trade, label_visible=true, input_class="form-control", placeholder="Maximum loss per trade") }}
-                                    </div>
-                                    <div class="col-md-3">
-                                        {{ render_field(form.model_max_daily_loss, label_visible=true, input_class="form-control", placeholder="Maximum daily loss") }}
-                                    </div>
-                                    <div class="col-md-3">
-                                        {{ render_field(form.model_max_weekly_loss, label_visible=true, input_class="form-control", placeholder="Maximum weekly loss") }}
-                                    </div>
-                                    <div class="col-md-3">
-                                        {{ render_field(form.model_consecutive_loss_limit, label_visible=true, input_class="form-control", placeholder="Consecutive loss limit") }}
-                                    </div>
-                                </div>
-                                {{ render_field(form.model_action_on_max_drawdown, label_visible=true, input_class="form-control", rows="3", placeholder="Maximum drawdown response procedures") }}
-                            </div>
-                        </div>
-
-                        <!-- Operational Procedures -->
-                        <div class="enterprise-module mb-4">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-list-check module-icon"></i>
-                                    Operational Procedures & Execution
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                {{ render_field(form.pre_trade_checklist, label_visible=true, input_class="form-control", rows="5", placeholder="Pre-execution validation checklist") }}
-                                {{ render_field(form.order_types_used, label_visible=true, input_class="form-control", rows="2", placeholder="Approved order types and specifications") }}
-                                {{ render_field(form.broker_platform_notes, label_visible=true, input_class="form-control", rows="2", placeholder="Platform-specific operational considerations") }}
-                                {{ render_field(form.execution_confirmation_notes, label_visible=true, input_class="form-control", rows="2", placeholder="Post-execution confirmation procedures") }}
-                                {{ render_field(form.post_trade_routine_model, label_visible=true, input_class="form-control", rows="3", placeholder="Post-trade analysis and documentation requirements") }}
-                            </div>
-                        </div>
-
-                        <!-- Performance Review -->
-                        <div class="enterprise-module mb-4">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-chart-line module-icon"></i>
-                                    Performance Review & Optimization
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                {{ render_field(form.strengths, label_visible=true, input_class="form-control", rows="3", placeholder="Framework operational strengths and advantages") }}
-                                {{ render_field(form.weaknesses, label_visible=true, input_class="form-control", rows="3", placeholder="Identified weaknesses and improvement areas") }}
-                                {{ render_field(form.backtesting_forwardtesting_notes, label_visible=true, input_class="form-control", rows="4", placeholder="Historical performance analysis and testing results") }}
-                                {{ render_field(form.refinements_learnings, label_visible=true, input_class="form-control", rows="4", placeholder="Continuous improvement documentation and learnings") }}
-                            </div>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="enterprise-module">
-                            <div class="module-content">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="btn-group">
-                                        <button type="submit" class="btn btn-primary btn-lg">
-                                            <i class="fas fa-save me-2"></i>
-                                            Update Configuration
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-lg"
-                                                onclick="confirmCancel()">
-                                            <i class="fas fa-times me-2"></i>
-                                            Cancel Changes
-                                        </button>
-                                    </div>
-                                    <div class="text-muted">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        Configuration changes are applied system-wide immediately
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <div class="visual-separator"></div>
+
+        <!-- Section 3: Market Context & Application -->
+        <div class="section-header">
+            <h3><i class="fas fa-globe"></i> Market Context & Application</h3>
+            <p>Market conditions, instruments, and optimal environments</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-chart-bar"></i>
+                            Instrument & Session
+                        </h4>
+                        <p class="card-subtitle-enhanced">Market and timing applicability</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Instrument Applicability</label>
+                            {{ form.instrument_applicability(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.instrument_applicability.errors else ""), placeholder="Which instruments work best (ES, NQ, YM, specific stocks, forex pairs)") }}
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Session Applicability</label>
+                            {{ form.session_applicability(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.session_applicability.errors else ""), placeholder="Best trading sessions (London Open, NY Open, etc.)") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-check-circle"></i>
+                            Optimal Conditions
+                        </h4>
+                        <p class="card-subtitle-enhanced">Best market environments</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Optimal Market Conditions</label>
+                            {{ form.optimal_market_conditions(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.optimal_market_conditions.errors else ""), placeholder="Market conditions where this model performs best") }}
+                            <div class="help-text">Trending, ranging, volatile, quiet markets, etc.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-times-circle"></i>
+                            Conditions to Avoid
+                        </h4>
+                        <p class="card-subtitle-enhanced">When not to use this model</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Sub-optimal Conditions</label>
+                            {{ form.sub_optimal_market_conditions(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.sub_optimal_market_conditions.errors else ""), placeholder="Market conditions to avoid when using this model") }}
+                            <div class="help-text">News events, low volume, choppy markets, etc.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="visual-separator"></div>
+
+        <!-- Section 4: Entry & Risk Management -->
+        <div class="section-header">
+            <h3><i class="fas fa-bullseye"></i> Entry & Risk Management</h3>
+            <p>Execution strategy, stops, targets, and risk parameters</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-play"></i>
+                            Entry Strategy
+                        </h4>
+                        <p class="card-subtitle-enhanced">Precise entry conditions</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Entry Triggers <span class="required-indicator">*</span></label>
+                            {{ form.entry_trigger_description(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.entry_trigger_description.errors else ""), placeholder="Specific conditions that must be met for entry") }}
+                            {% if form.entry_trigger_description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.entry_trigger_description.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="help-text">Be specific about confirmation signals</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-shield-alt"></i>
+                            Stop Loss Strategy
+                        </h4>
+                        <p class="card-subtitle-enhanced">Risk protection mechanism</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Stop Loss Method <span class="required-indicator">*</span></label>
+                            {{ form.stop_loss_strategy(class="form-control form-control-enhanced textarea-4" + (" is-invalid" if form.stop_loss_strategy.errors else ""), placeholder="How stops are placed and calculated") }}
+                            {% if form.stop_loss_strategy.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.stop_loss_strategy.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="help-text">ATR-based, structure-based, fixed points, etc.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-target"></i>
+                            Profit Strategy
+                        </h4>
+                        <p class="card-subtitle-enhanced">Target and exit methodology</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Take Profit Method <span class="required-indicator">*</span></label>
+                            {{ form.take_profit_strategy(class="form-control form-control-enhanced textarea-4" + (" is-invalid" if form.take_profit_strategy.errors else ""), placeholder="How profits are taken") }}
+                            {% if form.take_profit_strategy.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.take_profit_strategy.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Min Risk:Reward</label>
+                            {{ form.min_risk_reward_ratio(class="form-control form-control-enhanced" + (" is-invalid" if form.min_risk_reward_ratio.errors else ""), placeholder="e.g., 1.5", step="0.1") }}
+                            <div class="help-text">Minimum acceptable risk-to-reward ratio</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="visual-separator"></div>
+
+        <!-- Section 5: Trade Management & Position Sizing -->
+        <div class="section-header">
+            <h3><i class="fas fa-cogs"></i> Trade Management & Position Sizing</h3>
+            <p>Position sizing, scaling, and active trade management</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-balance-scale"></i>
+                            Position & Scaling
+                        </h4>
+                        <p class="card-subtitle-enhanced">Size and scaling methodology</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Position Sizing Rules</label>
+                            {{ form.position_sizing_rules(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.position_sizing_rules.errors else ""), placeholder="How position size is determined") }}
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Scaling In/Out Rules</label>
+                            {{ form.scaling_in_out_rules(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.scaling_in_out_rules.errors else ""), placeholder="Rules for adding to or reducing positions") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-sliders-h"></i>
+                            Active Management
+                        </h4>
+                        <p class="card-subtitle-enhanced">Dynamic trade adjustments</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Breakeven Rules</label>
+                            {{ form.trade_management_breakeven_rules(class="form-control form-control-enhanced textarea-2" + (" is-invalid" if form.trade_management_breakeven_rules.errors else ""), placeholder="When and how to move stops to breakeven") }}
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Trailing Stop Rules</label>
+                            {{ form.trade_management_trailing_stop_rules(class="form-control form-control-enhanced textarea-2" + (" is-invalid" if form.trade_management_trailing_stop_rules.errors else ""), placeholder="Trailing stop methodology") }}
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Partial Profit Rules</label>
+                            {{ form.trade_management_partial_profit_rules(class="form-control form-control-enhanced textarea-2" + (" is-invalid" if form.trade_management_partial_profit_rules.errors else ""), placeholder="When to take partial profits") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 6: Risk Parameters & Model Limits -->
+        <div class="section-header">
+            <h3><i class="fas fa-exclamation-triangle"></i> Risk Parameters & Model Limits</h3>
+            <p>Maximum loss limits and risk management constraints</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-dollar-sign"></i>
+                            Loss Limits
+                        </h4>
+                        <p class="card-subtitle-enhanced">Maximum risk thresholds</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Max Risk per Trade</label>
+                            {{ form.model_max_loss_per_trade(class="form-control form-control-enhanced" + (" is-invalid" if form.model_max_loss_per_trade.errors else ""), placeholder="e.g., 1% or $100") }}
+                            <div class="help-text">Maximum amount to risk on any single trade</div>
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Max Daily Loss</label>
+                            {{ form.model_max_daily_loss(class="form-control form-control-enhanced" + (" is-invalid" if form.model_max_daily_loss.errors else ""), placeholder="e.g., 3% or $300") }}
+                            <div class="help-text">Daily loss limit using this model</div>
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Max Weekly Loss</label>
+                            {{ form.model_max_weekly_loss(class="form-control form-control-enhanced" + (" is-invalid" if form.model_max_weekly_loss.errors else ""), placeholder="e.g., 5% or $500") }}
+                            <div class="help-text">Weekly loss limit for model</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-ban"></i>
+                            Circuit Breakers
+                        </h4>
+                        <p class="card-subtitle-enhanced">Automatic trading halts</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Consecutive Loss Limit</label>
+                            {{ form.model_consecutive_loss_limit(class="form-control form-control-enhanced" + (" is-invalid" if form.model_consecutive_loss_limit.errors else ""), placeholder="e.g., 3 trades") }}
+                            <div class="help-text">Maximum consecutive losing trades</div>
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Drawdown Action</label>
+                            {{ form.model_action_on_max_drawdown(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.model_action_on_max_drawdown.errors else ""), placeholder="Actions to take when max drawdown is hit") }}
+                            <div class="help-text">Procedure when risk limits are exceeded</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-clipboard-check"></i>
+                            Pre-Trade Checklist
+                        </h4>
+                        <p class="card-subtitle-enhanced">Mandatory pre-execution checks</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Checklist Items</label>
+                            {{ form.pre_trade_checklist(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.pre_trade_checklist.errors else ""), placeholder="List each checklist item on a new line") }}
+                            <div class="help-text">Model-specific checks before entering trades</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="visual-separator"></div>
+
+        <!-- Section 7: Execution & Operations -->
+        <div class="section-header">
+            <h3><i class="fas fa-play-circle"></i> Execution & Operations</h3>
+            <p>Order types, platform details, and operational procedures</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-desktop"></i>
+                            Platform & Orders
+                        </h4>
+                        <p class="card-subtitle-enhanced">Technical execution details</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Order Types Used</label>
+                            {{ form.order_types_used(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.order_types_used.errors else ""), placeholder="Market, Limit, Stop, Stop-Limit, etc.") }}
+                            <div class="help-text">Primary order types for this model</div>
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Broker/Platform Notes</label>
+                            {{ form.broker_platform_notes(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.broker_platform_notes.errors else ""), placeholder="Platform-specific settings or considerations") }}
+                            <div class="help-text">Any broker or platform specific requirements</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-tasks"></i>
+                            Trade Routines
+                        </h4>
+                        <p class="card-subtitle-enhanced">Pre and post-trade procedures</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Execution Confirmation</label>
+                            {{ form.execution_confirmation_notes(class="form-control form-control-enhanced textarea-2" + (" is-invalid" if form.execution_confirmation_notes.errors else ""), placeholder="How to confirm successful execution") }}
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Post-Trade Routine</label>
+                            {{ form.post_trade_routine_model(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.post_trade_routine_model.errors else ""), placeholder="Steps to take after trade execution") }}
+                            <div class="help-text">Model-specific post-trade actions</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="visual-separator"></div>
+
+        <!-- Section 8: Analysis & Assessment -->
+        <div class="section-header">
+            <h3><i class="fas fa-analytics"></i> Performance Analysis & Assessment</h3>
+            <p>Model evaluation, strengths, weaknesses, and improvement notes</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-thumbs-up"></i>
+                            Model Strengths
+                        </h4>
+                        <p class="card-subtitle-enhanced">What this model does well</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Perceived Strengths</label>
+                            {{ form.strengths(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.strengths.errors else ""), placeholder="Market conditions, setups, or situations where this model excels") }}
+                            <div class="help-text">Identify the model's competitive advantages</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-thumbs-down"></i>
+                            Model Weaknesses
+                        </h4>
+                        <p class="card-subtitle-enhanced">Areas needing improvement</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Perceived Weaknesses</label>
+                            {{ form.weaknesses(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.weaknesses.errors else ""), placeholder="Limitations, drawbacks, or challenging conditions for this model") }}
+                            <div class="help-text">Honest assessment of model limitations</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-flask"></i>
+                            Testing & Refinement
+                        </h4>
+                        <p class="card-subtitle-enhanced">Testing results and improvements</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Backtesting Results</label>
+                            {{ form.backtesting_forwardtesting_notes(class="form-control form-control-enhanced textarea-4" + (" is-invalid" if form.backtesting_forwardtesting_notes.errors else ""), placeholder="Test results, performance metrics, and key findings") }}
+                            <div class="help-text">Include win rate, profit factor, drawdown, etc.</div>
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Refinements & Learnings</label>
+                            {{ form.refinements_learnings(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.refinements_learnings.errors else ""), placeholder="Model improvements and lessons learned over time") }}
+                            <div class="help-text">Document evolution and improvements</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="visual-separator"></div>
+
+        <!-- Section 9: Additional Analysis Fields -->
+        <div class="section-header">
+            <h3><i class="fas fa-microscope"></i> Additional Analysis</h3>
+            <p>Volume analysis, fundamental considerations, and adverse conditions</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-5">
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-chart-bar"></i>
+                            Volume & Fundamentals
+                        </h4>
+                        <p class="card-subtitle-enhanced">Market depth and macro factors</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Volume Analysis</label>
+                            {{ form.volume_analysis_notes(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.volume_analysis_notes.errors else ""), placeholder="How volume is analyzed in this model") }}
+                            <div class="help-text">Volume confirmation, unusual activity, etc.</div>
+                        </div>
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Fundamental Considerations</label>
+                            {{ form.fundamental_analysis_notes(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.fundamental_analysis_notes.errors else ""), placeholder="Economic data, news events, market sentiment factors") }}
+                            <div class="help-text">Macro factors affecting model performance</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="strategy-card">
+                    <div class="card-header-enhanced">
+                        <h4 class="card-title-enhanced">
+                            <i class="fas fa-exclamation-circle"></i>
+                            Adverse Management
+                        </h4>
+                        <p class="card-subtitle-enhanced">Handling unfavorable conditions</p>
+                    </div>
+                    <div class="field-group">
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Adverse Price Action</label>
+                            {{ form.trade_management_adverse_price_action(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.trade_management_adverse_price_action.errors else ""), placeholder="How to handle trades moving against you") }}
+                            <div class="help-text">Strategies for managing losing positions</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Action Bar -->
+        <div class="floating-action-bar">
+            <button type="button" class="cancel-button-enhanced" onclick="cancelForm()">
+                <i class="fas fa-times me-2"></i>Cancel
+            </button>
+            <button type="submit" class="save-button-enhanced" id="saveButton">
+                <i class="fas fa-save me-2"></i>Save Model
+            </button>
+        </div>
+
+    </form>
 </div>
-{% endblock %}
 
-{% block scripts_extra %}
 <script>
-let formChanged = false;
-
+// Enhanced form functionality
 document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('trading-model-form');
+    const saveButton = document.getElementById('saveButton');
+    const progressIndicator = document.getElementById('progressIndicator');
+    
+    // Show progress on form submission
+    form.addEventListener('submit', function() {
+        progressIndicator.style.display = 'block';
+        saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+        saveButton.disabled = true;
+    });
+    
     // Initialize enterprise animations
-    const modules = document.querySelectorAll('.enterprise-module');
-    modules.forEach((module, index) => {
-        module.style.animationDelay = `${index * 0.1}s`;
+    const cards = document.querySelectorAll('.strategy-card');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in');
     });
-
-    // Track form changes for unsaved changes detection
-    const form = document.getElementById('configuration-form');
-    if (form) {
-        const formInputs = form.querySelectorAll('input, textarea, select');
-        formInputs.forEach(input => {
-            input.addEventListener('change', () => {
-                formChanged = true;
-            });
-            input.addEventListener('input', () => {
-                formChanged = true;
-            });
-        });
-    }
-
-    // Handle form submission
-    form.addEventListener('submit', function(e) {
-        formChanged = false; // Reset flag on submit
-        showNotification('Processing configuration update...', 'info', 'System Operation');
-    });
-
-    console.log('Enterprise Strategic Framework Configuration initialized');
 });
 
-// Enterprise confirmation for cancel action
-function confirmCancel() {
-    if (formChanged) {
-        showCustomConfirmation({
-            title: 'Unsaved Changes Detected',
-            message: 'Configuration changes are pending. Are you sure you want to discard these modifications and return to the Strategic Framework Administration?',
-            confirmText: 'Discard Changes',
-            cancelText: 'Continue Editing',
-            confirmClass: 'btn-warning',
-            icon: 'exclamation-triangle',
-            onConfirm: () => {
-                window.location.href = '{{ url_for("admin.manage_default_trading_models") }}';
+function previewImages(input) {
+    const container = document.getElementById('imagePreviewContainer');
+    container.innerHTML = '';
+    
+    if (input.files && input.files.length > 0) {
+        container.style.display = 'grid';
+        
+        Array.from(input.files).forEach((file, index) => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'preview-item';
+                    previewDiv.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview ${index + 1}">
+                        <div style="padding: 0.5rem; background: rgba(0,0,0,0.8); color: white; font-size: 0.8rem;">
+                            ${file.name}
+                        </div>
+                    `;
+                    container.appendChild(previewDiv);
+                };
+                reader.readAsDataURL(file);
             }
         });
     } else {
-        window.location.href = '{{ url_for("admin.manage_default_trading_models") }}';
+        container.style.display = 'none';
     }
 }
 
-// Handle browser navigation
-window.addEventListener('beforeunload', function(e) {
-    if (formChanged) {
-        e.preventDefault();
-        e.returnValue = 'Configuration changes are pending. Are you sure you want to leave?';
-        return e.returnValue;
+function cancelForm() {
+    if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
+        window.location.href = '{{ url_for("admin.manage_default_trading_models") }}';
     }
-});
+}
 </script>
 {% endblock %}

@@ -21,7 +21,8 @@ from app.extensions import db
 from app.utils import admin_required, record_activity, generate_token, send_email, smart_flash
 from datetime import datetime
 from app.forms import TradingModelForm
-from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel, P12Scenario, DiscordRolePermission
+from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel, P12Scenario, DiscordRolePermission, GlobalImage
+from app.utils.image_manager import ImageManager
 admin_bp = Blueprint('admin', __name__,
                      template_folder='../templates/admin',
                      url_prefix='/admin')
@@ -50,8 +51,47 @@ def edit_default_trading_model(model_id):
     form = TradingModelForm(obj=model)
 
     if form.validate_on_submit():
+        # Handle image uploads first
+        if form.chart_examples.data:
+            image_manager = ImageManager('trading_model')
+            
+            for uploaded_file in form.chart_examples.data:
+                if uploaded_file and uploaded_file.filename:
+                    # Save the image file
+                    save_result = image_manager.save_image(uploaded_file, entity_id=model.id)
+                    
+                    if save_result['success']:
+                        # Create GlobalImage database record
+                        global_image = GlobalImage(
+                            entity_type='trading_model',
+                            entity_id=model.id,
+                            user_id=current_user.id,
+                            filename=save_result['filename'],
+                            original_filename=uploaded_file.filename,
+                            relative_path=save_result['relative_path'],
+                            file_size=save_result['file_size'],
+                            mime_type=save_result['mime_type'],
+                            has_thumbnail=save_result.get('thumbnail_path') is not None,
+                            caption=f'Chart example for {model.name}',
+                            is_optimized=True
+                        )
+                        
+                        # Get image dimensions if possible
+                        try:
+                            from PIL import Image
+                            with Image.open(save_result['file_path']) as img:
+                                global_image.image_width, global_image.image_height = img.size
+                        except:
+                            pass  # Not critical if we can't get dimensions
+                        
+                        db.session.add(global_image)
+                    else:
+                        flash(f'Failed to upload {uploaded_file.filename}: {save_result.get("errors", ["Unknown error"])[0]}', 'warning')
+
+        # Update the model
         form.populate_obj(model)
         model.created_by_admin_user_id = current_user.id
+        
         try:
             db.session.commit()
             flash(f'Default model "{model.name}" updated successfully!', 'success')
@@ -60,9 +100,15 @@ def edit_default_trading_model(model_id):
             db.session.rollback()
             flash(f'Error updating model: {str(e)}', 'danger')
 
+    # Get existing images for display
+    existing_images = GlobalImage.query.filter_by(
+        entity_type='trading_model', 
+        entity_id=model.id
+    ).order_by(GlobalImage.upload_date.desc()).all()
+
     return render_template('admin/edit_default_trading_model.html',
                            title=f'Edit Default Model: {model.name}',
-                           form=form, model=model)
+                           form=form, model=model, existing_images=existing_images)
 
 
 @admin_bp.route('/default-trading-models/create', methods=['GET', 'POST'])
@@ -78,8 +124,48 @@ def create_default_trading_model():
         model.is_default = True
         model.user_id = current_user.id  # Still needs a user_id for FK constraint
         model.created_by_admin_user_id = current_user.id
+        
         try:
             db.session.add(model)
+            db.session.flush()  # Get the model ID without committing
+            
+            # Handle image uploads
+            if form.chart_examples.data:
+                image_manager = ImageManager('trading_model')
+                
+                for uploaded_file in form.chart_examples.data:
+                    if uploaded_file and uploaded_file.filename:
+                        # Save the image file
+                        save_result = image_manager.save_image(uploaded_file, entity_id=model.id)
+                        
+                        if save_result['success']:
+                            # Create GlobalImage database record
+                            global_image = GlobalImage(
+                                entity_type='trading_model',
+                                entity_id=model.id,
+                                user_id=current_user.id,
+                                filename=save_result['filename'],
+                                original_filename=uploaded_file.filename,
+                                relative_path=save_result['relative_path'],
+                                file_size=save_result['file_size'],
+                                mime_type=save_result['mime_type'],
+                                has_thumbnail=save_result.get('thumbnail_path') is not None,
+                                caption=f'Chart example for {model.name}',
+                                is_optimized=True
+                            )
+                            
+                            # Get image dimensions if possible
+                            try:
+                                from PIL import Image
+                                with Image.open(save_result['file_path']) as img:
+                                    global_image.image_width, global_image.image_height = img.size
+                            except:
+                                pass  # Not critical if we can't get dimensions
+                            
+                            db.session.add(global_image)
+                        else:
+                            flash(f'Failed to upload {uploaded_file.filename}: {save_result.get("errors", ["Unknown error"])[0]}', 'warning')
+            
             db.session.commit()
             flash(f'Default model "{model.name}" created successfully!', 'success')
             return redirect(url_for('admin.manage_default_trading_models'))
@@ -90,6 +176,27 @@ def create_default_trading_model():
     return render_template('admin/create_default_trading_model.html',
                            title='Create Default Trading Model',
                            form=form)
+
+
+@admin_bp.route('/default-trading-models/<int:model_id>/view')
+@login_required
+@admin_required
+def view_default_trading_model(model_id):
+    """View a default trading model"""
+    model = TradingModel.query.get_or_404(model_id)
+    if not model.is_default:
+        flash('This is not a default model.', 'warning')
+        return redirect(url_for('admin.manage_default_trading_models'))
+
+    # Get chart examples for this model
+    chart_examples = GlobalImage.query.filter_by(
+        entity_type='trading_model', 
+        entity_id=model.id
+    ).order_by(GlobalImage.upload_date.desc()).all()
+
+    return render_template('admin/view_default_trading_model.html',
+                           title=f'View Default Model: {model.name}',
+                           model=model, chart_examples=chart_examples)
 
 
 @admin_bp.route('/default-trading-models/<int:model_id>/delete', methods=['POST'])

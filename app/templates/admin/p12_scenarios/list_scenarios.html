@@ -35,6 +35,18 @@
                     <i class="fas fa-plus"></i>
                 </a>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="showImportModal()" title="Import Strategic Frameworks">
+                    <i class="fas fa-upload"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="exportScenariosPDF()" title="Export to PDF">
+                    <i class="fas fa-file-pdf"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="exportScenariosCSV()" title="Export to CSV">
+                    <i class="fas fa-file-csv"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="location.reload()" title="Refresh Data">
                     <i class="fas fa-sync-alt"></i>
                 </button>
@@ -57,7 +69,7 @@
 <div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
     <!-- KPI Cards Section -->
     <div class="kpi-section mt-3">
-        <div class="grid grid-cols-4 gap-4">
+        <div class="grid grid-cols-3 gap-4">
             <div class="col-span-1">
                 <div class="kpi-card">
                     <div class="kpi-content">
@@ -106,22 +118,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-span-1">
-                <div class="kpi-card">
-                    <div class="kpi-content">
-                        <div class="kpi-header">
-                            <span class="kpi-label">Directional Bias</span>
-                            <i class="fas fa-compass kpi-icon"></i>
-                        </div>
-                        <div class="kpi-value">{{ scenarios|selectattr('directional_bias')|list|length }}</div>
-                        <div class="kpi-trend">
-                            <span class="trend-indicator">
-                                <i class="fas fa-arrows-alt"></i> Defined
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
         </div>
     </div>
 
@@ -151,7 +148,7 @@
                                     <th width="120" class="text-center">Directional Bias</th>
                                     <th width="100" class="text-center">Image</th>
                                     <th width="80" class="text-center">Operational Status</th>
-                                    <th width="150" class="text-center">Actions</th>
+                                    <th width="150" class="text-center"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -308,6 +305,176 @@
 </div>
 
 <script>
+// =====================================
+// IMPORT/EXPORT FUNCTIONS
+// =====================================
+function showImportModal() {
+    const formHtml = `
+        <form id="import-scenarios-form">
+            <div class="mb-3">
+                <label for="import-file" class="form-label">Select Import File</label>
+                <input type="file" class="form-control" id="import-file" accept=".json,.csv" required>
+                <div class="form-text">Supported formats: JSON, CSV</div>
+            </div>
+            <div class="mb-3">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="overwrite-existing">
+                    <label class="form-check-label" for="overwrite-existing">
+                        Overwrite existing scenarios with same name
+                    </label>
+                </div>
+            </div>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Import will validate scenario data and maintain referential integrity.
+                <div class="mt-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="downloadImportTemplate()">
+                        <i class="fas fa-download me-1"></i>Download CSV Template
+                    </button>
+                </div>
+            </div>
+        </form>
+    `;
+    
+    showCustomConfirmation({
+        title: 'Import Strategic Frameworks',
+        message: formHtml,
+        confirmText: 'Import Scenarios',
+        confirmClass: 'btn-primary',
+        icon: 'upload',
+        onConfirm: () => {
+            performImport();
+        }
+    });
+}
+
+function performImport() {
+    const fileInput = document.getElementById('import-file');
+    const overwriteExisting = document.getElementById('overwrite-existing').checked;
+    
+    if (!fileInput.files[0]) {
+        showErrorMessage('Please select a file to import.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('overwrite_existing', overwriteExisting);
+    formData.append('csrf_token', getCSRFToken());
+
+    fetch('/admin/p12-scenarios/import', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && data.success) {
+            showSuccess(`Successfully imported ${data.imported_count} scenarios.`, 'Import Complete');
+            setTimeout(() => location.reload(), 1000);
+        } else if (data && !data.success) {
+            showErrorMessage(data.message || 'Import failed.');
+        }
+    })
+    .catch(error => {
+        console.error('Import error:', error);
+        showErrorMessage('An unexpected error occurred during import.');
+    });
+}
+
+function exportScenariosPDF() {
+    const exportBtn = document.querySelector('button[onclick="exportScenariosPDF()"]');
+    const originalHtml = exportBtn.innerHTML;
+    
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    exportBtn.disabled = true;
+    
+    fetch('/admin/p12-scenarios/export-pdf', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        } else {
+            throw new Error('Export failed');
+        }
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `P12_Strategic_Frameworks_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        showSuccess('P12 Strategic Frameworks exported successfully.', 'Export Complete');
+    })
+    .catch(error => {
+        console.error('Export error:', error);
+        showErrorMessage('Export failed. Please try again.');
+    })
+    .finally(() => {
+        exportBtn.innerHTML = originalHtml;
+        exportBtn.disabled = false;
+    });
+}
+
+function exportScenariosCSV() {
+    const exportBtn = document.querySelector('button[onclick="exportScenariosCSV()"]');
+    const originalHtml = exportBtn.innerHTML;
+    
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    exportBtn.disabled = true;
+    
+    fetch('/admin/p12-scenarios/export-csv', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        } else {
+            throw new Error('CSV export failed');
+        }
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `P12_Strategic_Frameworks_Export_${new Date().toISOString().split('T')[0].replace(/-/g, '')}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        showSuccess('P12 Strategic Frameworks exported to CSV successfully.', 'CSV Export Complete');
+    })
+    .catch(error => {
+        console.error('CSV Export error:', error);
+        showErrorMessage('CSV export failed. Please try again.');
+    })
+    .finally(() => {
+        exportBtn.innerHTML = originalHtml;
+        exportBtn.disabled = false;
+    });
+}
+
 // =====================================
 // STRATEGIC FRAMEWORK DECOMMISSION FUNCTIONS
 // =====================================
@@ -532,6 +699,54 @@ function performDeleteMainImage() {
 }
 
 // =====================================
+// IMAGE MODAL FUNCTIONS
+// =====================================
+function showImageModal(imageUrl, title) {
+    // Set the modal title and image
+    document.getElementById('imageModalTitle').textContent = title || 'Strategic Framework Analysis';
+    document.getElementById('imageModalImg').src = imageUrl;
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    modal.show();
+}
+
+function downloadCurrentImage() {
+    const imageElement = document.getElementById('imageModalImg');
+    const imageUrl = imageElement.src;
+    
+    if (imageUrl && imageUrl !== '') {
+        // Create a temporary link element to trigger download
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        
+        // Extract filename from title or use default
+        const title = document.getElementById('imageModalTitle').textContent;
+        const filename = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.png';
+        
+        link.download = filename;
+        link.target = '_blank';
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        console.log('Download triggered for:', filename);
+    } else {
+        showErrorMessage('No image available for download');
+    }
+}
+
+// =====================================
+// TEMPLATE DOWNLOAD FUNCTIONS
+// =====================================
+function downloadImportTemplate() {
+    console.log('Downloading P12 scenario import template...');
+    window.open('/admin/p12-scenarios/download-template', '_blank');
+}
+
+// =====================================
 // UTILITY FUNCTIONS
 // =====================================
 function getCSRFToken() {
@@ -568,6 +783,22 @@ function showErrorMessage(message) {
             confirmText: 'OK',
             confirmClass: 'btn-danger',
             icon: 'exclamation-triangle',
+            showCancel: false,
+            onConfirm: function() {}
+        });
+    } else {
+        alert(message);
+    }
+}
+
+function showSuccess(message, title = 'Success') {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: title,
+            message: message,
+            confirmText: 'OK',
+            confirmClass: 'btn-success',
+            icon: 'check-circle',
             showCancel: false,
             onConfirm: function() {}
         });

@@ -6,11 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token.current_token }}">
     <title>{% block title %}Enterprise Trading Journal{% endblock %}</title>
 
-    <!-- Fortune 500 Enterprise CSS Framework - Load in this exact order -->
-    <link rel="stylesheet" href="/static/css/enterprise-core.css">
-    <link rel="stylesheet" href="/static/css/enterprise-layout.css">
-    <link rel="stylesheet" href="/static/css/enterprise-components.css">
-    <link rel="stylesheet" href="/static/css/enterprise-specialized.css">
+    <!-- Fortune 500 Enterprise CSS Framework - Consolidated -->
+    <link rel="stylesheet" href="/static/css/enterprise-all.css">
 
     <!-- Optional: Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -293,14 +290,14 @@
 
     <!-- Enterprise Media Modal Component -->
     <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalTitle" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="imageModalTitle">Media Asset</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <img id="imageModalImg" src="" alt="" class="img-fluid">
+                    <img id="imageModalImg" src="" alt="" class="img-fluid" style="max-height: 80vh; max-width: 100%;">
                 </div>
                 <div class="modal-footer">
                     <div class="btn-group">

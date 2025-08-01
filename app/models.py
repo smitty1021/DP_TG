@@ -852,6 +852,301 @@ class TradingModel(db.Model):
         ).filter(cls.is_active == True).order_by(cls.name).all()
 
 
+# --- Backtesting Models ---
+class BacktestStatus(enum.Enum):
+    """Status enumeration for backtests"""
+    DRAFT = 'draft'
+    RUNNING = 'running'
+    COMPLETED = 'completed'
+    FAILED = 'failed'
+    CANCELLED = 'cancelled'
+
+    def __str__(self): return self.value
+
+
+class BacktestExitReason(enum.Enum):
+    """Exit reason enumeration for backtest trades"""
+    TAKE_PROFIT = 'take_profit'
+    STOP_LOSS = 'stop_loss'
+    TRAILING_STOP = 'trailing_stop'
+    TIME_EXIT = 'time_exit'
+    MANUAL_EXIT = 'manual_exit'
+    BREAKEVEN_STOP = 'breakeven_stop'
+    PARTIAL_PROFIT = 'partial_profit'
+    MARKET_CLOSE = 'market_close'
+    
+    def __str__(self): return self.value
+
+
+class Backtest(db.Model):
+    """
+    Main backtest model for comprehensive trading model testing
+    Links to TradingModel and contains all backtest metadata
+    """
+    __tablename__ = 'backtest'
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Basic backtest information
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    status = db.Column(db.Enum(BacktestStatus), nullable=False, default=BacktestStatus.DRAFT)
+    
+    # Date range for backtest
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    
+    # Trading model relationship
+    trading_model_id = db.Column(db.Integer, db.ForeignKey('trading_model.id', name='fk_backtest_trading_model'), 
+                                nullable=False, index=True)
+    trading_model = db.relationship('TradingModel', backref=db.backref('backtests', lazy='dynamic'))
+    
+    # Rules and settings (JSON stored)
+    specific_rules_used = db.Column(db.JSON, nullable=True)  # Store specific rules as JSON
+    trade_management_applied = db.Column(db.JSON, nullable=True)  # Trade management rules
+    entry_rules = db.Column(db.JSON, nullable=True)  # Entry criteria
+    exit_rules = db.Column(db.JSON, nullable=True)  # Exit criteria
+    risk_settings = db.Column(db.JSON, nullable=True)  # Risk management settings
+    
+    # Market conditions and context
+    market_conditions = db.Column(db.Text, nullable=True)
+    session_context = db.Column(db.String(100), nullable=True)  # Asia, London, NY1, NY2
+    
+    # Performance summary (calculated from trades)
+    total_trades = db.Column(db.Integer, default=0)
+    winning_trades = db.Column(db.Integer, default=0)
+    losing_trades = db.Column(db.Integer, default=0)
+    total_pnl = db.Column(db.Float, default=0.0)
+    max_drawdown = db.Column(db.Float, nullable=True)
+    max_runup = db.Column(db.Float, nullable=True)
+    win_percentage = db.Column(db.Float, nullable=True)
+    average_win = db.Column(db.Float, nullable=True)
+    average_loss = db.Column(db.Float, nullable=True)
+    profit_factor = db.Column(db.Float, nullable=True)
+    
+    # Additional notes and screenshots
+    notes = db.Column(db.Text, nullable=True)
+    tradingview_screenshot_links = db.Column(db.JSON, nullable=True)  # Array of screenshot URLs
+    chart_screenshots = db.Column(db.JSON, nullable=True)  # Array of chart screenshot URLs
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, nullable=False, default=dt.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=dt.utcnow, onupdate=dt.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    
+    # User relationship
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_backtest_user'), 
+                       nullable=False, index=True)
+    user = db.relationship('User', backref=db.backref('backtests', lazy='dynamic'))
+    
+    # Relationships
+    trades = db.relationship('BacktestTrade', backref='backtest', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f"<Backtest '{self.name}' for Model: {self.trading_model_id}>"
+    
+    def calculate_performance_metrics(self):
+        """Calculate and update performance metrics from associated trades"""
+        trades = list(self.trades)
+        
+        if not trades:
+            return
+            
+        self.total_trades = len(trades)
+        winning_trades = [t for t in trades if t.profit_loss > 0]
+        losing_trades = [t for t in trades if t.profit_loss < 0]
+        
+        self.winning_trades = len(winning_trades)
+        self.losing_trades = len(losing_trades)
+        self.total_pnl = sum(t.profit_loss for t in trades)
+        
+        if winning_trades:
+            self.average_win = sum(t.profit_loss for t in winning_trades) / len(winning_trades)
+        if losing_trades:
+            self.average_loss = sum(t.profit_loss for t in losing_trades) / len(losing_trades)
+            
+        if self.total_trades > 0:
+            self.win_percentage = (self.winning_trades / self.total_trades) * 100
+            
+        # Calculate profit factor
+        gross_profit = sum(t.profit_loss for t in winning_trades)
+        gross_loss = abs(sum(t.profit_loss for t in losing_trades))
+        if gross_loss > 0:
+            self.profit_factor = gross_profit / gross_loss
+            
+        # Calculate drawdown and runup
+        running_pnl = 0
+        peak = 0
+        trough = 0
+        max_dd = 0
+        max_ru = 0
+        
+        for trade in sorted(trades, key=lambda x: (x.trade_date, x.trade_time or py_time.min)):
+            running_pnl += trade.profit_loss
+            
+            if running_pnl > peak:
+                peak = running_pnl
+                trough = running_pnl
+            elif running_pnl < trough:
+                trough = running_pnl
+                
+            current_dd = peak - trough
+            if current_dd > max_dd:
+                max_dd = current_dd
+                
+            current_ru = running_pnl - min(0, min(t.profit_loss for t in trades[:trades.index(trade)+1]))
+            if current_ru > max_ru:
+                max_ru = current_ru
+                
+        self.max_drawdown = max_dd
+        self.max_runup = max_ru
+
+
+class BacktestTrade(db.Model):
+    """
+    Individual trade within a backtest
+    Contains detailed trade execution data and performance metrics
+    """
+    __tablename__ = 'backtest_trade'
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Basic trade information
+    trade_date = db.Column(db.Date, nullable=False)
+    trade_time = db.Column(db.Time, nullable=True)
+    instrument = db.Column(db.String(20), nullable=False, index=True)
+    direction = db.Column(db.String(5), nullable=False)  # LONG/SHORT
+    quantity = db.Column(db.Integer, nullable=False)
+    
+    # Entry and exit prices (for single entry/exit trades)
+    entry_price = db.Column(db.Float, nullable=True)
+    exit_price = db.Column(db.Float, nullable=True)
+    
+    # Stop and target levels
+    stop_loss_price = db.Column(db.Float, nullable=True)
+    take_profit_price = db.Column(db.Float, nullable=True)
+    actual_exit_reason = db.Column(db.Enum(BacktestExitReason), nullable=True)
+    
+    # Performance metrics
+    profit_loss = db.Column(db.Float, nullable=False, index=True)
+    profit_loss_ticks = db.Column(db.Float, nullable=True)
+    mae_ticks = db.Column(db.Float, nullable=True)  # Maximum Adverse Excursion in ticks
+    mfe_ticks = db.Column(db.Float, nullable=True)  # Maximum Favorable Excursion in ticks
+    duration_minutes = db.Column(db.Integer, nullable=True)  # Trade duration in minutes
+    
+    # Additional context
+    market_conditions = db.Column(db.String(100), nullable=True)
+    session_context = db.Column(db.String(50), nullable=True)  # Asia, London, NY1, NY2
+    notes = db.Column(db.Text, nullable=True)
+    
+    # Screenshot and chart links
+    tradingview_screenshot_links = db.Column(db.JSON, nullable=True)
+    chart_screenshots = db.Column(db.JSON, nullable=True)
+    
+    # Backtest relationship
+    backtest_id = db.Column(db.Integer, db.ForeignKey('backtest.id', name='fk_backtest_trade_backtest'), 
+                           nullable=False, index=True)
+    
+    # Entry and exit points (for complex scaling trades)
+    entries = db.relationship('BacktestTradeEntry', backref='trade', lazy='dynamic', cascade='all, delete-orphan')
+    exits = db.relationship('BacktestTradeExit', backref='trade', lazy='dynamic', cascade='all, delete-orphan')
+    
+    # Tags for categorization
+    tags = db.Column(db.JSON, nullable=True)  # Store tags as JSON array
+    
+    def __repr__(self):
+        return f"<BacktestTrade {self.instrument} {self.direction} on {self.trade_date}>"
+    
+    @property
+    def has_multiple_entries(self):
+        """Check if trade has multiple entry points"""
+        return self.entries.count() > 1
+    
+    @property
+    def has_multiple_exits(self):
+        """Check if trade has multiple exit points"""
+        return self.exits.count() > 1
+    
+    @property
+    def average_entry_price(self):
+        """Calculate average entry price from multiple entries"""
+        entries = list(self.entries)
+        if not entries:
+            return self.entry_price
+        
+        total_quantity = sum(e.quantity for e in entries)
+        if total_quantity == 0:
+            return None
+            
+        weighted_sum = sum(e.entry_price * e.quantity for e in entries)
+        return weighted_sum / total_quantity
+    
+    @property
+    def average_exit_price(self):
+        """Calculate average exit price from multiple exits"""
+        exits = list(self.exits)
+        if not exits:
+            return self.exit_price
+        
+        total_quantity = sum(e.quantity for e in exits)
+        if total_quantity == 0:
+            return None
+            
+        weighted_sum = sum(e.exit_price * e.quantity for e in exits)
+        return weighted_sum / total_quantity
+
+
+class BacktestTradeEntry(db.Model):
+    """
+    Multiple entry points for a single backtest trade
+    Supports scaling in strategies
+    """
+    __tablename__ = 'backtest_trade_entry'
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Entry details
+    entry_time = db.Column(db.Time, nullable=False)
+    entry_price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    
+    # Entry context
+    entry_reason = db.Column(db.String(100), nullable=True)  # Initial, scale-in, etc.
+    market_conditions = db.Column(db.String(100), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    
+    # Trade relationship
+    backtest_trade_id = db.Column(db.Integer, db.ForeignKey('backtest_trade.id', name='fk_bt_entry_trade'), 
+                                 nullable=False, index=True)
+    
+    def __repr__(self):
+        return f"<BacktestTradeEntry {self.quantity} @ {self.entry_price}>"
+
+
+class BacktestTradeExit(db.Model):
+    """
+    Multiple exit points for a single backtest trade
+    Supports scaling out strategies and partial profits
+    """
+    __tablename__ = 'backtest_trade_exit'
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Exit details
+    exit_time = db.Column(db.Time, nullable=False)
+    exit_price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    
+    # Exit context
+    exit_reason = db.Column(db.Enum(BacktestExitReason), nullable=False)
+    profit_loss = db.Column(db.Float, nullable=False)  # P&L for this specific exit
+    market_conditions = db.Column(db.String(100), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    
+    # Trade relationship
+    backtest_trade_id = db.Column(db.Integer, db.ForeignKey('backtest_trade.id', name='fk_bt_exit_trade'), 
+                                 nullable=False, index=True)
+    
+    def __repr__(self):
+        return f"<BacktestTradeExit {self.quantity} @ {self.exit_price}>"
+
+
 # --- Trade Related Models ---
 class TradeImage(db.Model):
     """Trade screenshot and chart images"""
@@ -1638,7 +1933,7 @@ class P12UsageStats(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    p12_scenario_id = db.Column(db.Integer, db.ForeignKey('p12_scenario.id'), nullable=False)
+    p12_scenario_id = db.Column(db.Integer, db.ForeignKey('p12_scenario.id', ondelete='CASCADE'), nullable=False)
     journal_date = db.Column(db.Date, nullable=False)  # Date scenario was used
     selection_timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
@@ -1654,7 +1949,7 @@ class P12UsageStats(db.Model):
 
     # Relationships
     user = db.relationship('User', backref=db.backref('p12_usage_stats', lazy='dynamic'))
-    scenario = db.relationship('P12Scenario', backref=db.backref('usage_stats', lazy='dynamic'))
+    scenario = db.relationship('P12Scenario', backref=db.backref('usage_stats', lazy='dynamic', cascade='all, delete-orphan'))
 
     def __repr__(self):
         return f'<P12UsageStats User={self.user_id} Scenario={self.p12_scenario_id} Date={self.journal_date}>'
@@ -1997,3 +2292,266 @@ class RolePermissionTemplate(db.Model):
     def get_system_templates(cls):
         """Get all system-defined templates."""
         return cls.query.filter_by(is_system_template=True).all()
+
+
+# =============================================================================
+# BACKTESTING MODELS
+# =============================================================================
+
+class BacktestStatus(enum.Enum):
+    """Status of a backtest"""
+    DRAFT = "draft"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class BacktestExitReason(enum.Enum):
+    """Reason for trade exit"""
+    STOP_LOSS = "stop_loss"
+    TAKE_PROFIT = "take_profit"
+    TRAILING_STOP = "trailing_stop"
+    BREAKEVEN_STOP = "breakeven_stop"
+    MANUAL_EXIT = "manual_exit"
+    TIME_EXIT = "time_exit"
+    MARKET_CLOSE = "market_close"
+    REVERSE_SIGNAL = "reverse_signal"
+    PARTIAL_PROFIT = "partial_profit"
+    RISK_MANAGEMENT = "risk_management"
+    OTHER = "other"
+
+
+class Backtest(db.Model):
+    """Main backtest container for trading model testing"""
+    __tablename__ = 'backtest'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    
+    # Relationships
+    trading_model_id = db.Column(db.Integer, db.ForeignKey('trading_model.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Date Range
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    
+    # Status and Metadata
+    status = db.Column(db.Enum(BacktestStatus), default=BacktestStatus.DRAFT, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    
+    # Rules and Settings (JSON fields for flexibility)
+    specific_rules_used = db.Column(db.Text, nullable=True)  # Specific rules for this backtest
+    entry_rules = db.Column(db.Text, nullable=True)  # Entry criteria
+    exit_rules = db.Column(db.Text, nullable=True)  # Exit criteria  
+    trade_management_applied = db.Column(db.Text, nullable=True)  # Trade management rules
+    risk_settings = db.Column(db.Text, nullable=True)  # Risk parameters used
+    
+    # Market Context
+    market_conditions = db.Column(db.String(500), nullable=True)  # Overall market conditions
+    session_context = db.Column(db.String(200), nullable=True)  # Trading sessions (Asia, London, NY1, NY2)
+    
+    # Screenshots and Links (JSON arrays)
+    tradingview_screenshot_links = db.Column(db.Text, nullable=True)  # JSON array of TradingView links
+    chart_screenshots = db.Column(db.Text, nullable=True)  # JSON array of screenshot paths
+    
+    # Performance Metrics (Auto-calculated)
+    total_trades = db.Column(db.Integer, default=0, nullable=False)
+    winning_trades = db.Column(db.Integer, default=0, nullable=False)
+    losing_trades = db.Column(db.Integer, default=0, nullable=False)
+    win_percentage = db.Column(db.Float, nullable=True)
+    
+    total_pnl = db.Column(db.Float, default=0.0, nullable=False)
+    total_pnl_ticks = db.Column(db.Float, default=0.0, nullable=False)
+    average_win = db.Column(db.Float, nullable=True)
+    average_loss = db.Column(db.Float, nullable=True)
+    profit_factor = db.Column(db.Float, nullable=True)
+    
+    max_drawdown = db.Column(db.Float, nullable=True)
+    max_drawdown_ticks = db.Column(db.Float, nullable=True)
+    max_runup = db.Column(db.Float, nullable=True)
+    max_runup_ticks = db.Column(db.Float, nullable=True)
+    
+    # Additional Analysis
+    notes = db.Column(db.Text, nullable=True)
+    
+    # Relationships
+    trading_model = db.relationship('TradingModel', backref='backtests', lazy=True)
+    user = db.relationship('User', backref='backtests', lazy=True)
+    trades = db.relationship('BacktestTrade', backref='backtest', cascade='all, delete-orphan', lazy='dynamic')
+    
+    def __repr__(self):
+        return f'<Backtest {self.name} for {self.trading_model.name}>'
+    
+    def calculate_performance_metrics(self):
+        """Calculate and update performance metrics based on trades"""
+        trades = self.trades.all()
+        
+        if not trades:
+            return
+        
+        self.total_trades = len(trades)
+        winning_trades = [t for t in trades if t.profit_loss > 0]
+        losing_trades = [t for t in trades if t.profit_loss < 0]
+        
+        self.winning_trades = len(winning_trades)
+        self.losing_trades = len(losing_trades)
+        self.win_percentage = (self.winning_trades / self.total_trades) * 100 if self.total_trades > 0 else 0
+        
+        self.total_pnl = sum(t.profit_loss for t in trades if t.profit_loss)
+        self.total_pnl_ticks = sum(t.profit_loss_ticks for t in trades if t.profit_loss_ticks)
+        
+        if winning_trades:
+            self.average_win = sum(t.profit_loss for t in winning_trades) / len(winning_trades)
+        if losing_trades:
+            self.average_loss = sum(t.profit_loss for t in losing_trades) / len(losing_trades)
+        
+        if self.average_loss and self.average_loss != 0:
+            self.profit_factor = abs(self.average_win * self.winning_trades) / abs(self.average_loss * self.losing_trades)
+        
+        # Calculate drawdown and runup
+        running_pnl = 0
+        peak_pnl = 0
+        trough_pnl = 0
+        max_dd = 0
+        max_ru = 0
+        
+        for trade in sorted(trades, key=lambda x: x.trade_date):
+            if trade.profit_loss:
+                running_pnl += trade.profit_loss
+                if running_pnl > peak_pnl:
+                    peak_pnl = running_pnl
+                    trough_pnl = running_pnl
+                elif running_pnl < trough_pnl:
+                    trough_pnl = running_pnl
+                
+                current_dd = peak_pnl - running_pnl
+                current_ru = running_pnl - trough_pnl
+                
+                if current_dd > max_dd:
+                    max_dd = current_dd
+                if current_ru > max_ru:
+                    max_ru = current_ru
+        
+        self.max_drawdown = max_dd
+        self.max_runup = max_ru
+
+
+class BacktestTrade(db.Model):
+    """Individual trade within a backtest"""
+    __tablename__ = 'backtest_trade'
+
+    id = db.Column(db.Integer, primary_key=True)
+    backtest_id = db.Column(db.Integer, db.ForeignKey('backtest.id'), nullable=False)
+    
+    # Trade Identification
+    trade_date = db.Column(db.Date, nullable=False)
+    trade_time = db.Column(db.Time, nullable=True)
+    instrument = db.Column(db.String(50), nullable=False)
+    direction = db.Column(db.String(10), nullable=False)  # 'long' or 'short'
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    
+    # Pricing Information
+    entry_price = db.Column(db.Float, nullable=False)
+    exit_price = db.Column(db.Float, nullable=True)
+    stop_loss_price = db.Column(db.Float, nullable=True)
+    take_profit_price = db.Column(db.Float, nullable=True)
+    
+    # Performance Metrics
+    profit_loss = db.Column(db.Float, nullable=True)  # Dollar P&L
+    profit_loss_ticks = db.Column(db.Float, nullable=True)  # P&L in ticks
+    mae_ticks = db.Column(db.Float, nullable=True)  # Maximum Adverse Excursion in ticks
+    mfe_ticks = db.Column(db.Float, nullable=True)  # Maximum Favorable Excursion in ticks
+    duration_minutes = db.Column(db.Integer, nullable=True)  # Trade duration in minutes
+    
+    # Exit Information
+    actual_exit_reason = db.Column(db.Enum(BacktestExitReason), nullable=True)
+    exit_time = db.Column(db.Time, nullable=True)
+    
+    # Context and Analysis
+    market_conditions = db.Column(db.String(500), nullable=True)
+    session_context = db.Column(db.String(100), nullable=True)  # Which session (Asia, London, NY1, NY2)
+    notes = db.Column(db.Text, nullable=True)
+    tags = db.Column(db.Text, nullable=True)  # JSON array of tags
+    
+    # Screenshots
+    tradingview_screenshot_links = db.Column(db.Text, nullable=True)  # JSON array
+    chart_screenshots = db.Column(db.Text, nullable=True)  # JSON array
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    entries = db.relationship('BacktestTradeEntry', backref='trade', cascade='all, delete-orphan', lazy='dynamic')
+    exits = db.relationship('BacktestTradeExit', backref='trade', cascade='all, delete-orphan', lazy='dynamic')
+    
+    def __repr__(self):
+        return f'<BacktestTrade {self.instrument} {self.direction} on {self.trade_date}>'
+    
+    def get_average_entry_price(self):
+        """Calculate average entry price from multiple entries"""
+        entries = self.entries.all()
+        if not entries:
+            return self.entry_price
+        
+        total_quantity = sum(entry.quantity for entry in entries)
+        weighted_price = sum(entry.entry_price * entry.quantity for entry in entries)
+        return weighted_price / total_quantity if total_quantity > 0 else self.entry_price
+    
+    def get_average_exit_price(self):
+        """Calculate average exit price from multiple exits"""
+        exits = self.exits.all()
+        if not exits:
+            return self.exit_price
+        
+        total_quantity = sum(exit.quantity for exit in exits)
+        weighted_price = sum(exit.exit_price * exit.quantity for exit in exits)
+        return weighted_price / total_quantity if total_quantity > 0 else self.exit_price
+
+
+class BacktestTradeEntry(db.Model):
+    """Multiple entry points for complex trading strategies"""
+    __tablename__ = 'backtest_trade_entry'
+
+    id = db.Column(db.Integer, primary_key=True)
+    backtest_trade_id = db.Column(db.Integer, db.ForeignKey('backtest_trade.id'), nullable=False)
+    
+    # Entry Details
+    entry_time = db.Column(db.DateTime, nullable=False)
+    entry_price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    entry_reason = db.Column(db.String(200), nullable=True)  # Why this entry was made
+    
+    # Analysis
+    notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    def __repr__(self):
+        return f'<BacktestTradeEntry {self.quantity}@{self.entry_price} at {self.entry_time}>'
+
+
+class BacktestTradeExit(db.Model):
+    """Multiple exit points for complex trading strategies"""
+    __tablename__ = 'backtest_trade_exit'
+
+    id = db.Column(db.Integer, primary_key=True)
+    backtest_trade_id = db.Column(db.Integer, db.ForeignKey('backtest_trade.id'), nullable=False)
+    
+    # Exit Details
+    exit_time = db.Column(db.DateTime, nullable=False)
+    exit_price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    exit_reason = db.Column(db.Enum(BacktestExitReason), nullable=False)
+    profit_loss = db.Column(db.Float, nullable=True)  # P&L for this specific exit
+    
+    # Analysis
+    notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    def __repr__(self):
+        return f'<BacktestTradeExit {self.quantity}@{self.exit_price} at {self.exit_time}>'

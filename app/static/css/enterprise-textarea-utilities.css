@@ -1,0 +1,134 @@
+/*
+===============================================================================
+ENTERPRISE TEXTAREA UTILITIES - OVERRIDE LAYER
+===============================================================================
+High-priority textarea height utilities with maximum specificity
+This file loads last to ensure textarea heights work across all frameworks
+*/
+
+/* Textarea height utilities with maximum CSS specificity */
+html body .enterprise-container-fluid form .form-control.textarea-1,
+html body .enterprise-module .module-content .form-control.textarea-1,
+html body div.enterprise-module div.module-content .form-control.textarea-1,
+html body form .form-control.textarea-1.textarea-1 {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+html body .enterprise-container-fluid form .form-control.textarea-2,
+html body .enterprise-module .module-content .form-control.textarea-2,
+html body div.enterprise-module div.module-content .form-control.textarea-2,
+html body form .form-control.textarea-2.textarea-2 {
+    height: 60px !important;
+    min-height: 60px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+html body .enterprise-container-fluid form .form-control.textarea-3,
+html body .enterprise-module .module-content .form-control.textarea-3,
+html body div.enterprise-module div.module-content .form-control.textarea-3,
+html body form .form-control.textarea-3.textarea-3 {
+    height: 80px !important;
+    min-height: 80px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+html body .enterprise-container-fluid form .form-control.textarea-4,
+html body .enterprise-module .module-content .form-control.textarea-4,
+html body div.enterprise-module div.module-content .form-control.textarea-4,
+html body form .form-control.textarea-4.textarea-4 {
+    height: 100px !important;
+    min-height: 100px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+html body .enterprise-container-fluid form .form-control.textarea-5,
+html body .enterprise-module .module-content .form-control.textarea-5,
+html body div.enterprise-module div.module-content .form-control.textarea-5,
+html body form .form-control.textarea-5.textarea-5 {
+    height: 120px !important;
+    min-height: 120px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+html body .enterprise-container-fluid form .form-control.textarea-6,
+html body .enterprise-module .module-content .form-control.textarea-6,
+html body div.enterprise-module div.module-content .form-control.textarea-6,
+html body form .form-control.textarea-6.textarea-6 {
+    height: 140px !important;
+    min-height: 140px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+html body .enterprise-container-fluid form .form-control.textarea-7,
+html body .enterprise-module .module-content .form-control.textarea-7,
+html body div.enterprise-module div.module-content .form-control.textarea-7,
+html body form .form-control.textarea-7.textarea-7 {
+    height: 160px !important;
+    min-height: 160px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+html body .enterprise-container-fluid form .form-control.textarea-8,
+html body .enterprise-module .module-content .form-control.textarea-8,
+html body div.enterprise-module div.module-content .form-control.textarea-8,
+html body form .form-control.textarea-8.textarea-8 {
+    height: 180px !important;
+    min-height: 180px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+html body .enterprise-container-fluid form .form-control.textarea-10,
+html body .enterprise-module .module-content .form-control.textarea-10,
+html body div.enterprise-module div.module-content .form-control.textarea-10,
+html body form .form-control.textarea-10.textarea-10 {
+    height: 220px !important;
+    min-height: 220px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+html body .enterprise-container-fluid form .form-control.textarea-12,
+html body .enterprise-module .module-content .form-control.textarea-12,
+html body div.enterprise-module div.module-content .form-control.textarea-12,
+html body form .form-control.textarea-12.textarea-12 {
+    height: 260px !important;
+    min-height: 260px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+html body .enterprise-container-fluid form .form-control.textarea-15,
+html body .enterprise-module .module-content .form-control.textarea-15,
+html body div.enterprise-module div.module-content .form-control.textarea-15,
+html body form .form-control.textarea-15.textarea-15 {
+    height: 320px !important;
+    min-height: 320px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+html body .enterprise-container-fluid form .form-control.textarea-20,
+html body .enterprise-module .module-content .form-control.textarea-20,
+html body div.enterprise-module div.module-content .form-control.textarea-20,
+html body form .form-control.textarea-20.textarea-20 {
+    height: 420px !important;
+    min-height: 420px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+/*
+===============================================================================
+END TEXTAREA UTILITIES OVERRIDE LAYER
+===============================================================================
+*/

@@ -200,6 +200,12 @@ class TradingModelForm(FlaskForm):
     backtesting_forwardtesting_notes = TextAreaField('Backtesting/Forward-Testing Notes & Results',
                                                      validators=[Optional()])
     refinements_learnings = TextAreaField('Refinements & Learnings Over Time', validators=[Optional()])
+    
+    # Chart Examples and Visual Analysis
+    chart_examples = MultipleFileField('Chart Examples', 
+                                     validators=[Optional(), FileAllowed(['jpg', 'jpeg', 'png', 'gif', 'webp'], 
+                                                                        'Images only! Supported formats: JPG, PNG, GIF, WebP')])
+    
     submit = SubmitField('Save Trading Model')
 
 
@@ -975,3 +981,224 @@ class InstrumentFilterForm(FlaskForm):
 
     status = SelectField('Status',
                          choices=[('', 'All'), ('active', 'Active Only'), ('inactive', 'Inactive Only')])
+
+
+# --- Backtesting Forms ---
+class BacktestForm(FlaskForm):
+    """Form for creating and editing backtests"""
+    name = StringField('Backtest Name', validators=[DataRequired(), Length(max=200)])
+    description = TextAreaField('Description', validators=[Optional()])
+    
+    # Date range
+    start_date = DateField('Start Date', validators=[DataRequired()])
+    end_date = DateField('End Date', validators=[DataRequired()])
+    
+    # Trading model selection
+    trading_model_id = SelectField('Trading Model', 
+                                  coerce=int, 
+                                  validators=[DataRequired()],
+                                  render_kw={"class": "form-select"})
+    
+    # Market context
+    market_conditions = TextAreaField('Market Conditions', 
+                                    validators=[Optional()],
+                                    render_kw={"rows": 3, "placeholder": "Describe overall market conditions during backtest period..."})
+    
+    session_context = SelectField('Primary Session Context',
+                                 choices=[('', 'All Sessions'),
+                                         ('Asia', 'Asia Session'),
+                                         ('London', 'London Session'),
+                                         ('NY1', 'NY1 Session'),
+                                         ('NY2', 'NY2 Session'),
+                                         ('Overlap', 'Session Overlaps')],
+                                 validators=[Optional()])
+    
+    # Rules and settings (JSON will be handled in view)
+    specific_rules_used = TextAreaField('Specific Rules Used',
+                                       validators=[Optional()],
+                                       render_kw={"rows": 4, "placeholder": "List specific rules or modifications applied..."})
+    
+    entry_rules = TextAreaField('Entry Rules',
+                               validators=[Optional()],
+                               render_kw={"rows": 3, "placeholder": "Specific entry criteria for this backtest..."})
+    
+    exit_rules = TextAreaField('Exit Rules',
+                              validators=[Optional()],
+                              render_kw={"rows": 3, "placeholder": "Specific exit criteria for this backtest..."})
+    
+    trade_management_applied = TextAreaField('Trade Management Applied',
+                                           validators=[Optional()],
+                                           render_kw={"rows": 4, "placeholder": "Scaling, breakeven, trailing stops, etc."})
+    
+    risk_settings = TextAreaField('Risk Settings',
+                                 validators=[Optional()],
+                                 render_kw={"rows": 3, "placeholder": "Position sizing, max loss per trade, etc."})
+    
+    # Screenshots and notes
+    tradingview_screenshot_links = TextAreaField('TradingView Screenshot Links',
+                                               validators=[Optional()],
+                                               render_kw={"rows": 2, "placeholder": "One URL per line..."})
+    
+    chart_screenshots = TextAreaField('Chart Screenshot Links',
+                                    validators=[Optional()],
+                                    render_kw={"rows": 2, "placeholder": "One URL per line..."})
+    
+    notes = TextAreaField('Additional Notes',
+                         validators=[Optional()],
+                         render_kw={"rows": 4, "placeholder": "Overall observations, lessons learned, etc."})
+    
+    submit = SubmitField('Save Backtest')
+
+    def __init__(self, *args, **kwargs):
+        super(BacktestForm, self).__init__(*args, **kwargs)
+        # Trading model choices will be populated in the view
+
+
+class BacktestTradeForm(FlaskForm):
+    """Form for adding individual trades to a backtest"""
+    # Basic trade information
+    trade_date = DateField('Trade Date', validators=[DataRequired()])
+    trade_time = TimeField('Trade Time', validators=[Optional()])
+    instrument = StringField('Instrument', validators=[DataRequired(), Length(max=20)])
+    direction = SelectField('Direction', 
+                          choices=[('LONG', 'Long'), ('SHORT', 'Short')],
+                          validators=[DataRequired()])
+    quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
+    
+    # Entry and exit prices (for simple trades)
+    entry_price = FloatField('Entry Price', validators=[Optional(), NumberRange(min=0)])
+    exit_price = FloatField('Exit Price', validators=[Optional(), NumberRange(min=0)])
+    
+    # Stop and target levels
+    stop_loss_price = FloatField('Stop Loss Price', validators=[Optional(), NumberRange(min=0)])
+    take_profit_price = FloatField('Take Profit Price', validators=[Optional(), NumberRange(min=0)])
+    
+    # Exit reason
+    actual_exit_reason = SelectField('Exit Reason',
+                                   choices=[('', 'Select Reason'),
+                                           ('take_profit', 'Take Profit'),
+                                           ('stop_loss', 'Stop Loss'),
+                                           ('trailing_stop', 'Trailing Stop'),
+                                           ('time_exit', 'Time Exit'),
+                                           ('manual_exit', 'Manual Exit'),
+                                           ('breakeven_stop', 'Breakeven Stop'),
+                                           ('partial_profit', 'Partial Profit'),
+                                           ('market_close', 'Market Close')],
+                                   validators=[Optional()])
+    
+    # Performance metrics
+    profit_loss = FloatField('Profit/Loss ($)', validators=[DataRequired()])
+    profit_loss_ticks = FloatField('P&L (Ticks)', validators=[Optional()])
+    mae_ticks = FloatField('MAE (Ticks)', validators=[Optional()])
+    mfe_ticks = FloatField('MFE (Ticks)', validators=[Optional()])
+    duration_minutes = IntegerField('Duration (Minutes)', validators=[Optional(), NumberRange(min=0)])
+    
+    # Context
+    market_conditions = StringField('Market Conditions', 
+                                   validators=[Optional(), Length(max=100)],
+                                   render_kw={"placeholder": "Trending, choppy, news-driven..."})
+    
+    session_context = SelectField('Session Context',
+                                 choices=[('', 'Select Session'),
+                                         ('Asia', 'Asia'),
+                                         ('London', 'London'),
+                                         ('NY1', 'NY1'),
+                                         ('NY2', 'NY2'),
+                                         ('Overlap', 'Overlap')],
+                                 validators=[Optional()])
+    
+    # Screenshots and notes
+    tradingview_screenshot_links = TextAreaField('TradingView Screenshots',
+                                               validators=[Optional()],
+                                               render_kw={"rows": 2, "placeholder": "One URL per line..."})
+    
+    chart_screenshots = TextAreaField('Chart Screenshots',
+                                    validators=[Optional()],
+                                    render_kw={"rows": 2, "placeholder": "One URL per line..."})
+    
+    notes = TextAreaField('Trade Notes',
+                         validators=[Optional()],
+                         render_kw={"rows": 3, "placeholder": "Setup quality, execution notes, lessons learned..."})
+    
+    # Tags (will be handled as JSON in view)
+    tags = StringField('Tags', 
+                      validators=[Optional()],
+                      render_kw={"placeholder": "Comma-separated tags..."})
+    
+    submit = SubmitField('Add Trade')
+
+
+class BacktestTradeEntryForm(FlaskForm):
+    """Form for adding multiple entry points to a backtest trade"""
+    entry_time = TimeField('Entry Time', validators=[DataRequired()])
+    entry_price = FloatField('Entry Price', validators=[DataRequired(), NumberRange(min=0)])
+    quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
+    entry_reason = StringField('Entry Reason', 
+                              validators=[Optional(), Length(max=100)],
+                              render_kw={"placeholder": "Initial, scale-in, add to winner..."})
+    market_conditions = StringField('Market Conditions',
+                                   validators=[Optional(), Length(max=100)],
+                                   render_kw={"placeholder": "Market state at this entry..."})
+    notes = TextAreaField('Notes', 
+                         validators=[Optional()],
+                         render_kw={"rows": 2, "placeholder": "Why this entry was taken..."})
+
+
+class BacktestTradeExitForm(FlaskForm):
+    """Form for adding multiple exit points to a backtest trade"""
+    exit_time = TimeField('Exit Time', validators=[DataRequired()])
+    exit_price = FloatField('Exit Price', validators=[DataRequired(), NumberRange(min=0)])
+    quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
+    exit_reason = SelectField('Exit Reason',
+                            choices=[('take_profit', 'Take Profit'),
+                                    ('stop_loss', 'Stop Loss'),
+                                    ('trailing_stop', 'Trailing Stop'),
+                                    ('time_exit', 'Time Exit'),
+                                    ('manual_exit', 'Manual Exit'),
+                                    ('breakeven_stop', 'Breakeven Stop'),
+                                    ('partial_profit', 'Partial Profit'),
+                                    ('market_close', 'Market Close')],
+                            validators=[DataRequired()])
+    profit_loss = FloatField('P&L for this Exit', validators=[DataRequired()])
+    market_conditions = StringField('Market Conditions',
+                                   validators=[Optional(), Length(max=100)],
+                                   render_kw={"placeholder": "Market state at this exit..."})
+    notes = TextAreaField('Notes', 
+                         validators=[Optional()],
+                         render_kw={"rows": 2, "placeholder": "Why this exit was taken..."})
+
+
+class BacktestFilterForm(FlaskForm):
+    """Form for filtering and searching backtests"""
+    search = StringField('Search',
+                        render_kw={"placeholder": "Search by name or description..."})
+    
+    trading_model_id = SelectField('Trading Model',
+                                  coerce=coerce_int_optional,
+                                  choices=[('', 'All Models')],
+                                  validators=[Optional()])
+    
+    status = SelectField('Status',
+                        choices=[('', 'All Statuses'),
+                                ('draft', 'Draft'),
+                                ('running', 'Running'),
+                                ('completed', 'Completed'),
+                                ('failed', 'Failed'),
+                                ('cancelled', 'Cancelled')],
+                        validators=[Optional()])
+    
+    start_date_from = DateField('Start Date From', validators=[Optional()])
+    start_date_to = DateField('Start Date To', validators=[Optional()])
+    
+    session_context = SelectField('Session Context',
+                                 choices=[('', 'All Sessions'),
+                                         ('Asia', 'Asia'),
+                                         ('London', 'London'),
+                                         ('NY1', 'NY1'),
+                                         ('NY2', 'NY2'),
+                                         ('Overlap', 'Overlap')],
+                                 validators=[Optional()])
+    
+    def __init__(self, *args, **kwargs):
+        super(BacktestFilterForm, self).__init__(*args, **kwargs)
+        # Trading model choices will be populated in the view

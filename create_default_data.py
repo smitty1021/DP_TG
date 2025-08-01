@@ -522,7 +522,7 @@ class EnhancedBootstrapManager:
         print("\n📊 Creating P12 scenarios...")
 
         scenarios_data = [
-            # Scenario 1A - Bullish
+            # Scenario 1A - Bullish (Low of Day likely already in)
             {
                 'scenario_number': '1A',
                 'scenario_name': 'Scenario 1A: P12 Mid Rejection, Stay Above (Bullish)',
@@ -543,7 +543,8 @@ class EnhancedBootstrapManager:
                 'key_considerations': 'LOD likely already established, focus on upside targets',
                 'is_active': True
             },
-            # Scenario 1B - Bearish
+
+            # Scenario 1B - Bearish (High of Day likely already in)
             {
                 'scenario_number': '1B',
                 'scenario_name': 'Scenario 1B: P12 Mid Rejection, Stay Below (Bearish)',
@@ -564,8 +565,140 @@ class EnhancedBootstrapManager:
                 'key_considerations': 'HOD likely already established, focus on downside targets',
                 'is_active': True
             },
-            # Additional scenarios would follow the same pattern...
-            # I'll create a few more key ones for demonstration
+
+            # Scenario 2A - Bullish (Look above and fail, expect reversal up)
+            {
+                'scenario_number': '2B',
+                'scenario_name': 'Scenario 2B: Look Above P12 High and Fail (Bearish Reversal)',
+                'short_description': 'Price looks above P12 High then fails, expect low in and reversal up',
+                'detailed_description': 'Price initially moves above P12 High but fails to hold and gets sucked back into the P12 range. High of Day likely set by this false breakout, expect reversal to upside.',
+                'hod_lod_implication': 'Low of Day likely set by the failed breakout above. Reversal higher expected.',
+                'directional_bias': 'bullish reversal',
+                'alert_criteria': 'Price moves above P12 High then gets sucked back into range',
+                'confirmation_criteria': 'Price closes back inside P12 range and breaks above P12 Mid',
+                'entry_strategy': 'Enter long on return inside P12 range, target P12 High and beyond',
+                'typical_targets': 'P12 High, then extended upside targets',
+                'stop_loss_guidance': 'Below the failed breakout low',
+                'risk_percentage': 0.50,
+                'models_to_activate': ['HOD/LOD Reversal', 'P12 Scenario-Based'],
+                'models_to_avoid': ['Captain Backtest'],
+                'risk_guidance': '0.50% risk - Reversal setup after failed breakout',
+                'preferred_timeframes': ['5-minute', '15-minute'],
+                'key_considerations': 'Wait for clear failure confirmation, LOD likely in',
+                'is_active': True
+            },
+
+            # Scenario 2B - Bearish (Look below and fail, expect reversal down)
+            {
+                'scenario_number': '2A',
+                'scenario_name': 'Scenario 2A: Look Below P12 Low and Fail (Bearish Reversal)',
+                'short_description': 'Price looks below P12 Low then fails, expect high in and reversal down',
+                'detailed_description': 'Price initially moves below P12 Low but fails to hold and gets sucked back into the P12 range. Low of Day likely set by this false breakdown, expect reversal to downside.',
+                'hod_lod_implication': 'High of Day likely set by the failed breakdown below. Reversal lower expected.',
+                'directional_bias': 'bearish reversal',
+                'alert_criteria': 'Price moves below P12 Low then gets sucked back into range',
+                'confirmation_criteria': 'Price closes back inside P12 range and breaks below P12 Mid',
+                'entry_strategy': 'Enter short on return inside P12 range, target P12 Low and beyond',
+                'typical_targets': 'P12 Low, then extended downside targets',
+                'stop_loss_guidance': 'Above the failed breakdown high',
+                'risk_percentage': 0.50,
+                'models_to_activate': ['HOD/LOD Reversal', 'P12 Scenario-Based'],
+                'models_to_avoid': ['Captain Backtest'],
+                'risk_guidance': '0.50% risk - Reversal setup after failed breakdown',
+                'preferred_timeframes': ['5-minute', '15-minute'],
+                'key_considerations': 'Wait for clear failure confirmation, HOD likely in',
+                'is_active': True
+            },
+
+            # Scenario 3A - Bullish (Range between Mid and High, then break up)
+            {
+                'scenario_number': '3A',
+                'scenario_name': 'Scenario 3A: Range Mid to High, Break Up (Bullish)',
+                'short_description': 'Price ranges between P12 Mid and High, then breaks above High',
+                'detailed_description': 'Price consolidates between P12 Mid and P12 High during analysis window, then breaks above P12 High with conviction. Low of Day likely already established.',
+                'hod_lod_implication': 'Low of Day likely already in. Breakout suggests bullish continuation.',
+                'directional_bias': 'bullish trending',
+                'alert_criteria': 'Price ping-ponging between P12 Mid and P12 High',
+                'confirmation_criteria': 'Clean breakout above P12 High',
+                'entry_strategy': 'Enter long on breakout above consolidation range',
+                'typical_targets': 'Extended targets above P12 range, daily highs',
+                'stop_loss_guidance': 'Back inside the P12 Mid-High range',
+                'risk_percentage': 0.25,
+                'models_to_activate': ['Captain Backtest', 'P12 Scenario-Based'],
+                'models_to_avoid': ['HOD/LOD Reversal'],
+                'risk_guidance': '0.25% risk - Clear bullish breakout setup',
+                'preferred_timeframes': ['5-minute', '10-minute'],
+                'key_considerations': 'Ensure clean break of consolidation, LOD likely in',
+                'is_active': True
+            },
+
+            # Scenario 3B - Bearish (Range between Mid and Low, then break down)
+            {
+                'scenario_number': '3B',
+                'scenario_name': 'Scenario 3B: Range Mid to Low, Break Down (Bearish)',
+                'short_description': 'Price ranges between P12 Mid and Low, then breaks below Low',
+                'detailed_description': 'Price consolidates between P12 Mid and P12 Low during analysis window, then breaks below P12 Low with conviction. High of Day likely already established.',
+                'hod_lod_implication': 'High of Day likely already in. Breakdown suggests bearish continuation.',
+                'directional_bias': 'bearish trending',
+                'alert_criteria': 'Price ping-ponging between P12 Mid and P12 Low',
+                'confirmation_criteria': 'Clean breakdown below P12 Low',
+                'entry_strategy': 'Enter short on breakdown below consolidation range',
+                'typical_targets': 'Extended targets below P12 range, daily lows',
+                'stop_loss_guidance': 'Back inside the P12 Mid-Low range',
+                'risk_percentage': 0.25,
+                'models_to_activate': ['Captain Backtest', 'P12 Scenario-Based'],
+                'models_to_avoid': ['HOD/LOD Reversal'],
+                'risk_guidance': '0.25% risk - Clear bearish breakdown setup',
+                'preferred_timeframes': ['5-minute', '10-minute'],
+                'key_considerations': 'Ensure clean break of consolidation, HOD likely in',
+                'is_active': True
+            },
+
+            # Scenario 4A - Bullish (Breakout and hold above P12 High)
+            {
+                'scenario_number': '4A',
+                'scenario_name': 'Scenario 4A: Stay Outside Above P12 High (Bullish)',
+                'short_description': 'Clean breakout above P12 High, level acts as support',
+                'detailed_description': 'Price breaks cleanly above P12 High and holds, with P12 High acting as dynamic support on any retests. Strong bullish momentum with Low of Day likely already established.',
+                'hod_lod_implication': 'Low of Day likely already in overnight. Strong bullish continuation expected.',
+                'directional_bias': 'strongly bullish',
+                'alert_criteria': 'Price steps outside and holds above P12 High',
+                'confirmation_criteria': 'P12 High acting as support on retests',
+                'entry_strategy': 'Enter long on retests of P12 High acting as support',
+                'typical_targets': 'Daily extremes, extended bullish targets',
+                'stop_loss_guidance': 'Below P12 High with structural confirmation',
+                'risk_percentage': 0.25,
+                'models_to_activate': ['Captain Backtest', '0930 Opening Range', 'P12 Scenario-Based'],
+                'models_to_avoid': ['HOD/LOD Reversal'],
+                'risk_guidance': '0.25% risk - High probability bullish continuation',
+                'preferred_timeframes': ['1-minute', '5-minute'],
+                'key_considerations': 'Strong momentum setup, LOD likely in - size appropriately',
+                'is_active': True
+            },
+
+            # Scenario 4B - Bearish (Breakout and hold below P12 Low)
+            {
+                'scenario_number': '4B',
+                'scenario_name': 'Scenario 4B: Stay Outside Below P12 Low (Bearish)',
+                'short_description': 'Clean breakdown below P12 Low, level acts as resistance',
+                'detailed_description': 'Price breaks cleanly below P12 Low and holds, with P12 Low acting as dynamic resistance on any retests. Strong bearish momentum with High of Day likely already established.',
+                'hod_lod_implication': 'High of Day likely already in overnight. Strong bearish continuation expected.',
+                'directional_bias': 'strongly bearish',
+                'alert_criteria': 'Price steps outside and holds below P12 Low',
+                'confirmation_criteria': 'P12 Low acting as resistance on retests',
+                'entry_strategy': 'Enter short on retests of P12 Low acting as resistance',
+                'typical_targets': 'Daily extremes, extended bearish targets',
+                'stop_loss_guidance': 'Above P12 Low with structural confirmation',
+                'risk_percentage': 0.25,
+                'models_to_activate': ['Captain Backtest', '0930 Opening Range', 'P12 Scenario-Based'],
+                'models_to_avoid': ['HOD/LOD Reversal'],
+                'risk_guidance': '0.25% risk - High probability bearish continuation',
+                'preferred_timeframes': ['1-minute', '5-minute'],
+                'key_considerations': 'Strong momentum setup, HOD likely in - size appropriately',
+                'is_active': True
+            },
+
+            # Scenario 5 - Choppy (Swiping the Mid)
             {
                 'scenario_number': '5',
                 'scenario_name': 'Scenario 5: Swiping the Mid - Expect HOD/LOD in RTH',
@@ -1622,7 +1755,7 @@ def run_complete_bootstrap():
             manager.create_account_settings()
 
             print("\n🔧 Phase 3: Trading Data Generation")
-            manager.generate_realistic_trades(1000)  # Reduce for initial testing
+            manager.generate_realistic_trades(10000)
             manager.create_trade_images()
             manager.create_daily_journals()
             manager.create_weekly_journals()

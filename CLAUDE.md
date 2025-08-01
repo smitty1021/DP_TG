@@ -155,6 +155,36 @@ The application uses a custom enterprise-grade CSS framework with strict convent
 - `unsaved-changes.js` - Form change detection
 - `enterprise-search.js` - Search functionality
 
+**CRITICAL: Enterprise Unsaved Changes System Guidelines:**
+The application uses a centralized unsaved changes detection system. NEVER create duplicate or competing unsaved changes systems.
+
+**✅ CORRECT Approach:**
+- Rely on the global `unsaved-changes.js` system for ALL forms
+- It automatically provides 3-button modal (Save Changes, Discard Changes, Cancel)
+- No page-specific beforeunload handlers needed
+- Only add `window.imageChanged = true` for image upload tracking if needed
+
+**🚫 NEVER DO:**
+- Add `window.addEventListener('beforeunload', ...)` in templates
+- Create custom unsaved changes detection in individual pages
+- Set `window.onbeforeunload = ...` anywhere
+- Add duplicate form monitoring systems
+- Create competing modal systems for unsaved changes
+
+**Debug Mode (For Troubleshooting Only):**
+```javascript
+// Enable debug mode in browser console
+window.__enableBeforeUnloadDebug = true
+// Get comprehensive reports
+__reportBeforeUnloadAttempts()
+__debugBeforeUnload()
+```
+
+**CSS Framework:**
+- `enterprise-all.css` - Consolidated CSS imports for optimal performance
+- `enterprise-textarea-utilities.css` - Textarea height utilities with maximum specificity
+- Uses consolidated CSS loading pattern for better performance
+
 ### Key Configuration Files
 
 **Environment Configuration:**
@@ -347,6 +377,36 @@ The application uses a custom enterprise-grade CSS framework with strict convent
 - **Form alignment**: `align-items-end` for horizontal form control alignment
 - **Table container**: `max-height: 600px; overflow-y: auto` for scrollable tables
 
+### **Textarea Height Utilities (MANDATORY)**
+**CRITICAL:** Use the enterprise textarea height utility classes for consistent textarea sizing across all forms. These classes use maximum CSS specificity to override framework defaults.
+
+#### **Available Textarea Height Classes:**
+```html
+<!-- Available textarea height classes (apply to textarea elements) -->
+<textarea class="form-control textarea-1">...</textarea>  <!-- ~80px height -->
+<textarea class="form-control textarea-3">...</textarea>  <!-- ~160px height -->
+<textarea class="form-control textarea-4">...</textarea>  <!-- ~200px height -->
+<textarea class="form-control textarea-7">...</textarea>  <!-- ~280px height -->
+<textarea class="form-control textarea-15">...</textarea> <!-- ~320px height -->
+```
+
+#### **Implementation Pattern:**
+```html
+<!-- CORRECT: Use enterprise textarea utilities -->
+{{ form.field_name(class="form-control textarea-7" + (" is-invalid" if form.field_name.errors else "")) }}
+
+<!-- INCORRECT: Never use inline styles or rows attribute -->
+<textarea style="height: 200px;">...</textarea>
+<textarea rows="10">...</textarea>
+```
+
+#### **Technical Details:**
+- Classes are defined in `enterprise-textarea-utilities.css`
+- Uses maximum specificity selector: `html body .enterprise-container-fluid form .form-control.textarea-X`
+- Includes `!important` declarations to override framework defaults
+- All textareas have `resize: vertical` enabled for user flexibility
+- Height utilities work across all enterprise form layouts
+
 ### **Color Consistency**
 - **Primary Enterprise Blue**: `#0066cc` (buttons, links, highlights)
 - **Success Green**: `#0070c0` (positive indicators)
@@ -375,14 +435,22 @@ The application uses a custom enterprise-grade CSS framework with strict convent
 ```
 
 #### **Required JavaScript Implementation:**
-```javascript
+**CRITICAL:** For proper custom modal functionality, unsaved changes detection MUST be implemented in the `head_extra` block as inline JavaScript, NOT in the document body. This ensures script loading order and function availability.
+
+```html
+{% block head_extra %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+<script>
 // Unsaved changes detection - MANDATORY for all forms
 let hasUnsavedChanges = false;
 let originalFormData = {};
 let isSubmitting = false;
 
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('form');
+    const form = document.getElementById('[form-id]'); // Use specific form ID
     const inputs = form.querySelectorAll('input, select, textarea');
 
     // Store original form data
@@ -395,8 +463,33 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Monitor form changes and show/hide indicator
-    // Implementation details in edit_user.html and create_user.html
+    inputs.forEach(input => {
+        input.addEventListener('change', checkForChanges);
+        input.addEventListener('input', checkForChanges);
+    });
+
+    // Check if form has changes
+    function checkForChanges() {
+        hasUnsavedChanges = false;
+        inputs.forEach(input => {
+            let currentValue = (input.type === 'checkbox') ? input.checked : input.value;
+            let originalValue = (input.type === 'checkbox') ? originalFormData[input.name] : originalFormData[input.name] || '';
+            if (currentValue !== originalValue) {
+                hasUnsavedChanges = true;
+            }
+        });
+
+        // Show/hide unsaved changes indicator
+        const indicator = document.getElementById('unsaved-indicator');
+        if (indicator) {
+            indicator.style.display = hasUnsavedChanges ? 'block' : 'none';
+        }
+    }
+
+    // Implementation continues with beforeUnloadHandler, navigation handler, etc.
 });
+</script>
+{% endblock %}
 ```
 
 #### **Required Scripts:**

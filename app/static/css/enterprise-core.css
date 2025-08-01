@@ -262,7 +262,7 @@ button:disabled {
 }
 
 textarea {
-    font-family: var(--enterprise-font-family) ;
+    font-family: var(--enterprise-font-family);
 }
 
 /* Exception for code/monospace areas where monospace is intentional */
@@ -919,6 +919,193 @@ button:disabled {
 
 /*
 ===============================================================================
+TEXTAREA HEIGHT UTILITIES
+===============================================================================
+Standardized textarea heights for consistent form experiences
+*/
+
+/* Single line textarea - Maximum specificity for enterprise framework compatibility */
+.textarea-1,
+textarea.textarea-1,
+.form-control.textarea-1,
+.enterprise-module .form-control.textarea-1,
+.module-content .form-control.textarea-1,
+form .form-control.textarea-1,
+div .form-control.textarea-1,
+.enterprise-container-fluid .form-control.textarea-1 {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+/* Two line textarea */
+.textarea-2,
+textarea.textarea-2,
+.form-control.textarea-2,
+.enterprise-module .form-control.textarea-2,
+.module-content .form-control.textarea-2,
+form .form-control.textarea-2,
+div .form-control.textarea-2,
+.enterprise-container-fluid .form-control.textarea-2 {
+    height: 60px !important;
+    min-height: 60px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+/* Three line textarea */
+.textarea-3,
+textarea.textarea-3,
+.form-control.textarea-3,
+.enterprise-module .form-control.textarea-3,
+.module-content .form-control.textarea-3,
+form .form-control.textarea-3,
+div .form-control.textarea-3,
+.enterprise-container-fluid .form-control.textarea-3 {
+    height: 80px !important;
+    min-height: 80px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+/* Four line textarea */
+.textarea-4,
+textarea.textarea-4,
+.form-control.textarea-4,
+.enterprise-module .form-control.textarea-4,
+.module-content .form-control.textarea-4,
+form .form-control.textarea-4,
+div .form-control.textarea-4,
+.enterprise-container-fluid .form-control.textarea-4 {
+    height: 100px !important;
+    min-height: 100px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+/* Five line textarea */
+.textarea-5,
+textarea.textarea-5,
+.form-control.textarea-5,
+.enterprise-module .form-control.textarea-5,
+.module-content .form-control.textarea-5,
+form .form-control.textarea-5,
+div .form-control.textarea-5,
+.enterprise-container-fluid .form-control.textarea-5 {
+    height: 120px !important;
+    min-height: 120px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+/* Six line textarea */
+.textarea-6,
+textarea.textarea-6,
+.form-control.textarea-6,
+.enterprise-module .form-control.textarea-6,
+.module-content .form-control.textarea-6,
+form .form-control.textarea-6,
+div .form-control.textarea-6,
+.enterprise-container-fluid .form-control.textarea-6 {
+    height: 140px !important;
+    min-height: 140px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+/* Seven line textarea */
+.textarea-7,
+textarea.textarea-7,
+.form-control.textarea-7,
+.enterprise-module .form-control.textarea-7,
+.module-content .form-control.textarea-7,
+form .form-control.textarea-7,
+div .form-control.textarea-7,
+.enterprise-container-fluid .form-control.textarea-7 {
+    height: 160px !important;
+    min-height: 160px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+/* Eight line textarea */
+.textarea-8,
+textarea.textarea-8,
+.form-control.textarea-8,
+.enterprise-module .form-control.textarea-8,
+.module-content .form-control.textarea-8,
+form .form-control.textarea-8,
+div .form-control.textarea-8,
+.enterprise-container-fluid .form-control.textarea-8 {
+    height: 180px !important;
+    min-height: 180px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+/* Ten line textarea */
+.textarea-10,
+textarea.textarea-10,
+.form-control.textarea-10,
+.enterprise-module .form-control.textarea-10,
+.module-content .form-control.textarea-10,
+form .form-control.textarea-10,
+div .form-control.textarea-10,
+.enterprise-container-fluid .form-control.textarea-10 {
+    height: 220px !important;
+    min-height: 220px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+/* Twelve line textarea */
+.textarea-12,
+textarea.textarea-12,
+.form-control.textarea-12,
+.enterprise-module .form-control.textarea-12,
+.module-content .form-control.textarea-12,
+form .form-control.textarea-12,
+div .form-control.textarea-12,
+.enterprise-container-fluid .form-control.textarea-12 {
+    height: 260px !important;
+    min-height: 260px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+/* Fifteen line textarea */
+.textarea-15,
+textarea.textarea-15,
+.form-control.textarea-15,
+.enterprise-module .form-control.textarea-15,
+.module-content .form-control.textarea-15,
+form .form-control.textarea-15,
+div .form-control.textarea-15,
+.enterprise-container-fluid .form-control.textarea-15 {
+    height: 320px !important;
+    min-height: 320px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+/* Twenty line textarea */
+.textarea-20,
+textarea.textarea-20,
+.form-control.textarea-20,
+.enterprise-module .form-control.textarea-20,
+.module-content .form-control.textarea-20,
+form .form-control.textarea-20,
+div .form-control.textarea-20,
+.enterprise-container-fluid .form-control.textarea-20 {
+    height: 420px !important;
+    min-height: 420px !important;
+    max-height: none !important;
+    resize: vertical !important;
+}
+
+/*
+===============================================================================
 END OF ENTERPRISE CORE STYLES
 ===============================================================================
 Framework Summary:
@@ -930,4 +1117,5 @@ Framework Summary:
 - Performance optimizations
 - Responsive utilities
 - Cross-browser compatibility
+- Textarea height utilities
 */

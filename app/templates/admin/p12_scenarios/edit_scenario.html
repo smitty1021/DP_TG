@@ -1,17 +1,33 @@
 {% extends "base.html" %}
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ title }} - Administration Center{% endblock %}
 
 {% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<script src="{{ url_for('static', filename='js/p12-images.js') }}"></script>
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+<script src="{{ url_for('static', filename='js/p12-images.js') }}"></script>
+<script>
+// Page-specific initialization for P12 Scenario editing
+// Note: Unsaved changes detection is now handled by the global enterprise system
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Track if image has been changed (for unsaved changes detection)
+    window.imageChanged = false;
+
+
+
+    console.log('Enterprise P12 Scenario Configuration Management initialized');
+});
+</script>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Executive Header -->
-    <div class="executive-header">
+<!-- Executive Header -->
+<div class="executive-header">
+    <div class="enterprise-container-fluid">
         <div class="d-flex justify-content-between align-items-center">
             <div class="header-content">
                 <h1 class="executive-title">
@@ -25,14 +41,11 @@
                         Establish new P12 Strategic Configuration
                     {% endif %}
                     {% if scenario %}
-                    <span class="user-context">• Last Updated: {{ scenario.updated_date.strftime('%d-%B-%Y') }}</span>
+                    <span class="user-context">• Last Updated: {{ scenario.updated_date.strftime('%d %b %Y') }}</span>
                     {% endif %}
                 </div>
             </div>
             <div class="btn-group">
-                <button type="submit" class="btn btn-outline-secondary btn-sm" title="Save Configuration" form="scenario-form">
-                    <i class="fas fa-save"></i>
-                </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="window.location.href='{{ url_for('main.index') }}'"
                         title="Go to Main Dashboard">
@@ -65,41 +78,46 @@
             </div>
         </div>
     </div>
+</div>
 
+<!-- Main Content Wrapper -->
+<div class="enterprise-container-fluid mt-3" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
     <!-- Unsaved Changes Indicator -->
     <div id="unsaved-indicator" class="alert alert-warning alert-dismissible fade show" role="alert" style="display: none;">
         <i class="fas fa-exclamation-triangle me-2"></i>
         <strong>Unsaved Changes:</strong> You have made changes that have not been saved yet.
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    <div class="row">
-        <div class="col-12 text-end pt-3" style="border-top: 1px solid var(--enterprise-border);">
-            <div class="btn-group">
-                <a href="{{ url_for('p12_scenarios.list_scenarios') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-times me-2"></i>Cancel Configuration
-                </a>
-                <button type="submit" class="btn btn-primary" title="Save Configuration" form="scenario-form">
-                    <i class="fas fa-save me-2"></i>Save Configuration
-                </button>
-            </div>
+    
+    <!-- Action Controls -->
+    <div class="d-flex justify-content-end align-items-center">
+        <div class="btn-group">
+            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Save Configuration" form="scenario-form">
+                <i class="fas fa-save"></i>
+            </button>
+            <a href="{{ url_for('p12_scenarios.list_scenarios') }}" class="btn btn-outline-secondary btn-sm" title="Cancel Configuration">
+                <i class="fas fa-times"></i>
+            </a>
         </div>
     </div>
 
-    <form method="POST" enctype="multipart/form-data" novalidate id="scenario-form" class="mt-4">
+    <form method="POST" enctype="multipart/form-data" novalidate id="scenario-form">
         {{ form.hidden_tag() }}
 
-        <!-- Strategic Configuration Grid -->
-        <div class="row mb-4">
-            <!-- Strategic Configuration Parameters -->
-            <div class="col-lg-4">
-                <div class="enterprise-module">
+        <!-- Enterprise Grid Layout: Three Columns, Two Rows -->
+        <div class="grid grid-cols-3 gap-4 mb-3">
+            <!-- Row 1: Basic Information & Configuration -->
+            <!-- Column 1: Strategic Configuration -->
+            <div class="col-span-1">
+                <div class="enterprise-module mb-3">
                     <div class="module-header">
                         <div class="module-title">
                             <i class="fas fa-info-circle module-icon"></i>
                             Strategic Configuration
                         </div>
+                        <div class="module-meta">Core Parameters</div>
                     </div>
-                    <div class="module-content">
+                    <div class="module-content mb-3">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Configuration ID</label>
                             {{ form.scenario_number(class="form-control" + (" is-invalid" if form.scenario_number.errors else "")) }}
@@ -120,7 +138,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Executive Summary</label>
-                            {{ form.short_description(class="form-control" + (" is-invalid" if form.short_description.errors else "")) }}
+                            {{ form.short_description(class="form-control textarea-1" + (" is-invalid" if form.short_description.errors else "")) }}
                             {% if form.short_description.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in form.short_description.errors %}{{ error }}{% endfor %}
@@ -129,14 +147,13 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Strategic Overview</label>
-                            {{ form.detailed_description(class="form-control" + (" is-invalid" if form.detailed_description.errors else ""), rows="3") }}
+                            {{ form.detailed_description(class="form-control textarea-7" + (" is-invalid" if form.detailed_description.errors else "")) }}
                             {% if form.detailed_description.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in form.detailed_description.errors %}{{ error }}{% endfor %}
                                 </div>
                             {% endif %}
                         </div>
-                        <hr class="my-3">
                         <div class="mb-2">
                             <div class="form-check">
                                 {{ form.is_active(class="form-check-input" + (" is-invalid" if form.is_active.errors else "")) }}
@@ -152,16 +169,58 @@
                 </div>
             </div>
 
-            <!-- System Configuration Matrix -->
-            <div class="col-lg-4">
-                <div class="enterprise-module">
+            <!-- Column 2: Market Analysis & Criteria -->
+            <div class="col-span-1">
+                <div class="enterprise-module mb-3">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-chart-line module-icon"></i>
+                            Market Analysis & Criteria
+                        </div>
+                        <div class="module-meta">Detection & Validation</div>
+                    </div>
+                    <div class="module-content mb-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">HOD/LOD Market Implications</label>
+                            {{ form.hod_lod_implication(class="form-control textarea-7" + (" is-invalid" if form.hod_lod_implication.errors else ""), rows="10") }}
+                            {% if form.hod_lod_implication.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.hod_lod_implication.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Directional Bias</label>
+                            <div class="tag-selector" id="directional-bias-tags"></div>
+                            {{ form.directional_bias(style="display: none;") }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Key Considerations</label>
+                            {{ form.key_considerations(class="form-control textarea-7" + (" is-invalid" if form.key_considerations.errors else ""), rows="5") }}
+                            {% if form.key_considerations.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.key_considerations.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.key_considerations.description %}
+                                <div class="form-text">{{ form.key_considerations.description }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 3: System Configuration Matrix -->
+            <div class="col-span-1">
+                <div class="enterprise-module mb-3">
                     <div class="module-header">
                         <div class="module-title">
                             <i class="fas fa-cogs module-icon"></i>
                             System Configuration Matrix
                         </div>
+                        <div class="module-meta">Models & Timeframes</div>
                     </div>
-                    <div class="module-content">
+                    <div class="module-content mb-3">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Recommended Models</label>
                             <div class="tag-selector" id="models-activate-tags"></div>
@@ -180,34 +239,42 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Execution Criteria -->
-            <div class="col-lg-4">
-                <div class="enterprise-module">
+        <!-- Row 2: Execution Strategy & Risk Management -->
+        <div class="grid grid-cols-3 gap-4">
+            <!-- Column 1: Execution Strategy -->
+            <div class="col-span-1">
+                <div class="enterprise-module mb-3">
                     <div class="module-header">
                         <div class="module-title">
-                            <i class="fas fa-chart-line module-icon"></i>
-                            Execution Criteria
+                            <i class="fas fa-bullseye module-icon"></i>
+                            Execution Strategy
                         </div>
+                        <div class="module-meta">Entry & Targets</div>
                     </div>
-                    <div class="module-content">
+                    <div class="module-content mb-3">
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">HOD/LOD Market Implications</label>
-                            {{ form.hod_lod_implication(class="form-control" + (" is-invalid" if form.hod_lod_implication.errors else ""), rows="2") }}
-                            {% if form.hod_lod_implication.errors %}
+                            <label class="form-label fw-semibold">Entry Strategy</label>
+                            {{ form.entry_strategy(class="form-control textarea-3" + (" is-invalid" if form.entry_strategy.errors else ""), rows="2") }}
+                            {% if form.entry_strategy.errors %}
                                 <div class="invalid-feedback">
-                                    {% for error in form.hod_lod_implication.errors %}{{ error }}{% endfor %}
+                                    {% for error in form.entry_strategy.errors %}{{ error }}{% endfor %}
                                 </div>
                             {% endif %}
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Directional Bias</label>
-                            <div class="tag-selector" id="directional-bias-tags"></div>
-                            {{ form.directional_bias(style="display: none;") }}
+                            <label class="form-label fw-semibold">Target Objectives</label>
+                            {{ form.typical_targets(class="form-control textarea-3" + (" is-invalid" if form.typical_targets.errors else ""), rows="2") }}
+                            {% if form.typical_targets.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.typical_targets.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Alert Threshold</label>
-                            {{ form.alert_criteria(class="form-control" + (" is-invalid" if form.alert_criteria.errors else ""), rows="2") }}
+                            {{ form.alert_criteria(class="form-control textarea-3" + (" is-invalid" if form.alert_criteria.errors else ""), rows="2") }}
                             {% if form.alert_criteria.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in form.alert_criteria.errors %}{{ error }}{% endfor %}
@@ -216,7 +283,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Confirmation Protocol</label>
-                            {{ form.confirmation_criteria(class="form-control" + (" is-invalid" if form.confirmation_criteria.errors else ""), rows="2") }}
+                            {{ form.confirmation_criteria(class="form-control textarea-3" + (" is-invalid" if form.confirmation_criteria.errors else ""), rows="2") }}
                             {% if form.confirmation_criteria.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in form.confirmation_criteria.errors %}{{ error }}{% endfor %}
@@ -226,103 +293,61 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Strategic Framework & Risk Management -->
-        <div class="row">
-            <!-- Strategic Framework -->
-            <div class="col-lg-6">
-                <div class="enterprise-module">
+            <!-- Column 2: Risk Management -->
+            <div class="col-span-1">
+                <div class="enterprise-module mb-3">
                     <div class="module-header">
                         <div class="module-title">
-                            <i class="fas fa-bullseye module-icon"></i>
-                            Strategic Framework
+                            <i class="fas fa-shield-alt module-icon"></i>
+                            Risk Management
                         </div>
+                        <div class="module-meta">Loss Mitigation</div>
                     </div>
-                    <div class="module-content">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Entry Strategy</label>
-                            {{ form.entry_strategy(class="form-control" + (" is-invalid" if form.entry_strategy.errors else ""), rows="3") }}
-                            {% if form.entry_strategy.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.entry_strategy.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Target Objectives</label>
-                            {{ form.typical_targets(class="form-control" + (" is-invalid" if form.typical_targets.errors else ""), rows="2") }}
-                            {% if form.typical_targets.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.typical_targets.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
+                    <div class="module-content mb-3">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Loss Mitigation Protocol</label>
-                            {{ form.stop_loss_guidance(class="form-control" + (" is-invalid" if form.stop_loss_guidance.errors else ""), rows="2") }}
+                            {{ form.stop_loss_guidance(class="form-control textarea-3" + (" is-invalid" if form.stop_loss_guidance.errors else ""), rows="2") }}
                             {% if form.stop_loss_guidance.errors %}
                                 <div class="invalid-feedback">
                                     {% for error in form.stop_loss_guidance.errors %}{{ error }}{% endfor %}
                                 </div>
                             {% endif %}
                         </div>
-                        <div class="d-flex gap-2">
-                            <div style="flex: 0 0 80px;">
-                                <label class="form-label fw-semibold">Risk %</label>
-                                {{ form.risk_percentage(class="form-control" + (" is-invalid" if form.risk_percentage.errors else ""), step="0.01", min="0", max="5") }}
-                                {% if form.risk_percentage.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.risk_percentage.errors %}{{ error }}{% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div style="flex: 1;">
-                                <label class="form-label fw-semibold">Risk Management Framework</label>
-                                {{ form.risk_guidance(class="form-control" + (" is-invalid" if form.risk_guidance.errors else ""), rows="2") }}
-                                {% if form.risk_guidance.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.risk_guidance.errors %}{{ error }}{% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Risk Management Framework</label>
+                            {{ form.risk_guidance(class="form-control textarea-4" + (" is-invalid" if form.risk_guidance.errors else ""), rows="3") }}
+                            {% if form.risk_guidance.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.risk_guidance.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Risk Percentage</label>
+                            {{ form.risk_percentage(class="form-control" + (" is-invalid" if form.risk_percentage.errors else ""), step="0.01", min="0", max="5") }}
+                            {% if form.risk_percentage.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.risk_percentage.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Executive Guidelines & Visual Analysis -->
-            <div class="col-lg-6">
-                <!-- Executive Guidelines -->
+            <!-- Column 3: Visual Analysis -->
+            <div class="col-span-1">
+                <!-- Visual Analysis Management -->
                 <div class="enterprise-module mb-3">
                     <div class="module-header">
                         <div class="module-title">
-                            <i class="fas fa-lightbulb module-icon"></i>
-                            Executive Guidelines
-                        </div>
-                    </div>
-                    <div class="module-content">
-                        {{ form.key_considerations(class="form-control" + (" is-invalid" if form.key_considerations.errors else ""), rows="6") }}
-                        {% if form.key_considerations.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.key_considerations.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                        {% if form.key_considerations.description %}
-                            <div class="form-text">{{ form.key_considerations.description }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Visual Analysis Management -->
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
                             <i class="fas fa-chart-area module-icon"></i>
-                            Visual Analysis Configuration
+                            Visual Analysis
                         </div>
+                        <div class="module-meta">Chart Configuration</div>
                     </div>
-                    <div class="module-content">
+                    <div class="module-content mb-3">
                         {% if scenario and scenario.images %}
                             {% set primary_image = scenario.images[0] %}
                             <div class="text-center mb-3">
@@ -356,7 +381,7 @@
                         </div>
 
                         <div id="newImagePreview" style="display: none;" class="text-center mb-3">
-                            <img id="previewImg" src="" alt="Preview" class="img-fluid rounded" style="max-height: 150px;">
+                            <img id="previewImg" src="" alt="Preview" class="img-fluid rounded" style="max-height: 100px;">
                             <p class="text-muted small mt-1">New analysis preview</p>
                         </div>
                     </div>
@@ -367,6 +392,7 @@
 </div>
 
 <script>
+// Initialize tag selectors after head script runs
 document.addEventListener('DOMContentLoaded', function() {
     const tradingModels = [];
     const directionalBias = ['bullish', 'bearish', 'neutral', 'choppy'];
@@ -375,10 +401,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Track if image has been changed
     window.imageChanged = false;
-
-    // Form change tracking
-    let originalFormData = {};
-    let hasChanges = false;
 
     // Extract timeframes from the actual form field
     const timeframes = [];
@@ -403,125 +425,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initTagSelector('models-avoid-tags', tradingModels, '{{ form.models_to_avoid.name }}');
     initTagSelector('timeframes-tags', timeframes, '{{ form.preferred_timeframes.name }}');
     initSingleTagSelector('directional-bias-tags', directionalBias, '{{ form.directional_bias.name }}');
-
-    // Capture original form state
-    function captureFormState() {
-        const form = document.getElementById('scenario-form');
-        const formData = new FormData(form);
-        const data = {};
-        for (let [key, value] of formData.entries()) {
-            if (data[key]) {
-                if (Array.isArray(data[key])) {
-                    data[key].push(value);
-                } else {
-                    data[key] = [data[key], value];
-                }
-            } else {
-                data[key] = value;
-            }
-        }
-        return data;
-    }
-
-    // Check if form has changes - updated to show/hide indicator
-    function checkForChanges() {
-        const currentData = captureFormState();
-        const changed = compareFormData(originalFormData, currentData);
-        hasChanges = changed || window.imageChanged;
-
-        // Show/hide unsaved changes indicator
-        const indicator = document.getElementById('unsaved-indicator');
-        if (hasChanges) {
-            indicator.style.display = 'block';
-        } else {
-            indicator.style.display = 'none';
-        }
-
-        return hasChanges;
-    }
-
-    // Compare form data
-    function compareFormData(original, current) {
-        const allKeys = new Set([...Object.keys(original), ...Object.keys(current)]);
-
-        for (let key of allKeys) {
-            const originalValue = original[key];
-            const currentValue = current[key];
-
-            if (Array.isArray(originalValue) || Array.isArray(currentValue)) {
-                const origArray = Array.isArray(originalValue) ? originalValue.sort() : (originalValue ? [originalValue] : []);
-                const currArray = Array.isArray(currentValue) ? currentValue.sort() : (currentValue ? [currentValue] : []);
-
-                if (origArray.length !== currArray.length ||
-                    !origArray.every((val, index) => val === currArray[index])) {
-                    return true;
-                }
-            } else {
-                const normalizedOriginal = (originalValue === undefined || originalValue === null || originalValue === '') ? '' : String(originalValue).trim();
-                const normalizedCurrent = (currentValue === undefined || currentValue === null || currentValue === '') ? '' : String(currentValue).trim();
-
-                if (normalizedOriginal !== normalizedCurrent) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    // Get list of changed fields
-    function getChangedFields() {
-        const changes = [];
-
-        if (window.imageChanged) {
-            changes.push('Visual Analysis');
-        }
-
-        const currentData = captureFormState();
-        const fieldMappings = {
-            'scenario_number': 'Configuration ID',
-            'scenario_name': 'Strategic Framework Name',
-            'short_description': 'Executive Summary',
-            'detailed_description': 'Strategic Overview',
-            'hod_lod_implication': 'HOD/LOD Market Implications',
-            'directional_bias': 'Directional Bias',
-            'alert_criteria': 'Alert Threshold',
-            'confirmation_criteria': 'Confirmation Protocol',
-            'entry_strategy': 'Entry Strategy',
-            'typical_targets': 'Target Objectives',
-            'stop_loss_guidance': 'Loss Mitigation Protocol',
-            'risk_percentage': 'Risk Percentage',
-            'risk_guidance': 'Risk Management Framework',
-            'key_considerations': 'Executive Guidelines',
-            'is_active': 'Operational Status',
-            'models_to_activate': 'Recommended Models',
-            'models_to_avoid': 'Restricted Models',
-            'preferred_timeframes': 'Optimal Timeframes'
-        };
-
-        for (const [fieldName, friendlyName] of Object.entries(fieldMappings)) {
-            const originalValue = originalFormData[fieldName];
-            const currentValue = currentData[fieldName];
-
-            if (Array.isArray(originalValue) || Array.isArray(currentValue)) {
-                const origArray = Array.isArray(originalValue) ? originalValue.sort() : (originalValue ? [originalValue] : []);
-                const currArray = Array.isArray(currentValue) ? currentValue.sort() : (currentValue ? [currentValue] : []);
-
-                if (origArray.length !== currArray.length ||
-                    !origArray.every((val, index) => val === currArray[index])) {
-                    changes.push(friendlyName);
-                }
-            } else {
-                const normalizedOriginal = (originalValue === undefined || originalValue === null || originalValue === '') ? '' : String(originalValue).trim();
-                const normalizedCurrent = (currentValue === undefined || currentValue === null || currentValue === '') ? '' : String(currentValue).trim();
-
-                if (normalizedOriginal !== normalizedCurrent) {
-                    changes.push(friendlyName);
-                }
-            }
-        }
-
-        return changes;
-    }
 
     function initTagSelector(containerId, options, hiddenFieldName) {
         const container = document.getElementById(containerId);
@@ -597,7 +500,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        checkForChanges();
+        // Trigger change event for form monitoring
+        hiddenField.dispatchEvent(new Event('change'));
     }
 
     function toggleSingleTag(tagElement, hiddenField, containerId) {
@@ -613,76 +517,10 @@ document.addEventListener('DOMContentLoaded', function() {
         tagElement.classList.add('bg-primary');
 
         hiddenField.value = value;
-        checkForChanges();
+        
+        // Trigger change event for form monitoring
+        hiddenField.dispatchEvent(new Event('change'));
     }
-
-    // Initialize form state tracking
-    originalFormData = captureFormState();
-
-    // Add form change listeners
-    const form = document.getElementById('scenario-form');
-    form.addEventListener('input', checkForChanges);
-    form.addEventListener('change', checkForChanges);
-
-    // Track form submission
-    let isSubmitting = false;
-    form.addEventListener('submit', function() {
-        isSubmitting = true;
-        hasChanges = false;
-        window.imageChanged = false;
-    });
-
-    // Beforeunload handler
-    window.addEventListener('beforeunload', function(e) {
-        if (hasChanges && !isSubmitting) {
-            const message = 'Configuration changes are pending. Proceed without saving?';
-            e.preventDefault();
-            e.returnValue = message;
-            return message;
-        }
-    });
-
-    // Navigation handler
-    document.addEventListener('click', function(e) {
-        const link = e.target.closest('a[href]');
-        if (link && hasChanges && !isSubmitting) {
-            const href = link.getAttribute('href');
-            if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const changedFields = getChangedFields();
-                const changesText = changedFields.length > 0
-                    ? `<br><br><strong>Modified parameters:</strong><br>• ${changedFields.join('<br>• ')}`
-                    : '';
-
-                if (typeof showCustomConfirmation === 'function') {
-                    showCustomConfirmation({
-                        title: 'Unsaved Configuration Changes',
-                        message: `Configuration changes are pending and will be lost if you navigate away.${changesText}<br><br>Proceed without saving?`,
-                        confirmText: 'Leave Page',
-                        cancelText: 'Continue Editing',
-                        confirmClass: 'btn-warning',
-                        icon: 'exclamation-triangle',
-                        onConfirm: function() {
-                            isSubmitting = true;
-                            hasChanges = false;
-                            window.imageChanged = false;
-                            window.location.href = href;
-                        }
-                    });
-                } else {
-                    if (confirm('Configuration changes are pending. Proceed without saving?')) {
-                        isSubmitting = true;
-                        hasChanges = false;
-                        window.imageChanged = false;
-                        window.location.href = href;
-                    }
-                }
-                return false;
-            }
-        }
-    });
 });
 
 function previewNewImage(input) {

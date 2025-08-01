@@ -69,32 +69,25 @@
                                     Enterprise Default Trading Model Configuration
                                 </div>
                             </div>
-                            <div class="btn-group">
-                                <a href="{{ url_for('admin.create_default_trading_model') }}"
-                                   class="btn btn-primary btn-sm">
-                                    <i class="fas fa-plus me-1"></i>
-                                    Create Strategic Model
-                                </a>
-                            </div>
                         </div>
                     </div>
                     <div class="module-content p-0">
                         {% if models %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
+                        <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                            <table class="table table-striped table-hover table-sm mb-0">
+                                <thead class="table-dark sticky-top">
                                     <tr>
-                                        <th scope="col" class="px-4 py-3">Model Name</th>
-                                        <th scope="col" class="px-4 py-3">Version</th>
-                                        <th scope="col" class="px-4 py-3">Operational Status</th>
-                                        <th scope="col" class="px-4 py-3">Created By</th>
-                                        <th scope="col" class="px-4 py-3 text-center"></th>
+                                        <th scope="col" class="px-3 py-2">Model Name</th>
+                                        <th scope="col" class="px-3 py-2">Version</th>
+                                        <th scope="col" class="px-3 py-2">Operational Status</th>
+                                        <th scope="col" class="px-3 py-2">Created By</th>
+                                        <th scope="col" class="px-3 py-2">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for model in models %}
-                                    <tr class="operation-item-row">
-                                        <td class="px-4 py-3">
+                                    <tr>
+                                        <td class="px-3 py-2">
                                             <div class="d-flex align-items-center">
 
                                                 <div>
@@ -102,24 +95,30 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-4 py-3">
+                                        <td class="px-3 py-2">
                                             <span class="version-badge">
                                                 {{ model.version or 'v1.0' }}
                                             </span>
                                         </td>
-                                        <td class="px-4 py-3">
+                                        <td class="px-3 py-2">
                                             <span class="status-indicator {{ 'active' if model.is_active else 'inactive' }}">
                                                 {{ 'Operational' if model.is_active else 'Inactive' }}
                                             </span>
                                         </td>
-                                        <td class="px-4 py-3">
+                                        <td class="px-3 py-2">
                                             <div class="user-info">
                                                 <i class="fas fa-user-circle me-2 text-muted"></i>
                                                 {{ model.user.username if model.user else 'System Administrator' }}
                                             </div>
                                         </td>
-                                        <td class="px-4 py-3">
+                                        <td class="px-3 py-2">
                                             <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{{ url_for('admin.view_default_trading_model', model_id=model.id) }}"
+                                                   class="btn btn-outline-secondary btn-sm"
+                                                   title="View Configuration">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+
                                                 <a href="{{ url_for('admin.edit_default_trading_model', model_id=model.id) }}"
                                                    class="btn btn-outline-secondary btn-sm"
                                                    title="Modify Configuration">
@@ -253,12 +252,12 @@ function executeStatusToggle(modelId, modelName, csrfToken) {
                 location.reload();
             }, 1500);
         } else {
-            showError(data.message || 'Failed to update operational status.', 'System Error');
+            showErrorMessage(data.message || 'Failed to update operational status.');
         }
     })
     .catch(error => {
         console.error('Status toggle error:', error);
-        showError('An unexpected system error occurred during status update.', 'System Error');
+        showErrorMessage('An unexpected system error occurred during status update.');
     });
 }
 
@@ -313,13 +312,48 @@ function executeRemoveConfiguration(modelId, modelName) {
                 location.reload();
             }, 1500);
         } else {
-            showError(data.message || 'Failed to remove configuration.', 'System Error');
+            showErrorMessage(data.message || 'Failed to remove configuration.');
         }
     })
     .catch(error => {
         console.error('Configuration removal error:', error);
-        showError('An unexpected system error occurred during configuration removal.', 'System Error');
+        showErrorMessage('An unexpected system error occurred during configuration removal.');
     });
+}
+
+// =====================================
+// UTILITY FUNCTIONS
+// =====================================
+function showErrorMessage(message) {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: 'Error',
+            message: message,
+            confirmText: 'OK',
+            confirmClass: 'btn-danger',
+            icon: 'exclamation-triangle',
+            showCancel: false,
+            onConfirm: function() {}
+        });
+    } else {
+        alert(message);
+    }
+}
+
+function showSuccess(message, title = 'Success') {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: title,
+            message: message,
+            confirmText: 'OK',
+            confirmClass: 'btn-success',
+            icon: 'check-circle',
+            showCancel: false,
+            onConfirm: function() {}
+        });
+    } else {
+        alert(message);
+    }
 }
 </script>
 {% endblock %}

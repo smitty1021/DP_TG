@@ -920,38 +920,35 @@ html[data-bs-theme="dark"] .calendar-nav-btn {
 
 /* Bias Indicators */
 .bias-indicator {
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--enterprise-radius-pill);
+    font-size: var(--enterprise-font-size-xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: var(--enterprise-radius-sm);
-    font-weight: 500;
-    font-size: var(--enterprise-font-size-sm);
-    border: 1px solid transparent;
+    gap: 0.25rem;
 }
 
 .bias-indicator.bullish {
-    background: rgba(34, 197, 94, 0.1);
-    border-color: rgba(34, 197, 94, 0.3);
-    color: #059669;
+    background: rgba(0, 112, 192, 0.1);
+    color: var(--enterprise-success);
 }
 
 .bias-indicator.bearish {
     background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.3);
-    color: #dc2626;
+    color: var(--enterprise-danger);
 }
 
 .bias-indicator.choppy {
     background: rgba(245, 158, 11, 0.1);
-    border-color: rgba(245, 158, 11, 0.3);
-    color: #d97706;
+    color: var(--enterprise-warning);
 }
 
 .bias-indicator.neutral {
-    background: rgba(107, 114, 128, 0.1);
-    border-color: rgba(107, 114, 128, 0.3);
-    color: #6b7280;
+    background: rgba(108, 117, 125, 0.1);
+    color: var(--enterprise-text-muted);
 }
 
 /*

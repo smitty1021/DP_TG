@@ -1,20 +1,24 @@
 {% extends "base.html" %}
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ title }} - Administration Center{% endblock %}
 
 {% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 <script src="{{ url_for('static', filename='js/p12-images.js') }}"></script>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <input type="hidden" id="csrf_token" name="csrf_token" value="{{ csrf_token() }}">
-
-    <!-- Executive Header -->
-    <div class="executive-header">
+<!-- Executive Header -->
+<div class="executive-header">
+    <div class="enterprise-container-fluid">
         <div class="d-flex justify-content-between align-items-center">
             <div class="header-content">
                 <h1 class="executive-title">
+                    <i class="fas fa-chart-line executive-icon"></i>
                     <span class="badge bg-primary text-black me-3">{{ scenario.scenario_number }}</span>
                     {{ scenario.scenario_name }}
                 </h1>
@@ -33,11 +37,18 @@
             </div>
 
             <div class="btn-group">
-
                 <button type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="window.location.href='{{ url_for('main.index') }}'"
                         title="Go to Main Dashboard">
                     <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="exportScenarioPDF()" title="Export to PDF">
+                    <i class="fas fa-file-pdf"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="exportScenarioCSV()" title="Export to CSV">
+                    <i class="fas fa-file-csv"></i>
                 </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="location.reload()" title="Refresh Data">
@@ -66,316 +77,300 @@
             </div>
         </div>
     </div>
-    <!-- Main Content Grid -->
-    <div class="container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 300px);">
-        <div class="row g-4">
-            <!-- Primary Information Panel -->
-            <div class="col-xl-8">
-                <!-- Strategic Overview -->
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-chart-line module-icon"></i>
-                            Strategic Overview
-                        </div>
-                        <div class="module-meta">P12 Methodology Framework</div>
+</div>
+<!-- Main Content Wrapper -->
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
+    <div class="grid grid-cols-3 gap-4 align-items-start mt-3">
+        <!-- Primary Information Panel -->
+        <div class="col-span-2">
+            <!-- Strategic Overview -->
+            <div class="enterprise-module mb-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-line module-icon"></i>
+                        Strategic Overview
                     </div>
-                    <div class="module-content">
-                        <div class="mb-4">
-                            <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Strategic Context</div>
-                            <div class="text-muted">{{ scenario.detailed_description }}</div>
-                        </div>
-                        <div class="mb-4">
-                            <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">HOD/LOD Market Implications</div>
-                            <div class="text-muted">{{ scenario.hod_lod_implication }}</div>
-                        </div>
-                        <!-- Directional Bias -->
+                    <div class="module-meta">P12 Methodology Framework</div>
+                </div>
+                <div class="module-content mb-3">
+                    <div class="mb-4">
+                        <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Strategic Context</div>
+                        <div class="text-muted">{{ scenario.detailed_description }}</div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">HOD/LOD Market Implications</div>
+                        <div class="text-muted">{{ scenario.hod_lod_implication }}</div>
+                    </div>
+                    <!-- Directional Bias -->
+                    <div>
+                        <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Directional Bias</div>
                         <div>
-                            <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Directional Bias</div>
-                            <div>
-                                {% if scenario.directional_bias %}
-                                    {% if scenario.directional_bias == 'bullish' %}
-                                        <span class="bias-indicator bullish">
-                                            <i class="fas fa-arrow-up"></i> Bullish
-                                        </span>
-                                    {% elif scenario.directional_bias == 'bearish' %}
-                                        <span class="bias-indicator bearish">
-                                            <i class="fas fa-arrow-down"></i> Bearish
-                                        </span>
-                                    {% elif scenario.directional_bias == 'choppy' %}
-                                        <span class="bias-indicator choppy">
-                                            <i class="fas fa-random"></i> Choppy
-                                        </span>
-                                    {% else %}
-                                        <span class="bias-indicator neutral">
-                                            <i class="fas fa-minus"></i> Neutral
-                                        </span>
-                                    {% endif %}
+                            {% if scenario.directional_bias %}
+                                {% if scenario.directional_bias == 'bullish' %}
+                                    <span class="bias-indicator bullish">
+                                        <i class="fas fa-arrow-up"></i> Bullish
+                                    </span>
+                                {% elif scenario.directional_bias == 'bearish' %}
+                                    <span class="bias-indicator bearish">
+                                        <i class="fas fa-arrow-down"></i> Bearish
+                                    </span>
+                                {% elif scenario.directional_bias == 'choppy' %}
+                                    <span class="bias-indicator choppy">
+                                        <i class="fas fa-random"></i> Choppy
+                                    </span>
                                 {% else %}
-                                    <span class="text-muted">Not specified</span>
+                                    <span class="bias-indicator neutral">
+                                        <i class="fas fa-minus"></i> Neutral
+                                    </span>
                                 {% endif %}
-                            </div>
+                            {% else %}
+                                <span class="text-muted">Not specified</span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
-
-                <!-- Execution Framework -->
-                <div class="row g-4">
-                    <div class="col-lg-6">
-                        <div class="enterprise-module">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-crosshairs module-icon"></i>
-                                    Execution Criteria
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                <div class="mb-3">
-                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Alert Threshold</div>
-                                    <div class="small text-muted">{{ scenario.alert_criteria }}</div>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Confirmation Protocol</div>
-                                    <div class="small text-muted">{{ scenario.confirmation_criteria }}</div>
-                                </div>
-                                <div>
-                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Entry Strategy</div>
-                                    <div class="small text-muted">{{ scenario.entry_strategy }}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-6">
-                        <div class="enterprise-module">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-shield-alt module-icon"></i>
-                                    Risk Management
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                {% if scenario.typical_targets %}
-                                <div class="mb-3">
-                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Target Objectives</div>
-                                    <div class="small text-muted">{{ scenario.typical_targets }}</div>
-                                </div>
-                                {% endif %}
-
-                                {% if scenario.stop_loss_guidance %}
-                                <div class="mb-3">
-                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Loss Mitigation Protocol</div>
-                                    <div class="small text-muted">{{ scenario.stop_loss_guidance }}</div>
-                                </div>
-                                {% endif %}
-
-                                <!-- Risk Allocation -->
-                                {% if scenario.risk_percentage %}
-                                <div>
-                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Risk Allocation</div>
-                                    <div><span class="small text-muted">{{ scenario.risk_percentage }}%</span></div>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Model Configuration -->
-                {% if scenario.models_to_activate or scenario.models_to_avoid or scenario.preferred_timeframes or scenario.key_considerations %}
-                <div class="row g-4">
-                    <div class="col-lg-8">
-                        <div class="enterprise-module">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-cogs module-icon"></i>
-                                    System Configuration Matrix
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                {% if scenario.models_to_activate %}
-                                <div class="mb-3">
-                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Recommended Models</div>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        {% for model in scenario.models_to_activate %}
-                                        <span class="badge bg-success-soft">{{ model }}</span>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% endif %}
-
-                                {% if scenario.models_to_avoid %}
-                                <div class="mb-3">
-                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Restricted Models</div>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        {% for model in scenario.models_to_avoid %}
-                                        <span class="badge bg-danger-soft">{{ model }}</span>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% endif %}
-
-                                {% if scenario.preferred_timeframes %}
-                                <div class="mb-3">
-                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Optimal Timeframes</div>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        {% for timeframe in scenario.preferred_timeframes %}
-                                        <span class="small text-muted">{{ timeframe }}</span>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% endif %}
-
-                                {% if scenario.key_considerations %}
-                                <div>
-                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Executive Guidelines</div>
-                                    <div class="small text-muted">{{ scenario.key_considerations }}</div>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4">
-                        <div class="enterprise-module">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-info-circle module-icon"></i>
-                                    System Metadata
-                                </div>
-                            </div>
-                            <div class="module-content">
-                                <div class="d-flex flex-column gap-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="fw-500 text-muted small">Configuration ID</div>
-                                        <div class="fw-600 small">{{ scenario.scenario_number }}</div>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="fw-500 text-muted small">Created</div>
-                                        <div class="fw-600 small">{{ scenario.created_date.strftime('%m/%d/%Y') }}</div>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="fw-500 text-muted small">Last Modified</div>
-                                        <div class="fw-600 small">{{ scenario.updated_date.strftime('%m/%d/%Y') }}</div>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="fw-500 text-muted small">Framework</div>
-                                        <div class="fw-600 small">P12 Methodology</div>
-                                    </div>
-                                    <!-- Configuration Status -->
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="fw-500 text-muted small">Status</div>
-                                        <div>
-                                            {% if scenario.is_active %}
-                                                <span class="config-status active">
-                                                    <i class="fas fa-check-circle"></i> Operational
-                                                </span>
-                                            {% else %}
-                                                <span class="config-status inactive">
-                                                    <i class="fas fa-pause-circle"></i> Standby
-                                                </span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
             </div>
 
-            <!-- Visual Analysis Panel -->
-            <div class="col-xl-4">
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-chart-area module-icon"></i>
-                            Visual Analysis
+            <!-- Execution Framework -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-1">
+                    <div class="enterprise-module mb-3">
+                        <div class="module-header">
+                            <div class="module-title">
+                                <i class="fas fa-crosshairs module-icon"></i>
+                                Execution Criteria
+                            </div>
                         </div>
-                        <div class="module-meta">Chart Examples & Patterns</div>
-                    </div>
-                    <div class="module-content">
-                        {% if scenario.images %}
-                            {% set primary_image = scenario.images[0] %}
-                            <div class="text-center">
-                                <div class="mb-3">
-                                    <img src="{{ url_for('images.serve_image', image_id=primary_image.id) }}"
-                                         alt="Strategic Framework {{ scenario.scenario_number }} Analysis"
-                                         class="img-fluid rounded"
-                                         style="max-height: 300px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;"
-                                         onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Strategic Framework {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')"
-                                         onmouseover="this.style.border='2px solid var(--enterprise-primary)'; this.style.transform='scale(1.02)'"
-                                         onmouseout="this.style.border='2px solid transparent'; this.style.transform='scale(1)'">
-                                </div>
-
-                                {% if primary_image.caption %}
-                                <div class="text-muted small mb-3" style="font-style: italic;">{{ primary_image.caption }}</div>
-                                {% endif %}
-
-                                <div class="border-top pt-3">
-                                    <div class="d-flex justify-content-center gap-3">
-                                        <span class="small text-muted d-flex align-items-center gap-1">
-                                            <i class="fas fa-eye"></i> {{ primary_image.view_count }} views
-                                        </span>
-                                        <span class="small text-muted d-flex align-items-center gap-1">
-                                            <i class="fas fa-calendar"></i> {{ primary_image.upload_date.strftime('%m/%d/%y') }}
-                                        </span>
-                                    </div>
-                                </div>
+                        <div class="module-content mb-3">
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Alert Threshold</div>
+                                <div class="small text-muted">{{ scenario.alert_criteria }}</div>
                             </div>
-
-                        {% else %}
-                            <div class="text-center py-5">
-                                <i class="fas fa-chart-area fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
-                                <h6 class="text-muted">No Visual Analysis Available</h6>
-                                <p class="text-muted small">Chart examples and pattern analysis pending upload</p>
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Confirmation Protocol</div>
+                                <div class="small text-muted">{{ scenario.confirmation_criteria }}</div>
                             </div>
-                        {% endif %}
+                            <div>
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Entry Strategy</div>
+                                <div class="small text-muted">{{ scenario.entry_strategy }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Administrative Controls Panel -->
-                <div class="enterprise-module">
-                    <div class="module-header">
-                        <div class="module-title">
-                            <i class="fas fa-tools module-icon"></i>
-                            Administrative Controls
+                <div class="col-span-1">
+                    <div class="enterprise-module mb-3">
+                        <div class="module-header">
+                            <div class="module-title">
+                                <i class="fas fa-shield-alt module-icon"></i>
+                                Risk Management
+                            </div>
+                        </div>
+                        <div class="module-content mb-3">
+                            {% if scenario.typical_targets %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Target Objectives</div>
+                                <div class="small text-muted">{{ scenario.typical_targets }}</div>
+                            </div>
+                            {% endif %}
+
+                            {% if scenario.stop_loss_guidance %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Loss Mitigation Protocol</div>
+                                <div class="small text-muted">{{ scenario.stop_loss_guidance }}</div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Risk Allocation -->
+                            {% if scenario.risk_percentage %}
+                            <div>
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Risk Allocation</div>
+                                <div><span class="small text-muted">{{ scenario.risk_percentage }}%</span></div>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
-                    <div class="module-content">
-                        <div class="operation-list">
-                            <a href="{{ url_for('p12_scenarios.edit_scenario', scenario_id=scenario.id) }}"
-                               class="operation-item">
-                                <div class="operation-icon">
-                                    <i class="fas fa-edit"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold small">Modify Configuration</div>
-                                    <div class="text-muted" style="font-size: 0.8rem;">Update parameters and criteria</div>
-                                </div>
-                            </a>
+                </div>
+            </div>
 
-                            <a href="{{ url_for('p12_scenarios.list_scenarios') }}"
-                               class="operation-item">
-                                <div class="operation-icon">
-                                    <i class="fas fa-list"></i>
+            <!-- Model Configuration -->
+            {% if scenario.models_to_activate or scenario.models_to_avoid or scenario.preferred_timeframes or scenario.key_considerations %}
+            <div class="grid grid-cols-3 gap-4">
+                <div class="col-span-2">
+                    <div class="enterprise-module mb-3">
+                        <div class="module-header">
+                            <div class="module-title">
+                                <i class="fas fa-cogs module-icon"></i>
+                                System Configuration Matrix
+                            </div>
+                        </div>
+                        <div class="module-content mb-3">
+                            {% if scenario.models_to_activate %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Recommended Models</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% for model in scenario.models_to_activate %}
+                                    <span class="status-indicator active">{{ model }}</span>
+                                    {% endfor %}
                                 </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold small">View All Frameworks</div>
-                                    <div class="text-muted" style="font-size: 0.8rem;">Return to strategic overview</div>
-                                </div>
-                            </a>
+                            </div>
+                            {% endif %}
 
-                            <div class="operation-item" style="cursor: pointer;"
-                                 onclick="confirmDeleteScenario({{ scenario.id }}, '{{ scenario.scenario_name }}')">
-                                <div class="operation-icon" style="background: rgba(209, 52, 56, 0.1);">
-                                    <i class="fas fa-trash-alt" style="color: var(--enterprise-danger);"></i>
+                            {% if scenario.models_to_avoid %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Restricted Models</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% for model in scenario.models_to_avoid %}
+                                    <span class="status-indicator inactive">{{ model }}</span>
+                                    {% endfor %}
                                 </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold small text-danger">Decommission Framework</div>
-                                    <div class="text-muted" style="font-size: 0.8rem;">Permanently remove configuration</div>
+                            </div>
+                            {% endif %}
+
+                            {% if scenario.preferred_timeframes %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Optimal Timeframes</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% for timeframe in scenario.preferred_timeframes %}
+                                    <span class="small text-muted">{{ timeframe }}</span>
+                                    {% endfor %}
                                 </div>
+                            </div>
+                            {% endif %}
+
+                            {% if scenario.key_considerations %}
+                            <div>
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Key Considerations</div>
+                                <div class="small text-muted">{{ scenario.key_considerations }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-span-1">
+                    <div class="enterprise-module mb-3">
+                        <div class="module-header">
+                            <div class="module-title">
+                                <i class="fas fa-info-circle module-icon"></i>
+                                System Metadata
+                            </div>
+                        </div>
+                        <div class="module-content mb-3">
+                            <div class="d-flex flex-column gap-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Scenario ID</div>
+                                    <div class="fw-500 text-muted small">{{ scenario.scenario_number }}</div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Created</div>
+                                    <div class="fw-500 text-muted small">{{ scenario.created_date.strftime('%d %b %Y') }}</div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Last Modified</div>
+                                    <div class="fw-500 text-muted small">{{ scenario.updated_date.strftime('%d %b %Y') }}</div>
+                                </div>
+
+                                <!-- Configuration Status -->
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Status</div>
+                                    <div>
+                                        {% if scenario.is_active %}
+                                            <span class="status-indicator active">
+                                                <i class="fas fa-circle"></i> Operational Framework
+                                            </span>
+                                        {% else %}
+                                            <span class="status-indicator inactive">
+                                                <i class="fas fa-pause-circle"></i> Standby Configuration
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Visual Analysis Panel -->
+        <div class="col-span-1">
+            <div class="enterprise-module mb-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-area module-icon"></i>
+                        Visual Analysis
+                    </div>
+                    <div class="module-meta">Chart Examples & Patterns</div>
+                </div>
+                <div class="module-content mb-3">
+                    {% if scenario.images %}
+                        {% set primary_image = scenario.images[0] %}
+                        <div class="text-center">
+                            {% if primary_image.caption %}
+                            <div class="text-muted small mb-3" style="font-style: italic;">{{ primary_image.caption }}</div>
+                            {% endif %}
+                            <div class="mb-3">
+                                <img src="{{ url_for('images.serve_image', image_id=primary_image.id) }}"
+                                     alt="Strategic Framework {{ scenario.scenario_number }} Analysis"
+                                     class="img-fluid rounded"
+                                     style="max-height: 300px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;"
+                                     onclick="showImageModal('{{ url_for('images.serve_image', image_id=primary_image.id) }}', 'Strategic Framework {{ scenario.scenario_number }}: {{ scenario.scenario_name }}')"
+                                     onmouseover="this.style.border='2px solid var(--enterprise-primary)'; this.style.transform='scale(1.02)'"
+                                     onmouseout="this.style.border='2px solid transparent'; this.style.transform='scale(1)'">
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-area fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
+                            <h6 class="text-muted">No Visual Analysis Available</h6>
+                            <p class="text-muted small">Chart examples and pattern analysis pending upload</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Administrative Controls Panel -->
+            <div class="enterprise-module mb-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-tools module-icon"></i>
+                        Administrative Controls
+                    </div>
+                </div>
+                <div class="module-content mb-3">
+                    <div class="operation-list">
+                        <a href="{{ url_for('p12_scenarios.edit_scenario', scenario_id=scenario.id) }}"
+                           class="operation-item">
+                            <div class="operation-icon">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Modify Configuration</div>
+                                <div class="text-muted" style="font-size: 0.8rem;">Update parameters and criteria</div>
+                            </div>
+                        </a>
+
+                        <a href="{{ url_for('p12_scenarios.list_scenarios') }}"
+                           class="operation-item">
+                            <div class="operation-icon">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">View All Frameworks</div>
+                                <div class="text-muted" style="font-size: 0.8rem;">Return to strategic overview</div>
+                            </div>
+                        </a>
+
+                        <div class="operation-item" style="cursor: pointer;"
+                             onclick="confirmDeleteScenario({{ scenario.id }}, '{{ scenario.scenario_name }}')">
+                            <div class="operation-icon" style="background: rgba(209, 52, 56, 0.1);">
+                                <i class="fas fa-trash-alt" style="color: var(--enterprise-danger);"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold small text-danger">Decommission Framework</div>
+                                <div class="text-muted" style="font-size: 0.8rem;">Permanently remove configuration</div>
                             </div>
                         </div>
                     </div>
@@ -383,10 +378,165 @@
             </div>
         </div>
     </div>
-</div>
+
 
 
 <script>
+// =====================================
+// EXPORT FUNCTIONS
+// =====================================
+function exportScenarioPDF() {
+    const exportBtn = document.querySelector('button[onclick="exportScenarioPDF()"]');
+    const originalHtml = exportBtn.innerHTML;
+    
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    exportBtn.disabled = true;
+    
+    fetch('/admin/p12-scenarios/{{ scenario.id }}/export-pdf', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        } else {
+            throw new Error('PDF export failed');
+        }
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `P12_Strategic_Framework_{{ scenario.scenario_number }}_{{ scenario.scenario_name|replace(' ', '_') }}_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        showSuccess('Strategic Framework exported to PDF successfully.', 'PDF Export Complete');
+    })
+    .catch(error => {
+        console.error('PDF Export error:', error);
+        showErrorMessage('PDF export failed. Please try again.');
+    })
+    .finally(() => {
+        exportBtn.innerHTML = originalHtml;
+        exportBtn.disabled = false;
+    });
+}
+
+function exportScenarioCSV() {
+    const exportBtn = document.querySelector('button[onclick="exportScenarioCSV()"]');
+    const originalHtml = exportBtn.innerHTML;
+    
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    exportBtn.disabled = true;
+    
+    fetch('/admin/p12-scenarios/{{ scenario.id }}/export-csv', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        } else {
+            throw new Error('CSV export failed');
+        }
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `P12_Strategic_Framework_{{ scenario.scenario_number }}_{{ scenario.scenario_name|replace(' ', '_') }}_Export_${new Date().toISOString().split('T')[0].replace(/-/g, '')}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        showSuccess('Strategic Framework exported to CSV successfully.', 'CSV Export Complete');
+    })
+    .catch(error => {
+        console.error('CSV Export error:', error);
+        showErrorMessage('CSV export failed. Please try again.');
+    })
+    .finally(() => {
+        exportBtn.innerHTML = originalHtml;
+        exportBtn.disabled = false;
+    });
+}
+
+// =====================================
+// UTILITY FUNCTIONS
+// =====================================
+function getCSRFToken() {
+    let csrfToken = null;
+
+    const directInput = document.getElementById('js-csrf-token');
+    if (directInput && directInput.value) {
+        csrfToken = directInput.value;
+    }
+
+    if (!csrfToken) {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag && metaTag.getAttribute('content')) {
+            csrfToken = metaTag.getAttribute('content');
+        }
+    }
+
+    if (!csrfToken) {
+        const hiddenInput = document.querySelector('input[name="csrf_token"]');
+        if (hiddenInput && hiddenInput.value) {
+            csrfToken = hiddenInput.value;
+        }
+    }
+
+    console.log('CSRF Token retrieved:', csrfToken ? 'Yes' : 'No');
+    return csrfToken;
+}
+
+function showErrorMessage(message) {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: 'Error',
+            message: message,
+            confirmText: 'OK',
+            confirmClass: 'btn-danger',
+            icon: 'exclamation-triangle',
+            showCancel: false,
+            onConfirm: function() {}
+        });
+    } else {
+        alert(message);
+    }
+}
+
+function showSuccess(message, title = 'Success') {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: title,
+            message: message,
+            confirmText: 'OK',
+            confirmClass: 'btn-success',
+            icon: 'check-circle',
+            showCancel: false,
+            onConfirm: function() {}
+        });
+    } else {
+        alert(message);
+    }
+}
+
+// =====================================
+// DELETE SCENARIO FUNCTION
+// =====================================
 function confirmDeleteScenario(scenarioId, scenarioName) {
     if (typeof showCustomConfirmation === 'function') {
         showCustomConfirmation({
@@ -433,7 +583,11 @@ function performDeleteScenario(scenarioId) {
 
     const csrfToken = getCSRFToken();
     if (!csrfToken) {
-        alert('CSRF token not found. Please refresh the page and try again.');
+        if (typeof showErrorMessage === 'function') {
+            showErrorMessage('CSRF token not found. Please refresh the page and try again.');
+        } else {
+            console.error('CSRF token not found and showErrorMessage not available');
+        }
         return;
     }
 
@@ -493,6 +647,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     console.log('Enterprise P12 Strategic Framework View initialized');
+    console.log('====================================');
 });
 </script>
 

@@ -1,0 +1,657 @@
+{% extends "base.html" %}
+{% block title %}{{ model.name }} - Trading Model View{% endblock %}
+
+{% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Executive Header -->
+<div class="executive-header">
+    <div class="enterprise-container-fluid">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="header-content">
+                <h1 class="executive-title">
+                    <i class="fas fa-cogs executive-icon"></i>
+                    <span class="badge bg-primary text-black me-3">{{ model.version or 'v1.0' }}</span>
+                    {{ model.name }}
+                </h1>
+                <div class="executive-subtitle">
+                    Strategic Trading Model Configuration
+                    {% if model.is_active %}
+                        <span class="status-indicator active">
+                            <i class="fas fa-circle"></i> Operational Framework
+                        </span>
+                    {% else %}
+                        <span class="status-indicator inactive">
+                            <i class="fas fa-pause-circle"></i> Inactive Configuration
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="exportModelPDF()" title="Export to PDF">
+                    <i class="fas fa-file-pdf"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="exportModelCSV()" title="Export to CSV">
+                    <i class="fas fa-file-csv"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Data">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.manage_default_trading_models') }}'"
+                        title="Back to Model Administration">
+                    <i class="fas fa-tachometer-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();"
+                        title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <a href="{{ url_for('admin.edit_default_trading_model', model_id=model.id) }}"
+                   class="btn btn-outline-secondary btn-sm"
+                   title="Edit Model">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <button type="button" class="btn btn-outline-secondary btn-sm" title="Remove Model"
+                        onclick="confirmDeleteModel({{ model.id }}, '{{ model.name }}')">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Wrapper -->
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
+    <div class="grid grid-cols-3 gap-4 align-items-start mt-3">
+        <!-- Primary Information Panel -->
+        <div class="col-span-2">
+            <!-- Strategic Overview -->
+            <div class="enterprise-module mb-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-line module-icon"></i>
+                        Strategic Framework Overview
+                    </div>
+                    <div class="module-meta">Trading Model Configuration</div>
+                </div>
+                <div class="module-content mb-3">
+                    {% if model.overview_logic %}
+                    <div class="mb-4">
+                        <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Framework Logic</div>
+                        <div class="text-muted">{{ model.overview_logic }}</div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Timeframes Row -->
+                    {% if model.primary_chart_tf or model.execution_chart_tf or model.context_chart_tf %}
+                    <div class="mb-4">
+                        <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Operational Timeframes</div>
+                        <div class="row">
+                            {% if model.primary_chart_tf %}
+                            <div class="col-md-4">
+                                <div class="small text-muted mb-1">Primary Analysis</div>
+                                <span class="badge bg-secondary">{{ model.primary_chart_tf }}</span>
+                            </div>
+                            {% endif %}
+                            {% if model.execution_chart_tf %}
+                            <div class="col-md-4">
+                                <div class="small text-muted mb-1">Execution</div>
+                                <span class="badge bg-secondary">{{ model.execution_chart_tf }}</span>
+                            </div>
+                            {% endif %}
+                            {% if model.context_chart_tf %}
+                            <div class="col-md-4">
+                                <div class="small text-muted mb-1">Context Analysis</div>
+                                <span class="badge bg-secondary">{{ model.context_chart_tf }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Technical Framework -->
+                    {% if model.technical_indicators_used %}
+                    <div class="mb-4">
+                        <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Technical Indicators</div>
+                        <div class="text-muted">{{ model.technical_indicators_used }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Execution Framework -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-1">
+                    <div class="enterprise-module mb-3">
+                        <div class="module-header">
+                            <div class="module-title">
+                                <i class="fas fa-crosshairs module-icon"></i>
+                                Entry & Execution
+                            </div>
+                        </div>
+                        <div class="module-content mb-3">
+                            {% if model.entry_trigger_description %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Entry Triggers</div>
+                                <div class="small text-muted">{{ model.entry_trigger_description }}</div>
+                            </div>
+                            {% endif %}
+                            {% if model.optimal_market_conditions %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Optimal Conditions</div>
+                                <div class="small text-muted">{{ model.optimal_market_conditions }}</div>
+                            </div>
+                            {% endif %}
+                            {% if model.instrument_applicability %}
+                            <div>
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Instrument Applicability</div>
+                                <div class="small text-muted">{{ model.instrument_applicability }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-span-1">
+                    <div class="enterprise-module mb-3">
+                        <div class="module-header">
+                            <div class="module-title">
+                                <i class="fas fa-shield-alt module-icon"></i>
+                                Risk Management
+                            </div>
+                        </div>
+                        <div class="module-content mb-3">
+                            {% if model.stop_loss_strategy %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Stop Loss Strategy</div>
+                                <div class="small text-muted">{{ model.stop_loss_strategy }}</div>
+                            </div>
+                            {% endif %}
+
+                            {% if model.take_profit_strategy %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Profit Strategy</div>
+                                <div class="small text-muted">{{ model.take_profit_strategy }}</div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Risk Parameters -->
+                            {% if model.min_risk_reward_ratio %}
+                            <div>
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Min Risk:Reward</div>
+                                <div><span class="badge bg-info">{{ model.min_risk_reward_ratio }}:1</span></div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance & Analysis -->
+            {% if model.strengths or model.weaknesses or model.backtesting_forwardtesting_notes %}
+            <div class="enterprise-module mb-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-line module-icon"></i>
+                        Performance Analysis
+                    </div>
+                    <div class="module-meta">Framework Assessment</div>
+                </div>
+                <div class="module-content mb-3">
+                    <div class="row">
+                        {% if model.strengths %}
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="fw-semibold text-success mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Strengths</div>
+                                <div class="small text-muted">{{ model.strengths }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if model.weaknesses %}
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="fw-semibold text-warning mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Weaknesses</div>
+                                <div class="small text-muted">{{ model.weaknesses }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if model.backtesting_forwardtesting_notes %}
+                    <div>
+                        <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Testing Results</div>
+                        <div class="small text-muted">{{ model.backtesting_forwardtesting_notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Visual Analysis Panel -->
+        <div class="col-span-1">
+            <!-- Chart Examples -->
+            <div class="enterprise-module mb-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-area module-icon"></i>
+                        Chart Examples
+                    </div>
+                    <div class="module-meta">Trading Model Illustrations</div>
+                </div>
+                <div class="module-content mb-3">
+                    {% if chart_examples %}
+                        {% for image in chart_examples %}
+                        <div class="text-center mb-3">
+                            {% if image.caption %}
+                            <div class="text-muted small mb-2" style="font-style: italic;">{{ image.caption }}</div>
+                            {% endif %}
+                            <div class="mb-3">
+                                <img src="{{ url_for('images.serve_image', image_id=image.id) }}"
+                                     alt="Trading Model {{ model.name }} Example {{ loop.index }}"
+                                     class="img-fluid rounded"
+                                     style="max-height: 250px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;"
+                                     onclick="showImageModal('{{ url_for('images.serve_image', image_id=image.id) }}', 'Trading Model {{ model.name }}: Chart Example {{ loop.index }}')"
+                                     onmouseover="this.style.border='2px solid var(--enterprise-primary)'; this.style.transform='scale(1.02)'"
+                                     onmouseout="this.style.border='2px solid transparent'; this.style.transform='scale(1)'">
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-area fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
+                            <h6 class="text-muted">No Chart Examples Available</h6>
+                            <p class="text-muted small">Add chart examples to illustrate this trading model</p>
+                            {% if current_user.is_admin() %}
+                            <a href="{{ url_for('admin.edit_default_trading_model', model_id=model.id) }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus me-1"></i>Add Examples
+                            </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Risk Parameters Panel -->
+            {% if model.model_max_loss_per_trade or model.model_max_daily_loss or model.position_sizing_rules %}
+            <div class="enterprise-module mb-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-exclamation-triangle module-icon"></i>
+                        Risk Parameters
+                    </div>
+                </div>
+                <div class="module-content mb-3">
+                    <div class="d-flex flex-column gap-3">
+                        {% if model.model_max_loss_per_trade %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="fw-semibold text-danger mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Max Loss/Trade</div>
+                            <div class="fw-500 text-muted small">{{ model.model_max_loss_per_trade }}</div>
+                        </div>
+                        {% endif %}
+                        {% if model.model_max_daily_loss %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="fw-semibold text-danger mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Max Daily Loss</div>
+                            <div class="fw-500 text-muted small">{{ model.model_max_daily_loss }}</div>
+                        </div>
+                        {% endif %}
+                        {% if model.model_max_weekly_loss %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="fw-semibold text-danger mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Max Weekly Loss</div>
+                            <div class="fw-500 text-muted small">{{ model.model_max_weekly_loss }}</div>
+                        </div>
+                        {% endif %}
+                        {% if model.model_consecutive_loss_limit %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="fw-semibold text-warning mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Consecutive Loss Limit</div>
+                            <div class="fw-500 text-muted small">{{ model.model_consecutive_loss_limit }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Administrative Controls Panel -->
+            <div class="enterprise-module mb-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-tools module-icon"></i>
+                        Administrative Controls
+                    </div>
+                </div>
+                <div class="module-content mb-3">
+                    <div class="operation-list">
+                        <a href="{{ url_for('admin.edit_default_trading_model', model_id=model.id) }}"
+                           class="operation-item">
+                            <div class="operation-icon">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Modify Configuration</div>
+                                <div class="text-muted" style="font-size: 0.8rem;">Update model parameters and settings</div>
+                            </div>
+                        </a>
+
+                        <a href="{{ url_for('admin.manage_default_trading_models') }}"
+                           class="operation-item">
+                            <div class="operation-icon">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">View All Models</div>
+                                <div class="text-muted" style="font-size: 0.8rem;">Return to model administration</div>
+                            </div>
+                        </a>
+
+                        <div class="operation-item" style="cursor: pointer;"
+                             onclick="confirmDeleteModel({{ model.id }}, '{{ model.name }}')">
+                            <div class="operation-icon" style="background: rgba(209, 52, 56, 0.1);">
+                                <i class="fas fa-trash-alt" style="color: var(--enterprise-danger);"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold small text-danger">Remove Model</div>
+                                <div class="text-muted" style="font-size: 0.8rem;">Permanently delete configuration</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// =====================================
+// EXPORT FUNCTIONS
+// =====================================
+function exportModelPDF() {
+    const exportBtn = document.querySelector('button[onclick="exportModelPDF()"]');
+    const originalHtml = exportBtn.innerHTML;
+    
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    exportBtn.disabled = true;
+    
+    fetch('/admin/default-trading-models/{{ model.id }}/export-pdf', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        } else {
+            throw new Error('PDF export failed');
+        }
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `Trading_Model_{{ model.name|replace(' ', '_') }}_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        showSuccess('Trading Model exported to PDF successfully.', 'PDF Export Complete');
+    })
+    .catch(error => {
+        console.error('PDF Export error:', error);
+        showErrorMessage('PDF export failed. Please try again.');
+    })
+    .finally(() => {
+        exportBtn.innerHTML = originalHtml;
+        exportBtn.disabled = false;
+    });
+}
+
+function exportModelCSV() {
+    const exportBtn = document.querySelector('button[onclick="exportModelCSV()"]');
+    const originalHtml = exportBtn.innerHTML;
+    
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    exportBtn.disabled = true;
+    
+    fetch('/admin/default-trading-models/{{ model.id }}/export-csv', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        } else {
+            throw new Error('CSV export failed');
+        }
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `Trading_Model_{{ model.name|replace(' ', '_') }}_Export_${new Date().toISOString().split('T')[0].replace(/-/g, '')}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        showSuccess('Trading Model exported to CSV successfully.', 'CSV Export Complete');
+    })
+    .catch(error => {
+        console.error('CSV Export error:', error);
+        showErrorMessage('CSV export failed. Please try again.');
+    })
+    .finally(() => {
+        exportBtn.innerHTML = originalHtml;
+        exportBtn.disabled = false;
+    });
+}
+
+// =====================================
+// DELETE MODEL FUNCTION
+// =====================================
+function confirmDeleteModel(modelId, modelName) {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: 'Remove Trading Model',
+            message: `Confirm removal of trading model configuration:<br><br><strong>"${modelName}"</strong><br><br><div class="alert alert-danger mt-2"><i class="fas fa-exclamation-triangle me-2"></i><strong>Warning:</strong> This action cannot be undone. This will permanently delete the trading model configuration.</div>`,
+            confirmText: 'Remove Model',
+            cancelText: 'Cancel',
+            confirmClass: 'btn-danger',
+            icon: 'exclamation-triangle',
+            onConfirm: function() {
+                performDeleteModel(modelId);
+            }
+        });
+    } else {
+        if (confirm(`Confirm removal of trading model: "${modelName}"?\\n\\nThis action cannot be undone.`)) {
+            performDeleteModel(modelId);
+        }
+    }
+}
+
+function performDeleteModel(modelId) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/admin/default-trading-models/' + modelId + '/delete';
+
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = getCSRFToken();
+    form.appendChild(csrfInput);
+
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// =====================================
+// IMAGE MODAL FUNCTION
+// =====================================
+function showImageModal(imageUrl, title) {
+    // Create modal HTML
+    const modalHtml = `
+        <div class="modal fade" id="imageViewModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img src="${imageUrl}" alt="${title}" class="img-fluid">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <a href="${imageUrl}" download class="btn btn-primary">
+                            <i class="fas fa-download me-1"></i>Download
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if present
+    const existingModal = document.getElementById('imageViewModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to DOM and show
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('imageViewModal'));
+    modal.show();
+}
+
+// =====================================
+// UTILITY FUNCTIONS
+// =====================================
+function getCSRFToken() {
+    let csrfToken = null;
+
+    const directInput = document.getElementById('js-csrf-token');
+    if (directInput && directInput.value) {
+        csrfToken = directInput.value;
+    }
+
+    if (!csrfToken) {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag && metaTag.getAttribute('content')) {
+            csrfToken = metaTag.getAttribute('content');
+        }
+    }
+
+    if (!csrfToken) {
+        const hiddenInput = document.querySelector('input[name="csrf_token"]');
+        if (hiddenInput && hiddenInput.value) {
+            csrfToken = hiddenInput.value;
+        }
+    }
+
+    console.log('CSRF Token retrieved:', csrfToken ? 'Yes' : 'No');
+    return csrfToken;
+}
+
+function showErrorMessage(message) {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: 'Error',
+            message: message,
+            confirmText: 'OK',
+            confirmClass: 'btn-danger',
+            icon: 'exclamation-triangle',
+            showCancel: false,
+            onConfirm: function() {}
+        });
+    } else {
+        alert(message);
+    }
+}
+
+function showSuccess(message, title = 'Success') {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: title,
+            message: message,
+            confirmText: 'OK',
+            confirmClass: 'btn-success',
+            icon: 'check-circle',
+            showCancel: false,
+            onConfirm: function() {}
+        });
+    } else {
+        alert(message);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced operation items hover effects
+    const operationItems = document.querySelectorAll('.operation-item:not([onclick])');
+    operationItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = 'var(--enterprise-gray-50)';
+            this.style.borderLeft = '4px solid var(--enterprise-primary)';
+            this.style.paddingLeft = 'calc(1.5rem - 4px + 0.5rem)';
+            this.style.transition = 'all 0.2s ease';
+        });
+
+        item.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+            this.style.borderLeft = '';
+            this.style.paddingLeft = '';
+        });
+    });
+
+    // Danger operation hover effect
+    const dangerOperation = document.querySelector('.operation-item[onclick]');
+    if (dangerOperation) {
+        dangerOperation.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = 'rgba(209, 52, 56, 0.05)';
+            this.style.borderLeft = '4px solid var(--enterprise-danger)';
+            this.style.paddingLeft = 'calc(1.5rem - 4px + 0.5rem)';
+            this.style.transition = 'all 0.2s ease';
+        });
+
+        dangerOperation.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+            this.style.borderLeft = '';
+            this.style.paddingLeft = '';
+        });
+    }
+
+    // Module animation initialization
+    const modules = document.querySelectorAll('.enterprise-module');
+    modules.forEach((module, index) => {
+        module.style.animationDelay = `${index * 0.1}s`;
+        module.classList.add('fade-in');
+    });
+
+    console.log('Enterprise Trading Model View initialized');
+    console.log('====================================');
+});
+</script>
+
+{% endblock %}

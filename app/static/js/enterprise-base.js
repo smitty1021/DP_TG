@@ -201,14 +201,35 @@ function showImagePreview(imageUrl, title) {
 }
 
 function downloadCurrentImage() {
-    const imageUrl = document.getElementById('imagePreviewImg').src;
-    if (imageUrl) {
+    const imageElement = document.getElementById('imageModalImg');
+    const imageUrl = imageElement ? imageElement.src : null;
+    
+    if (imageUrl && imageUrl !== '') {
+        // Create a temporary link element to trigger download
         const link = document.createElement('a');
         link.href = imageUrl;
-        link.download = 'enterprise-media-asset';
+        
+        // Extract filename from title or use default
+        const titleElement = document.getElementById('imageModalTitle');
+        const title = titleElement ? titleElement.textContent : 'enterprise-media-asset';
+        const filename = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.png';
+        
+        link.download = filename;
+        link.target = '_blank';
+        
+        // Trigger download
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        
+        console.log('Download triggered for:', filename);
+    } else {
+        console.warn('No image available for download');
+        if (typeof showErrorMessage === 'function') {
+            showErrorMessage('No image available for download');
+        } else {
+            alert('No image available for download');
+        }
     }
 }
 
@@ -219,21 +240,7 @@ function downloadCurrentImage() {
 function initializeGlobalUnsavedChangesSystem() {
     console.log('🔧 Initializing global unsaved changes system...');
     
-    // Create a global beforeunload handler that can be bypassed
-    globalBeforeUnloadHandler = function(e) {
-        // Check if bypass is active
-        if (beforeUnloadBypass) {
-            console.log('🚫 Beforeunload bypassed - allowing navigation');
-            return undefined;
-        }
-        
-        // Let individual pages handle their own unsaved changes logic
-        // This is just a fallback safety net
-        return undefined;
-    };
-    
-    // Install the global handler
-    window.addEventListener('beforeunload', globalBeforeUnloadHandler);
+    // No global beforeunload handler - individual pages handle unsaved changes via click interception
     console.log('✅ Global unsaved changes system initialized');
 }
 

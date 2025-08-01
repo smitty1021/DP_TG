@@ -1474,115 +1474,6 @@ To restore borders, simply comment it back out.
     }
 }
 
-/*
-===============================================================================
-13. MODAL SYSTEM
-===============================================================================
-*/
-
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: var(--enterprise-z-modal);
-    display: none;
-    width: 100%;
-    height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
-    outline: 0;
-}
-
-.modal-dialog {
-    position: relative;
-    width: auto;
-    margin: 0.5rem;
-    pointer-events: none;
-}
-
-.modal-content {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    pointer-events: auto;
-    background-color: var(--enterprise-card-bg);
-    background-clip: padding-box;
-    border: 1px solid var(--enterprise-border);
-    border-radius: var(--enterprise-radius-md);
-    box-shadow: var(--enterprise-shadow-xl);
-    outline: 0;
-}
-
-.modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: var(--enterprise-z-modal-backdrop);
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-.modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--enterprise-spacing-lg);
-    border-bottom: 1px solid var(--enterprise-border);
-    border-radius: var(--enterprise-radius-md) var(--enterprise-radius-md) 0 0;
-    background-color: var(--enterprise-gray-50);
-}
-
-.modal-title {
-    margin-bottom: 0;
-    line-height: 1.5;
-    font-weight: 600;
-    color: var(--enterprise-text-primary);
-}
-
-.modal-body {
-    position: relative;
-    flex: 1 1 auto;
-    padding: var(--enterprise-spacing-lg);
-    color: var(--enterprise-text-primary);
-}
-
-.modal-footer {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: flex-end;
-    padding: calc(var(--enterprise-spacing-lg) - var(--enterprise-spacing-sm) * 0.5);
-    border-top: 1px solid var(--enterprise-border);
-    border-radius: 0 0 var(--enterprise-radius-md) var(--enterprise-radius-md);
-    background-color: var(--enterprise-gray-50);
-}
-
-.modal-footer > * {
-    margin: calc(var(--enterprise-spacing-sm) * 0.5);
-}
-
-/* Modal Sizes */
-.modal-sm {
-    max-width: 300px;
-}
-
-.modal-lg {
-    max-width: 800px;
-}
-
-.modal-xl {
-    max-width: 95vw;
-}
-
-@media (min-width: 576px) {
-    .modal-dialog {
-        max-width: 500px;
-        margin: 1.75rem auto;
-    }
-}
-
 /* Close Button */
 .btn-close {
     box-sizing: content-box;
@@ -3205,3 +3096,160 @@ Ensures all form controls have identical heights for perfect alignment
     height: 38px !important;
     box-sizing: border-box !important;
 }
+
+/*
+===============================================================================
+CONSOLIDATED MODAL SYSTEM
+===============================================================================
+*/
+
+/* Base Modal Structure */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: var(--enterprise-z-modal);
+    display: none;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    outline: 0;
+}
+
+.modal-dialog {
+    position: relative;
+    width: auto;
+    margin: 0.5rem;
+    pointer-events: none;
+}
+
+.modal-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    pointer-events: auto;
+    background-color: var(--enterprise-card-bg);
+    background-clip: padding-box;
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius-md);
+    box-shadow: var(--enterprise-shadow-xl);
+    outline: 0;
+}
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: var(--enterprise-z-modal-backdrop);
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--enterprise-spacing-lg);
+    border-bottom: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius-md) var(--enterprise-radius-md) 0 0;
+    background-color: var(--enterprise-gray-50);
+}
+
+.modal-title {
+    margin-bottom: 0;
+    line-height: 1.5;
+    font-weight: 600;
+    color: var(--enterprise-text-primary);
+}
+
+.modal-body {
+    position: relative;
+    flex: 1 1 auto;
+    padding: var(--enterprise-spacing-lg);
+    color: var(--enterprise-text-primary);
+}
+
+.modal-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    padding: calc(var(--enterprise-spacing-lg) - var(--enterprise-spacing-sm) * 0.5);
+    border-top: 1px solid var(--enterprise-border);
+    border-radius: 0 0 var(--enterprise-radius-md) var(--enterprise-radius-md);
+    background-color: var(--enterprise-gray-50);
+}
+
+.modal-footer > * {
+    margin: calc(var(--enterprise-spacing-sm) * 0.5);
+}
+
+/* Modal Sizes - Responsive */
+@media (min-width: 576px) {
+    .modal-dialog {
+        max-width: 500px;
+        margin: 1.75rem auto;
+    }
+    
+    .modal-sm {
+        max-width: 300px;
+    }
+    
+    .modal-lg {
+        max-width: 800px;
+    }
+    
+    .modal-xl {
+        max-width: 95vw;
+        width: 95vw;
+    }
+}
+
+/* Image Modal Optimizations */
+#imageModal .modal-dialog {
+    max-width: 75vw !important;
+    width: 75vw !important;
+    margin: 1rem auto !important;
+}
+
+#imageModal .modal-body {
+    padding: 1.5rem;
+    max-height: 75vh;
+    overflow: auto;
+}
+
+#imageModal .modal-body img {
+    max-height: 80vh !important;
+    max-width: 100% !important;
+    height: auto !important;
+    width: auto !important;
+    object-fit: contain !important;
+    border-radius: var(--enterprise-radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Mobile Modal Adjustments */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    #imageModal .modal-dialog {
+        margin: 0.5rem auto !important;
+    }
+    
+    #imageModal .modal-body {
+        padding: 1rem;
+        max-height: 75vh;
+    }
+    
+    #imageModal .modal-body img {
+        max-height: 70vh !important;
+    }
+}
+
+
+
