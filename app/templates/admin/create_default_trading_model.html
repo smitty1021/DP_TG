@@ -1,1091 +1,869 @@
 {% extends "base.html" %}
-{% from "macros/_form_helpers.html" import render_field, render_checkbox %}
 
 {% block title %}Strategic Framework Configuration{% if model %} - {{ model.name }}{% endif %}{% endblock %}
 
 {% block head_extra %}
 <!-- Fortune 500 Enterprise CSS Framework -->
 <link rel="stylesheet" href="/static/css/enterprise-all.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+{% endblock %}
 
-<style>
-/* Enhanced Visual Styling */
-.strategy-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border: 1px solid #e9ecef;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
+{% block scripts_extra %}
+<script>
+// Global variables for unsaved changes tracking
+let hasUnsavedChanges = false;
+let originalFormData = {};
+let isSubmitting = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize comprehensive unsaved changes detection
+    initializeUnsavedChangesDetection();
+
+    // Initialize image preview functionality
+    initializeImagePreview();
+
+    // Initialize auto-resizing textareas
+    initializeAutoResizeTextareas();
+
+    // Add form submission debugging
+    const form = document.getElementById('create-trading-model-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            console.log('Form submission detected');
+            console.log('Form data:', new FormData(form));
+            console.log('Form action:', form.action);
+            console.log('Form method:', form.method);
+            
+            // Only validate required fields for create mode (not edit mode)
+            {% if not model %}
+            let hasErrors = false;
+            const requiredFields = [
+                { element: form.querySelector('#name'), label: 'Model Name' },
+                { element: form.querySelector('#entry_trigger_description'), label: 'Entry Trigger Specifications' },
+                { element: form.querySelector('#stop_loss_strategy'), label: 'Stop Loss Protocol' },
+                { element: form.querySelector('#take_profit_strategy'), label: 'Profit Target Strategy' }
+            ];
+            
+            requiredFields.forEach(field => {
+                if (field.element && !field.element.value.trim()) {
+                    field.element.classList.add('is-invalid');
+                    hasErrors = true;
+                    console.log(`Missing required field: ${field.label}`);
+                } else if (field.element) {
+                    field.element.classList.remove('is-invalid');
+                }
+            });
+
+            if (hasErrors) {
+                e.preventDefault();
+                showCustomConfirmation(
+                    'Required Fields Missing',
+                    'Please fill in all required fields:\n• Model Name\n• Entry Trigger Specifications\n• Stop Loss Protocol\n• Profit Target Strategy',
+                    'btn-warning',
+                    'exclamation-triangle'
+                ).then(result => {
+                    // Just acknowledge the error, don't proceed with form submission
+                });
+                return false;
+            }
+            {% endif %}
+            
+            // Mark as submitting to prevent unsaved changes warnings
+            isSubmitting = true;
+            hasUnsavedChanges = false;
+            hideUnsavedIndicator();
+            
+            // Allow form to submit normally
+            console.log('Form validation passed, submitting...');
+        });
+    }
+
+    console.log('Page initialized');
+});
+
+function initializeImagePreview() {
+    const fileInput = document.getElementById('chart_examples');
+    const previewContainer = document.getElementById('image-preview-container');
+    const defaultState = document.getElementById('default-chart-state');
+
+    if (fileInput && previewContainer) {
+        fileInput.addEventListener('change', function(e) {
+            previewContainer.innerHTML = '';
+
+            if (this.files && this.files.length > 0) {
+                previewContainer.style.display = 'block';
+                if (defaultState) defaultState.style.display = 'none';
+                
+                // Mark as changed for unsaved changes
+                if (window.enterpriseUnsavedChanges) {
+                    window.enterpriseUnsavedChanges.hasUnsavedChanges = true;
+                    window.enterpriseUnsavedChanges.updateVisualIndicators();
+                }
+
+                Array.from(this.files).forEach((file, index) => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const previewDiv = document.createElement('div');
+                            previewDiv.className = 'text-center mb-3';
+                            previewDiv.innerHTML = `
+                                <div class="mb-3">
+                                    <img src="${e.target.result}"
+                                         alt="Trading Model Chart Example ${index + 1}"
+                                         class="img-fluid rounded"
+                                         style="max-height: 250px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;"
+                                         onmouseover="this.style.border='2px solid #0066cc'; this.style.transform='scale(1.02)'"
+                                         onmouseout="this.style.border='2px solid transparent'; this.style.transform='scale(1)'">
+                                </div>
+                                <div class="text-muted small mb-2" style="font-style: italic;">${file.name}</div>
+                            `;
+                            previewContainer.appendChild(previewDiv);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            } else {
+                previewContainer.style.display = 'none';
+                if (defaultState) defaultState.style.display = 'block';
+            }
+        });
+    }
 }
 
-.strategy-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #007bff, #0056b3);
-    border-radius: 12px 12px 0 0;
+function initializeAutoResizeTextareas() {
+    const textareas = document.querySelectorAll('textarea');
+
+    textareas.forEach(textarea => {
+        textarea.style.resize = 'vertical';
+        textarea.style.overflow = 'hidden';
+        textarea.style.boxSizing = 'border-box';
+
+        autoResize(textarea);
+
+        textarea.addEventListener('input', function() {
+            autoResize(this);
+        });
+
+        textarea.addEventListener('change', function() {
+            autoResize(this);
+        });
+
+        textarea.addEventListener('paste', function() {
+            setTimeout(() => autoResize(this), 10);
+        });
+
+        window.addEventListener('resize', function() {
+            autoResize(textarea);
+        });
+    });
 }
 
-.strategy-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+function autoResize(textarea) {
+    const originalOverflow = textarea.style.overflow;
+    const originalHeight = textarea.style.height;
+
+    textarea.style.overflow = 'hidden';
+    textarea.style.height = 'auto';
+
+    const rows = parseInt(textarea.getAttribute('rows')) || 3;
+    const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight) || 20;
+    const minHeight = rows * lineHeight + 20;
+
+    const scrollHeight = textarea.scrollHeight;
+    const newHeight = Math.max(scrollHeight + 2, minHeight);
+    textarea.style.height = newHeight + 'px';
+
+    if (originalOverflow !== 'hidden') {
+        textarea.style.overflow = originalOverflow || 'hidden';
+    }
 }
 
-.card-header-enhanced {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 1px solid #dee2e6;
-    padding: 1.25rem 1.5rem;
-    border-radius: 8px 8px 0 0;
+function initializeUnsavedChangesDetection() {
+    const form = document.getElementById('create-trading-model-form');
+    if (!form) return;
+
+    // Get all form elements including those associated via form attribute
+    const formInputs = form.querySelectorAll('input, select, textarea, [contenteditable]');
+    const associatedInputs = document.querySelectorAll('[form="create-trading-model-form"]');
+    
+    // Combine both sets of inputs
+    const inputs = [...formInputs, ...associatedInputs];
+    
+    console.log(`Found ${inputs.length} form elements for unsaved changes detection`);
+    
+    // Debug: List all form fields found
+    inputs.forEach((input, index) => {
+        console.log(`Field ${index + 1}: name="${input.name}", id="${input.id}", type="${input.type}", tagName="${input.tagName}"`);
+    });
+    
+    // Store original form data
+    inputs.forEach(input => {
+        const fieldKey = input.name || input.id || input.type;
+        if (input.type === 'checkbox') {
+            originalFormData[fieldKey] = input.checked;
+        } else if (input.type === 'file') {
+            originalFormData[fieldKey] = ''; // Files start empty
+        } else {
+            originalFormData[fieldKey] = input.value || '';
+        }
+    });
+
+    // Add change listeners to all form elements
+    inputs.forEach(input => {
+        input.addEventListener('change', function() {
+            console.log(`Change detected in field: name="${this.name}", id="${this.id}", type="${this.type}"`);
+            checkForChanges();
+        });
+        input.addEventListener('input', function() {
+            console.log(`Input detected in field: name="${this.name}", id="${this.id}", type="${this.type}"`);
+            checkForChanges();
+        });
+        
+        // Special handling for file inputs
+        if (input.type === 'file') {
+            input.addEventListener('change', function() {
+                if (this.files && this.files.length > 0) {
+                    hasUnsavedChanges = true;
+                    showUnsavedIndicator();
+                    console.log('File input changed, marking as unsaved');
+                }
+            });
+        }
+    });
+
+    function checkForChanges() {
+        hasUnsavedChanges = false;
+        let changedFields = [];
+        
+        inputs.forEach(input => {
+            const fieldKey = input.name || input.id || input.type;
+            let currentValue, originalValue;
+            
+            if (input.type === 'checkbox') {
+                currentValue = input.checked;
+                originalValue = originalFormData[fieldKey];
+            } else if (input.type === 'file') {
+                // File inputs are considered changed if they have files
+                if (input.files && input.files.length > 0) {
+                    hasUnsavedChanges = true;
+                    changedFields.push(fieldKey);
+                }
+                return;
+            } else {
+                currentValue = input.value || '';
+                originalValue = originalFormData[fieldKey] || '';
+            }
+            
+            if (currentValue !== originalValue) {
+                hasUnsavedChanges = true;
+                changedFields.push(fieldKey);
+            }
+        });
+
+        if (changedFields.length > 0) {
+            console.log('Changed fields detected:', changedFields);
+        }
+
+        // Show/hide unsaved changes indicator
+        if (hasUnsavedChanges && !isSubmitting) {
+            showUnsavedIndicator();
+        } else {
+            hideUnsavedIndicator();
+        }
+    }
 }
 
-.card-title-enhanced {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #2c3e50;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+function showUnsavedIndicator() {
+    const indicator = document.getElementById('unsaved-indicator');
+    if (indicator) {
+        indicator.style.display = 'block';
+        console.log('Showing unsaved changes indicator');
+    }
 }
 
-.card-title-enhanced i {
-    color: #007bff;
-    font-size: 1.2rem;
+function hideUnsavedIndicator() {
+    const indicator = document.getElementById('unsaved-indicator');
+    if (indicator) {
+        indicator.style.display = 'none';
+    }
 }
 
-.card-subtitle-enhanced {
-    font-size: 0.875rem;
-    color: #6c757d;
-    margin: 0.25rem 0 0 0;
-    font-weight: 400;
+function confirmCancel() {
+    {% if model %}
+    const message = 'Configuration changes are pending. Are you sure you want to discard these modifications and return to the Strategic Framework Administration?';
+    {% else %}
+    const message = 'Discard configuration changes and return to model administration?';
+    {% endif %}
+    
+    if (confirm(message)) {
+        // Reset unsaved changes to prevent beforeunload warning
+        hasUnsavedChanges = false;
+        window.location.href = '{{ url_for("admin.manage_default_trading_models") }}';
+    }
 }
 
-.form-control-enhanced {
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    font-size: 0.95rem;
-    transition: all 0.3s ease;
-    background-color: #ffffff;
+// Delete existing image function
+function deleteExistingImage(imageId, filename) {
+    showCustomConfirmation(
+        'Delete Chart Example',
+        `Are you sure you want to delete "${filename}"?<br><br>This action cannot be undone.`,
+        'btn-danger',
+        'trash-alt'
+    ).then(result => {
+        if (result) {
+            // Make AJAX request to delete image
+            const formData = new FormData();
+            formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+            
+            fetch(`/admin/delete-image/${imageId}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the image from display
+                    const imageContainer = document.getElementById(`existing-image-${imageId}`);
+                    if (imageContainer) {
+                        imageContainer.remove();
+                    }
+                    
+                    // Update the count or show default state if no images left
+                    const existingImagesContainer = document.getElementById('existing-images-container');
+                    const remainingImages = existingImagesContainer.querySelectorAll('[id^="existing-image-"]');
+                    
+                    if (remainingImages.length === 0) {
+                        existingImagesContainer.style.display = 'none';
+                        // Show default state if it exists
+                        const defaultState = document.getElementById('default-chart-state');
+                        if (defaultState) {
+                            defaultState.style.display = 'block';
+                        }
+                    } else {
+                        // Update count in header
+                        const header = existingImagesContainer.querySelector('h6');
+                        if (header) {
+                            header.textContent = `Current Chart Examples (${remainingImages.length})`;
+                        }
+                    }
+                    
+                    // Mark as changed for unsaved changes detection
+                    if (window.enterpriseUnsavedChanges) {
+                        window.enterpriseUnsavedChanges.hasUnsavedChanges = true;
+                        window.enterpriseUnsavedChanges.updateVisualIndicators();
+                    }
+                    
+                    if (typeof showNotification === 'function') {
+                        showNotification('Image deleted successfully', 'success');
+                    }
+                } else {
+                    if (typeof showNotification === 'function') {
+                        showNotification(data.message || 'Error deleting image', 'error');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (typeof showNotification === 'function') {
+                    showNotification('Error deleting image', 'error');
+                }
+            });
+        }
+    });
 }
 
-.form-control-enhanced:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.1);
-    background-color: #ffffff;
+// Show image modal function
+function showImageModal(imageSrc, title) {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation(
+            title || 'Chart Example',
+            `<div class="text-center"><img src="${imageSrc}" class="img-fluid" style="max-width: 100%; max-height: 70vh;"></div>`,
+            'btn-primary',
+            'eye'
+        );
+    } else {
+        // Fallback - open in new window
+        window.open(imageSrc, '_blank');
+    }
 }
-
-.form-label-enhanced {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.section-divider {
-    height: 2px;
-    background: linear-gradient(90deg, #007bff, transparent);
-    margin: 2rem 0;
-    border-radius: 1px;
-}
-
-.image-upload-zone {
-    border: 2px dashed #007bff;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
-    transition: all 0.3s ease;
-    position: relative;
-}
-
-.image-upload-zone:hover {
-    border-color: #0056b3;
-    background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
-}
-
-.upload-icon {
-    font-size: 3rem;
-    color: #007bff;
-    margin-bottom: 1rem;
-    opacity: 0.7;
-}
-
-.section-header {
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-    color: white;
-    padding: 1rem 1.5rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
-}
-
-.section-header h3 {
-    margin: 0;
-    font-size: 1.2rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.section-header p {
-    margin: 0.5rem 0 0 0;
-    font-size: 0.9rem;
-    opacity: 0.9;
-}
-
-.field-group {
-    background: #ffffff;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    position: relative;
-}
-
-.field-group::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: linear-gradient(180deg, #007bff, #0056b3);
-    border-radius: 0 0 0 8px;
-}
-
-.preview-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.preview-item {
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
-}
-
-.preview-item:hover {
-    transform: scale(1.05);
-}
-
-.preview-item img {
-    width: 100%;
-    height: 120px;
-    object-fit: cover;
-}
-
-.save-button-enhanced {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    border: none;
-    border-radius: 50px;
-    padding: 1rem 3rem;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: white;
-    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.save-button-enhanced:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
-    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
-}
-
-.cancel-button-enhanced {
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-    border: none;
-    border-radius: 50px;
-    padding: 1rem 3rem;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: white;
-    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.cancel-button-enhanced:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
-    background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
-}
-
-.floating-action-bar {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 50px;
-    padding: 1rem 2rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    display: flex;
-    gap: 1rem;
-    z-index: 1000;
-}
-
-.progress-indicator {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, #007bff 0%, #0056b3 50%, #007bff 100%);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite;
-    z-index: 9999;
-    display: none;
-}
-
-@keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-}
-
-.form-group-enhanced {
-    margin-bottom: 1.5rem;
-    position: relative;
-}
-
-.required-indicator {
-    color: #dc3545;
-    font-weight: bold;
-    margin-left: 0.25rem;
-}
-
-.help-text {
-    font-size: 0.825rem;
-    color: #6c757d;
-    margin-top: 0.25rem;
-    font-style: italic;
-}
-
-.visual-separator {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, #dee2e6, transparent);
-    margin: 2rem 0;
-}
-</style>
+</script>
 {% endblock %}
 
 {% block content %}
-<!-- Progress Indicator -->
-<div id="progressIndicator" class="progress-indicator"></div>
-
 <!-- Executive Header -->
 <div class="executive-header">
-    <div class="d-flex justify-content-between align-items-center">
-        <div class="header-content">
-            <h1 class="executive-title">
-                <i class="fas fa-cogs executive-icon"></i>
-                Strategic Framework Configuration
-            </h1>
-            <div class="executive-subtitle">
-                {% if model %}
-                    Modify Strategic Trading Framework: {{ model.name }}
-                {% else %}
-                    Create New Strategic Trading Framework
-                {% endif %}
+    <div class="enterprise-container-fluid">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="header-content">
+                <h1 class="executive-title">
+                    <i class="fas fa-cogs executive-icon"></i>
+                    Strategic Framework Configuration
+                </h1>
+                <div class="executive-subtitle">
+                    {% if model %}
+                        Modify Strategic Trading Framework: {{ model.name }}
+                    {% else %}
+                        Trading Model Development & Implementation
+                    {% endif %}
+                </div>
             </div>
-        </div>
-        <div class="btn-group">
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="window.location.href='{{ url_for('main.index') }}'"
-                    title="Go to Main Dashboard">
-                <i class="fas fa-home"></i>
-            </button>
-            {% if model %}
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="window.location.href='{{ url_for('admin.view_default_trading_model', model_id=model.id) }}'"
-                    title="View Trading Model">
-                <i class="fas fa-eye"></i>
-            </button>
-            {% endif %}
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="window.location.href='{{ url_for('admin.create_default_trading_model') }}'"
-                    title="New Trading Model Configuration">
-                <i class="fas fa-plus"></i>
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="location.reload()" title="Refresh Data">
-                <i class="fas fa-sync-alt"></i>
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="window.location.href='{{ url_for('admin.manage_default_trading_models') }}'"
-                    title="Back to Model Administration">
-                <i class="fas fa-tachometer-alt"></i>
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="history.back();"
-                    title="Go Back">
-                <i class="fas fa-arrow-left"></i>
-            </button>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Data">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.manage_default_trading_models') }}'"
+                        title="Back to Model Administration">
+                    <i class="fas fa-tachometer-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();"
+                        title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Main Content Wrapper -->
-<div class="enterprise-container-fluid mt-3" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem; padding-bottom: 8rem;">
-    
-    <form method="POST" enctype="multipart/form-data" novalidate id="trading-model-form">
-        {{ form.hidden_tag() }}
+<div class="enterprise-container-fluid mt-3">
+    <!-- Unsaved Changes Indicator -->
+    <div id="unsaved-indicator" class="alert alert-warning alert-dismissible fade show" role="alert" style="display: none;">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Unsaved Changes:</strong> You have made changes that have not been saved yet.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div class="grid grid-cols-3 gap-4 align-items-start">
+        <!-- Primary Configuration Panel (2/3 width) -->
+        <div class="col-span-2">
+            <form method="POST" enctype="multipart/form-data" novalidate id="create-trading-model-form"
+                  {% if model %}action="{{ url_for('admin.edit_default_trading_model', model_id=model.id) }}"{% endif %}>
+                {{ form.hidden_tag() }}
 
-        <!-- Section 1: Strategic Foundation -->
-        <div class="section-header">
-            <h3><i class="fas fa-chess-king"></i> Strategic Foundation</h3>
-            <p>Core model identification and strategic overview</p>
-        </div>
-
-        <div class="grid grid-cols-3 gap-4 mb-4">
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-info-circle"></i>
-                            Basic Information
-                        </h4>
-                        <p class="card-subtitle-enhanced">Model identity and version control</p>
+                <!-- Required Fields Notice -->
+                {% if not model %}
+                <div class="alert alert-info mb-4" role="alert">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-info-circle me-2 mt-1"></i>
+                        <div>
+                            <h6 class="alert-heading mb-2">Required Fields</h6>
+                            <p class="mb-2">The following fields are required to create a trading model:</p>
+                            <ul class="mb-0 small">
+                                <li><strong>Model Name</strong> - Unique identifier for your trading framework</li>
+                                <li><strong>Entry Trigger Specifications</strong> - Precise conditions for trade initiation</li>
+                                <li><strong>Stop Loss Protocol</strong> - Risk management strategy</li>
+                                <li><strong>Profit Target Strategy</strong> - Exit strategy for profitable trades</li>
+                            </ul>
+                        </div>
                     </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Model Name <span class="required-indicator">*</span></label>
-                            {{ form.name(class="form-control form-control-enhanced" + (" is-invalid" if form.name.errors else ""), placeholder="Enter strategic model name") }}
-                            {% if form.name.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.name.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
+                </div>
+                {% else %}
+                <div class="alert alert-warning mb-4" role="alert">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
+                        <div>
+                            <h6 class="alert-heading mb-2">Enterprise Configuration Update</h6>
+                            <p class="mb-0">This strategic framework configuration affects all system users. Changes will be immediately available across the enterprise platform.</p>
                         </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Version</label>
-                            {{ form.version(class="form-control form-control-enhanced" + (" is-invalid" if form.version.errors else ""), placeholder="e.g., v1.0, v2.1") }}
-                            {% if form.version.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.version.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Strategic Framework Overview -->
+                <div class="enterprise-module mb-4">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-info-circle module-icon"></i>
+                            Strategic Framework Overview
                         </div>
-                        <div class="form-group-enhanced">
-                            <div class="form-check">
-                                {{ form.is_active(class="form-check-input" + (" is-invalid" if form.is_active.errors else "")) }}
-                                {{ form.is_active.label(class="form-check-label fw-semibold") }}
-                                {% if form.is_active.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.is_active.errors %}{{ error }}{% endfor %}
-                                    </div>
+                        <div class="module-meta">Trading Model Configuration</div>
+                    </div>
+                    <div class="module-content">
+                        <div class="grid grid-cols-8 gap-3 mb-3">
+                            <div class="col-span-6">
+                                <label for="{{ form.name.id }}" class="form-label fw-semibold">{{ form.name.label.text }}</label>
+                                {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                                {% if form.name.errors %}
+                                    <div class="invalid-feedback">{{ form.name.errors[0] }}</div>
                                 {% endif %}
                             </div>
-                            <div class="help-text">Enable this model for active trading operations</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-brain"></i>
-                            Strategic Logic
-                        </h4>
-                        <p class="card-subtitle-enhanced">Core model framework and philosophy</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Strategic Overview</label>
-                            {{ form.overview_logic(class="form-control form-control-enhanced textarea-7" + (" is-invalid" if form.overview_logic.errors else ""), placeholder="Describe the core logic and methodology of this trading model...") }}
-                            {% if form.overview_logic.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.overview_logic.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                            <div class="help-text">Explain the fundamental approach and reasoning behind this model</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-chart-area"></i>
-                            Chart Examples
-                        </h4>
-                        <p class="card-subtitle-enhanced">Visual examples and patterns</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Upload Chart Examples</label>
-                            <div class="image-upload-zone">
-                                <div class="upload-icon">
-                                    <i class="fas fa-cloud-upload-alt"></i>
-                                </div>
-                                {{ form.chart_examples(class="form-control" + (" is-invalid" if form.chart_examples.errors else ""), accept="image/*", multiple=true, id="chartExamplesFile", onchange="previewImages(this)") }}
-                                {% if form.chart_examples.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in form.chart_examples.errors %}{{ error }}{% endfor %}
-                                    </div>
+                            <div class="col-span-2">
+                                <label for="{{ form.version.id }}" class="form-label fw-semibold">{{ form.version.label.text }}</label>
+                                {{ form.version(class="form-control" + (" is-invalid" if form.version.errors else "")) }}
+                                {% if form.version.errors %}
+                                    <div class="invalid-feedback">{{ form.version.errors[0] }}</div>
                                 {% endif %}
-                                <p class="mt-2 mb-0">
-                                    <strong>Drag & Drop</strong> or <strong>Click to Upload</strong><br>
-                                    <small class="text-muted">Supported: JPG, PNG, GIF, WebP (Max 5MB each)</small>
-                                </p>
                             </div>
-                            <div id="imagePreviewContainer" class="preview-container" style="display: none;"></div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="visual-separator"></div>
+                        <div class="grid grid-cols-7 gap-3 mb-3">
+                            <div class="col-span-5">
+                                <label for="{{ form.overview_logic.id }}" class="form-label fw-semibold">Strategic Approach and Fundamental Reasoning</label>
+                                {{ form.overview_logic(class="form-control textarea-8") }}
+                                {% if form.overview_logic.errors %}
+                                    <div class="invalid-feedback">{{ form.overview_logic.errors[0] }}</div>
+                                {% endif %}
+                            </div>
 
-        <!-- Section 2: Technical Analysis Framework -->
-        <div class="section-header">
-            <h3><i class="fas fa-chart-line"></i> Technical Analysis Framework</h3>
-            <p>Timeframes, indicators, and analysis methodology</p>
-        </div>
+                            <div class="col-span-2">
+                                <div class="module-title">Operational Timeframes</div>
+                                <label for="{{ form.primary_chart_tf.id }}" class="text-muted">Analysis Timeframe</label>
+                                {{ form.primary_chart_tf(class="form-control" + (" is-invalid" if form.primary_chart_tf.errors else "")) }}
+                                {% if form.primary_chart_tf.errors %}
+                                    <div class="invalid-feedback">{{ form.primary_chart_tf.errors[0] }}</div>
+                                {% endif %}
 
-        <div class="grid grid-cols-3 gap-4 mb-4">
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-clock"></i>
-                            Timeframe Structure
-                        </h4>
-                        <p class="card-subtitle-enhanced">Multi-timeframe analysis setup</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Primary Chart (Analysis)</label>
-                            {{ form.primary_chart_tf(class="form-control form-control-enhanced" + (" is-invalid" if form.primary_chart_tf.errors else ""), placeholder="e.g., 15m, 1H, 4H") }}
-                            <div class="help-text">Main timeframe for trade setup analysis</div>
+                                <label for="{{ form.execution_chart_tf.id }}" class="text-muted">Execution Timeframe</label>
+                                {{ form.execution_chart_tf(class="form-control" + (" is-invalid" if form.execution_chart_tf.errors else "")) }}
+                                {% if form.execution_chart_tf.errors %}
+                                    <div class="invalid-feedback">{{ form.execution_chart_tf.errors[0] }}</div>
+                                {% endif %}
+
+                                <label for="{{ form.context_chart_tf.id }}" class="text-muted">Context Analysis</label>
+                                {{ form.context_chart_tf(class="form-control" + (" is-invalid" if form.context_chart_tf.errors else "")) }}
+                                {% if form.context_chart_tf.errors %}
+                                    <div class="invalid-feedback">{{ form.context_chart_tf.errors[0] }}</div>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Execution Chart</label>
-                            {{ form.execution_chart_tf(class="form-control form-control-enhanced" + (" is-invalid" if form.execution_chart_tf.errors else ""), placeholder="e.g., 1m, 5m, 15m") }}
-                            <div class="help-text">Timeframe for precise entry timing</div>
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Context Chart</label>
-                            {{ form.context_chart_tf(class="form-control form-control-enhanced" + (" is-invalid" if form.context_chart_tf.errors else ""), placeholder="e.g., 1D, 4H, 1H") }}
-                            <div class="help-text">Higher timeframe for trend context</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-calculator"></i>
-                            Technical Indicators
-                        </h4>
-                        <p class="card-subtitle-enhanced">Indicators and technical tools</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Technical Indicators</label>
-                            {{ form.technical_indicators_used(class="form-control form-control-enhanced textarea-4" + (" is-invalid" if form.technical_indicators_used.errors else ""), placeholder="List indicators and their settings (e.g., EMA 20/50, RSI 14, MACD 12,26,9)") }}
-                            <div class="help-text">Include specific settings and parameters</div>
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Chart Patterns</label>
-                            {{ form.chart_patterns_used(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.chart_patterns_used.errors else ""), placeholder="Patterns this model identifies and trades") }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-search"></i>
-                            Price Action Analysis
-                        </h4>
-                        <p class="card-subtitle-enhanced">Price behavior and levels</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Price Action Signals</label>
-                            {{ form.price_action_signals(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.price_action_signals.errors else ""), placeholder="Key price action patterns and signals") }}
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Key Levels</label>
-                            {{ form.key_levels_identification(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.key_levels_identification.errors else ""), placeholder="How to identify and use key levels") }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="visual-separator"></div>
-
-        <!-- Section 3: Market Context & Application -->
-        <div class="section-header">
-            <h3><i class="fas fa-globe"></i> Market Context & Application</h3>
-            <p>Market conditions, instruments, and optimal environments</p>
-        </div>
-
-        <div class="grid grid-cols-3 gap-4 mb-4">
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-chart-bar"></i>
-                            Instrument & Session
-                        </h4>
-                        <p class="card-subtitle-enhanced">Market and timing applicability</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Instrument Applicability</label>
-                            {{ form.instrument_applicability(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.instrument_applicability.errors else ""), placeholder="Which instruments work best (ES, NQ, YM, specific stocks, forex pairs)") }}
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Session Applicability</label>
-                            {{ form.session_applicability(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.session_applicability.errors else ""), placeholder="Best trading sessions (London Open, NY Open, etc.)") }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-check-circle"></i>
-                            Optimal Conditions
-                        </h4>
-                        <p class="card-subtitle-enhanced">Best market environments</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Optimal Market Conditions</label>
-                            {{ form.optimal_market_conditions(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.optimal_market_conditions.errors else ""), placeholder="Market conditions where this model performs best") }}
-                            <div class="help-text">Trending, ranging, volatile, quiet markets, etc.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-times-circle"></i>
-                            Conditions to Avoid
-                        </h4>
-                        <p class="card-subtitle-enhanced">When not to use this model</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Sub-optimal Conditions</label>
-                            {{ form.sub_optimal_market_conditions(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.sub_optimal_market_conditions.errors else ""), placeholder="Market conditions to avoid when using this model") }}
-                            <div class="help-text">News events, low volume, choppy markets, etc.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="visual-separator"></div>
-
-        <!-- Section 4: Entry & Risk Management -->
-        <div class="section-header">
-            <h3><i class="fas fa-bullseye"></i> Entry & Risk Management</h3>
-            <p>Execution strategy, stops, targets, and risk parameters</p>
-        </div>
-
-        <div class="grid grid-cols-3 gap-4 mb-4">
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-play"></i>
-                            Entry Strategy
-                        </h4>
-                        <p class="card-subtitle-enhanced">Precise entry conditions</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Entry Triggers <span class="required-indicator">*</span></label>
-                            {{ form.entry_trigger_description(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.entry_trigger_description.errors else ""), placeholder="Specific conditions that must be met for entry") }}
-                            {% if form.entry_trigger_description.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.entry_trigger_description.errors %}{{ error }}{% endfor %}
+                        <div class="grid grid-cols-6 gap-3">
+                            <div class="col-span-3">
+                                <label for="{{ form.technical_indicators_used.id }}" class="form-label fw-semibold">Technical Indicators and Settings</label>
+                                {{ form.technical_indicators_used(class="form-control textarea-8") }}
+                                {% if form.technical_indicators_used.errors %}
+                                    <div class="invalid-feedback">{{ form.technical_indicators_used.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-span-3">
+                                <label for="{{ form.chart_patterns_used.id }}" class="form-label fw-semibold">Chart Patterns and Formations</label>
+                                {{ form.chart_patterns_used(class="form-control textarea-8") }}
+                                {% if form.chart_patterns_used.errors %}
+                                    <div class="invalid-feedback">{{ form.chart_patterns_used.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-span-4">
+                                <div class="form-check">
+                                    {{ form.is_active(class="form-check-input" + (" is-invalid" if form.is_active.errors else "")) }}
+                                    <label for="{{ form.is_active.id }}" class="form-check-label fw-semibold">Deploy Model For Global Utilization </label>
+                                    {% if form.is_active.errors %}
+                                        <div class="invalid-feedback">{{ form.is_active.errors[0] }}</div>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
-                            <div class="help-text">Be specific about confirmation signals</div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-shield-alt"></i>
-                            Stop Loss Strategy
-                        </h4>
-                        <p class="card-subtitle-enhanced">Risk protection mechanism</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Stop Loss Method <span class="required-indicator">*</span></label>
-                            {{ form.stop_loss_strategy(class="form-control form-control-enhanced textarea-4" + (" is-invalid" if form.stop_loss_strategy.errors else ""), placeholder="How stops are placed and calculated") }}
-                            {% if form.stop_loss_strategy.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.stop_loss_strategy.errors %}{{ error }}{% endfor %}
+
+
+                    <!-- Entry & Risk Management Framework -->
+                    <div class="enterprise-module mb-4">
+                        <div class="module-header">
+                            <div class="module-title">
+                                <i class="fas fa-shield-alt module-icon"></i>
+                                Entry & Execution
+                            </div>
+                            <div class="module-meta">Trade Execution & Protection Protocols</div>
+                        </div>
+                        <div class="module-content">
+                            <div class="mb-3">
+                                <label for="{{ form.entry_trigger_description.id }}" class="form-label fw-semibold">Entry Trigger Specifications <span class="text-danger">*</span></label>
+                                {{ form.entry_trigger_description(class="form-control" + (" is-invalid" if form.entry_trigger_description.errors else ""), rows="4") }}
+                                {% if form.entry_trigger_description.errors %}
+                                    <div class="invalid-feedback">{{ form.entry_trigger_description.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Precise conditions required for trade initiation</div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="col-span-1">
+                                    <label for="{{ form.stop_loss_strategy.id }}" class="form-label fw-semibold">Stop Loss Protocol <span class="text-danger">*</span></label>
+                                    {{ form.stop_loss_strategy(class="form-control" + (" is-invalid" if form.stop_loss_strategy.errors else ""), rows="3") }}
+                                    {% if form.stop_loss_strategy.errors %}
+                                        <div class="invalid-feedback">{{ form.stop_loss_strategy.errors[0] }}</div>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
-                            <div class="help-text">ATR-based, structure-based, fixed points, etc.</div>
+                                <div class="col-span-1">
+                                    <label for="{{ form.take_profit_strategy.id }}" class="form-label fw-semibold">Profit Target Strategy <span class="text-danger">*</span></label>
+                                    {{ form.take_profit_strategy(class="form-control" + (" is-invalid" if form.take_profit_strategy.errors else ""), rows="3") }}
+                                    {% if form.take_profit_strategy.errors %}
+                                        <div class="invalid-feedback">{{ form.take_profit_strategy.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-span-1">
+                                    <label for="{{ form.min_risk_reward_ratio.id }}" class="form-label fw-semibold">Minimum Risk:Reward</label>
+                                    {{ form.min_risk_reward_ratio(class="form-control" + (" is-invalid" if form.min_risk_reward_ratio.errors else "")) }}
+                                    {% if form.min_risk_reward_ratio.errors %}
+                                        <div class="invalid-feedback">{{ form.min_risk_reward_ratio.errors[0] }}</div>
+                                    {% endif %}
+                                    <div class="form-text">Required ratio threshold</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                <!-- Position Management Operations -->
+                <div class="enterprise-module mb-4">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-balance-scale module-icon"></i>
+                            Position Management Operations
+                        </div>
+                        <div class="module-meta">Sizing & Dynamic Trade Management</div>
+                    </div>
+                    <div class="module-content">
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <div class="col-span-1">
+                                <label for="{{ form.position_sizing_rules.id }}" class="form-label fw-semibold">Position Sizing Protocol</label>
+                                {{ form.position_sizing_rules(class="form-control", rows="3") }}
+                                {% if form.position_sizing_rules.errors %}
+                                    <div class="invalid-feedback">{{ form.position_sizing_rules.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-span-1">
+                                <label for="{{ form.scaling_in_out_rules.id }}" class="form-label fw-semibold">Scaling Operations</label>
+                                {{ form.scaling_in_out_rules(class="form-control", rows="3") }}
+                                {% if form.scaling_in_out_rules.errors %}
+                                    <div class="invalid-feedback">{{ form.scaling_in_out_rules.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="col-span-1">
+                                <label for="{{ form.trade_management_breakeven_rules.id }}" class="form-label fw-semibold">Breakeven Rules</label>
+                                {{ form.trade_management_breakeven_rules(class="form-control", rows="2") }}
+                                {% if form.trade_management_breakeven_rules.errors %}
+                                    <div class="invalid-feedback">{{ form.trade_management_breakeven_rules.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-span-1">
+                                <label for="{{ form.trade_management_trailing_stop_rules.id }}" class="form-label fw-semibold">Trailing Stop Protocol</label>
+                                {{ form.trade_management_trailing_stop_rules(class="form-control", rows="2") }}
+                                {% if form.trade_management_trailing_stop_rules.errors %}
+                                    <div class="invalid-feedback">{{ form.trade_management_trailing_stop_rules.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-span-1">
+                                <label for="{{ form.trade_management_partial_profit_rules.id }}" class="form-label fw-semibold">Partial Profit Rules</label>
+                                {{ form.trade_management_partial_profit_rules(class="form-control", rows="2") }}
+                                {% if form.trade_management_partial_profit_rules.errors %}
+                                    <div class="invalid-feedback">{{ form.trade_management_partial_profit_rules.errors[0] }}</div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-target"></i>
-                            Profit Strategy
-                        </h4>
-                        <p class="card-subtitle-enhanced">Target and exit methodology</p>
+                <!-- Risk Limits & Circuit Breakers -->
+                <div class="enterprise-module mb-4">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-exclamation-triangle module-icon"></i>
+                            Risk Limits & Circuit Breakers
+                        </div>
+                        <div class="module-meta">Maximum Loss Parameters & Safety Protocols</div>
                     </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Take Profit Method <span class="required-indicator">*</span></label>
-                            {{ form.take_profit_strategy(class="form-control form-control-enhanced textarea-4" + (" is-invalid" if form.take_profit_strategy.errors else ""), placeholder="How profits are taken") }}
-                            {% if form.take_profit_strategy.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.take_profit_strategy.errors %}{{ error }}{% endfor %}
-                                </div>
+                    <div class="module-content">
+                        <div class="grid grid-cols-4 gap-3 mb-3">
+                            <div class="col-span-1">
+                                <label for="{{ form.model_max_loss_per_trade.id }}" class="form-label fw-semibold">Max Trade Loss</label>
+                                {{ form.model_max_loss_per_trade(class="form-control" + (" is-invalid" if form.model_max_loss_per_trade.errors else "")) }}
+                                {% if form.model_max_loss_per_trade.errors %}
+                                    <div class="invalid-feedback">{{ form.model_max_loss_per_trade.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-span-1">
+                                <label for="{{ form.model_max_daily_loss.id }}" class="form-label fw-semibold">Max Daily Loss</label>
+                                {{ form.model_max_daily_loss(class="form-control" + (" is-invalid" if form.model_max_daily_loss.errors else "")) }}
+                                {% if form.model_max_daily_loss.errors %}
+                                    <div class="invalid-feedback">{{ form.model_max_daily_loss.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-span-1">
+                                <label for="{{ form.model_max_weekly_loss.id }}" class="form-label fw-semibold">Max Weekly Loss</label>
+                                {{ form.model_max_weekly_loss(class="form-control" + (" is-invalid" if form.model_max_weekly_loss.errors else "")) }}
+                                {% if form.model_max_weekly_loss.errors %}
+                                    <div class="invalid-feedback">{{ form.model_max_weekly_loss.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-span-1">
+                                <label for="{{ form.model_consecutive_loss_limit.id }}" class="form-label fw-semibold">Consecutive Loss Limit</label>
+                                {{ form.model_consecutive_loss_limit(class="form-control" + (" is-invalid" if form.model_consecutive_loss_limit.errors else "")) }}
+                                {% if form.model_consecutive_loss_limit.errors %}
+                                    <div class="invalid-feedback">{{ form.model_consecutive_loss_limit.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.model_action_on_max_drawdown.id }}" class="form-label fw-semibold">Drawdown Response Protocol</label>
+                            {{ form.model_action_on_max_drawdown(class="form-control", rows="3") }}
+                            {% if form.model_action_on_max_drawdown.errors %}
+                                <div class="invalid-feedback">{{ form.model_action_on_max_drawdown.errors[0] }}</div>
                             {% endif %}
                         </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Min Risk:Reward</label>
-                            {{ form.min_risk_reward_ratio(class="form-control form-control-enhanced" + (" is-invalid" if form.min_risk_reward_ratio.errors else ""), placeholder="e.g., 1.5", step="0.1") }}
-                            <div class="help-text">Minimum acceptable risk-to-reward ratio</div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Sidebar Panel (1/3 width) -->
+        <div class="col-span-1">
+            <!-- Trading Model Illustrations -->
+            <div class="enterprise-module mb-4">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-area module-icon"></i>
+                        Model Examples
+                    </div>
+                </div>
+                <div class="module-content">
+                    <!-- Existing Images Display -->
+                    {% if model and existing_images %}
+                        <div id="existing-images-container" class="mb-3">
+                            <h6 class="text-muted mb-2">Current Chart Examples ({{ existing_images|length }})</h6>
+                            <div class="row g-2">
+                                {% for image in existing_images %}
+                                <div class="col-6" id="existing-image-{{ image.id }}">
+                                    <div class="position-relative">
+                                        <img src="{{ url_for('images.serve_image', image_id=image.id) }}"
+                                             alt="Chart Example"
+                                             class="img-fluid rounded"
+                                             style="max-height: 120px; width: 100%; object-fit: cover; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;"
+                                             onclick="showImageModal('{{ url_for('images.serve_image', image_id=image.id) }}', '{{ model.name }} - Chart Example')"
+                                             onmouseover="this.style.border='2px solid #0066cc'; this.style.transform='scale(1.02)'"
+                                             onmouseout="this.style.border='2px solid transparent'; this.style.transform='scale(1)'">
+                                        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1"
+                                                onclick="deleteExistingImage({{ image.id }}, '{{ image.original_filename }}')"
+                                                title="Delete this image">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <p class="text-muted small text-center mt-1 mb-0">{{ image.original_filename }}</p>
+                                </div>
+                                {% endfor %}
+                            </div>
                         </div>
+                    {% endif %}
+
+                    <!-- New Images Preview -->
+                    <div id="image-preview-container" style="display: none;">
+                        <h6 class="text-muted mb-2">New Chart Examples</h6>
+                        <!-- Dynamic chart preview will be populated here -->
+                    </div>
+
+                    <!-- Default state when no images -->
+                    {% if not (model and existing_images) %}
+                    <div id="default-chart-state" class="text-center py-5">
+                        <i class="fas fa-chart-area fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
+                        <h6 class="text-muted">No Chart Examples Available</h6>
+                        <p class="text-muted small">Upload chart examples to illustrate this trading framework</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <label for="{{ form.chart_examples.id }}" class="form-label fw-semibold">{% if model and existing_images %}Add More Chart Examples{% else %}Chart Examples{% endif %}</label>
+                        {{ form.chart_examples(class="form-control" + (" is-invalid" if form.chart_examples.errors else ""), accept="image/*", multiple=true, form="create-trading-model-form") }}
+                        {% if form.chart_examples.errors %}
+                            <div class="invalid-feedback">{{ form.chart_examples.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Configuration Parameters -->
+            <div class="enterprise-module mb-4">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-cog module-icon"></i>
+                        Additional Configuration
+                    </div>
+                    <div class="module-meta">Optimization & Quality Controls</div>
+                </div>
+                <div class="module-content">
+                    <div class="mb-3">
+                        <label for="{{ form.sub_optimal_market_conditions.id }}" class="form-label fw-semibold">Exclusion Criteria</label>
+                        {{ form.sub_optimal_market_conditions(class="form-control", rows="3", form="create-trading-model-form") }}
+                        {% if form.sub_optimal_market_conditions.errors %}
+                            <div class="invalid-feedback">{{ form.sub_optimal_market_conditions.errors[0] }}</div>
+                        {% endif %}
+                        <div class="form-text">Market conditions to avoid</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.pre_trade_checklist.id }}" class="form-label fw-semibold">Pre-Trade Verification Protocol</label>
+                        {{ form.pre_trade_checklist(class="form-control", rows="4", form="create-trading-model-form") }}
+                        {% if form.pre_trade_checklist.errors %}
+                            <div class="invalid-feedback">{{ form.pre_trade_checklist.errors[0] }}</div>
+                        {% endif %}
+                        <div class="form-text">Framework-specific validation checks before trade execution</div>
+                    </div>
+
+                    <!-- Price Action & Market Context in Sidebar -->
+                    <div class="mb-3">
+                        <label for="{{ form.price_action_signals.id }}" class="form-label fw-semibold">Price Action Signals</label>
+                        {{ form.price_action_signals(class="form-control", rows="3", form="create-trading-model-form") }}
+                        {% if form.price_action_signals.errors %}
+                            <div class="invalid-feedback">{{ form.price_action_signals.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.key_levels_identification.id }}" class="form-label fw-semibold">Key Level Identification</label>
+                        {{ form.key_levels_identification(class="form-control", rows="3", form="create-trading-model-form") }}
+                        {% if form.key_levels_identification.errors %}
+                            <div class="invalid-feedback">{{ form.key_levels_identification.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.instrument_applicability.id }}" class="form-label fw-semibold">Instrument Coverage</label>
+                        {{ form.instrument_applicability(class="form-control", rows="2", form="create-trading-model-form") }}
+                        {% if form.instrument_applicability.errors %}
+                            <div class="invalid-feedback">{{ form.instrument_applicability.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.session_applicability.id }}" class="form-label fw-semibold">Session Parameters</label>
+                        {{ form.session_applicability(class="form-control", rows="2", form="create-trading-model-form") }}
+                        {% if form.session_applicability.errors %}
+                            <div class="invalid-feedback">{{ form.session_applicability.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.optimal_market_conditions.id }}" class="form-label fw-semibold">Optimal Conditions</label>
+                        {{ form.optimal_market_conditions(class="form-control", rows="2", form="create-trading-model-form") }}
+                        {% if form.optimal_market_conditions.errors %}
+                            <div class="invalid-feedback">{{ form.optimal_market_conditions.errors[0] }}</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="visual-separator"></div>
-
-        <!-- Section 5: Trade Management & Position Sizing -->
-        <div class="section-header">
-            <h3><i class="fas fa-cogs"></i> Trade Management & Position Sizing</h3>
-            <p>Position sizing, scaling, and active trade management</p>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-balance-scale"></i>
-                            Position & Scaling
-                        </h4>
-                        <p class="card-subtitle-enhanced">Size and scaling methodology</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Position Sizing Rules</label>
-                            {{ form.position_sizing_rules(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.position_sizing_rules.errors else ""), placeholder="How position size is determined") }}
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Scaling In/Out Rules</label>
-                            {{ form.scaling_in_out_rules(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.scaling_in_out_rules.errors else ""), placeholder="Rules for adding to or reducing positions") }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-sliders-h"></i>
-                            Active Management
-                        </h4>
-                        <p class="card-subtitle-enhanced">Dynamic trade adjustments</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Breakeven Rules</label>
-                            {{ form.trade_management_breakeven_rules(class="form-control form-control-enhanced textarea-2" + (" is-invalid" if form.trade_management_breakeven_rules.errors else ""), placeholder="When and how to move stops to breakeven") }}
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Trailing Stop Rules</label>
-                            {{ form.trade_management_trailing_stop_rules(class="form-control form-control-enhanced textarea-2" + (" is-invalid" if form.trade_management_trailing_stop_rules.errors else ""), placeholder="Trailing stop methodology") }}
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Partial Profit Rules</label>
-                            {{ form.trade_management_partial_profit_rules(class="form-control form-control-enhanced textarea-2" + (" is-invalid" if form.trade_management_partial_profit_rules.errors else ""), placeholder="When to take partial profits") }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Section 6: Risk Parameters & Model Limits -->
-        <div class="section-header">
-            <h3><i class="fas fa-exclamation-triangle"></i> Risk Parameters & Model Limits</h3>
-            <p>Maximum loss limits and risk management constraints</p>
-        </div>
-
-        <div class="grid grid-cols-3 gap-4 mb-4">
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-dollar-sign"></i>
-                            Loss Limits
-                        </h4>
-                        <p class="card-subtitle-enhanced">Maximum risk thresholds</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Max Risk per Trade</label>
-                            {{ form.model_max_loss_per_trade(class="form-control form-control-enhanced" + (" is-invalid" if form.model_max_loss_per_trade.errors else ""), placeholder="e.g., 1% or $100") }}
-                            <div class="help-text">Maximum amount to risk on any single trade</div>
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Max Daily Loss</label>
-                            {{ form.model_max_daily_loss(class="form-control form-control-enhanced" + (" is-invalid" if form.model_max_daily_loss.errors else ""), placeholder="e.g., 3% or $300") }}
-                            <div class="help-text">Daily loss limit using this model</div>
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Max Weekly Loss</label>
-                            {{ form.model_max_weekly_loss(class="form-control form-control-enhanced" + (" is-invalid" if form.model_max_weekly_loss.errors else ""), placeholder="e.g., 5% or $500") }}
-                            <div class="help-text">Weekly loss limit for model</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-ban"></i>
-                            Circuit Breakers
-                        </h4>
-                        <p class="card-subtitle-enhanced">Automatic trading halts</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Consecutive Loss Limit</label>
-                            {{ form.model_consecutive_loss_limit(class="form-control form-control-enhanced" + (" is-invalid" if form.model_consecutive_loss_limit.errors else ""), placeholder="e.g., 3 trades") }}
-                            <div class="help-text">Maximum consecutive losing trades</div>
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Drawdown Action</label>
-                            {{ form.model_action_on_max_drawdown(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.model_action_on_max_drawdown.errors else ""), placeholder="Actions to take when max drawdown is hit") }}
-                            <div class="help-text">Procedure when risk limits are exceeded</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-clipboard-check"></i>
-                            Pre-Trade Checklist
-                        </h4>
-                        <p class="card-subtitle-enhanced">Mandatory pre-execution checks</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Checklist Items</label>
-                            {{ form.pre_trade_checklist(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.pre_trade_checklist.errors else ""), placeholder="List each checklist item on a new line") }}
-                            <div class="help-text">Model-specific checks before entering trades</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="visual-separator"></div>
-
-        <!-- Section 7: Execution & Operations -->
-        <div class="section-header">
-            <h3><i class="fas fa-play-circle"></i> Execution & Operations</h3>
-            <p>Order types, platform details, and operational procedures</p>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-desktop"></i>
-                            Platform & Orders
-                        </h4>
-                        <p class="card-subtitle-enhanced">Technical execution details</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Order Types Used</label>
-                            {{ form.order_types_used(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.order_types_used.errors else ""), placeholder="Market, Limit, Stop, Stop-Limit, etc.") }}
-                            <div class="help-text">Primary order types for this model</div>
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Broker/Platform Notes</label>
-                            {{ form.broker_platform_notes(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.broker_platform_notes.errors else ""), placeholder="Platform-specific settings or considerations") }}
-                            <div class="help-text">Any broker or platform specific requirements</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-tasks"></i>
-                            Trade Routines
-                        </h4>
-                        <p class="card-subtitle-enhanced">Pre and post-trade procedures</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Execution Confirmation</label>
-                            {{ form.execution_confirmation_notes(class="form-control form-control-enhanced textarea-2" + (" is-invalid" if form.execution_confirmation_notes.errors else ""), placeholder="How to confirm successful execution") }}
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Post-Trade Routine</label>
-                            {{ form.post_trade_routine_model(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.post_trade_routine_model.errors else ""), placeholder="Steps to take after trade execution") }}
-                            <div class="help-text">Model-specific post-trade actions</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="visual-separator"></div>
-
-        <!-- Section 8: Analysis & Assessment -->
-        <div class="section-header">
-            <h3><i class="fas fa-analytics"></i> Performance Analysis & Assessment</h3>
-            <p>Model evaluation, strengths, weaknesses, and improvement notes</p>
-        </div>
-
-        <div class="grid grid-cols-3 gap-4 mb-4">
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-thumbs-up"></i>
-                            Model Strengths
-                        </h4>
-                        <p class="card-subtitle-enhanced">What this model does well</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Perceived Strengths</label>
-                            {{ form.strengths(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.strengths.errors else ""), placeholder="Market conditions, setups, or situations where this model excels") }}
-                            <div class="help-text">Identify the model's competitive advantages</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-thumbs-down"></i>
-                            Model Weaknesses
-                        </h4>
-                        <p class="card-subtitle-enhanced">Areas needing improvement</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Perceived Weaknesses</label>
-                            {{ form.weaknesses(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.weaknesses.errors else ""), placeholder="Limitations, drawbacks, or challenging conditions for this model") }}
-                            <div class="help-text">Honest assessment of model limitations</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-flask"></i>
-                            Testing & Refinement
-                        </h4>
-                        <p class="card-subtitle-enhanced">Testing results and improvements</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Backtesting Results</label>
-                            {{ form.backtesting_forwardtesting_notes(class="form-control form-control-enhanced textarea-4" + (" is-invalid" if form.backtesting_forwardtesting_notes.errors else ""), placeholder="Test results, performance metrics, and key findings") }}
-                            <div class="help-text">Include win rate, profit factor, drawdown, etc.</div>
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Refinements & Learnings</label>
-                            {{ form.refinements_learnings(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.refinements_learnings.errors else ""), placeholder="Model improvements and lessons learned over time") }}
-                            <div class="help-text">Document evolution and improvements</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="visual-separator"></div>
-
-        <!-- Section 9: Additional Analysis Fields -->
-        <div class="section-header">
-            <h3><i class="fas fa-microscope"></i> Additional Analysis</h3>
-            <p>Volume analysis, fundamental considerations, and adverse conditions</p>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mb-5">
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-chart-bar"></i>
-                            Volume & Fundamentals
-                        </h4>
-                        <p class="card-subtitle-enhanced">Market depth and macro factors</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Volume Analysis</label>
-                            {{ form.volume_analysis_notes(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.volume_analysis_notes.errors else ""), placeholder="How volume is analyzed in this model") }}
-                            <div class="help-text">Volume confirmation, unusual activity, etc.</div>
-                        </div>
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Fundamental Considerations</label>
-                            {{ form.fundamental_analysis_notes(class="form-control form-control-enhanced textarea-3" + (" is-invalid" if form.fundamental_analysis_notes.errors else ""), placeholder="Economic data, news events, market sentiment factors") }}
-                            <div class="help-text">Macro factors affecting model performance</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-span-1">
-                <div class="strategy-card">
-                    <div class="card-header-enhanced">
-                        <h4 class="card-title-enhanced">
-                            <i class="fas fa-exclamation-circle"></i>
-                            Adverse Management
-                        </h4>
-                        <p class="card-subtitle-enhanced">Handling unfavorable conditions</p>
-                    </div>
-                    <div class="field-group">
-                        <div class="form-group-enhanced">
-                            <label class="form-label-enhanced">Adverse Price Action</label>
-                            {{ form.trade_management_adverse_price_action(class="form-control form-control-enhanced textarea-5" + (" is-invalid" if form.trade_management_adverse_price_action.errors else ""), placeholder="How to handle trades moving against you") }}
-                            <div class="help-text">Strategies for managing losing positions</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Floating Action Bar -->
-        <div class="floating-action-bar">
-            <button type="button" class="cancel-button-enhanced" onclick="cancelForm()">
-                <i class="fas fa-times me-2"></i>Cancel
-            </button>
-            <button type="submit" class="save-button-enhanced" id="saveButton">
-                <i class="fas fa-save me-2"></i>Save Model
-            </button>
-        </div>
-
-    </form>
+    <!-- Ensure content doesn't get hidden behind sticky buttons -->
+    <div class="sticky-action-buttons-spacer"></div>
 </div>
 
-<script>
-// Enhanced form functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('trading-model-form');
-    const saveButton = document.getElementById('saveButton');
-    const progressIndicator = document.getElementById('progressIndicator');
-    
-    // Show progress on form submission
-    form.addEventListener('submit', function() {
-        progressIndicator.style.display = 'block';
-        saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
-        saveButton.disabled = true;
-    });
-    
-    // Initialize enterprise animations
-    const cards = document.querySelectorAll('.strategy-card');
-    cards.forEach((card, index) => {
-        card.style.animationDelay = `${index * 0.1}s`;
-        card.classList.add('fade-in');
-    });
-});
-
-function previewImages(input) {
-    const container = document.getElementById('imagePreviewContainer');
-    container.innerHTML = '';
-    
-    if (input.files && input.files.length > 0) {
-        container.style.display = 'grid';
-        
-        Array.from(input.files).forEach((file, index) => {
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const previewDiv = document.createElement('div');
-                    previewDiv.className = 'preview-item';
-                    previewDiv.innerHTML = `
-                        <img src="${e.target.result}" alt="Preview ${index + 1}">
-                        <div style="padding: 0.5rem; background: rgba(0,0,0,0.8); color: white; font-size: 0.8rem;">
-                            ${file.name}
-                        </div>
-                    `;
-                    container.appendChild(previewDiv);
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    } else {
-        container.style.display = 'none';
-    }
-}
-
-function cancelForm() {
-    if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
-        window.location.href = '{{ url_for("admin.manage_default_trading_models") }}';
-    }
-}
-</script>
+<!-- Sticky Action Buttons -->
+<div class="sticky-action-buttons">
+    <button type="submit" class="btn btn-primary" form="create-trading-model-form">
+        <i class="fas fa-save me-1"></i>{% if model %}Update Configuration{% else %}Save Model{% endif %}
+    </button>
+    <a href="{{ url_for('admin.manage_default_trading_models') }}" class="btn btn-secondary">
+        <i class="fas fa-times me-2"></i>{% if model %}Cancel Changes{% else %}Cancel{% endif %}
+    </a>
+</div>
 {% endblock %}

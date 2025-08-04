@@ -133,6 +133,41 @@
                         <div class="text-muted">{{ model.technical_indicators_used }}</div>
                     </div>
                     {% endif %}
+
+                    {% if model.chart_patterns_used %}
+                    <div class="mb-4">
+                        <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Chart Patterns</div>
+                        <div class="text-muted">{{ model.chart_patterns_used }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if model.price_action_signals %}
+                    <div class="mb-4">
+                        <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Price Action Signals</div>
+                        <div class="text-muted">{{ model.price_action_signals }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if model.key_levels_identification %}
+                    <div class="mb-4">
+                        <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Key Levels Identification</div>
+                        <div class="text-muted">{{ model.key_levels_identification }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if model.volume_analysis_notes %}
+                    <div class="mb-4">
+                        <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Volume Analysis</div>
+                        <div class="text-muted">{{ model.volume_analysis_notes }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if model.fundamental_analysis_notes %}
+                    <div class="mb-4">
+                        <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.9rem; letter-spacing: 0.5px;">Fundamental Analysis</div>
+                        <div class="text-muted">{{ model.fundamental_analysis_notes }}</div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -160,9 +195,21 @@
                             </div>
                             {% endif %}
                             {% if model.instrument_applicability %}
-                            <div>
+                            <div class="mb-3">
                                 <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Instrument Applicability</div>
                                 <div class="small text-muted">{{ model.instrument_applicability }}</div>
+                            </div>
+                            {% endif %}
+                            {% if model.session_applicability %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Session Applicability</div>
+                                <div class="small text-muted">{{ model.session_applicability }}</div>
+                            </div>
+                            {% endif %}
+                            {% if model.sub_optimal_market_conditions %}
+                            <div>
+                                <div class="fw-semibold text-warning mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Sub-Optimal Conditions</div>
+                                <div class="small text-muted">{{ model.sub_optimal_market_conditions }}</div>
                             </div>
                             {% endif %}
                         </div>
@@ -194,15 +241,130 @@
 
                             <!-- Risk Parameters -->
                             {% if model.min_risk_reward_ratio %}
-                            <div>
+                            <div class="mb-3">
                                 <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Min Risk:Reward</div>
                                 <div><span class="badge bg-info">{{ model.min_risk_reward_ratio }}:1</span></div>
+                            </div>
+                            {% endif %}
+
+                            {% if model.model_action_on_max_drawdown %}
+                            <div>
+                                <div class="fw-semibold text-danger mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Max Drawdown Action</div>
+                                <div class="small text-muted">{{ model.model_action_on_max_drawdown }}</div>
                             </div>
                             {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Position Management Framework -->
+            {% if model.position_sizing_rules or model.scaling_in_out_rules or model.trade_management_breakeven_rules or model.trade_management_trailing_stop_rules or model.trade_management_partial_profit_rules or model.trade_management_adverse_price_action %}
+            <div class="enterprise-module mb-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-balance-scale module-icon"></i>
+                        Position Management Framework
+                    </div>
+                    <div class="module-meta">Sizing & Trade Management</div>
+                </div>
+                <div class="module-content mb-3">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-1">
+                            {% if model.position_sizing_rules %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Position Sizing Rules</div>
+                                <div class="small text-muted">{{ model.position_sizing_rules }}</div>
+                            </div>
+                            {% endif %}
+                            {% if model.scaling_in_out_rules %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Scaling In/Out Rules</div>
+                                <div class="small text-muted">{{ model.scaling_in_out_rules }}</div>
+                            </div>
+                            {% endif %}
+                            {% if model.trade_management_adverse_price_action %}
+                            <div>
+                                <div class="fw-semibold text-warning mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Adverse Price Action</div>
+                                <div class="small text-muted">{{ model.trade_management_adverse_price_action }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-span-1">
+                            {% if model.trade_management_breakeven_rules %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-success mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Breakeven Rules</div>
+                                <div class="small text-muted">{{ model.trade_management_breakeven_rules }}</div>
+                            </div>
+                            {% endif %}
+                            {% if model.trade_management_trailing_stop_rules %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-info mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Trailing Stop Rules</div>
+                                <div class="small text-muted">{{ model.trade_management_trailing_stop_rules }}</div>
+                            </div>
+                            {% endif %}
+                            {% if model.trade_management_partial_profit_rules %}
+                            <div>
+                                <div class="fw-semibold text-success mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Partial Profit Rules</div>
+                                <div class="small text-muted">{{ model.trade_management_partial_profit_rules }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Execution Framework -->
+            {% if model.pre_trade_checklist or model.order_types_used or model.broker_platform_notes or model.execution_confirmation_notes or model.post_trade_routine_model %}
+            <div class="enterprise-module mb-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-play-circle module-icon"></i>
+                        Execution Framework
+                    </div>
+                    <div class="module-meta">Order Management & Workflow</div>
+                </div>
+                <div class="module-content mb-3">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-1">
+                            {% if model.pre_trade_checklist %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Pre-Trade Checklist</div>
+                                <div class="small text-muted">{{ model.pre_trade_checklist }}</div>
+                            </div>
+                            {% endif %}
+                            {% if model.order_types_used %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-info mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Order Types Used</div>
+                                <div class="small text-muted">{{ model.order_types_used }}</div>
+                            </div>
+                            {% endif %}
+                            {% if model.broker_platform_notes %}
+                            <div>
+                                <div class="fw-semibold text-secondary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Broker/Platform Notes</div>
+                                <div class="small text-muted">{{ model.broker_platform_notes }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-span-1">
+                            {% if model.execution_confirmation_notes %}
+                            <div class="mb-3">
+                                <div class="fw-semibold text-success mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Execution Confirmation</div>
+                                <div class="small text-muted">{{ model.execution_confirmation_notes }}</div>
+                            </div>
+                            {% endif %}
+                            {% if model.post_trade_routine_model %}
+                            <div>
+                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Post-Trade Routine</div>
+                                <div class="small text-muted">{{ model.post_trade_routine_model }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Performance & Analysis -->
             {% if model.strengths or model.weaknesses or model.backtesting_forwardtesting_notes %}
@@ -234,9 +396,15 @@
                         {% endif %}
                     </div>
                     {% if model.backtesting_forwardtesting_notes %}
-                    <div>
+                    <div class="mb-3">
                         <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Testing Results</div>
                         <div class="small text-muted">{{ model.backtesting_forwardtesting_notes }}</div>
+                    </div>
+                    {% endif %}
+                    {% if model.refinements_learnings %}
+                    <div>
+                        <div class="fw-semibold text-info mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Refinements & Learnings</div>
+                        <div class="small text-muted">{{ model.refinements_learnings }}</div>
                     </div>
                     {% endif %}
                 </div>
@@ -328,6 +496,80 @@
             </div>
             {% endif %}
 
+            <!-- Backtesting Panel -->
+            <div class="enterprise-module mb-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-bar module-icon"></i>
+                        Backtesting Results
+                    </div>
+                    <div class="module-meta">{{ model_backtests|length }} Tests</div>
+                </div>
+                <div class="module-content mb-3">
+                    {% if model_backtests %}
+                        {% for backtest in model_backtests[:3] %}
+                        <div class="operation-item">
+                            <div class="operation-icon" style="background: rgba(0, 123, 255, 0.1);">
+                                {% if backtest.status.value == 'completed' %}
+                                    <i class="fas fa-check-circle" style="color: var(--enterprise-success);"></i>
+                                {% elif backtest.status.value == 'active' %}
+                                    <i class="fas fa-play-circle" style="color: var(--enterprise-primary);"></i>
+                                {% else %}
+                                    <i class="fas fa-pause-circle" style="color: var(--enterprise-warning);"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div class="fw-semibold text-primary" style="font-size: 0.85rem;">
+                                        {{ backtest.description[:40] }}...
+                                    </div>
+                                    <div class="small text-muted">
+                                        {{ backtest.date_range_start.strftime('%m/%d/%Y') if backtest.date_range_start }}
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="text-muted small">
+                                        {{ backtest.total_trades or 0 }} trades
+                                        {% if backtest.win_percentage %}
+                                            • {{ "%.1f"|format(backtest.win_percentage) }}% win rate
+                                        {% endif %}
+                                    </div>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('admin.view_backtest', backtest_id=backtest.id) }}"
+                                           class="btn btn-outline-primary btn-sm"
+                                           title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        {% if model_backtests|length > 3 %}
+                        <div class="text-center mt-2">
+                            <a href="{{ url_for('admin.view_model_backtests', model_id=model.id) }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-eye me-1"></i>View All {{ model_backtests|length }} Backtests
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-chart-bar fa-2x text-muted mb-2" style="opacity: 0.3;"></i>
+                            <h6 class="text-muted">No Backtest Results</h6>
+                            <p class="text-muted small">Start performance analysis for this model</p>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mt-3 pt-3 border-top">
+                        <a href="{{ url_for('admin.create_default_model_backtest', model_id=model.id) }}"
+                           class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-plus me-1"></i>Create New Backtest
+                        </a>
+                    </div>
+                </div>
+            </div>
+
             <!-- Administrative Controls Panel -->
             <div class="enterprise-module mb-3">
                 <div class="module-header">
@@ -357,6 +599,17 @@
                             <div class="flex-grow-1">
                                 <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">View All Models</div>
                                 <div class="text-muted" style="font-size: 0.8rem;">Return to model administration</div>
+                            </div>
+                        </a>
+
+                        <a href="{{ url_for('admin.manage_default_model_backtests') }}"
+                           class="operation-item">
+                            <div class="operation-icon">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">All Backtests</div>
+                                <div class="text-muted" style="font-size: 0.8rem;">View all model backtests</div>
                             </div>
                         </a>
 

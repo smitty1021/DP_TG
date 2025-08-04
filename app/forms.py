@@ -993,6 +993,24 @@ class BacktestForm(FlaskForm):
     start_date = DateField('Start Date', validators=[DataRequired()])
     end_date = DateField('End Date', validators=[DataRequired()])
     
+    # Status
+    status = SelectField('Status',
+                        choices=[('draft', 'Draft'),
+                                ('running', 'Running'),
+                                ('completed', 'Completed'),
+                                ('failed', 'Failed'),
+                                ('cancelled', 'Cancelled')],
+                        validators=[DataRequired()],
+                        default='draft')
+    
+    # Configuration fields
+    initial_capital = FloatField('Initial Capital', validators=[Optional()])
+    primary_instrument = StringField('Primary Instrument', validators=[Optional(), Length(max=50)])
+    position_sizing = StringField('Position Sizing Strategy', validators=[Optional(), Length(max=200)])
+    trade_management = TextAreaField('Trade Management Rules',
+                                   validators=[Optional()],
+                                   render_kw={"rows": 3, "placeholder": "Trade management and scaling rules..."})
+    
     # Trading model selection
     trading_model_id = SelectField('Trading Model', 
                                   coerce=int, 

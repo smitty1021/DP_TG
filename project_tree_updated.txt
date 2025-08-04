@@ -1,0 +1,9 @@
+C\:\\Users\\micha\\OneDrive\\Desktop\\DP-TG:
+__pycache__		       NUL
+app			       project_tree.txt
+CLAUDE.md		       project_tree_updated.txt
+cleanup_test_data.py	       README.md
+comprehensive_test_export.pdf  remove_profile_picture_column.py
+create_default_data.py	       requirements.txt
+instance		       run.py
+migrations

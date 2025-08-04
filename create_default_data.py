@@ -1700,6 +1700,403 @@ class EnhancedBootstrapManager:
         # Assign unique tags
         trade.tags = list(set(selected_tags))
 
+    def create_backtesting_data(self):
+        """Create comprehensive backtesting data for all trading models."""
+        print("\n🧪 Creating backtesting data for all trading models...")
+        
+        if not self.trading_models:
+            print("❌ No trading models found. Skipping backtesting data creation.")
+            return
+        
+        from app.models import Backtest, BacktestTrade, BacktestStatus, BacktestExitReason
+        
+        created_backtests = []
+        created_trades = []
+        
+        # Get a consistent instrument for all backtests (ES)
+        es_instrument = None
+        for instrument in self.instruments.values():
+            if instrument.symbol == 'ES':
+                es_instrument = instrument
+                break
+        
+        if not es_instrument:
+            print("❌ ES instrument not found. Cannot create backtesting data.")
+            return
+        
+        # Generate 500+ days of backtesting data 
+        end_date = date.today() - timedelta(days=30)  # End 30 days ago
+        start_date = end_date - timedelta(days=500)   # 500 days of data
+        
+        # Create one backtest per trading model
+        for model in self.trading_models:
+            # Only create backtests for default models
+            if not model.is_default:
+                continue
+                
+            print(f"  📊 Creating backtest for {model.name}...")
+            
+            # Create the backtest
+            backtest = Backtest(
+                name=f"{model.name} - Historical Performance Analysis",
+                description=f"Comprehensive 500-day backtest of the {model.name} trading model using ES futures. "
+                           f"Testing period: {start_date.strftime('%m/%d/%Y')} to {end_date.strftime('%m/%d/%Y')}. "
+                           f"This backtest validates the model's performance across various market conditions including trending, "
+                           f"ranging, and volatile periods.",
+                trading_model_id=model.id,
+                user_id=self.admin_user.id,
+                start_date=start_date,
+                end_date=end_date,
+                status=BacktestStatus.COMPLETED,
+                created_at=datetime.utcnow() - timedelta(days=random.randint(60, 120)),
+                completed_at=datetime.utcnow() - timedelta(days=random.randint(1, 30)),
+                
+                # Trading rules specific to each model
+                specific_rules_used=f"Standard {model.name} rules with enhanced risk management for backtesting",
+                entry_rules=f"Entry signals based on {model.name} methodology with statistical validation",
+                exit_rules="Systematic exits using profit targets, stop losses, and time-based exits",
+                trade_management_applied="Breakeven stops after 1R profit, partial profit taking at key levels",
+                risk_settings="Maximum 2% risk per trade, maximum 5% daily drawdown limit",
+                
+                # Market context
+                market_conditions="Mixed market conditions including trending, ranging, and volatile periods",
+                session_context="Primary focus on NY1 session (9:30-12:00 EST)",
+                
+                # Will be calculated after adding trades
+                total_trades=0,
+                winning_trades=0,
+                losing_trades=0,
+                total_pnl=0.0,
+                total_pnl_ticks=0.0
+            )
+            
+            db.session.add(backtest)
+            db.session.flush()  # Get the ID
+            created_backtests.append(backtest)
+            
+            # Generate 1000 trades for this backtest
+            print(f"    🔄 Generating 1000 trades...")
+            
+            # Trade generation parameters based on model characteristics
+            model_params = self._get_model_backtest_params(model.name)
+            
+            model_trades = []
+            current_date = start_date
+            
+            trades_generated = 0
+            while trades_generated < 1000 and current_date <= end_date:
+                # Skip weekends
+                if current_date.weekday() >= 5:
+                    current_date += timedelta(days=1)
+                    continue
+                
+                # Generate 1-3 trades per day (randomly)
+                trades_per_day = random.choices([0, 1, 2, 3], weights=[0.3, 0.4, 0.2, 0.1])[0]
+                
+                for _ in range(min(trades_per_day, 1000 - trades_generated)):
+                    if trades_generated >= 1000:
+                        break
+                        
+                    trade = self._generate_backtest_trade(
+                        backtest=backtest,
+                        trade_date=current_date,
+                        instrument=es_instrument,
+                        model_params=model_params
+                    )
+                    
+                    model_trades.append(trade)
+                    trades_generated += 1
+                
+                current_date += timedelta(days=1)
+            
+            # Add all trades to session
+            for trade in model_trades:
+                db.session.add(trade)
+                created_trades.append(trade)
+            
+            # Calculate backtest performance metrics
+            self._calculate_backtest_metrics(backtest, model_trades)
+            
+            print(f"    ✅ Created backtest with {len(model_trades)} trades")
+        
+        # Commit all backtesting data
+        try:
+            db.session.commit()
+            print(f"\n✅ Successfully created {len(created_backtests)} backtests with {len(created_trades)} total trades")
+            
+            # Print summary statistics
+            for backtest in created_backtests:
+                print(f"   📊 {backtest.name[:50]}...")
+                print(f"      Trades: {backtest.total_trades} | Win Rate: {backtest.win_percentage:.1f}% | "
+                      f"P&L: ${backtest.total_pnl:,.2f} | PF: {backtest.profit_factor:.2f}")
+                
+        except Exception as e:
+            db.session.rollback()
+            print(f"❌ Error creating backtesting data: {e}")
+            raise
+
+    def _get_model_backtest_params(self, model_name):
+        """Get backtest parameters specific to each trading model."""
+        params = {
+            '0930 Opening Range': {
+                'win_rate': 0.68,
+                'avg_winner': 1.8,
+                'avg_loser': -0.9,
+                'session_times': [(9, 30), (9, 45)],  # 9:30-9:45 AM
+                'typical_duration': (5, 15),  # 5-15 minutes
+                'primary_sessions': ['NY1'],
+                'market_conditions': ['trending', 'breakout', 'high_volume']
+            },
+            'HOD/LOD Reversal': {
+                'win_rate': 0.62,
+                'avg_winner': 2.2,
+                'avg_loser': -1.0,
+                'session_times': [(10, 0), (15, 30)],  # Throughout the day
+                'typical_duration': (10, 45),  # 10-45 minutes
+                'primary_sessions': ['NY1', 'NY2'],
+                'market_conditions': ['ranging', 'reversal', 'overextended']
+            },
+            'Captain Backtest': {
+                'win_rate': 0.55,
+                'avg_winner': 3.2,
+                'avg_loser': -1.1,
+                'session_times': [(9, 30), (16, 0)],  # Full day
+                'typical_duration': (20, 120),  # 20-120 minutes
+                'primary_sessions': ['NY1', 'NY2'],
+                'market_conditions': ['trending', 'momentum', 'breakout']
+            },
+            'P12 Scenario-Based': {
+                'win_rate': 0.70,
+                'avg_winner': 1.5,
+                'avg_loser': -0.8,
+                'session_times': [(9, 30), (12, 0)],  # NY1 session
+                'typical_duration': (8, 25),  # 8-25 minutes
+                'primary_sessions': ['NY1'],
+                'market_conditions': ['p12_setup', 'statistical', 'high_probability']
+            },
+            'Quarterly Theory & 05 Boxes': {
+                'win_rate': 0.64,
+                'avg_winner': 2.0,
+                'avg_loser': -0.9,
+                'session_times': [(9, 0), (16, 0)],  # Extended hours
+                'typical_duration': (15, 60),  # 15-60 minutes
+                'primary_sessions': ['NY1', 'NY2'],
+                'market_conditions': ['quarterly_levels', 'precision', 'institutional']
+            },
+            'Midnight Open Retracement': {
+                'win_rate': 0.66,
+                'avg_winner': 1.7,
+                'avg_loser': -0.85,
+                'session_times': [(0, 0), (2, 0), (9, 30), (11, 0)],  # Midnight and morning
+                'typical_duration': (10, 30),  # 10-30 minutes
+                'primary_sessions': ['Asia', 'NY1'],
+                'market_conditions': ['retracement', 'overnight', 'statistical']
+            }
+        }
+        
+        # Default parameters for unknown models
+        default_params = {
+            'win_rate': 0.60,
+            'avg_winner': 2.0,
+            'avg_loser': -1.0,
+            'session_times': [(9, 30), (16, 0)],
+            'typical_duration': (10, 45),
+            'primary_sessions': ['NY1', 'NY2'],
+            'market_conditions': ['mixed', 'general']
+        }
+        
+        return params.get(model_name, default_params)
+
+    def _generate_backtest_trade(self, backtest, trade_date, instrument, model_params):
+        """Generate a single realistic backtest trade."""
+        from app.models import BacktestTrade, BacktestExitReason
+        
+        # Determine trade outcome based on model win rate
+        outcome_rand = random.random()
+        if outcome_rand < model_params['win_rate']:
+            outcome = 'win'
+            r_multiple = random.uniform(0.5, model_params['avg_winner'])
+        else:
+            outcome = 'loss'
+            r_multiple = random.uniform(model_params['avg_loser'], -0.2)
+        
+        # Generate realistic trade timing
+        session_times = model_params['session_times']
+        if len(session_times) >= 2:
+            start_hour, start_min = session_times[0]
+            end_hour, end_min = session_times[1]
+        else:
+            start_hour, start_min = 9, 30
+            end_hour, end_min = 16, 0
+            
+        # Random entry time within session
+        entry_hour = random.randint(start_hour, min(end_hour, 15))
+        entry_minute = random.randint(0 if entry_hour > start_hour else start_min, 
+                                     59 if entry_hour < end_hour else end_min)
+        entry_time = time(entry_hour, entry_minute)
+        
+        # Trade duration
+        min_duration, max_duration = model_params['typical_duration']
+        duration = random.randint(min_duration, max_duration)
+        
+        # Calculate exit time
+        entry_dt = datetime.combine(trade_date, entry_time)
+        exit_dt = entry_dt + timedelta(minutes=duration)
+        exit_time = exit_dt.time()
+        
+        # Generate realistic ES prices (around 4400-4600 range)
+        base_price = random.uniform(4400, 4600)
+        entry_price = round(base_price + random.uniform(-20, 20), 2)
+        
+        # Direction
+        direction = random.choice(['LONG', 'SHORT'])
+        
+        # Calculate stop loss and take profit
+        tick_value = 0.25  # ES tick size
+        stop_distance_ticks = random.randint(8, 20)  # 8-20 ticks stop
+        target_distance_ticks = random.randint(12, 40)  # 12-40 ticks target
+        
+        if direction == 'LONG':
+            stop_loss = entry_price - (stop_distance_ticks * tick_value)
+            take_profit = entry_price + (target_distance_ticks * tick_value)
+            if outcome == 'win':
+                exit_price = entry_price + (abs(r_multiple) * stop_distance_ticks * tick_value)
+            else:
+                exit_price = entry_price + (r_multiple * stop_distance_ticks * tick_value)
+        else:
+            stop_loss = entry_price + (stop_distance_ticks * tick_value)
+            take_profit = entry_price - (target_distance_ticks * tick_value)
+            if outcome == 'win':
+                exit_price = entry_price - (abs(r_multiple) * stop_distance_ticks * tick_value)
+            else:
+                exit_price = entry_price - (r_multiple * stop_distance_ticks * tick_value)
+        
+        exit_price = round(exit_price, 2)
+        
+        # Calculate P&L
+        if direction == 'LONG':
+            pnl_ticks = (exit_price - entry_price) / tick_value
+        else:
+            pnl_ticks = (entry_price - exit_price) / tick_value
+            
+        pnl_dollars = pnl_ticks * 12.50  # ES point value
+        
+        # Generate MAE/MFE
+        mae_ticks = random.uniform(1, stop_distance_ticks * 0.8)
+        if outcome == 'win':
+            mfe_ticks = abs(pnl_ticks) + random.uniform(0, 5)
+        else:
+            mfe_ticks = random.uniform(0, stop_distance_ticks * 0.3)
+        
+        # Exit reason
+        if outcome == 'win':
+            exit_reason = random.choice([
+                BacktestExitReason.TAKE_PROFIT,
+                BacktestExitReason.PARTIAL_PROFIT,
+                BacktestExitReason.TRAILING_STOP
+            ])
+        else:
+            exit_reason = random.choice([
+                BacktestExitReason.STOP_LOSS,
+                BacktestExitReason.TIME_EXIT,
+                BacktestExitReason.MANUAL_EXIT
+            ])
+        
+        # Session context and market conditions
+        session_context = random.choice(model_params['primary_sessions'])
+        market_condition = random.choice(model_params['market_conditions'])
+        
+        # Create the trade
+        trade = BacktestTrade(
+            backtest_id=backtest.id,
+            trade_date=trade_date,
+            trade_time=entry_time,
+            instrument=instrument.symbol,
+            direction=direction.lower(),
+            quantity=1,
+            entry_price=entry_price,
+            exit_price=exit_price,
+            stop_loss_price=round(stop_loss, 2),
+            take_profit_price=round(take_profit, 2),
+            profit_loss=round(pnl_dollars, 2),
+            profit_loss_ticks=round(pnl_ticks, 1),
+            mae_ticks=round(-abs(mae_ticks), 1),  # MAE is negative
+            mfe_ticks=round(mfe_ticks, 1),
+            duration_minutes=duration,
+            actual_exit_reason=exit_reason,
+            exit_time=exit_time,
+            market_conditions=f"{market_condition.replace('_', ' ').title()}, Normal Volume",
+            session_context=session_context,
+            notes=f"Systematic {backtest.trading_model.name} trade. Setup quality: {random.choice(['A+', 'A', 'B+', 'B'])}. "
+                  f"Execution: {random.choice(['Perfect', 'Good', 'Fair'])}.",
+            tags=f"[\"{backtest.trading_model.name.lower().replace(' ', '-')}\", \"{outcome}\", \"{market_condition}\"]",
+            created_at=datetime.combine(trade_date, entry_time) + timedelta(minutes=duration + 5)
+        )
+        
+        return trade
+
+    def _calculate_backtest_metrics(self, backtest, trades):
+        """Calculate and update backtest performance metrics."""
+        if not trades:
+            return
+            
+        total_trades = len(trades)
+        winning_trades = sum(1 for t in trades if t.profit_loss > 0)
+        losing_trades = sum(1 for t in trades if t.profit_loss < 0)
+        breakeven_trades = total_trades - winning_trades - losing_trades
+        
+        total_pnl = sum(t.profit_loss for t in trades)
+        total_pnl_ticks = sum(t.profit_loss_ticks for t in trades)
+        
+        win_percentage = (winning_trades / total_trades * 100) if total_trades > 0 else 0
+        
+        # Calculate profit factor
+        gross_profit = sum(t.profit_loss for t in trades if t.profit_loss > 0)
+        gross_loss = abs(sum(t.profit_loss for t in trades if t.profit_loss < 0))
+        profit_factor = (gross_profit / gross_loss) if gross_loss > 0 else 0
+        
+        # Calculate averages
+        winners = [t.profit_loss for t in trades if t.profit_loss > 0]
+        losers = [t.profit_loss for t in trades if t.profit_loss < 0]
+        
+        avg_win = sum(winners) / len(winners) if winners else 0
+        avg_loss = sum(losers) / len(losers) if losers else 0
+        avg_trade_pnl = total_pnl / total_trades if total_trades > 0 else 0
+        
+        # Calculate max drawdown (simplified)
+        running_pnl = 0
+        peak_pnl = 0
+        max_drawdown = 0
+        
+        for trade in sorted(trades, key=lambda t: (t.trade_date, t.trade_time or time(9, 30))):
+            running_pnl += trade.profit_loss
+            if running_pnl > peak_pnl:
+                peak_pnl = running_pnl
+            drawdown = peak_pnl - running_pnl
+            if drawdown > max_drawdown:
+                max_drawdown = drawdown
+        
+        # Calculate additional metrics
+        largest_win = max(winners) if winners else 0
+        largest_loss = min(losers) if losers else 0
+        
+        # Update backtest object
+        backtest.total_trades = total_trades
+        backtest.winning_trades = winning_trades
+        backtest.losing_trades = losing_trades
+        backtest.win_percentage = round(win_percentage, 2)
+        backtest.total_pnl = round(total_pnl, 2)
+        backtest.total_pnl_ticks = round(total_pnl_ticks, 1)
+        backtest.average_win = round(avg_win, 2)
+        backtest.average_loss = round(avg_loss, 2)
+        backtest.profit_factor = round(profit_factor, 2)
+        backtest.avg_trade_pnl = round(avg_trade_pnl, 2)
+        backtest.max_drawdown = round(-max_drawdown, 2)  # Store as negative
+        backtest.largest_win = round(largest_win, 2)
+        backtest.largest_loss = round(largest_loss, 2)
+        backtest.avg_mae = round(sum(t.mae_ticks for t in trades if t.mae_ticks) / total_trades, 2)
+        backtest.avg_mfe = round(sum(t.mfe_ticks for t in trades if t.mfe_ticks) / total_trades, 2)
+
     def print_comprehensive_statistics(self):
         """Print detailed statistics about the generated data."""
         print("\n" + "=" * 80)
@@ -1759,6 +2156,7 @@ def run_complete_bootstrap():
             manager.create_trade_images()
             manager.create_daily_journals()
             manager.create_weekly_journals()
+            manager.create_backtesting_data()
 
             print("\n🔧 Phase 4: System Activity & Files")
             manager.create_activity_logs()
@@ -1782,10 +2180,36 @@ def run_complete_bootstrap():
     return True
 
 
+def create_backtesting_data_only():
+    """Create only backtesting data - useful for adding backtests to existing database."""
+    print("🧪 Creating Backtesting Data Only...")
+    manager = EnhancedBootstrapManager()
+    
+    try:
+        manager.initialize_app()
+        
+        with manager.app.app_context():
+            manager.create_backtesting_data()
+            print("\n✅ Backtesting data creation completed successfully!")
+            return True
+            
+    except Exception as e:
+        print(f"\n❌ Backtesting data creation failed: {e}")
+        traceback.print_exc()
+        return False
+
+
 if __name__ == '__main__':
-    success = run_complete_bootstrap()
+    import sys
+    
+    # Check if user wants to create only backtesting data
+    if len(sys.argv) > 1 and sys.argv[1] == '--backtesting-only':
+        success = create_backtesting_data_only()
+    else:
+        success = run_complete_bootstrap()
+    
     if not success:
-        print("\n❌ Bootstrap failed. Check the errors above.")
+        print("\n❌ Operation failed. Check the errors above.")
         sys.exit(1)
     else:
-        print("\n✅ Bootstrap completed successfully!")
+        print("\n✅ Operation completed successfully!")

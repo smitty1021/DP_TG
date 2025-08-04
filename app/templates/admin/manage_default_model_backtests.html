@@ -1,0 +1,546 @@
+{% extends "base.html" %}
+{% block title %}Default Model Backtests - Admin{% endblock %}
+
+{% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Executive Header -->
+<div class="executive-header">
+    <div class="enterprise-container-fluid">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="header-content">
+                <h1 class="executive-title">
+                    <i class="fas fa-chart-bar executive-icon"></i>
+                    Default Model Backtests
+                </h1>
+                <div class="executive-subtitle">
+                    Comprehensive Performance Analysis & Testing Results
+                    <span class="status-indicator active">
+                        <i class="fas fa-circle"></i> {{ backtests|length }} Total Backtests
+                    </span>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="exportBacktestsCSV()" title="Export All to CSV">
+                    <i class="fas fa-file-csv"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Data">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.manage_default_trading_models') }}'"
+                        title="Back to Trading Models">
+                    <i class="fas fa-cogs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
+    <!-- Statistics Overview -->
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <div class="enterprise-module mb-3">
+                <div class="module-content mb-3 text-center">
+                    <div class="display-6 fw-bold text-primary">{{ backtests|length }}</div>
+                    <div class="text-muted small">Total Backtests</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="enterprise-module mb-3">
+                <div class="module-content mb-3 text-center">
+                    <div class="display-6 fw-bold text-success">{{ active_backtests|length }}</div>
+                    <div class="text-muted small">Active Tests</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="enterprise-module mb-3">
+                <div class="module-content mb-3 text-center">
+                    <div class="display-6 fw-bold text-info">{{ completed_backtests|length }}</div>
+                    <div class="text-muted small">Completed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="enterprise-module mb-3">
+                <div class="module-content mb-3 text-center">
+                    <div class="display-6 fw-bold text-warning">{{ models_with_backtests|length }}</div>
+                    <div class="text-muted small">Models Tested</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="enterprise-module mb-3">
+        <div class="module-header">
+            <div class="module-title">
+                <i class="fas fa-filter module-icon"></i>
+                Filter & Search Controls
+            </div>
+        </div>
+        <div class="module-content mb-3">
+            <form method="GET" class="d-flex gap-3 align-items-end">
+                <div class="flex-grow-1">
+                    <label for="search" class="form-label small text-muted">Search Backtests</label>
+                    <input type="text" class="form-control" id="search" name="search"
+                           value="{{ request.args.get('search', '') }}"
+                           placeholder="Search by model name, description, or notes...">
+                </div>
+                <div>
+                    <label for="status_filter" class="form-label small text-muted">Status</label>
+                    <select class="form-select" id="status_filter" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
+                        <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="paused" {% if request.args.get('status') == 'paused' %}selected{% endif %}>Paused</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="model_filter" class="form-label small text-muted">Trading Model</label>
+                    <select class="form-select" id="model_filter" name="model_id">
+                        <option value="">All Models</option>
+                        {% for model in all_models %}
+                        <option value="{{ model.id }}" {% if request.args.get('model_id') == model.id|string %}selected{% endif %}>
+                            {{ model.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search me-1"></i>Filter
+                </button>
+                <a href="{{ url_for('admin.manage_default_model_backtests') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i>Clear
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Backtests Table -->
+    <div class="enterprise-module mb-3">
+        <div class="module-header">
+            <div class="module-title">
+                <i class="fas fa-table module-icon"></i>
+                Backtest Results
+            </div>
+            <div class="module-meta">Performance Analysis Overview</div>
+        </div>
+        <div class="module-content mb-3">
+            {% if backtests %}
+                <div style="max-height: 600px; overflow-y: auto;">
+                    <table class="table table-sm table-striped">
+                        <thead class="sticky-top" style="background: white; z-index: 10;">
+                            <tr>
+                                <th class="sortable" data-sort="name">
+                                    <i class="fas fa-sort me-1"></i>Model Name
+                                </th>
+                                <th class="sortable" data-sort="description">
+                                    <i class="fas fa-sort me-1"></i>Description
+                                </th>
+                                <th class="sortable text-center" data-sort="status">
+                                    <i class="fas fa-sort me-1"></i>Status
+                                </th>
+                                <th class="sortable text-center" data-sort="total_trades">
+                                    <i class="fas fa-sort me-1"></i>Trades
+                                </th>
+                                <th class="sortable text-center" data-sort="win_percentage">
+                                    <i class="fas fa-sort me-1"></i>Win %
+                                </th>
+                                <th class="sortable text-center" data-sort="profit_factor">
+                                    <i class="fas fa-sort me-1"></i>PF
+                                </th>
+                                <th class="sortable text-center" data-sort="total_pnl">
+                                    <i class="fas fa-sort me-1"></i>P&L
+                                </th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for backtest in backtests %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            {% if backtest.status.value == 'active' %}
+                                                <div class="status-dot bg-success"></div>
+                                            {% elif backtest.status.value == 'completed' %}
+                                                <div class="status-dot bg-primary"></div>
+                                            {% elif backtest.status.value == 'paused' %}
+                                                <div class="status-dot bg-warning"></div>
+                                            {% else %}
+                                                <div class="status-dot bg-secondary"></div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ backtest.trading_model.name }}</div>
+                                            <div class="text-muted small">{{ backtest.date_range_start.strftime('%m/%d/%Y') if backtest.date_range_start }} - {{ backtest.date_range_end.strftime('%m/%d/%Y') if backtest.date_range_end }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 200px;" title="{{ backtest.description or 'No description' }}">
+                                        {{ backtest.description or 'No description' }}
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    {% if backtest.status.value == 'active' %}
+                                        <span class="badge bg-success">{{ backtest.status.value.title() }}</span>
+                                    {% elif backtest.status.value == 'completed' %}
+                                        <span class="badge bg-primary">{{ backtest.status.value.title() }}</span>
+                                    {% elif backtest.status.value == 'paused' %}
+                                        <span class="badge bg-warning">{{ backtest.status.value.title() }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ backtest.status.value.title() }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="fw-semibold">{{ backtest.total_trades or 0 }}</span>
+                                </td>
+                                <td class="text-center">
+                                    {% if backtest.win_percentage is not none %}
+                                        <span class="fw-semibold {% if backtest.win_percentage >= 50 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ "%.1f".format(backtest.win_percentage) }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if backtest.profit_factor is not none %}
+                                        <span class="fw-semibold {% if backtest.profit_factor >= 1.0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ "%.2f".format(backtest.profit_factor) }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if backtest.total_pnl is not none %}
+                                        <span class="fw-semibold {% if backtest.total_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                            ${{ "{:,.2f}".format(backtest.total_pnl) }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">$0.00</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('admin.view_backtest', backtest_id=backtest.id) }}"
+                                           class="btn btn-outline-primary btn-sm"
+                                           title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('admin.edit_backtest', backtest_id=backtest.id) }}"
+                                           class="btn btn-outline-secondary btn-sm"
+                                           title="Edit Backtest">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button"
+                                                class="btn btn-outline-danger btn-sm"
+                                                onclick="confirmDeleteBacktest({{ backtest.id }}, '{{ backtest.trading_model.name }} - {{ backtest.description[:30] }}...')"
+                                                title="Delete Backtest">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-bar fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
+                    <h5 class="text-muted">No Backtests Found</h5>
+                    <p class="text-muted">No backtest results match your current filters.</p>
+                    {% if request.args.get('search') or request.args.get('status') or request.args.get('model_id') %}
+                        <a href="{{ url_for('admin.manage_default_model_backtests') }}" class="btn btn-primary">
+                            <i class="fas fa-times me-1"></i>Clear Filters
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="enterprise-module mb-3">
+        <div class="module-header">
+            <div class="module-title">
+                <i class="fas fa-bolt module-icon"></i>
+                Quick Actions
+            </div>
+        </div>
+        <div class="module-content mb-3">
+            <div class="operation-list">
+                {% for model in all_models %}
+                <a href="{{ url_for('admin.create_default_model_backtest', model_id=model.id) }}"
+                   class="operation-item">
+                    <div class="operation-icon">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">
+                            Create {{ model.name }} Backtest
+                        </div>
+                        <div class="text-muted" style="font-size: 0.8rem;">
+                            Start new performance analysis for {{ model.name }}
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// =====================================
+// TABLE SORTING
+// =====================================
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.querySelector('table');
+    if (!table) return;
+
+    const headers = table.querySelectorAll('th.sortable');
+    headers.forEach(header => {
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', function() {
+            const sortKey = this.getAttribute('data-sort');
+            sortTable(table, sortKey);
+        });
+    });
+});
+
+function sortTable(table, sortKey) {
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    rows.sort((a, b) => {
+        let aVal, bVal;
+        
+        switch(sortKey) {
+            case 'name':
+                aVal = a.cells[0].textContent.trim().toLowerCase();
+                bVal = b.cells[0].textContent.trim().toLowerCase();
+                break;
+            case 'description':
+                aVal = a.cells[1].textContent.trim().toLowerCase();
+                bVal = b.cells[1].textContent.trim().toLowerCase();
+                break;
+            case 'status':
+                aVal = a.cells[2].textContent.trim().toLowerCase();
+                bVal = b.cells[2].textContent.trim().toLowerCase();
+                break;
+            case 'total_trades':
+                aVal = parseInt(a.cells[3].textContent.trim()) || 0;
+                bVal = parseInt(b.cells[3].textContent.trim()) || 0;
+                return bVal - aVal; // Descending for numbers
+            case 'win_percentage':
+                aVal = parseFloat(a.cells[4].textContent.replace('%', '')) || 0;
+                bVal = parseFloat(b.cells[4].textContent.replace('%', '')) || 0;
+                return bVal - aVal; // Descending for percentages
+            case 'profit_factor':
+                aVal = parseFloat(a.cells[5].textContent.trim()) || 0;
+                bVal = parseFloat(b.cells[5].textContent.trim()) || 0;
+                return bVal - aVal; // Descending for ratios
+            case 'total_pnl':
+                aVal = parseFloat(a.cells[6].textContent.replace(/[$,]/g, '')) || 0;
+                bVal = parseFloat(b.cells[6].textContent.replace(/[$,]/g, '')) || 0;
+                return bVal - aVal; // Descending for P&L
+            default:
+                aVal = a.cells[0].textContent.trim().toLowerCase();
+                bVal = b.cells[0].textContent.trim().toLowerCase();
+        }
+        
+        if (typeof aVal === 'string') {
+            return aVal.localeCompare(bVal);
+        }
+        return aVal - bVal;
+    });
+    
+    // Clear and re-append sorted rows
+    tbody.innerHTML = '';
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// =====================================
+// EXPORT FUNCTIONS
+// =====================================
+function exportBacktestsCSV() {
+    const exportBtn = document.querySelector('button[onclick="exportBacktestsCSV()"]');
+    const originalHtml = exportBtn.innerHTML;
+    
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    exportBtn.disabled = true;
+    
+    fetch('/admin/backtests/export-csv', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        } else {
+            throw new Error('CSV export failed');
+        }
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `Default_Model_Backtests_Export_${new Date().toISOString().split('T')[0].replace(/-/g, '')}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        showSuccess('Backtests exported to CSV successfully.', 'CSV Export Complete');
+    })
+    .catch(error => {
+        console.error('CSV Export error:', error);
+        showErrorMessage('CSV export failed. Please try again.');
+    })
+    .finally(() => {
+        exportBtn.innerHTML = originalHtml;
+        exportBtn.disabled = false;
+    });
+}
+
+// =====================================
+// DELETE FUNCTIONS
+// =====================================
+function confirmDeleteBacktest(backtestId, backtestName) {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: 'Delete Backtest',
+            message: `Confirm deletion of backtest:<br><br><strong>"${backtestName}"</strong><br><br><div class="alert alert-danger mt-2"><i class="fas fa-exclamation-triangle me-2"></i><strong>Warning:</strong> This action cannot be undone. All associated trades and data will be permanently deleted.</div>`,
+            confirmText: 'Delete Backtest',
+            cancelText: 'Cancel',
+            confirmClass: 'btn-danger',
+            icon: 'exclamation-triangle',
+            onConfirm: function() {
+                performDeleteBacktest(backtestId);
+            }
+        });
+    } else {
+        if (confirm(`Confirm deletion of backtest: "${backtestName}"?\n\nThis action cannot be undone.`)) {
+            performDeleteBacktest(backtestId);
+        }
+    }
+}
+
+function performDeleteBacktest(backtestId) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/admin/backtests/' + backtestId + '/delete';
+
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = getCSRFToken();
+    form.appendChild(csrfInput);
+
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// =====================================
+// UTILITY FUNCTIONS
+// =====================================
+function getCSRFToken() {
+    let csrfToken = null;
+
+    const directInput = document.getElementById('js-csrf-token');
+    if (directInput && directInput.value) {
+        csrfToken = directInput.value;
+    }
+
+    if (!csrfToken) {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag && metaTag.getAttribute('content')) {
+            csrfToken = metaTag.getAttribute('content');
+        }
+    }
+
+    if (!csrfToken) {
+        const hiddenInput = document.querySelector('input[name="csrf_token"]');
+        if (hiddenInput && hiddenInput.value) {
+            csrfToken = hiddenInput.value;
+        }
+    }
+
+    return csrfToken;
+}
+
+function showErrorMessage(message) {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: 'Error',
+            message: message,
+            confirmText: 'OK',
+            confirmClass: 'btn-danger',
+            icon: 'exclamation-triangle',
+            showCancel: false,
+            onConfirm: function() {}
+        });
+    } else {
+        alert(message);
+    }
+}
+
+function showSuccess(message, title = 'Success') {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: title,
+            message: message,
+            confirmText: 'OK',
+            confirmClass: 'btn-success',
+            icon: 'check-circle',
+            showCancel: false,
+            onConfirm: function() {}
+        });
+    } else {
+        alert(message);
+    }
+}
+
+// Add status dot styles
+const style = document.createElement('style');
+style.textContent = `
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.25rem;
+}
+`;
+document.head.appendChild(style);
+</script>
+
+{% endblock %}

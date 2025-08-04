@@ -20,9 +20,11 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.utils import admin_required, record_activity, generate_token, send_email, smart_flash
 from datetime import datetime
+import os
 from app.forms import TradingModelForm
-from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel, P12Scenario, DiscordRolePermission, GlobalImage
+from app.models import User, UserRole, Activity, Instrument, Tag, TagCategory, TradingModel, P12Scenario, DiscordRolePermission, GlobalImage, Backtest, BacktestTrade, BacktestStatus, BacktestExitReason
 from app.utils.image_manager import ImageManager
+from app.forms import BacktestForm, BacktestTradeForm, BacktestFilterForm
 admin_bp = Blueprint('admin', __name__,
                      template_folder='../templates/admin',
                      url_prefix='/admin')
@@ -106,7 +108,7 @@ def edit_default_trading_model(model_id):
         entity_id=model.id
     ).order_by(GlobalImage.upload_date.desc()).all()
 
-    return render_template('admin/edit_default_trading_model.html',
+    return render_template('admin/create_default_trading_model.html',
                            title=f'Edit Default Model: {model.name}',
                            form=form, model=model, existing_images=existing_images)
 
@@ -268,6 +270,48 @@ def toggle_default_trading_model_status(model_id):
         flash(f"Error updating status: {str(e)}", 'danger')
 
     return redirect(url_for('admin.manage_default_trading_models'))
+
+
+@admin_bp.route('/delete-image/<int:image_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_image(image_id):
+    """Delete a GlobalImage and its associated file."""
+    try:
+        image = GlobalImage.query.get_or_404(image_id)
+        
+        # Check if user has permission (admin or owner)
+        if current_user.role != UserRole.ADMIN and image.user_id != current_user.id:
+            return jsonify({'success': False, 'message': 'Permission denied'}), 403
+        
+        # Store filename for response
+        filename = image.original_filename
+        
+        # Delete the physical file
+        try:
+            file_path = os.path.join(current_app.instance_path, image.relative_path)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as file_error:
+            current_app.logger.warning(f"Could not delete physical file {image.relative_path}: {file_error}")
+        
+        # Delete from database
+        db.session.delete(image)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Image "{filename}" deleted successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting image {image_id}: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'message': 'Error deleting image'
+        }), 500
+
 
 @admin_bp.route('/default-tags/create', methods=['POST'])
 @login_required
@@ -2498,3 +2542,300 @@ def backup_system_data():
     except Exception as e:
         flash(f'Error creating system backup: {str(e)}', 'danger')
         return redirect(url_for('admin_bp.show_admin_dashboard'))
+
+
+# =============================================================================
+# BACKTESTING ROUTES FOR DEFAULT MODELS
+# =============================================================================
+
+@admin_bp.route('/default-models/backtest')
+@login_required
+@admin_required
+def manage_default_model_backtests():
+    """Admin page to manage all default model backtests"""
+    # Get filter parameters
+    filter_form = BacktestFilterForm()
+    
+    # Populate trading model choices with default models only
+    default_models = TradingModel.query.filter_by(is_default=True).all()
+    filter_form.trading_model_id.choices = [('', 'All Models')] + [(m.id, m.name) for m in default_models]
+    
+    # Build query for default model backtests only
+    query = Backtest.query.join(TradingModel).filter(TradingModel.is_default == True)
+    
+    # Apply filters
+    if request.args.get('search'):
+        search_term = f"%{request.args.get('search')}%"
+        query = query.filter(db.or_(
+            Backtest.name.ilike(search_term),
+            Backtest.description.ilike(search_term)
+        ))
+    
+    if request.args.get('trading_model_id'):
+        query = query.filter(Backtest.trading_model_id == request.args.get('trading_model_id'))
+    
+    if request.args.get('status'):
+        query = query.filter(Backtest.status == request.args.get('status'))
+    
+    if request.args.get('start_date'):
+        query = query.filter(Backtest.start_date >= datetime.strptime(request.args.get('start_date'), '%Y-%m-%d').date())
+    
+    if request.args.get('end_date'):
+        query = query.filter(Backtest.end_date <= datetime.strptime(request.args.get('end_date'), '%Y-%m-%d').date())
+    
+    # Order and paginate
+    backtests = query.order_by(Backtest.created_at.desc()).all()
+    
+    return render_template('admin/manage_default_model_backtests.html',
+                           title='Default Model Backtesting',
+                           backtests=backtests,
+                           filter_form=filter_form)
+
+
+@admin_bp.route('/default-models/<int:model_id>/backtests')
+@login_required  
+@admin_required
+def view_model_backtests(model_id):
+    """View all backtests for a specific default trading model"""
+    model = TradingModel.query.get_or_404(model_id)
+    if not model.is_default:
+        flash('This is not a default model.', 'warning')
+        return redirect(url_for('admin.manage_default_trading_models'))
+    
+    backtests = Backtest.query.filter_by(trading_model_id=model_id).order_by(Backtest.created_at.desc()).all()
+    
+    return render_template('admin/view_model_backtests.html',
+                           title=f'Backtests for {model.name}',
+                           model=model,
+                           backtests=backtests)
+
+
+@admin_bp.route('/default-models/<int:model_id>/backtests/create', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def create_default_model_backtest(model_id):
+    """Create a new backtest for a default trading model"""
+    model = TradingModel.query.get_or_404(model_id)
+    if not model.is_default:
+        flash('This is not a default model.', 'warning')
+        return redirect(url_for('admin.manage_default_trading_models'))
+    
+    form = BacktestForm()
+    
+    # Set the trading model (pre-selected and hidden)
+    form.trading_model_id.choices = [(model.id, model.name)]
+    form.trading_model_id.data = model.id
+    
+    if form.validate_on_submit():
+        backtest = Backtest(
+            name=form.name.data,
+            description=form.description.data,
+            trading_model_id=model.id,
+            user_id=current_user.id,
+            start_date=form.start_date.data,
+            end_date=form.end_date.data,
+            market_conditions=form.market_conditions.data,
+            session_context=form.session_context.data,
+            specific_rules_used=form.specific_rules_used.data,
+            entry_rules=form.entry_rules.data,
+            exit_rules=form.exit_rules.data,
+            trade_management_applied=form.trade_management_applied.data,
+            risk_settings=form.risk_settings.data,
+            tradingview_screenshot_links=form.tradingview_screenshot_links.data,
+            chart_screenshots=form.chart_screenshots.data,
+            notes=form.notes.data,
+            status=BacktestStatus.DRAFT
+        )
+        
+        try:
+            db.session.add(backtest)
+            db.session.commit()
+            flash(f'Backtest "{backtest.name}" created successfully!', 'success')
+            return redirect(url_for('admin.view_backtest', backtest_id=backtest.id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating backtest: {str(e)}', 'danger')
+    
+    return render_template('admin/create_default_model_backtest.html',
+                           title=f'Create Backtest for {model.name}',
+                           form=form,
+                           model=model)
+
+
+@admin_bp.route('/backtests/<int:backtest_id>')
+@login_required
+@admin_required
+def view_backtest(backtest_id):
+    """View a specific backtest with all its trades and analytics"""
+    backtest = Backtest.query.get_or_404(backtest_id)
+    
+    # Verify it's a default model backtest
+    if not backtest.trading_model.is_default:
+        flash('Access denied: This is not a default model backtest.', 'warning')
+        return redirect(url_for('admin.manage_default_model_backtests'))
+    
+    # Get all trades for this backtest
+    trades = BacktestTrade.query.filter_by(backtest_id=backtest_id).order_by(BacktestTrade.trade_date, BacktestTrade.trade_time).all()
+    
+    # Calculate performance metrics if not up to date
+    backtest.calculate_performance_metrics()
+    db.session.commit()
+    
+    return render_template('admin/view_backtest.html',
+                           title=f'Backtest: {backtest.name}',
+                           backtest=backtest,
+                           trades=trades)
+
+
+@admin_bp.route('/backtests/<int:backtest_id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_backtest(backtest_id):
+    """Edit a backtest"""
+    backtest = Backtest.query.get_or_404(backtest_id)
+    
+    # Verify it's a default model backtest
+    if not backtest.trading_model.is_default:
+        flash('Access denied: This is not a default model backtest.', 'warning')
+        return redirect(url_for('admin.manage_default_model_backtests'))
+    
+    form = BacktestForm(obj=backtest)
+    
+    # Set trading model choices
+    form.trading_model_id.choices = [(backtest.trading_model.id, backtest.trading_model.name)]
+    
+    if form.validate_on_submit():
+        form.populate_obj(backtest)
+        
+        try:
+            db.session.commit()
+            flash(f'Backtest "{backtest.name}" updated successfully!', 'success')
+            return redirect(url_for('admin.view_backtest', backtest_id=backtest.id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating backtest: {str(e)}', 'danger')
+    
+    return render_template('admin/edit_backtest.html',
+                           title=f'Edit Backtest: {backtest.name}',
+                           form=form,
+                           backtest=backtest)
+
+
+@admin_bp.route('/backtests/<int:backtest_id>/trades/add', methods=['GET', 'POST'])
+@login_required
+@admin_required  
+def add_backtest_trade(backtest_id):
+    """Add a new trade to a backtest"""
+    backtest = Backtest.query.get_or_404(backtest_id)
+    
+    # Verify it's a default model backtest
+    if not backtest.trading_model.is_default:
+        flash('Access denied: This is not a default model backtest.', 'warning')
+        return redirect(url_for('admin.manage_default_model_backtests'))
+    
+    form = BacktestTradeForm()
+    
+    if form.validate_on_submit():
+        trade = BacktestTrade(
+            backtest_id=backtest_id,
+            trade_date=form.trade_date.data,
+            trade_time=form.trade_time.data,
+            instrument=form.instrument.data,
+            direction=form.direction.data,
+            quantity=form.quantity.data,
+            entry_price=form.entry_price.data,
+            exit_price=form.exit_price.data,
+            stop_loss_price=form.stop_loss_price.data,
+            take_profit_price=form.take_profit_price.data,
+            profit_loss=form.profit_loss.data,
+            profit_loss_ticks=form.profit_loss_ticks.data,
+            mae_ticks=form.mae_ticks.data,
+            mfe_ticks=form.mfe_ticks.data,
+            duration_minutes=form.duration_minutes.data,
+            actual_exit_reason=form.actual_exit_reason.data,
+            exit_time=form.exit_time.data,
+            market_conditions=form.market_conditions.data,
+            session_context=form.session_context.data,
+            notes=form.notes.data,
+            tags=form.tags.data,
+            tradingview_screenshot_links=form.tradingview_screenshot_links.data,
+            chart_screenshots=form.chart_screenshots.data
+        )
+        
+        try:
+            db.session.add(trade)
+            db.session.commit()
+            
+            # Recalculate backtest performance metrics
+            backtest.calculate_performance_metrics()
+            db.session.commit()
+            
+            flash('Trade added successfully!', 'success')
+            return redirect(url_for('admin.view_backtest', backtest_id=backtest_id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding trade: {str(e)}', 'danger')
+    
+    return render_template('admin/add_backtest_trade.html',
+                           title=f'Add Trade to {backtest.name}',
+                           form=form,
+                           backtest=backtest)
+
+
+@admin_bp.route('/backtests/<int:backtest_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_backtest(backtest_id):
+    """Delete a backtest and all its trades"""
+    backtest = Backtest.query.get_or_404(backtest_id)
+    
+    # Verify it's a default model backtest
+    if not backtest.trading_model.is_default:
+        flash('Access denied: This is not a default model backtest.', 'warning')
+        return redirect(url_for('admin.manage_default_model_backtests'))
+    
+    try:
+        backtest_name = backtest.name
+        db.session.delete(backtest)  # Cascade will delete all trades
+        db.session.commit()
+        
+        flash(f'Backtest "{backtest_name}" and all its trades have been deleted.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting backtest: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin.manage_default_model_backtests'))
+
+
+@admin_bp.route('/backtests/<int:backtest_id>/trades/<int:trade_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_backtest_trade(backtest_id, trade_id):
+    """Delete a specific trade from a backtest"""
+    backtest = Backtest.query.get_or_404(backtest_id)
+    trade = BacktestTrade.query.get_or_404(trade_id)
+    
+    # Verify it's a default model backtest
+    if not backtest.trading_model.is_default:
+        flash('Access denied: This is not a default model backtest.', 'warning')
+        return redirect(url_for('admin.manage_default_model_backtests'))
+    
+    # Verify trade belongs to this backtest
+    if trade.backtest_id != backtest_id:
+        flash('Invalid trade for this backtest.', 'danger')
+        return redirect(url_for('admin.view_backtest', backtest_id=backtest_id))
+    
+    try:
+        db.session.delete(trade)  # Cascade will delete entries/exits
+        db.session.commit()
+        
+        # Recalculate backtest performance metrics
+        backtest.calculate_performance_metrics()
+        db.session.commit()
+        
+        flash('Trade deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting trade: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin.view_backtest', backtest_id=backtest_id))

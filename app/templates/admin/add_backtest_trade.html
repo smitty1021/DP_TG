@@ -1,0 +1,534 @@
+{% extends "base.html" %}
+{% block title %}Add Trade - {{ backtest.trading_model.name }} Backtest{% endblock %}
+
+{% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+<script src="{{ url_for('static', filename='js/unsaved-changes.js') }}"></script>
+
+<style>
+.strategy-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.strategy-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.card-header-custom {
+    background: linear-gradient(135deg, var(--enterprise-primary) 0%, #0056b3 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 1rem 1.5rem;
+    border: none;
+}
+
+.card-header-custom h5 {
+    margin: 0;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-label-custom {
+    font-weight: 600;
+    color: var(--enterprise-text-primary);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.entry-exit-section {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    background: rgba(248, 249, 250, 0.5);
+    transition: all 0.3s ease;
+}
+
+.entry-exit-section:hover {
+    border-color: var(--enterprise-primary);
+    background: rgba(0, 123, 255, 0.05);
+}
+
+.add-entry-exit-btn {
+    border: 2px dashed #6c757d;
+    background: transparent;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    color: #6c757d;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.add-entry-exit-btn:hover {
+    border-color: var(--enterprise-primary);
+    color: var(--enterprise-primary);
+    background: rgba(0, 123, 255, 0.05);
+}
+
+.remove-entry-exit {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.remove-entry-exit:hover {
+    background: rgba(220, 53, 69, 1);
+    transform: scale(1.1);
+}
+
+.textarea-3 { min-height: 100px; }
+.textarea-4 { min-height: 120px; }
+.textarea-5 { min-height: 150px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Executive Header -->
+<div class="executive-header">
+    <div class="enterprise-container-fluid">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="header-content">
+                <h1 class="executive-title">
+                    <i class="fas fa-plus-circle executive-icon"></i>
+                    Add Trade
+                </h1>
+                <div class="executive-subtitle">
+                    {{ backtest.trading_model.name }} - {{ backtest.description[:50] }}...
+                    <span class="status-indicator active">
+                        <i class="fas fa-chart-line"></i> Trade Entry Mode
+                    </span>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.view_backtest', backtest_id=backtest.id) }}'"
+                        title="Back to Backtest View">
+                    <i class="fas fa-chart-bar"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();"
+                        title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
+    <form method="POST" id="tradeForm" class="needs-validation" novalidate>
+        {{ form.hidden_tag() }}
+        
+        <div class="grid grid-cols-3 gap-4 align-items-start mt-3">
+            
+            <!-- Column 1: Basic Trade Information -->
+            <div class="col-span-1">
+                <!-- Trade Basics -->
+                <div class="strategy-card mb-3">
+                    <div class="card-header-custom">
+                        <h5><i class="fas fa-info-circle"></i> Trade Information</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.trade_date.label }}</label>
+                                    {{ form.trade_date(class="form-control") }}
+                                    {% if form.trade_date.errors %}
+                                        <div class="text-danger small mt-1">{{ form.trade_date.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.trade_time.label }}</label>
+                                    {{ form.trade_time(class="form-control") }}
+                                    {% if form.trade_time.errors %}
+                                        <div class="text-danger small mt-1">{{ form.trade_time.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.instrument.label }}</label>
+                                    {{ form.instrument(class="form-control", placeholder="e.g., ES, NQ, YM") }}
+                                    {% if form.instrument.errors %}
+                                        <div class="text-danger small mt-1">{{ form.instrument.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.direction.label }}</label>
+                                    {{ form.direction(class="form-select") }}
+                                    {% if form.direction.errors %}
+                                        <div class="text-danger small mt-1">{{ form.direction.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.quantity.label }}</label>
+                                    {{ form.quantity(class="form-control", placeholder="1") }}
+                                    {% if form.quantity.errors %}
+                                        <div class="text-danger small mt-1">{{ form.quantity.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.stop_loss_price.label }}</label>
+                                    {{ form.stop_loss_price(class="form-control", placeholder="4500.00") }}
+                                    {% if form.stop_loss_price.errors %}
+                                        <div class="text-danger small mt-1">{{ form.stop_loss_price.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.take_profit_price.label }}</label>
+                                    {{ form.take_profit_price(class="form-control", placeholder="4600.00") }}
+                                    {% if form.take_profit_price.errors %}
+                                        <div class="text-danger small mt-1">{{ form.take_profit_price.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.mae_ticks.label }}</label>
+                                    {{ form.mae_ticks(class="form-control", placeholder="5") }}
+                                    {% if form.mae_ticks.errors %}
+                                        <div class="text-danger small mt-1">{{ form.mae_ticks.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.mfe_ticks.label }}</label>
+                                    {{ form.mfe_ticks(class="form-control", placeholder="10") }}
+                                    {% if form.mfe_ticks.errors %}
+                                        <div class="text-danger small mt-1">{{ form.mfe_ticks.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.actual_exit_reason.label }}</label>
+                                    {{ form.actual_exit_reason(class="form-select") }}
+                                    {% if form.actual_exit_reason.errors %}
+                                        <div class="text-danger small mt-1">{{ form.actual_exit_reason.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.entry_price.label }}</label>
+                                    {{ form.entry_price(class="form-control", placeholder="4550.00") }}
+                                    {% if form.entry_price.errors %}
+                                        <div class="text-danger small mt-1">{{ form.entry_price.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.exit_price.label }}</label>
+                                    {{ form.exit_price(class="form-control", placeholder="4580.00") }}
+                                    {% if form.exit_price.errors %}
+                                        <div class="text-danger small mt-1">{{ form.exit_price.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.profit_loss.label }}</label>
+                                    {{ form.profit_loss(class="form-control", placeholder="150.00") }}
+                                    {% if form.profit_loss.errors %}
+                                        <div class="text-danger small mt-1">{{ form.profit_loss.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.profit_loss_ticks.label }}</label>
+                                    {{ form.profit_loss_ticks(class="form-control", placeholder="6") }}
+                                    {% if form.profit_loss_ticks.errors %}
+                                        <div class="text-danger small mt-1">{{ form.profit_loss_ticks.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label-custom">{{ form.duration_minutes.label }}</label>
+                                    {{ form.duration_minutes(class="form-control", placeholder="15") }}
+                                    {% if form.duration_minutes.errors %}
+                                        <div class="text-danger small mt-1">{{ form.duration_minutes.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 2: Market Context & Session Info -->
+            <div class="col-span-1">
+                <!-- Market Context -->
+                <div class="strategy-card mb-3">
+                    <div class="card-header-custom">
+                        <h5><i class="fas fa-globe"></i> Market Context</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label-custom">{{ form.session_context.label }}</label>
+                            {{ form.session_context(class="form-select") }}
+                            {% if form.session_context.errors %}
+                                <div class="text-danger small mt-1">{{ form.session_context.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label-custom">{{ form.market_conditions.label }}</label>
+                            {{ form.market_conditions(class="form-control", placeholder="Trending, choppy, news-driven...") }}
+                            {% if form.market_conditions.errors %}
+                                <div class="text-danger small mt-1">{{ form.market_conditions.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label-custom">{{ form.tags.label }}</label>
+                            {{ form.tags(class="form-control", placeholder="setup-quality, execution, session-open") }}
+                            {% if form.tags.errors %}
+                                <div class="text-danger small mt-1">{{ form.tags.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screenshots & Documentation -->
+                <div class="strategy-card mb-3">
+                    <div class="card-header-custom">
+                        <h5><i class="fas fa-camera"></i> Screenshots & Links</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label-custom">{{ form.tradingview_screenshot_links.label }}</label>
+                            {{ form.tradingview_screenshot_links(class="form-control textarea-3", placeholder="https://tradingview.com/chart/...\nOne URL per line") }}
+                            {% if form.tradingview_screenshot_links.errors %}
+                                <div class="text-danger small mt-1">{{ form.tradingview_screenshot_links.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label-custom">{{ form.chart_screenshots.label }}</label>
+                            {{ form.chart_screenshots(class="form-control textarea-3", placeholder="https://imgur.com/...\nOne URL per line") }}
+                            {% if form.chart_screenshots.errors %}
+                                <div class="text-danger small mt-1">{{ form.chart_screenshots.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 3: Notes & Analysis -->
+            <div class="col-span-1">
+                <!-- Trade Notes -->
+                <div class="strategy-card mb-3">
+                    <div class="card-header-custom">
+                        <h5><i class="fas fa-sticky-note"></i> Trade Notes & Analysis</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label-custom">{{ form.notes.label }}</label>
+                            {{ form.notes(class="form-control textarea-6", placeholder="Setup quality, execution notes, lessons learned, what went well, what to improve...") }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger small mt-1">{{ form.notes.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="enterprise-module mb-3 mt-4">
+            <div class="module-content mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Fill in the trade details. P&L calculation will be done automatically if entry/exit prices are provided.
+                    </div>
+                    
+                    <div class="btn-group">
+                        <a href="{{ url_for('admin.view_backtest', backtest_id=backtest.id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="button" class="btn btn-outline-primary" onclick="saveDraft()">
+                            <i class="fas fa-save me-2"></i>Save as Draft
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Add Trade
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+
+// =====================================
+// FORM HANDLING
+// =====================================
+function saveDraft() {
+    const form = document.getElementById('tradeForm');
+    const formData = new FormData(form);
+    formData.set('is_draft', 'true');
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            showSuccess('Trade saved as draft successfully.', 'Draft Saved');
+            setTimeout(() => {
+                window.location.href = '{{ url_for("admin.view_backtest", backtest_id=backtest.id) }}';
+            }, 1500);
+        } else {
+            throw new Error('Save failed');
+        }
+    })
+    .catch(error => {
+        console.error('Save error:', error);
+        showErrorMessage('Failed to save draft. Please try again.');
+    });
+}
+
+// Form validation
+document.getElementById('tradeForm').addEventListener('submit', function(e) {
+    if (!this.checkValidity()) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        showErrorMessage('Please fill in all required fields correctly.');
+    }
+    
+    this.classList.add('was-validated');
+});
+
+// =====================================
+// UTILITY FUNCTIONS
+// =====================================
+function getCSRFToken() {
+    let csrfToken = null;
+
+    const directInput = document.getElementById('js-csrf-token');
+    if (directInput && directInput.value) {
+        csrfToken = directInput.value;
+    }
+
+    if (!csrfToken) {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag && metaTag.getAttribute('content')) {
+            csrfToken = metaTag.getAttribute('content');
+        }
+    }
+
+    return csrfToken;
+}
+
+function showErrorMessage(message) {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: 'Error',
+            message: message,
+            confirmText: 'OK',
+            confirmClass: 'btn-danger',
+            icon: 'exclamation-triangle',
+            showCancel: false,
+            onConfirm: function() {}
+        });
+    } else {
+        alert(message);
+    }
+}
+
+function showSuccess(message, title = 'Success') {
+    if (typeof showCustomConfirmation === 'function') {
+        showCustomConfirmation({
+            title: title,
+            message: message,
+            confirmText: 'OK',
+            confirmClass: 'btn-success',
+            icon: 'check-circle',
+            showCancel: false,
+            onConfirm: function() {}
+        });
+    } else {
+        alert(message);
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof initializeUnsavedChanges === 'function') {
+        initializeUnsavedChanges('tradeForm');
+    }
+    
+    console.log('Add Trade Form initialized');
+});
+</script>
+
+{% endblock %}

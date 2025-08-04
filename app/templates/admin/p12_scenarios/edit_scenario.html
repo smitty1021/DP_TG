@@ -89,17 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     
-    <!-- Action Controls -->
-    <div class="d-flex justify-content-end align-items-center">
-        <div class="btn-group">
-            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Save Configuration" form="scenario-form">
-                <i class="fas fa-save"></i>
-            </button>
-            <a href="{{ url_for('p12_scenarios.list_scenarios') }}" class="btn btn-outline-secondary btn-sm" title="Cancel Configuration">
-                <i class="fas fa-times"></i>
-            </a>
-        </div>
-    </div>
+
 
     <form method="POST" enctype="multipart/form-data" novalidate id="scenario-form">
         {{ form.hidden_tag() }}
@@ -390,7 +380,15 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </form>
 </div>
-
+<!-- Sticky Action Buttons -->
+<div class="sticky-action-buttons">
+    <button type="submit" class="btn btn-outline-success" form="scenario-form">
+        <i class="fas fa-save me-1"></i>Save Configuration
+    </button>
+    <a href="{{ url_for('p12_scenarios.list_scenarios') }}" class="btn btn-outline-warning" title="Cancel Configuration">
+        <i class="fas fa-times me-1"></i>Cancel
+    </a>
+</div>
 <script>
 // Initialize tag selectors after head script runs
 document.addEventListener('DOMContentLoaded', function() {

@@ -1,9 +1,11 @@
 {% extends "base.html" %}
-
 {% block title %}Strategic Model Administration - Trading Models{% endblock %}
 
 {% block head_extra %}
+<!-- Fortune 500 Enterprise CSS Framework -->
+<link rel="stylesheet" href="/static/css/enterprise-all.css">
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 {% endblock %}
@@ -11,175 +13,386 @@
 {% block content %}
 <!-- Executive Header -->
 <div class="executive-header">
-    <div class="d-flex justify-content-between align-items-center">
-        <div class="header-content">
-            <h1 class="executive-title">
-                <i class="fas fa-chart-line executive-icon"></i>
-                Strategic Trading Model Administration
-            </h1>
-            <div class="executive-subtitle">
-                Default Trading Model Configuration & Management Model
+    <div class="enterprise-container-fluid">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="header-content">
+                <h1 class="executive-title">
+                    <i class="fas fa-chart-line executive-icon"></i>
+                    Strategic Trading Model Administration
+                </h1>
+                <div class="executive-subtitle">
+                    Configure and manage default trading models for organizational trading analysis
+                </div>
             </div>
-        </div>
-        <div class="btn-group">
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="window.location.href='{{ url_for('main.index') }}'"
-                    title="Go to Main Dashboard">
-                <i class="fas fa-home"></i>
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="window.location.href='{{ url_for('admin.create_default_trading_model') }}'"
-                    title="New Trading Model Configuration">
-                <i class="fas fa-plus"></i>
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="location.reload()" title="Refresh Data">
-                <i class="fas fa-sync-alt"></i>
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="window.location.href='{{ url_for('admin.show_admin_dashboard') }}'"
-                    title="Back to Administration Center">
-                <i class="fas fa-tachometer-alt"></i>
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="history.back();"
-                    title="Go Back">
-                <i class="fas fa-arrow-left"></i>
-            </button>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.create_default_trading_model') }}'"
+                        title="Create New Trading Model">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="exportModelsPDF()" title="Export to PDF">
+                    <i class="fas fa-file-pdf"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="exportModelsCSV()" title="Export to CSV">
+                    <i class="fas fa-file-csv"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="location.reload()" title="Refresh Data">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="window.location.href='{{ url_for('admin.show_admin_dashboard') }}'"
+                        title="Back to Administration Center">
+                    <i class="fas fa-tachometer-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();"
+                        title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Main Content Grid -->
-<div class="container-fluid" style="background: var(--enterprise-gray-50); padding: 1.5rem; min-height: calc(100vh - 300px);">
-        <div class="row g-4">
-
-
-            <!-- Strategic Model Configuration Module -->
-            <div class="col-12">
-                <div class="enterprise-module fade-in">
-                    <div class="module-header">
-                        <div class="d-flex justify-content-between align-items-center w-100">
-                            <div>
-                                <div class="module-title">
-                                    <i class="fas fa-cogs module-icon"></i>
-                                    Strategic Trading Model Registry
-                                </div>
-                                <div class="module-meta">
-                                    Enterprise Default Trading Model Configuration
-                                </div>
-                            </div>
+<!-- Main Content Wrapper -->
+<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
+    <!-- KPI Cards Section -->
+    <div class="kpi-section mt-3">
+        <div class="grid grid-cols-3 gap-4">
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Total Models</span>
+                            <i class="fas fa-chart-line kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ models|length }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">
+                                <i class="fas fa-cogs"></i> Configured
+                            </span>
                         </div>
                     </div>
-                    <div class="module-content p-0">
-                        {% if models %}
-                        <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
-                            <table class="table table-striped table-hover table-sm mb-0">
-                                <thead class="table-dark sticky-top">
-                                    <tr>
-                                        <th scope="col" class="px-3 py-2">Model Name</th>
-                                        <th scope="col" class="px-3 py-2">Version</th>
-                                        <th scope="col" class="px-3 py-2">Operational Status</th>
-                                        <th scope="col" class="px-3 py-2">Created By</th>
-                                        <th scope="col" class="px-3 py-2">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for model in models %}
-                                    <tr>
-                                        <td class="px-3 py-2">
-                                            <div class="d-flex align-items-center">
+                </div>
+            </div>
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Active Models</span>
+                            <i class="fas fa-check-circle kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ models|selectattr('is_active')|list|length }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator operational">
+                                <i class="fas fa-play"></i> Operational
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Default Models</span>
+                            <i class="fas fa-star kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ models|selectattr('is_default')|list|length }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator neutral">
+                                <i class="fas fa-layer-group"></i> System
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                                                <div>
-                                                    <div class="operation-name">{{ model.name }}</div>
+    <!-- Hidden CSRF Token for JavaScript -->
+    <input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
+
+    <!-- Enterprise Grid Layout for Trading Models -->
+    <div class="grid grid-cols-3 gap-4 align-items-start mt-3">
+        <!-- Trading Models Table -->
+        <div class="col-span-2">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-cogs module-icon"></i>
+                        Strategic Trading Models
+                    </div>
+                    <div class="module-meta">Active Configurations</div>
+                </div>
+                <div class="module-content mb-3">
+                    {% if models %}
+                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                        <table class="table table-striped table-hover table-sm mb-0">
+                            <thead class="table-dark sticky-top">
+                                <tr>
+                                    <th width="60" class="text-center">Type</th>
+                                    <th>Trading Model</th>
+                                    <th width="100" class="text-center">Version</th>
+                                    <th width="100" class="text-center">Image</th>
+                                    <th width="120" class="text-center">Status</th>
+                                    <th width="100" class="text-center">Creator</th>
+                                    <th width="200" class="text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for model in models %}
+                                <tr class="fade-in {% if not model.is_active %}opacity-50{% endif %}">
+                                    <td class="text-center">
+                                        {% if model.is_default %}
+                                            <span class="badge bg-success text-white fw-semibold">SYS</span>
+                                        {% else %}
+                                            <span class="badge bg-primary text-white fw-semibold">USR</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="fw-semibold">
+                                        {{ model.name }}
+                                        {% if model.short_description %}
+                                            <div class="text-muted small">{{ model.short_description[:50] }}{% if model.short_description|length > 50 %}...{% endif %}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="version-badge">
+                                            {{ model.version or 'v1.0' }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="image-status {% if model.image_filename %}has-image{% endif %}" id="model-{{ model.id }}">
+                                            {% if model.image_filename %}
+                                            <div class="image-preview">
+                                                <img src="{{ url_for('static', filename='uploads/models/' + model.image_filename) }}"
+                                                     alt="Trading Model {{ model.name }} Image"
+                                                     class="img-fluid rounded"
+                                                     style="max-width: 40px; max-height: 40px; object-fit: cover; cursor: pointer;"
+                                                     onclick="showImageModal('{{ url_for('static', filename='uploads/models/' + model.image_filename) }}', 'Trading Model: {{ model.name }}')">
+                                            </div>
+                                            {% else %}
+                                            <div class="image-preview">
+                                                <div class="text-muted" style="position: relative;">
+                                                    <i class="fas fa-image" style="font-size: 20px; opacity: 0.3;"></i>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td class="px-3 py-2">
-                                            <span class="version-badge">
-                                                {{ model.version or 'v1.0' }}
-                                            </span>
-                                        </td>
-                                        <td class="px-3 py-2">
-                                            <span class="status-indicator {{ 'active' if model.is_active else 'inactive' }}">
-                                                {{ 'Operational' if model.is_active else 'Inactive' }}
-                                            </span>
-                                        </td>
-                                        <td class="px-3 py-2">
-                                            <div class="user-info">
-                                                <i class="fas fa-user-circle me-2 text-muted"></i>
-                                                {{ model.user.username if model.user else 'System Administrator' }}
-                                            </div>
-                                        </td>
-                                        <td class="px-3 py-2">
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <a href="{{ url_for('admin.view_default_trading_model', model_id=model.id) }}"
-                                                   class="btn btn-outline-secondary btn-sm"
-                                                   title="View Configuration">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-
-                                                <a href="{{ url_for('admin.edit_default_trading_model', model_id=model.id) }}"
-                                                   class="btn btn-outline-secondary btn-sm"
-                                                   title="Modify Configuration">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-
-                                                <button type="button"
-                                                        class="btn btn-outline-secondary btn-sm toggle-status-btn"
-                                                        title="{{ 'Suspend Operations' if model.is_active else 'Activate Operations' }}"
-                                                        data-model-id="{{ model.id }}"
-                                                        data-model-name="{{ model.name }}"
-                                                        data-csrf-token="{{ csrf_token() }}">
-                                                    <i class="fas {{ 'fa-pause' if model.is_active else 'fa-play' }}"></i>
-                                                </button>
-
-                                                <button type="button"
-                                                        class="btn btn-outline-secondary btn-sm delete-btn"
-                                                        title="Remove Configuration"
-                                                        data-model-id="{{ model.id }}"
-                                                        data-model-name="{{ model.name }}"
-                                                        data-csrf-token="{{ csrf_token() }}">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="status-badge {{ 'operational' if model.is_active else 'inactive' }}">
+                                            <i class="fas {{ 'fa-check-circle' if model.is_active else 'fa-times-circle' }} me-1"></i>
+                                            {{ 'OPERATIONAL' if model.is_active else 'STANDBY' }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="text-muted small">
+                                            <i class="fas fa-user-circle me-1"></i>
+                                            {{ model.user.username if model.user else 'System' }}
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    onclick="window.location.href='{{ url_for('admin.view_default_trading_model', model_id=model.id) }}'"
+                                                    title="View Model">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    onclick="window.location.href='{{ url_for('admin.edit_default_trading_model', model_id=model.id) }}'"
+                                                    title="Edit Model">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                                    onclick="window.location.href='{{ url_for('admin.manage_default_model_backtests') }}';"
+                                                    title="Backtesting Analytics">
+                                                <i class="fas fa-chart-bar"></i>
+                                            </button>
+                                            <button type="button"
+                                                    class="btn btn-outline-secondary btn-sm toggle-status-btn"
+                                                    title="{{ 'Suspend Operations' if model.is_active else 'Activate Operations' }}"
+                                                    data-model-id="{{ model.id }}"
+                                                    data-model-name="{{ model.name }}"
+                                                    data-csrf-token="{{ csrf_token() }}">
+                                                <i class="fas {{ 'fa-pause' if model.is_active else 'fa-play' }}"></i>
+                                            </button>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger btn-sm delete-btn"
+                                                    title="Remove Configuration"
+                                                    data-model-id="{{ model.id }}"
+                                                    data-model-name="{{ model.name }}"
+                                                    data-csrf-token="{{ csrf_token() }}">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
                             </table>
                         </div>
-                        {% else %}
-                        <div class="module-content">
-                            <div class="empty-state">
-                                <div class="empty-state-icon">
-                                    <i class="fas fa-chart-line"></i>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-line fa-2x text-muted mb-3" style="opacity: 0.3;"></i>
+                        <p class="text-muted fst-italic">No Strategic Trading Models found matching your criteria.</p>
+                        <a href="{{ url_for('admin.create_default_trading_model') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-2"></i>Create First Trading Model
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Trading Models Overview -->
+        <div class="col-span-1">
+            <div class="enterprise-module">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-bar module-icon"></i>
+                        Model Analytics
+                    </div>
+                    <div class="module-meta">Performance Overview</div>
+                </div>
+                <div class="module-content mb-3">
+                    <div class="operation-list">
+                        <div class="operation-item">
+                            <div class="operation-icon">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">
+                                    Backtesting Analytics
                                 </div>
-                                <div class="empty-state-title">No Strategic Models Configured</div>
-                                <div class="empty-state-description">
-                                    No default trading models have been configured for this system.
-                                    Create your first strategic Model to begin operational trading analysis.
+                                <div class="text-muted" style="font-size: 0.8rem;">
+                                    View comprehensive backtesting results and performance metrics for all trading models
                                 </div>
-                                <div class="empty-state-actions mt-4">
-                                    <a href="{{ url_for('admin.create_default_trading_model') }}"
-                                       class="btn btn-primary">
-                                        <i class="fas fa-plus me-2"></i>
-                                        Create Strategic Model
+                                <div class="mt-2">
+                                    <a href="{{ url_for('admin.manage_default_model_backtests') }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-chart-line me-1"></i>View Analytics
                                     </a>
                                 </div>
                             </div>
                         </div>
-                        {% endif %}
+
+                        <div class="operation-item">
+                            <div class="operation-icon">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">
+                                    Create New Model
+                                </div>
+                                <div class="text-muted" style="font-size: 0.8rem;">
+                                    Design and configure a new strategic trading model
+                                </div>
+                                <div class="mt-2">
+                                    <a href="{{ url_for('admin.create_default_trading_model') }}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus me-1"></i>Create Model
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="operation-item">
+                            <div class="operation-icon">
+                                <i class="fas fa-download"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">
+                                    Export Configuration
+                                </div>
+                                <div class="text-muted" style="font-size: 0.8rem;">
+                                    Export trading model configurations to PDF or CSV format
+                                </div>
+                                <div class="mt-2">
+                                    <div class="btn-group btn-group-sm">
+                                        <button onclick="exportModelsPDF()" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-file-pdf me-1"></i>PDF
+                                        </button>
+                                        <button onclick="exportModelsCSV()" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-file-csv me-1"></i>CSV
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
+
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block scripts_extra %}
 <script>
+// =====================================
+// IMAGE MODAL FUNCTION
+// =====================================
+function showImageModal(imageUrl, title) {
+    const modalHtml = `
+        <div class="modal fade" id="imageViewModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img src="${imageUrl}" alt="${title}" class="img-fluid">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <a href="${imageUrl}" download class="btn btn-primary">
+                            <i class="fas fa-download me-1"></i>Download
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const existingModal = document.getElementById('imageViewModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('imageViewModal'));
+    modal.show();
+}
+
+// =====================================
+// EXPORT FUNCTIONS
+// =====================================
+function exportModelsPDF() {
+    showNotification('Generating PDF export...', 'info', 'Export Processing');
+    // Implement PDF export functionality
+    setTimeout(() => {
+        showNotification('PDF export feature coming soon', 'warning', 'Feature Notice');
+    }, 1000);
+}
+
+function exportModelsCSV() {
+    showNotification('Generating CSV export...', 'info', 'Export Processing');
+    // Implement CSV export functionality
+    setTimeout(() => {
+        showNotification('CSV export feature coming soon', 'warning', 'Feature Notice');
+    }, 1000);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize enterprise animations
     const modules = document.querySelectorAll('.enterprise-module');

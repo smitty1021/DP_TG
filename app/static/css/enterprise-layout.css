@@ -1651,13 +1651,7 @@ html[data-bs-theme="dark"] .content-section {
 ===============================================================================
 */
 
-/* GPU Acceleration */
-.sidebar,
-.content-wrapper,
-.navbar {
-    will-change: transform;
-    transform: translateZ(0);
-}
+
 
 /* Smooth Transitions */
 .sidebar,
