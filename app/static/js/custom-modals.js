@@ -1,11 +1,27 @@
-function showCustomConfirmation(options) {
+function showCustomConfirmation(titleOrOptions, message, confirmClass, icon) {
+    // Support both new object-based syntax and legacy parameter-based syntax
+    let options;
+    
+    if (typeof titleOrOptions === 'object') {
+        // New object-based syntax
+        options = titleOrOptions;
+    } else {
+        // Legacy parameter-based syntax - convert to object
+        options = {
+            title: titleOrOptions || 'Confirm Action',
+            message: message || 'Are you sure?',
+            confirmClass: confirmClass || 'btn-primary',
+            icon: icon || null
+        };
+    }
+    
     const {
         title = 'Confirm Action',
-        message = 'Are you sure?',
+        message: msg = 'Are you sure?',
         confirmText = 'Confirm',
         cancelText = 'Cancel',
-        confirmClass = 'btn-primary',
-        icon = null,
+        confirmClass: btnClass = 'btn-primary',
+        icon: iconName = null,
         iconClass = '',
         onConfirm = null,
         onCancel = null
@@ -15,16 +31,16 @@ function showCustomConfirmation(options) {
     let headerClass = '';
     let modalClass = '';
 
-    if (confirmClass.includes('btn-danger')) {
+    if (btnClass.includes('btn-danger')) {
         headerClass = 'bg-danger text-white';
         modalClass = 'border-danger';
-    } else if (confirmClass.includes('btn-warning')) {
+    } else if (btnClass.includes('btn-warning')) {
         headerClass = 'bg-warning text-dark';
         modalClass = 'border-warning';
-    } else if (confirmClass.includes('btn-success')) {
+    } else if (btnClass.includes('btn-success')) {
         headerClass = 'bg-success text-white';
         modalClass = 'border-success';
-    } else if (confirmClass.includes('btn-info')) {
+    } else if (btnClass.includes('btn-info')) {
         headerClass = 'bg-info text-white';
         modalClass = 'border-info';
     } else {
@@ -33,7 +49,10 @@ function showCustomConfirmation(options) {
     }
 
     // Build icon HTML if provided
-    const iconHtml = icon ? `<i class="fas fa-${icon} me-2"></i>` : '';
+    const iconHtml = iconName ? `<i class="fas fa-${iconName} me-2"></i>` : '';
+    
+    // Create promise for legacy support
+    return new Promise((resolve, reject) => {
 
     // Create modal HTML with themed colors
     const modalHtml = `
@@ -45,11 +64,11 @@ function showCustomConfirmation(options) {
                         <button type="button" class="btn-close ${headerClass.includes('text-white') ? 'btn-close-white' : ''}" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="mb-0">${message}</p>
+                        <p class="mb-0">${msg}</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${cancelText}</button>
-                        <button type="button" class="btn ${confirmClass}" id="customConfirmBtn">${confirmText}</button>
+                        <button type="button" class="btn ${btnClass}" id="customConfirmBtn">${confirmText}</button>
                     </div>
                 </div>
             </div>
@@ -67,17 +86,19 @@ function showCustomConfirmation(options) {
     const modal = new bootstrap.Modal(document.getElementById('customConfirmModal'));
     modal.show();
 
-    // Handle confirm click
-    document.getElementById('customConfirmBtn').onclick = function() {
-        modal.hide();
-        if (onConfirm) onConfirm();
-    };
+        // Handle confirm click
+        document.getElementById('customConfirmBtn').onclick = function() {
+            modal.hide();
+            if (onConfirm) onConfirm();
+            resolve(true); // Resolve promise with true for confirm
+        };
 
-    // Handle cancel (modal close)
-    //... (rest of the function)
-    document.getElementById('customConfirmModal').addEventListener('hidden.bs.modal', function() {
-        if (onCancel) onCancel();
-        this.remove();
+        // Handle cancel (modal close)
+        document.getElementById('customConfirmModal').addEventListener('hidden.bs.modal', function() {
+            if (onCancel) onCancel();
+            resolve(false); // Resolve promise with false for cancel
+            this.remove();
+        });
     });
 }
 

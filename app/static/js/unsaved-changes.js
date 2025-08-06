@@ -24,6 +24,7 @@ class EnterpriseUnsavedChangesHandler {
         this.isSubmitting = false;
         this.originalFormData = new Map();
         this.form = null;
+        this.allInputs = [];
         this.warningShown = false;
         this.beforeUnloadDisabled = false;
         
@@ -67,21 +68,72 @@ class EnterpriseUnsavedChangesHandler {
     }
 
     captureOriginalState() {
-        const inputs = this.form.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
+        // Get ALL inputs on the page, not just those in the main form
+        this.allInputs = this.getAllFormInputs();
+        
+        this.allInputs.forEach(input => {
             if (!this.isExcludedInput(input)) {
-                const key = input.name || input.id;
+                const key = this.getInputKey(input);
                 if (key) {
                     if (input.type === 'checkbox' || input.type === 'radio') {
                         this.originalFormData.set(key, input.checked);
                     } else if (input.type === 'file') {
-                        this.originalFormData.set(key, input.files);
+                        this.originalFormData.set(key, input.files ? input.files.length : 0);
                     } else {
                         this.originalFormData.set(key, input.value);
+                    }
+                    
+                    if (window.__enableBeforeUnloadDebug) {
+                        console.log(`Captured original state for ${key}: ${input.type} = ${this.originalFormData.get(key)}`);
                     }
                 }
             }
         });
+        
+        console.log(`🔧 Enterprise Unsaved Changes: Captured ${this.originalFormData.size} fields from ${this.allInputs.length} total inputs`);
+    }
+
+    getAllFormInputs() {
+        // Get inputs from main form
+        const formInputs = this.form ? Array.from(this.form.querySelectorAll('input, select, textarea, [contenteditable="true"]')) : [];
+        
+        // Get inputs that are associated with forms via form attribute
+        const allForms = document.querySelectorAll('form');
+        const associatedInputs = [];
+        
+        allForms.forEach(form => {
+            const formId = form.id;
+            if (formId) {
+                const associated = Array.from(document.querySelectorAll(`[form="${formId}"]`));
+                associatedInputs.push(...associated);
+            }
+        });
+        
+        // Get any other inputs not captured above
+        const otherInputs = Array.from(document.querySelectorAll('input, select, textarea')).filter(input => {
+            return !formInputs.includes(input) && !associatedInputs.includes(input) && !input.form;
+        });
+        
+        // Combine all inputs and remove duplicates
+        const allInputs = [...new Set([...formInputs, ...associatedInputs, ...otherInputs])];
+        
+        console.log(`🔍 Found inputs: ${formInputs.length} in forms, ${associatedInputs.length} associated, ${otherInputs.length} standalone`);
+        
+        return allInputs;
+    }
+
+    getInputKey(input) {
+        // Create a unique key for each input
+        const name = input.name;
+        const id = input.id;
+        const formId = input.form ? input.form.id : (input.getAttribute('form') || 'no-form');
+        
+        if (name) {
+            return `${formId}:${name}`;
+        } else if (id) {
+            return `${formId}:${id}`;
+        }
+        return null;
     }
 
     isExcludedInput(input) {
@@ -89,12 +141,22 @@ class EnterpriseUnsavedChangesHandler {
     }
 
     attachEventListeners() {
-        const inputs = this.form.querySelectorAll('input, select, textarea');
-        
-        inputs.forEach(input => {
+        this.allInputs.forEach(input => {
             if (!this.isExcludedInput(input)) {
                 input.addEventListener('input', () => this.checkForChanges());
                 input.addEventListener('change', () => this.checkForChanges());
+                
+                // Special handling for file inputs
+                if (input.type === 'file') {
+                    input.addEventListener('change', () => {
+                        console.log(`📎 File input changed: ${input.name || input.id}`);
+                        this.checkForChanges();
+                    });
+                }
+                
+                if (window.__enableBeforeUnloadDebug) {
+                    console.log(`🎧 Attached listeners to: ${this.getInputKey(input)}`);
+                }
             }
         });
 
@@ -110,48 +172,54 @@ class EnterpriseUnsavedChangesHandler {
 
     checkForChanges() {
         this.hasUnsavedChanges = false;
+        const changedFields = [];
         
-        const inputs = this.form.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
+        this.allInputs.forEach(input => {
             if (!this.isExcludedInput(input)) {
-                const key = input.name || input.id;
+                const key = this.getInputKey(input);
                 if (key && this.originalFormData.has(key)) {
                     let currentValue;
                     let originalValue = this.originalFormData.get(key);
+                    let fieldChanged = false;
 
                     if (input.type === 'checkbox' || input.type === 'radio') {
                         currentValue = input.checked;
+                        fieldChanged = currentValue !== originalValue;
                     } else if (input.type === 'file') {
-                        // File inputs are tricky - we can't easily compare FileList objects
-                        // Only mark as changed if:
-                        // 1. Originally had no files AND now has files, OR
-                        // 2. Originally had files AND now has no files
-                        const originalHadFiles = this.originalFormData.get(key) && this.originalFormData.get(key).length > 0;
-                        const currentHasFiles = input.files && input.files.length > 0;
-                        
-                        if (originalHadFiles !== currentHasFiles) {
-                            console.log('File input change detected:', key, 'originalHadFiles:', originalHadFiles, 'currentHasFiles:', currentHasFiles);
-                            this.hasUnsavedChanges = true;
+                        const originalFileCount = originalValue;
+                        const currentFileCount = input.files ? input.files.length : 0;
+                        fieldChanged = originalFileCount !== currentFileCount;
+                        if (fieldChanged) {
+                            console.log(`📎 File input change detected: ${key} (${originalFileCount} → ${currentFileCount} files)`);
                         }
-                        return; // Skip the normal comparison for file inputs
                     } else {
                         currentValue = input.value;
+                        fieldChanged = this.normalizeValue(currentValue) !== this.normalizeValue(originalValue);
                     }
 
-                    if (this.normalizeValue(currentValue) !== this.normalizeValue(originalValue)) {
-                        if (window.__enableBeforeUnloadDebug) {
-                            console.log('Change detected in field:', key, 'from:', originalValue, 'to:', currentValue);
-                        }
+                    if (fieldChanged) {
                         this.hasUnsavedChanges = true;
+                        changedFields.push({
+                            key: key,
+                            name: input.name || input.id || 'unnamed field',
+                            type: input.type,
+                            original: originalValue,
+                            current: input.type === 'file' ? `${input.files ? input.files.length : 0} files` : currentValue
+                        });
+                        
+                        if (window.__enableBeforeUnloadDebug) {
+                            console.log(`🔄 Change detected: ${key} (${input.type}) from [${originalValue}] to [${currentValue}]`);
+                        }
                     }
                 }
             }
         });
 
         if (window.__enableBeforeUnloadDebug) {
-            console.log('hasUnsavedChanges after check:', this.hasUnsavedChanges);
+            console.log(`🔍 Unsaved changes check: ${this.hasUnsavedChanges} (${changedFields.length} changed fields)`);
         }
-        this.updateVisualIndicators();
+        
+        this.updateVisualIndicators(changedFields);
     }
 
     normalizeValue(value) {
@@ -217,10 +285,22 @@ class EnterpriseUnsavedChangesHandler {
                    .split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     }
 
-    updateVisualIndicators() {
-        // Update unsaved changes indicator if it exists
-        const indicators = document.querySelectorAll('#unsaved-indicator, #unsaved-changes-indicator, .unsaved-changes-indicator');
-        indicators.forEach(indicator => {
+    updateVisualIndicators(changedFields = []) {
+        // Store detailed changed fields info for modal use
+        this.changedFields = changedFields;
+        
+        // Update global unsaved changes indicator from base.html (simple message only)
+        if (typeof showUnsavedChangesIndicator === 'function' && typeof hideUnsavedChangesIndicator === 'function') {
+            if (this.hasUnsavedChanges && !this.isSubmitting) {
+                showUnsavedChangesIndicator(); // No detailed message in the bar
+            } else {
+                hideUnsavedChangesIndicator();
+            }
+        }
+        
+        // Also update any legacy indicators for backward compatibility
+        const legacyIndicators = document.querySelectorAll('#unsaved-indicator, #unsaved-changes-indicator, .unsaved-changes-indicator');
+        legacyIndicators.forEach(indicator => {
             indicator.style.display = this.hasUnsavedChanges ? 'block' : 'none';
         });
     }
@@ -378,14 +458,11 @@ class EnterpriseUnsavedChangesHandler {
     }
 
     showNavigationWarning(targetUrl) {
-        // Get the list of changed fields
-        const changedFields = this.getChangedFields();
-        const changesText = changedFields.length > 0
-            ? `<br><br><strong>Modified parameters:</strong><br>• ${changedFields.join('<br>• ')}`
-            : '';
+        // Get the detailed message with changed fields
+        const detailedMessage = this.getDetailedChangedFieldsMessage();
         
-        // Create enhanced message with field details
-        const enhancedMessage = `${this.messages.navigationMessage}${changesText}`;
+        // Convert newlines to HTML breaks for display in modal
+        const enhancedMessage = detailedMessage.replace(/\n/g, '<br>');
         
         // Always try to use the enhanced modal first
         this.showEnhancedUnsavedChangesModal({
@@ -409,14 +486,11 @@ class EnterpriseUnsavedChangesHandler {
     showReloadWarning() {
         this.warningShown = true;
         
-        // Get the list of changed fields
-        const changedFields = this.getChangedFields();
-        const changesText = changedFields.length > 0
-            ? `<br><br><strong>Modified parameters:</strong><br>• ${changedFields.join('<br>• ')}`
-            : '';
+        // Get the detailed message with changed fields
+        const detailedMessage = this.getDetailedChangedFieldsMessage();
         
-        // Create enhanced message with field details
-        const enhancedMessage = `${this.messages.reloadMessage}${changesText}`;
+        // Convert newlines to HTML breaks for display in modal
+        const enhancedMessage = detailedMessage.replace(/\n/g, '<br>');
         
         // Always try to use the enhanced modal first
         this.showEnhancedUnsavedChangesModal({
@@ -946,6 +1020,134 @@ class EnterpriseUnsavedChangesHandler {
         }, 50);
     }
 
+
+    // Public method to get detailed changed fields for modals
+    getDetailedChangedFieldsMessage() {
+        if (!this.changedFields || this.changedFields.length === 0) {
+            return 'You have made changes that have not been saved yet.';
+        }
+        
+        // Create a mapping of technical field names to user-friendly labels
+        const fieldLabelMap = this.createFieldLabelMapping();
+        
+        const fieldLabels = this.changedFields.map(field => {
+            const friendlyName = fieldLabelMap[field.name] || this.beautifyFieldName(field.name);
+            return friendlyName;
+        });
+        
+        let message = 'You have made changes to the following fields that have not been saved yet:\n\n';
+        
+        if (fieldLabels.length <= 5) {
+            message += `• ${fieldLabels.join('\n• ')}`;
+        } else {
+            message += `• ${fieldLabels.slice(0, 5).join('\n• ')}\n• ... and ${fieldLabels.length - 5} more fields`;
+        }
+        
+        return message;
+    }
+
+    // Create field label mapping based on page context and form labels
+    createFieldLabelMapping() {
+        const mapping = {};
+        
+        // Try to extract labels from actual form elements on the page
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            const fieldName = input.name || input.id;
+            if (fieldName) {
+                // Look for associated label element
+                let label = null;
+                
+                // Method 1: Find label with 'for' attribute matching field id
+                if (input.id) {
+                    label = document.querySelector(`label[for="${input.id}"]`);
+                }
+                
+                // Method 2: Find label that contains this input
+                if (!label) {
+                    label = input.closest('label') || input.parentElement.querySelector('label');
+                }
+                
+                // Method 3: Look for label in parent elements
+                if (!label) {
+                    let parent = input.parentElement;
+                    while (parent && !label) {
+                        label = parent.querySelector('label');
+                        parent = parent.parentElement;
+                    }
+                }
+                
+                if (label && label.textContent.trim()) {
+                    // Clean up the label text (remove asterisks, colons, extra whitespace)
+                    let labelText = label.textContent.trim()
+                        .replace(/[\*:]/g, '')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                    
+                    // If label is too long, use a shorter version
+                    if (labelText.length > 50) {
+                        labelText = labelText.substring(0, 47) + '...';
+                    }
+                    
+                    if (labelText) {
+                        mapping[fieldName] = labelText;
+                    }
+                }
+            }
+        });
+        
+        // Fallback mappings for common field patterns
+        const fallbackMappings = {
+            'version': 'Version',
+            'overview_logic': 'Strategic Approach and Fundamental Reasoning',
+            'primary_chart_tf': 'Analysis Timeframe',
+            'execution_chart_tf': 'Execution Timeframe',
+            'context_chart_tf': 'Context Analysis',
+            'scenario_number': 'Configuration ID',
+            'scenario_name': 'Strategic Framework Name',
+            'short_description': 'Executive Summary',
+            'detailed_description': 'Strategic Overview',
+            'hod_lod_implication': 'HOD/LOD Market Implications',
+            'directional_bias': 'Directional Bias',
+            'key_considerations': 'Key Considerations',
+            'models_to_activate': 'Recommended Models',
+            'models_to_avoid': 'Restricted Models',
+            'preferred_timeframes': 'Optimal Timeframes',
+            'entry_strategy': 'Entry Strategy',
+            'typical_targets': 'Target Objectives',
+            'alert_criteria': 'Alert Threshold',
+            'confirmation_criteria': 'Confirmation Protocol',
+            'stop_loss_guidance': 'Loss Mitigation Protocol',
+            'risk_guidance': 'Risk Management Framework',
+            'risk_percentage': 'Risk Percentage',
+            'is_active': 'Active Status',
+            'username': 'Username',
+            'email': 'Email Address',
+            'name': 'Full Name',
+            'role': 'User Role'
+        };
+        
+        // Apply fallback mappings for any missing fields
+        Object.keys(fallbackMappings).forEach(key => {
+            if (!mapping[key]) {
+                mapping[key] = fallbackMappings[key];
+            }
+        });
+        
+        return mapping;
+    }
+
+    // Beautify field names as a last resort
+    beautifyFieldName(fieldName) {
+        if (!fieldName) return 'Unknown Field';
+        
+        return fieldName
+            .replace(/_/g, ' ')
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+    }
 
     // Public methods for external control
     markAsSaved() {

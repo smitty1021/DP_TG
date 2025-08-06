@@ -142,7 +142,6 @@
                                     <th width="60" class="text-center">Type</th>
                                     <th>Trading Model</th>
                                     <th width="100" class="text-center">Version</th>
-                                    <th width="100" class="text-center">Image</th>
                                     <th width="120" class="text-center">Status</th>
                                     <th width="100" class="text-center">Creator</th>
                                     <th width="200" class="text-center"></th>
@@ -168,25 +167,6 @@
                                         <span class="version-badge">
                                             {{ model.version or 'v1.0' }}
                                         </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="image-status {% if model.image_filename %}has-image{% endif %}" id="model-{{ model.id }}">
-                                            {% if model.image_filename %}
-                                            <div class="image-preview">
-                                                <img src="{{ url_for('static', filename='uploads/models/' + model.image_filename) }}"
-                                                     alt="Trading Model {{ model.name }} Image"
-                                                     class="img-fluid rounded"
-                                                     style="max-width: 40px; max-height: 40px; object-fit: cover; cursor: pointer;"
-                                                     onclick="showImageModal('{{ url_for('static', filename='uploads/models/' + model.image_filename) }}', 'Trading Model: {{ model.name }}')">
-                                            </div>
-                                            {% else %}
-                                            <div class="image-preview">
-                                                <div class="text-muted" style="position: relative;">
-                                                    <i class="fas fa-image" style="font-size: 20px; opacity: 0.3;"></i>
-                                                </div>
-                                            </div>
-                                            {% endif %}
-                                        </div>
                                     </td>
                                     <td class="text-center">
                                         <span class="status-badge {{ 'operational' if model.is_active else 'inactive' }}">
@@ -329,8 +309,6 @@
                     </div>
                 </div>
             </div>
-
-
         </div>
     </div>
 </div>
@@ -375,22 +353,122 @@ function showImageModal(imageUrl, title) {
 }
 
 // =====================================
+// UTILITY FUNCTIONS
+// =====================================
+function getCSRFToken() {
+    let csrfToken = null;
+
+    const directInput = document.getElementById('js-csrf-token');
+    if (directInput && directInput.value) {
+        csrfToken = directInput.value;
+    }
+
+    if (!csrfToken) {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag && metaTag.getAttribute('content')) {
+            csrfToken = metaTag.getAttribute('content');
+        }
+    }
+
+    if (!csrfToken) {
+        const hiddenInput = document.querySelector('input[name="csrf_token"]');
+        if (hiddenInput && hiddenInput.value) {
+            csrfToken = hiddenInput.value;
+        }
+    }
+
+    return csrfToken;
+}
+
+// =====================================
 // EXPORT FUNCTIONS
 // =====================================
 function exportModelsPDF() {
-    showNotification('Generating PDF export...', 'info', 'Export Processing');
-    // Implement PDF export functionality
-    setTimeout(() => {
-        showNotification('PDF export feature coming soon', 'warning', 'Feature Notice');
-    }, 1000);
+    const exportBtn = document.querySelector('button[onclick="exportModelsPDF()"]');
+    const originalHtml = exportBtn.innerHTML;
+    
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    exportBtn.disabled = true;
+    
+    fetch('/admin/default-trading-models/export-pdf', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        } else {
+            throw new Error('PDF export failed');
+        }
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `All_Trading_Models_Export_${new Date().toISOString().split('T')[0].replace(/-/g, '')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        showNotification('All trading models exported to PDF successfully.', 'success', 'PDF Export Complete');
+    })
+    .catch(error => {
+        console.error('PDF Export error:', error);
+        showNotification('PDF export failed. Please try again.', 'error', 'Export Error');
+    })
+    .finally(() => {
+        exportBtn.innerHTML = originalHtml;
+        exportBtn.disabled = false;
+    });
 }
 
 function exportModelsCSV() {
-    showNotification('Generating CSV export...', 'info', 'Export Processing');
-    // Implement CSV export functionality
-    setTimeout(() => {
-        showNotification('CSV export feature coming soon', 'warning', 'Feature Notice');
-    }, 1000);
+    const exportBtn = document.querySelector('button[onclick="exportModelsCSV()"]');
+    const originalHtml = exportBtn.innerHTML;
+    
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    exportBtn.disabled = true;
+    
+    fetch('/admin/default-trading-models/export-csv', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        } else {
+            throw new Error('CSV export failed');
+        }
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `All_Trading_Models_Export_${new Date().toISOString().split('T')[0].replace(/-/g, '')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        showNotification('All trading models exported to CSV successfully.', 'success', 'CSV Export Complete');
+    })
+    .catch(error => {
+        console.error('CSV Export error:', error);
+        showNotification('CSV export failed. Please try again.', 'error', 'Export Error');
+    })
+    .finally(() => {
+        exportBtn.innerHTML = originalHtml;
+        exportBtn.disabled = false;
+    });
 }
 
 document.addEventListener('DOMContentLoaded', function() {

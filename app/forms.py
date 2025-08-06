@@ -140,66 +140,72 @@ class FileUploadForm(FlaskForm):
 
 # --- Trading Model Form ---
 class TradingModelForm(FlaskForm):
-    name = StringField('Model Name', validators=[DataRequired(), Length(max=150)])
-    version = StringField('Version', validators=[Optional(), Length(max=50)])
+    name = StringField('Model Name', validators=[DataRequired(), Length(max=150)],
+                                                 render_kw={"placeholder": "Name this model..."})
+    version = StringField('Version', validators=[Optional(), Length(max=50)],
+                          render_kw={"placeholder": "Version #..."})
     is_active = BooleanField('Is Active', default=True)
-    overview_logic = TextAreaField('Overview & Logic', validators=[Optional()])
-    primary_chart_tf = StringField('Primary Chart TF (Analysis/Setup)', validators=[Optional(), Length(max=50)])
-    execution_chart_tf = StringField('Execution Chart TF (Entry/Fine-tuning)', validators=[Optional(), Length(max=50)])
-    context_chart_tf = StringField('Higher Timeframe (Context/Trend)', validators=[Optional(), Length(max=50)])
-    technical_indicators_used = TextAreaField('Technical Indicators Used (and settings)', validators=[Optional()])
-    chart_patterns_used = TextAreaField('Chart Patterns Used', validators=[Optional()])
-    price_action_signals = TextAreaField('Price Action Signals', validators=[Optional()])
-    key_levels_identification = TextAreaField('Key Levels Identification', validators=[Optional()])
-    volume_analysis_notes = TextAreaField('Volume Analysis (if applicable)', validators=[Optional()])
+    overview_logic = TextAreaField('Overview & Logic', validators=[Optional()],
+                                   render_kw={"placeholder": "Describe the core methodology and strategic approach of this trading model..."})
+    primary_chart_tf = StringField('Primary Chart TF (Analysis/Setup)', validators=[Optional(), Length(max=50)], render_kw={"placeholder": "Ex: 1-Minute, 5-Minute..."})
+    execution_chart_tf = StringField('Execution Chart TF (Entry/Fine-tuning)', validators=[Optional(), Length(max=50)], render_kw={"placeholder": "Ex: 15-Minute, 1-Hour..."})
+    context_chart_tf = StringField('Higher Timeframe (Context/Trend)', validators=[Optional(), Length(max=50)], render_kw={"placeholder": "Ex: 4-Hour, Daily Chart..."})
+    technical_indicators_used = TextAreaField('Technical Indicators Used (and settings)', validators=[Optional()],
+                                              render_kw={"placeholder": "List indicators used in this model and any specific settings..."})
+    chart_patterns_used = TextAreaField('Chart Patterns Used', validators=[Optional()], render_kw={"placeholder": "Identify any chart patterns utilized for this model..."})
+    price_action_signals = TextAreaField('Price Action Signals', validators=[Optional()], render_kw={"placeholder": "Identify any price action signals utilized for this model..."})
+    key_levels_identification = TextAreaField('Key Levels Identification', validators=[Optional()], render_kw={"placeholder": "Identify any key levels utilized for this model..."})
+    volume_analysis_notes = TextAreaField('Volume Analysis (if applicable)', validators=[Optional()], render_kw={"placeholder": "Identify any volume analysis utilized for this model..."})
     fundamental_analysis_notes = TextAreaField('Fundamental Analysis Considerations (if applicable)',
-                                               validators=[Optional()])
+                                               validators=[Optional()], render_kw={"placeholder": "Identify any fundamental analysis considerations for this model..."})
     instrument_applicability = TextAreaField('Instrument Applicability (e.g., NQ, ES, specific stocks)',
-                                             validators=[Optional()])
-    session_applicability = TextAreaField('Session Applicability (e.g., London Open, NY Open)', validators=[Optional()])
-    optimal_market_conditions = TextAreaField('Optimal Market Conditions for this Model', validators=[Optional()])
+                                             validators=[Optional()], render_kw={"placeholder": "Identify the instruments or markets this model is used for..."})
+    session_applicability = TextAreaField('Session Applicability (e.g., London Open, NY Open)', validators=[Optional()], render_kw={"placeholder": "Identify any session applicability for this model. Ex:  Overnight, 0600-0830, NY1, etc..."})
+    optimal_market_conditions = TextAreaField('Optimal Market Conditions for this Model', validators=[Optional()], render_kw={"placeholder": "What are the optimal market conditions for this model..."})
     sub_optimal_market_conditions = TextAreaField('Sub-optimal Market Conditions (or when to avoid)',
-                                                  validators=[Optional()])
+                                                  validators=[Optional()], render_kw={"placeholder": "What market conditions are avoided for this model..."})
     entry_trigger_description = TextAreaField('Entry Trigger Description (Specific conditions for entry)',
-                                              validators=[DataRequired()])
+                                              validators=[DataRequired()],
+                                              render_kw={"placeholder": "Define specific entry conditions...\n\nExample:\n• Price closes above 0930 opening box with volume\n• Price retests 50% of opening box and rejects"})
     stop_loss_strategy = TextAreaField('Stop-Loss Strategy (e.g., ATR-based, fixed points, structure)',
-                                       validators=[DataRequired()])
+                                       validators=[DataRequired()], render_kw={"placeholder": "Define your risk for this model..."})
     take_profit_strategy = TextAreaField('Take-Profit Strategy (e.g., fixed R:R, key levels, trailing)',
-                                         validators=[DataRequired()])
+                                         validators=[DataRequired()], render_kw={"placeholder": "Define your profit taking strategy..."})
     min_risk_reward_ratio = FloatField('Minimum Acceptable Risk:Reward Ratio', validators=[Optional(),
                                                                                            NumberRange(min=0.0,
-                                                                                                       message="R:R must be a positive number or zero.")])
+                                                                                                       message="R:R must be a positive number or zero.")], render_kw={"placeholder": "Must be a single number..."})
     position_sizing_rules = TextAreaField('Position Sizing Rules (e.g., % of account, fixed lot)',
-                                          validators=[Optional()])
-    scaling_in_out_rules = TextAreaField('Scaling In/Out Rules (if applicable)', validators=[Optional()])
-    trade_management_breakeven_rules = TextAreaField('Trade Management: Breakeven Rules', validators=[Optional()])
+                                          validators=[Optional()], render_kw={"placeholder": "Ex: % of account, fixed position size, structure based..."})
+    scaling_in_out_rules = TextAreaField('Scaling In/Out Rules (if applicable)', validators=[Optional()], render_kw={"placeholder": "How do you scale into or out of this model..."})
+    trade_management_breakeven_rules = TextAreaField('Trade Management: Breakeven Rules', validators=[Optional()], render_kw={"placeholder": "When do you move to breakeven with this model..."})
     trade_management_trailing_stop_rules = TextAreaField('Trade Management: Trailing Stop Rules',
-                                                         validators=[Optional()])
+                                                         validators=[Optional()], render_kw={"placeholder": "When do you use a trailing stop for this model..."})
     trade_management_partial_profit_rules = TextAreaField('Trade Management: Partial Profit Taking Rules',
-                                                          validators=[Optional()])
+                                                          validators=[Optional()], render_kw={"placeholder": "What are your partial profit rules for this model..."})
     trade_management_adverse_price_action = TextAreaField('Trade Management: Handling Adverse Price Action',
-                                                          validators=[Optional()])
+                                                          validators=[Optional()], render_kw={"placeholder": "What are your trade management rules for this model..."})
     model_max_loss_per_trade = StringField('Max Risk per Trade for this Model (e.g., 1% or $X)',
-                                           validators=[Optional(), Length(max=100)])
+                                           validators=[Optional(), Length(max=100)], render_kw={"placeholder": "Ex., 1% or $X..."})
     model_max_daily_loss = StringField('Max Daily Loss when using this Model (e.g., 3% or $Y)',
-                                       validators=[Optional(), Length(max=100)])
+                                       validators=[Optional(), Length(max=100)], render_kw={"placeholder": "Ex., 3% or $X..."})
     model_max_weekly_loss = StringField('Max Weekly Loss when using this Model',
-                                        validators=[Optional(), Length(max=100)])
+                                        validators=[Optional(), Length(max=100)], render_kw={"placeholder": "Ex., 8% or $X..."})
     model_consecutive_loss_limit = StringField('Consecutive Loss Limit for this Model (e.g., 3 trades)',
-                                               validators=[Optional(), Length(max=100)])
+                                               validators=[Optional(), Length(max=100)], render_kw={"placeholder": "Ex., 3 or 5..."})
     model_action_on_max_drawdown = TextAreaField('Action if Max Drawdown (for this model) is Hit',
-                                                 validators=[Optional()])
+                                                 validators=[Optional()], render_kw={"placeholder": "What are my actions for drawdown?..."})
     pre_trade_checklist = TextAreaField('Pre-Trade Routine Checklist (Model Specific - one item per line)',
-                                        validators=[Optional()])
-    order_types_used = TextAreaField('Order Types Primarily Used (e.g., Market, Limit, Stop)', validators=[Optional()])
-    broker_platform_notes = TextAreaField('Broker/Platform Specific Notes', validators=[Optional()])
-    execution_confirmation_notes = TextAreaField('Confirmation after Execution Notes', validators=[Optional()])
-    post_trade_routine_model = TextAreaField('Post-Trade Routine (Model Specific)', validators=[Optional()])
-    strengths = TextAreaField('Perceived Strengths of this Model', validators=[Optional()])
-    weaknesses = TextAreaField('Perceived Weaknesses of this Model', validators=[Optional()])
+                                        validators=[Optional()],
+                                        render_kw={"placeholder": "Framework-specific validation checks before trade execution...\n\nExample:\n• 4-steps complete\n• P12 analyzed\n• Entry signal validated\n• Position size calculated\n• Stop loss placement verified\n• Profit targets established"})
+    order_types_used = TextAreaField('Order Types Primarily Used (e.g., Market, Limit, Stop)', validators=[Optional()], render_kw={"placeholder": "Ex: Market, Join Bid, Limit Orders, etc..."})
+    broker_platform_notes = TextAreaField('Broker/Platform Specific Notes', validators=[Optional()], render_kw={"placeholder": "Any broker specific notes for this model..."})
+    execution_confirmation_notes = TextAreaField('Confirmation after Execution Notes', validators=[Optional()], render_kw={"placeholder": "Outline any execution notes for this model..."})
+    post_trade_routine_model = TextAreaField('Post-Trade Routine (Model Specific)', validators=[Optional()], render_kw={"placeholder": "Define post-trade routine for this model..."})
+    strengths = TextAreaField('Perceived Strengths of this Model', validators=[Optional()], render_kw={"placeholder": "Define model strengths based on backtesting..."})
+    weaknesses = TextAreaField('Perceived Weaknesses of this Model', validators=[Optional()], render_kw={"placeholder": "Define model weaknesses based on backtesting..."})
     backtesting_forwardtesting_notes = TextAreaField('Backtesting/Forward-Testing Notes & Results',
-                                                     validators=[Optional()])
-    refinements_learnings = TextAreaField('Refinements & Learnings Over Time', validators=[Optional()])
+                                                     validators=[Optional()], render_kw={"placeholder": "Identify any backtesting notes for this model..."})
+    refinements_learnings = TextAreaField('Refinements & Learnings Over Time', validators=[Optional()], render_kw={"placeholder": "Define any refinements made to this model..."})
     
     # Chart Examples and Visual Analysis
     chart_examples = MultipleFileField('Chart Examples', 
@@ -995,13 +1001,13 @@ class BacktestForm(FlaskForm):
     
     # Status
     status = SelectField('Status',
-                        choices=[('draft', 'Draft'),
-                                ('running', 'Running'),
-                                ('completed', 'Completed'),
-                                ('failed', 'Failed'),
-                                ('cancelled', 'Cancelled')],
+                        choices=[('DRAFT', 'Draft'),
+                                ('RUNNING', 'Running'),
+                                ('COMPLETED', 'Completed'),
+                                ('FAILED', 'Failed'),
+                                ('CANCELLED', 'Cancelled')],
                         validators=[DataRequired()],
-                        default='draft')
+                        default='DRAFT')
     
     # Configuration fields
     initial_capital = FloatField('Initial Capital', validators=[Optional()])
@@ -1198,11 +1204,11 @@ class BacktestFilterForm(FlaskForm):
     
     status = SelectField('Status',
                         choices=[('', 'All Statuses'),
-                                ('draft', 'Draft'),
-                                ('running', 'Running'),
-                                ('completed', 'Completed'),
-                                ('failed', 'Failed'),
-                                ('cancelled', 'Cancelled')],
+                                ('DRAFT', 'Draft'),
+                                ('RUNNING', 'Running'),
+                                ('COMPLETED', 'Completed'),
+                                ('FAILED', 'Failed'),
+                                ('CANCELLED', 'Cancelled')],
                         validators=[Optional()])
     
     start_date_from = DateField('Start Date From', validators=[Optional()])

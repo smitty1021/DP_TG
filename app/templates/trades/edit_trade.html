@@ -9,6 +9,10 @@
 {{ super() }}
 <!-- Fortune 500 Enterprise CSS Framework -->
 <link rel="stylesheet" href="/static/css/enterprise-all.css">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 {% endblock %}
 
 {% block page_header %}
@@ -55,11 +59,6 @@
 
 {% block content %}
 <div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
-    <!-- Unsaved Changes Indicator -->
-    <div id="unsaved-changes-indicator" class="unsaved-changes-indicator">
-        <i class="fas fa-exclamation-triangle me-2"></i>
-        Configuration changes pending
-    </div>
 
     <!-- Trade Stats Dashboard (Auto-calculated) -->
     <div id="trade-stats-dashboard" class="enterprise-module mb-4">
@@ -279,12 +278,12 @@
             </div>
             <div class="module-content">
                 <!-- Display existing images with delete option -->
-                {% if trade.images.count() > 0 %}
+                {% if trade.images %}
                 <div class="mb-4">
                     <h5>Current Documentation</h5>
                     {% for image in trade.images %}
                     <div class="image-delete-item">
-                        <img src="{{ url_for('static', filename=current_app.config['UPLOAD_FOLDER'].split('/')[-1] + '/' + image.filepath if '/' in current_app.config['UPLOAD_FOLDER'] else current_app.config['UPLOAD_FOLDER'] + '/' + image.filepath) }}" alt="{{ image.filename }}" class="existing-image-preview img-thumbnail">
+                        <img src="{{ url_for('static', filename='uploads/' + image.filepath) }}" alt="{{ image.filename }}" class="existing-image-preview img-thumbnail" onclick="showImageModal('{{ url_for('static', filename='uploads/' + image.filepath) }}', '{{ image.filename }}')" style="cursor: pointer;">
                         <span class="me-2">{{ image.filename }}</span>
                         <input type="checkbox" name="delete_image_{{ image.id }}" id="delete_image_{{ image.id }}" value="{{ image.id }}" class="form-check-input ms-2">
                         <label for="delete_image_{{ image.id }}" class="form-check-label ms-1">Remove Configuration</label>
@@ -381,48 +380,31 @@
 
 {% block scripts_extra %}
 <script>
-// Unsaved changes detection
-let hasUnsavedChanges = false;
-const unsavedIndicator = document.getElementById('unsaved-changes-indicator');
-
-function markUnsaved() {
-    hasUnsavedChanges = true;
-    if (unsavedIndicator) {
-        unsavedIndicator.style.display = 'block';
-    }
-}
-
-function markSaved() {
-    hasUnsavedChanges = false;
-    if (unsavedIndicator) {
-        unsavedIndicator.style.display = 'none';
-    }
+// Image modal function using Enterprise Media Modal
+function showImageModal(imageSrc, title) {
+    document.getElementById('imageModalTitle').textContent = title;
+    document.getElementById('imageModalImg').src = imageSrc;
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    modal.show();
 }
 
 function handleCancelAction() {
-    if (hasUnsavedChanges) {
-        showCustomConfirmation(
-            'Unsaved Changes Detected',
-            'Configuration changes have been made but not saved. Are you sure you want to leave without saving?',
-            'btn-warning',
-            'exclamation-triangle',
-            function() {
+    if (window.enterpriseUnsavedChanges && window.enterpriseUnsavedChanges.hasUnsavedChanges) {
+        showCustomConfirmation({
+            title: 'Unsaved Changes Detected',
+            message: 'Configuration changes have been made but not saved. Are you sure you want to leave without saving?',
+            confirmText: 'Leave Without Saving',
+            cancelText: 'Stay on Page',
+            confirmClass: 'btn-warning',
+            icon: 'exclamation-triangle',
+            onConfirm: () => {
                 window.location.href = '{{ url_for("trades.view_trade_detail", trade_id=trade.id) }}';
             }
-        );
+        });
     } else {
         window.location.href = '{{ url_for("trades.view_trade_detail", trade_id=trade.id) }}';
     }
 }
-
-// Warn before page unload if there are unsaved changes
-window.addEventListener('beforeunload', function(e) {
-    if (hasUnsavedChanges) {
-        const message = 'Configuration changes pending. Are you sure you want to leave?';
-        e.returnValue = message;
-        return message;
-    }
-});
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Enterprise edit trade page JavaScript initializing...');
@@ -457,15 +439,16 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('TomSelect initialized for tags with colors');
     }
 
-    // Monitor form changes
+    // Monitor form changes with enterprise system
     const form = document.getElementById('tradeForm');
     if (form) {
-        form.addEventListener('input', markUnsaved);
-        form.addEventListener('change', markUnsaved);
-
+        // The enterprise system will automatically handle unsaved changes detection
         form.addEventListener('submit', function() {
-            markSaved(); // Clear the flag on form submission
-            showSuccess('Configuration Updated Successfully');
+            // Mark as submitting to prevent unsaved changes warning
+            if (window.enterpriseUnsavedChanges) {
+                window.enterpriseUnsavedChanges.markAsSubmitting();
+            }
+            showNotification('Configuration Updated Successfully', 'success', 'Trade Updated');
         });
     }
 
@@ -764,7 +747,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         event.target.closest('.' + itemClass).remove();
                         addCalculationListeners();
                         calculateStats();
-                        markUnsaved();
                     }
                 );
             } else {
@@ -786,7 +768,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     addRemoveButtonListeners(newItemElement);
                     addCalculationListeners();
                     calculateStats();
-                    markUnsaved();
                 }
             });
         }
@@ -828,8 +809,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Track changes
-            quillInstances[hiddenTextareaId].on('text-change', markUnsaved);
+            // Track changes - enterprise system will handle this automatically
         }
     }
 
@@ -906,7 +886,6 @@ document.addEventListener('DOMContentLoaded', function() {
             selector.addEventListener('change', function() {
                 updateRadarChart();
                 calculateStats();
-                markUnsaved();
             });
         });
 

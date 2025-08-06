@@ -96,7 +96,7 @@ def edit_default_trading_model(model_id):
         
         try:
             db.session.commit()
-            flash(f'Default model "{model.name}" updated successfully!', 'success')
+            flash(f"Default model '{model.name}' updated successfully!", 'success')
             return redirect(url_for('admin.manage_default_trading_models'))
         except Exception as e:
             db.session.rollback()
@@ -169,7 +169,7 @@ def create_default_trading_model():
                             flash(f'Failed to upload {uploaded_file.filename}: {save_result.get("errors", ["Unknown error"])[0]}', 'warning')
             
             db.session.commit()
-            flash(f'Default model "{model.name}" created successfully!', 'success')
+            flash(f"Default model '{model.name}' created successfully!", 'success')
             return redirect(url_for('admin.manage_default_trading_models'))
         except Exception as e:
             db.session.rollback()
@@ -187,7 +187,7 @@ def view_default_trading_model(model_id):
     """View a default trading model"""
     model = TradingModel.query.get_or_404(model_id)
     if not model.is_default:
-        flash('This is not a default model.', 'warning')
+        flash("This is not a default model.", 'warning')
         return redirect(url_for('admin.manage_default_trading_models'))
 
     # Get chart examples for this model
@@ -270,6 +270,560 @@ def toggle_default_trading_model_status(model_id):
         flash(f"Error updating status: {str(e)}", 'danger')
 
     return redirect(url_for('admin.manage_default_trading_models'))
+
+
+@admin_bp.route('/default-trading-models/<int:model_id>/export-pdf', methods=['POST'])
+@login_required
+@admin_required
+def export_trading_model_pdf(model_id):
+    """Export a single trading model to PDF."""
+    try:
+        model = TradingModel.query.get_or_404(model_id)
+        
+        if not model.is_default:
+            flash('Access denied: This is not a default trading model.', 'warning')
+            return redirect(url_for('admin.manage_default_trading_models'))
+        
+        # Get chart examples
+        chart_examples = GlobalImage.query.filter_by(
+            entity_type='trading_model', 
+            entity_id=model.id
+        ).all()
+        
+        # Create PDF content
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.lib import colors
+        from io import BytesIO
+        import os
+        from PIL import Image as PILImage
+        
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72,
+                                topMargin=72, bottomMargin=18)
+        
+        # Build story
+        story = []
+        styles = getSampleStyleSheet()
+        
+        # Title
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=20,
+            spaceAfter=30,
+            textColor=colors.HexColor('#0066cc'),
+            alignment=1  # Center
+        )
+        story.append(Paragraph(f"Trading Model: {model.name}", title_style))
+        story.append(Spacer(1, 12))
+        
+        # Version and Status
+        if model.version:
+            story.append(Paragraph(f"<b>Version:</b> {model.version}", styles['Normal']))
+        story.append(Paragraph(f"<b>Status:</b> {'Active' if model.is_active else 'Inactive'}", styles['Normal']))
+        story.append(Spacer(1, 20))
+        
+        # Overview Logic
+        if model.overview_logic:
+            story.append(Paragraph("<b>Strategic Framework Overview</b>", styles['Heading2']))
+            story.append(Paragraph(model.overview_logic, styles['Normal']))
+            story.append(Spacer(1, 12))
+        
+        # Timeframes
+        if model.primary_chart_tf or model.execution_chart_tf or model.context_chart_tf:
+            story.append(Paragraph("<b>Operational Timeframes</b>", styles['Heading2']))
+            timeframe_data = []
+            if model.primary_chart_tf:
+                timeframe_data.append(['Primary Analysis', model.primary_chart_tf])
+            if model.execution_chart_tf:
+                timeframe_data.append(['Execution', model.execution_chart_tf])
+            if model.context_chart_tf:
+                timeframe_data.append(['Context Analysis', model.context_chart_tf])
+            
+            if timeframe_data:
+                t = Table(timeframe_data)
+                t.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 14),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+                story.append(t)
+                story.append(Spacer(1, 12))
+        
+        # Technical Framework
+        sections = [
+            ('Technical Indicators', model.technical_indicators_used),
+            ('Chart Patterns', model.chart_patterns_used),
+            ('Price Action Signals', model.price_action_signals),
+            ('Key Levels Identification', model.key_levels_identification),
+            ('Volume Analysis', model.volume_analysis_notes),
+            ('Fundamental Analysis', model.fundamental_analysis_notes),
+            ('Entry Triggers', model.entry_trigger_description),
+            ('Optimal Market Conditions', model.optimal_market_conditions),
+            ('Instrument Applicability', model.instrument_applicability),
+            ('Session Applicability', model.session_applicability),
+            ('Sub-Optimal Conditions', model.sub_optimal_market_conditions),
+            ('Stop Loss Strategy', model.stop_loss_strategy),
+            ('Take Profit Strategy', model.take_profit_strategy),
+            ('Position Sizing Rules', model.position_sizing_rules),
+            ('Scaling In/Out Rules', model.scaling_in_out_rules),
+            ('Pre-Trade Checklist', model.pre_trade_checklist),
+            ('Order Types Used', model.order_types_used),
+            ('Broker/Platform Notes', model.broker_platform_notes),
+            ('Strengths', model.strengths),
+            ('Weaknesses', model.weaknesses),
+            ('Backtesting Notes', model.backtesting_forwardtesting_notes),
+            ('Refinements & Learnings', model.refinements_learnings)
+        ]
+        
+        for section_title, content in sections:
+            if content:
+                story.append(Paragraph(f"<b>{section_title}</b>", styles['Heading3']))
+                story.append(Paragraph(content, styles['Normal']))
+                story.append(Spacer(1, 8))
+        
+        # Risk Parameters
+        risk_params = []
+        if model.min_risk_reward_ratio:
+            risk_params.append(['Min Risk:Reward Ratio', f"{model.min_risk_reward_ratio}:1"])
+        if model.model_max_loss_per_trade:
+            risk_params.append(['Max Loss Per Trade', model.model_max_loss_per_trade])
+        if model.model_max_daily_loss:
+            risk_params.append(['Max Daily Loss', model.model_max_daily_loss])
+        if model.model_max_weekly_loss:
+            risk_params.append(['Max Weekly Loss', model.model_max_weekly_loss])
+        if model.model_consecutive_loss_limit:
+            risk_params.append(['Consecutive Loss Limit', str(model.model_consecutive_loss_limit)])
+        
+        if risk_params:
+            story.append(Paragraph("<b>Risk Parameters</b>", styles['Heading2']))
+            t = Table(risk_params)
+            t.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            story.append(t)
+        
+        # Chart Examples
+        if chart_examples:
+            story.append(Paragraph("<b>Chart Examples</b>", styles['Heading2']))
+            story.append(Spacer(1, 12))
+            
+            for i, chart_image in enumerate(chart_examples, 1):
+                try:
+                    # Get the image file path using the model's full_disk_path property
+                    image_path = chart_image.full_disk_path
+                    
+                    if os.path.exists(image_path):
+                        # Add image title/caption
+                        if chart_image.caption:
+                            story.append(Paragraph(f"<b>Chart Example {i}: {chart_image.caption}</b>", styles['Heading3']))
+                        else:
+                            story.append(Paragraph(f"<b>Chart Example {i}</b>", styles['Heading3']))
+                        story.append(Spacer(1, 6))
+                        
+                        # Add image to PDF with proper sizing
+                        img = Image(image_path)
+                        # Scale image to fit page width (max 6 inches wide)
+                        img_width, img_height = img.drawWidth, img.drawHeight
+                        max_width = 7 * inch
+                        max_height = 5 * inch
+                        
+                        # Calculate scaling to fit within max dimensions
+                        scale_w = max_width / img_width if img_width > max_width else 1
+                        scale_h = max_height / img_height if img_height > max_height else 1
+                        scale = min(scale_w, scale_h)
+                        
+                        img.drawWidth = img_width * scale
+                        img.drawHeight = img_height * scale
+                        
+                        story.append(img)
+                        story.append(Spacer(1, 12))
+                        
+                except Exception as img_error:
+                    # If image fails, add a note instead
+                    story.append(Paragraph(f"<b>Chart Example {i}:</b> Image not available", styles['Normal']))
+                    story.append(Spacer(1, 8))
+                    current_app.logger.warning(f"Failed to include image {chart_image.id} in PDF: {img_error}")
+        
+        # Build PDF
+        doc.build(story)
+        buffer.seek(0)
+        
+        # Create response
+        from flask import make_response
+        response = make_response(buffer.getvalue())
+        buffer.close()
+        
+        filename = f"Trading_Model_{model.name.replace(' ', '_')}_Export.pdf"
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # Log activity
+        record_activity(f'Exported trading model "{model.name}" to PDF')
+        
+        return response
+        
+    except Exception as e:
+        current_app.logger.error(f"Error exporting trading model {model_id} to PDF: {e}", exc_info=True)
+        flash(f'Error exporting to PDF: {str(e)}', 'danger')
+        return redirect(url_for('admin.view_default_trading_model', model_id=model_id))
+
+
+@admin_bp.route('/default-trading-models/<int:model_id>/export-csv', methods=['POST'])
+@login_required
+@admin_required
+def export_trading_model_csv(model_id):
+    """Export a single trading model to CSV."""
+    try:
+        model = TradingModel.query.get_or_404(model_id)
+        
+        if not model.is_default:
+            flash('Access denied: This is not a default trading model.', 'warning')
+            return redirect(url_for('admin.manage_default_trading_models'))
+        
+        import csv
+        from io import StringIO
+        
+        # Create CSV content
+        output = StringIO()
+        writer = csv.writer(output)
+        
+        # Header
+        writer.writerow(['Trading Model Export', model.name])
+        writer.writerow(['Generated', datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
+        writer.writerow([])  # Empty row
+        
+        # Model details
+        fields = [
+            ('Name', model.name),
+            ('Version', model.version),
+            ('Status', 'Active' if model.is_active else 'Inactive'),
+            ('Overview Logic', model.overview_logic),
+            ('Primary Chart Timeframe', model.primary_chart_tf),
+            ('Execution Chart Timeframe', model.execution_chart_tf),
+            ('Context Chart Timeframe', model.context_chart_tf),
+            ('Technical Indicators Used', model.technical_indicators_used),
+            ('Chart Patterns Used', model.chart_patterns_used),
+            ('Price Action Signals', model.price_action_signals),
+            ('Key Levels Identification', model.key_levels_identification),
+            ('Volume Analysis Notes', model.volume_analysis_notes),
+            ('Fundamental Analysis Notes', model.fundamental_analysis_notes),
+            ('Entry Trigger Description', model.entry_trigger_description),
+            ('Optimal Market Conditions', model.optimal_market_conditions),
+            ('Instrument Applicability', model.instrument_applicability),
+            ('Session Applicability', model.session_applicability),
+            ('Sub-Optimal Market Conditions', model.sub_optimal_market_conditions),
+            ('Stop Loss Strategy', model.stop_loss_strategy),
+            ('Take Profit Strategy', model.take_profit_strategy),
+            ('Min Risk Reward Ratio', model.min_risk_reward_ratio),
+            ('Model Max Loss Per Trade', model.model_max_loss_per_trade),
+            ('Model Max Daily Loss', model.model_max_daily_loss),
+            ('Model Max Weekly Loss', model.model_max_weekly_loss),
+            ('Model Consecutive Loss Limit', model.model_consecutive_loss_limit),
+            ('Model Action on Max Drawdown', model.model_action_on_max_drawdown),
+            ('Position Sizing Rules', model.position_sizing_rules),
+            ('Scaling In/Out Rules', model.scaling_in_out_rules),
+            ('Trade Management Breakeven Rules', model.trade_management_breakeven_rules),
+            ('Trade Management Trailing Stop Rules', model.trade_management_trailing_stop_rules),
+            ('Trade Management Partial Profit Rules', model.trade_management_partial_profit_rules),
+            ('Trade Management Adverse Price Action', model.trade_management_adverse_price_action),
+            ('Pre-Trade Checklist', model.pre_trade_checklist),
+            ('Order Types Used', model.order_types_used),
+            ('Broker Platform Notes', model.broker_platform_notes),
+            ('Execution Confirmation Notes', model.execution_confirmation_notes),
+            ('Post Trade Routine Model', model.post_trade_routine_model),
+            ('Strengths', model.strengths),
+            ('Weaknesses', model.weaknesses),
+            ('Backtesting Forward Testing Notes', model.backtesting_forwardtesting_notes),
+            ('Refinements Learnings', model.refinements_learnings),
+            ('Created At', model.created_at.strftime('%Y-%m-%d %H:%M:%S') if model.created_at else ''),
+            ('Updated At', model.updated_at.strftime('%Y-%m-%d %H:%M:%S') if model.updated_at else '')
+        ]
+        
+        writer.writerow(['Field', 'Value'])
+        for field_name, field_value in fields:
+            writer.writerow([field_name, field_value or ''])
+        
+        # Create response
+        from flask import make_response
+        response = make_response(output.getvalue())
+        output.close()
+        
+        filename = f"Trading_Model_{model.name.replace(' ', '_')}_Export.csv"
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # Log activity
+        record_activity(f'Exported trading model "{model.name}" to CSV')
+        
+        return response
+        
+    except Exception as e:
+        current_app.logger.error(f"Error exporting trading model {model_id} to CSV: {e}", exc_info=True)
+        flash(f'Error exporting to CSV: {str(e)}', 'danger')
+        return redirect(url_for('admin.view_default_trading_model', model_id=model_id))
+
+
+@admin_bp.route('/default-trading-models/export-pdf', methods=['POST'])
+@login_required
+@admin_required
+def export_all_trading_models_pdf():
+    """Export all default trading models to PDF."""
+    try:
+        models = TradingModel.query.filter_by(is_default=True).order_by(TradingModel.name).all()
+        
+        if not models:
+            flash('No default trading models found to export.', 'warning')
+            return redirect(url_for('admin.manage_default_trading_models'))
+        
+        # Create PDF content
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.lib import colors
+        from io import BytesIO
+        import os
+        from PIL import Image as PILImage
+        
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72,
+                                topMargin=72, bottomMargin=18)
+        
+        # Build story
+        story = []
+        styles = getSampleStyleSheet()
+        
+        # Main Title
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            spaceAfter=30,
+            textColor=colors.HexColor('#0066cc'),
+            alignment=1  # Center
+        )
+        story.append(Paragraph("Trading Models Export", title_style))
+        story.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+        story.append(Paragraph(f"Total Models: {len(models)}", styles['Normal']))
+        story.append(Spacer(1, 30))
+        
+        # Table of Contents
+        story.append(Paragraph("Table of Contents", styles['Heading2']))
+        for i, model in enumerate(models, 1):
+            story.append(Paragraph(f"{i}. {model.name} (Version: {model.version or 'N/A'})", styles['Normal']))
+        story.append(PageBreak())
+        
+        # Individual Models
+        for i, model in enumerate(models, 1):
+            # Model Title
+            model_title_style = ParagraphStyle(
+                'ModelTitle',
+                parent=styles['Heading1'],
+                fontSize=18,
+                spaceAfter=20,
+                textColor=colors.HexColor('#0066cc')
+            )
+            story.append(Paragraph(f"{i}. {model.name}", model_title_style))
+            
+            # Basic Info
+            if model.version:
+                story.append(Paragraph(f"<b>Version:</b> {model.version}", styles['Normal']))
+            story.append(Paragraph(f"<b>Status:</b> {'Active' if model.is_active else 'Inactive'}", styles['Normal']))
+            story.append(Spacer(1, 12))
+            
+            # Overview
+            if model.overview_logic:
+                story.append(Paragraph("<b>Strategic Framework Overview</b>", styles['Heading3']))
+                story.append(Paragraph(model.overview_logic, styles['Normal']))
+                story.append(Spacer(1, 8))
+            
+            # Key sections
+            key_sections = [
+                ('Technical Indicators', model.technical_indicators_used),
+                ('Entry Triggers', model.entry_trigger_description),
+                ('Stop Loss Strategy', model.stop_loss_strategy),
+                ('Take Profit Strategy', model.take_profit_strategy),
+                ('Strengths', model.strengths),
+                ('Weaknesses', model.weaknesses)
+            ]
+            
+            for section_title, content in key_sections:
+                if content:
+                    story.append(Paragraph(f"<b>{section_title}:</b> {content}", styles['Normal']))
+                    story.append(Spacer(1, 4))
+            
+            # Chart Examples for this model
+            chart_examples = GlobalImage.query.filter_by(
+                entity_type='trading_model', 
+                entity_id=model.id
+            ).all()
+            
+            if chart_examples:
+                story.append(Spacer(1, 8))
+                story.append(Paragraph("<b>Chart Examples</b>", styles['Heading3']))
+                story.append(Spacer(1, 6))
+                
+                for j, chart_image in enumerate(chart_examples, 1):
+                    try:
+                        # Get the image file path using the model's full_disk_path property
+                        image_path = chart_image.full_disk_path
+                        
+                        if os.path.exists(image_path):
+                            # Add image title/caption
+                            if chart_image.caption:
+                                story.append(Paragraph(f"<b>Chart {j}: {chart_image.caption}</b>", styles['Normal']))
+                            else:
+                                story.append(Paragraph(f"<b>Chart {j}</b>", styles['Normal']))
+                            story.append(Spacer(1, 4))
+                            
+                            # Add image to PDF with proper sizing (smaller for bulk export)
+                            img = Image(image_path)
+                            # Scale image smaller for bulk export (max 4 inches wide)
+                            img_width, img_height = img.drawWidth, img.drawHeight
+                            max_width = 7 * inch
+                            max_height = 5 * inch
+                            
+                            # Calculate scaling to fit within max dimensions
+                            scale_w = max_width / img_width if img_width > max_width else 1
+                            scale_h = max_height / img_height if img_height > max_height else 1
+                            scale = min(scale_w, scale_h)
+                            
+                            img.drawWidth = img_width * scale
+                            img.drawHeight = img_height * scale
+                            
+                            story.append(img)
+                            story.append(Spacer(1, 6))
+                            
+                    except Exception as img_error:
+                        # If image fails, add a note instead
+                        story.append(Paragraph(f"<b>Chart {j}:</b> Image not available", styles['Normal']))
+                        story.append(Spacer(1, 4))
+                        current_app.logger.warning(f"Failed to include image {chart_image.id} in bulk PDF: {img_error}")
+            
+            # Add page break except for last model
+            if i < len(models):
+                story.append(PageBreak())
+        
+        # Build PDF
+        doc.build(story)
+        buffer.seek(0)
+        
+        # Create response
+        from flask import make_response
+        response = make_response(buffer.getvalue())
+        buffer.close()
+        
+        filename = f"All_Trading_Models_Export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # Log activity
+        record_activity(f'Exported {len(models)} trading models to PDF')
+        
+        return response
+        
+    except Exception as e:
+        current_app.logger.error(f"Error exporting all trading models to PDF: {e}", exc_info=True)
+        flash(f'Error exporting to PDF: {str(e)}', 'danger')
+        return redirect(url_for('admin.manage_default_trading_models'))
+
+
+@admin_bp.route('/default-trading-models/export-csv', methods=['POST'])
+@login_required
+@admin_required
+def export_all_trading_models_csv():
+    """Export all default trading models to CSV."""
+    try:
+        models = TradingModel.query.filter_by(is_default=True).order_by(TradingModel.name).all()
+        
+        if not models:
+            flash('No default trading models found to export.', 'warning')
+            return redirect(url_for('admin.manage_default_trading_models'))
+        
+        import csv
+        from io import StringIO
+        
+        # Create CSV content
+        output = StringIO()
+        writer = csv.writer(output)
+        
+        # Header
+        writer.writerow(['Trading Models Export - All Models'])
+        writer.writerow(['Generated', datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
+        writer.writerow(['Total Models', len(models)])
+        writer.writerow([])  # Empty row
+        
+        # Column headers
+        headers = [
+            'Model Name', 'Version', 'Status', 'Overview Logic', 
+            'Primary Chart TF', 'Execution Chart TF', 'Context Chart TF',
+            'Technical Indicators', 'Chart Patterns', 'Price Action Signals',
+            'Entry Triggers', 'Optimal Conditions', 'Stop Loss Strategy',
+            'Take Profit Strategy', 'Min Risk Reward', 'Position Sizing',
+            'Strengths', 'Weaknesses', 'Created At', 'Updated At'
+        ]
+        writer.writerow(headers)
+        
+        # Model data
+        for model in models:
+            row = [
+                model.name,
+                model.version or '',
+                'Active' if model.is_active else 'Inactive',
+                model.overview_logic or '',
+                model.primary_chart_tf or '',
+                model.execution_chart_tf or '',
+                model.context_chart_tf or '',
+                model.technical_indicators_used or '',
+                model.chart_patterns_used or '',
+                model.price_action_signals or '',
+                model.entry_trigger_description or '',
+                model.optimal_market_conditions or '',
+                model.stop_loss_strategy or '',
+                model.take_profit_strategy or '',
+                model.min_risk_reward_ratio or '',
+                model.position_sizing_rules or '',
+                model.strengths or '',
+                model.weaknesses or '',
+                model.created_at.strftime('%Y-%m-%d %H:%M:%S') if model.created_at else '',
+                model.updated_at.strftime('%Y-%m-%d %H:%M:%S') if model.updated_at else ''
+            ]
+            writer.writerow(row)
+        
+        # Create response
+        from flask import make_response
+        response = make_response(output.getvalue())
+        output.close()
+        
+        filename = f"All_Trading_Models_Export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # Log activity
+        record_activity(f'Exported {len(models)} trading models to CSV')
+        
+        return response
+        
+    except Exception as e:
+        current_app.logger.error(f"Error exporting all trading models to CSV: {e}", exc_info=True)
+        flash(f'Error exporting to CSV: {str(e)}', 'danger')
+        return redirect(url_for('admin.manage_default_trading_models'))
 
 
 @admin_bp.route('/delete-image/<int:image_id>', methods=['POST'])
@@ -2627,6 +3181,10 @@ def create_default_model_backtest(model_id):
     form.trading_model_id.data = model.id
     
     if form.validate_on_submit():
+        # Determine status - use form data or default to DRAFT
+        status_value = form.status.data if form.status.data else 'DRAFT'
+        status_enum = BacktestStatus[status_value]  # Convert string to enum using name lookup
+        
         backtest = Backtest(
             name=form.name.data,
             description=form.description.data,
@@ -2644,7 +3202,7 @@ def create_default_model_backtest(model_id):
             tradingview_screenshot_links=form.tradingview_screenshot_links.data,
             chart_screenshots=form.chart_screenshots.data,
             notes=form.notes.data,
-            status=BacktestStatus.DRAFT
+            status=status_enum
         )
         
         try:

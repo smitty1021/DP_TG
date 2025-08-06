@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ title }} - {{ trade.instrument }} on {{ trade.trade_date|format_date('%d-%b-%Y') }}{% endblock %}
+{% block title %}{{ title }} - {{ trade.instrument }} on {{ trade.trade_date.strftime('%d-%b-%Y') }}{% endblock %}
 
 {% block head_extra %}
 <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
@@ -16,7 +16,7 @@
                     {{ title }}
                 </h1>
                 <div class="executive-subtitle">
-                    Strategic Trading Analysis: {{ trade.instrument }} ({{ trade.direction }}) on {{ trade.trade_date|format_date('%d-%b-%Y') }}
+                    Strategic Trading Analysis: {{ trade.instrument }} ({{ trade.direction }}) on {{ trade.trade_date.strftime('%d-%b-%Y') }}
                 </div>
             </div>
             <div class="btn-group">
@@ -58,7 +58,7 @@
                 Trade Configuration Overview: {{ trade.id }} - {{ trade.instrument }} ({{ trade.direction }})
             </div>
             <div class="status-badge">
-                {{ trade.trade_date|format_date('%d-%b-%Y') }}
+                {{ trade.trade_date.strftime('%d-%b-%Y') }}
             </div>
         </div>
         <div class="module-content">
@@ -72,7 +72,7 @@
                         </div>
                         <div class="operation-item">
                             <span class="operation-label">Execution Date:</span>
-                            <span class="operation-value">{{ trade.trade_date|format_date('%d-%b-%Y') }}</span>
+                            <span class="operation-value">{{ trade.trade_date.strftime('%d-%b-%Y') }}</span>
                         </div>
                         <div class="operation-item">
                             <span class="operation-label">Strategic Direction:</span>
@@ -87,7 +87,7 @@
                             <div class="tag-container">
                                 {% if trade.tags %}
                                     {% for tag in trade.tags %}
-                                        <span class="status-badge me-1 mb-1 {{ tag|tag_color }}">
+                                        <span class="status-badge me-1 mb-1 tag-{{ tag.color or 'neutral' }}">
                                             {{ tag.name }}
                                         </span>
                                     {% endfor %}
@@ -161,7 +161,7 @@
                         </div>
                     </div>
                     <div class="module-content">
-                        {% if trade.entries.count() > 0 %}
+                        {% if trade.entries %}
                             <div class="operation-list">
                             {% for entry in trade.entries %}
                                 <div class="operation-item">
@@ -184,7 +184,7 @@
                         </div>
                     </div>
                     <div class="module-content">
-                         {% if trade.exits.count() > 0 %}
+                         {% if trade.exits %}
                             <div class="operation-list">
                             {% for exit_item in trade.exits %}
                                 <div class="operation-item">
@@ -313,7 +313,7 @@
             </div>
             {% endif %}
 
-            {% if trade.images.count() > 0 %}
+            {% if trade.images %}
             <hr class="section-divider">
             <div class="enterprise-module">
                 <div class="module-header">
@@ -324,7 +324,7 @@
                         {% for image in trade.images %}
                         <div class="col">
                             <div class="card h-100">
-                                <img src="{{ url_for('static', filename=current_app.config['UPLOAD_FOLDER'].split('/')[-1] + '/' + image.filepath if '/' in current_app.config['UPLOAD_FOLDER'] else current_app.config['UPLOAD_FOLDER'] + '/' + image.filepath) }}" class="card-img-top" alt="{{ image.filename }}" style="max-height: 200px; object-fit: contain;">
+                                <img src="{{ url_for('static', filename='uploads/' + image.filepath) }}" class="card-img-top" alt="{{ image.filename }}" style="max-height: 200px; object-fit: contain; cursor: pointer;" onclick="showImageModal('{{ url_for('static', filename='uploads/' + image.filepath) }}', '{{ image.filename }}')">
                                 <div class="card-body">
                                     <p class="card-text small">{{ image.filename }}</p>
                                     {% if image.caption %}<p class="card-text"><small class="text-muted">{{ image.caption }}</small></p>{% endif %}
@@ -341,6 +341,14 @@
 </div>
 
 <script>
+// Image modal function using Enterprise Media Modal
+function showImageModal(imageSrc, title) {
+    document.getElementById('imageModalTitle').textContent = title;
+    document.getElementById('imageModalImg').src = imageSrc;
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    modal.show();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Enterprise trade detail view initialized');
 

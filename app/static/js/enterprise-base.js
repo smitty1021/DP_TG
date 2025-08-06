@@ -192,6 +192,34 @@ function initializeMediaPreviewSystem() {
 }
 
 /**
+ * Global Unsaved Changes Indicator Management
+ */
+function showUnsavedChangesIndicator(message = null) {
+    const indicator = document.getElementById('global-unsaved-indicator');
+    
+    if (indicator) {
+        // Simple message - detailed info is shown in modal only
+        indicator.style.display = 'block';
+        console.log('🔶 Global unsaved changes indicator shown');
+    }
+}
+
+function hideUnsavedChangesIndicator() {
+    const indicator = document.getElementById('global-unsaved-indicator');
+    if (indicator) {
+        indicator.style.display = 'none';
+        console.log('🔷 Global unsaved changes indicator hidden');
+    }
+}
+
+function updateUnsavedChangesMessage(message) {
+    const messageSpan = document.getElementById('unsaved-changes-message');
+    if (messageSpan) {
+        messageSpan.textContent = message;
+    }
+}
+
+/**
  * Enterprise media preview system functions
  */
 function showImagePreview(imageUrl, title) {

@@ -300,6 +300,80 @@
                     </div>
                 </div>
             </div>
+            <div class="enterprise-module mt-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-bar module-icon"></i>
+                        Model Analytics
+                    </div>
+                    <div class="module-meta">Performance Overview</div>
+                </div>
+                <div class="module-content mb-3">
+                    <div class="operation-list">
+                        <div class="operation-item">
+                            <div class="operation-icon">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">
+                                    Backtesting Analytics
+                                </div>
+                                <div class="text-muted" style="font-size: 0.8rem;">
+                                    View comprehensive backtesting results and performance metrics for all trading models
+                                </div>
+                                <div class="mt-2">
+                                    <a href="{{ url_for('admin.manage_default_model_backtests') }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-chart-line me-1"></i>View Analytics
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="operation-item">
+                            <div class="operation-icon">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">
+                                    Create New Model
+                                </div>
+                                <div class="text-muted" style="font-size: 0.8rem;">
+                                    Design and configure a new strategic trading model
+                                </div>
+                                <div class="mt-2">
+                                    <a href="{{ url_for('admin.create_default_trading_model') }}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus me-1"></i>Create Model
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="operation-item">
+                            <div class="operation-icon">
+                                <i class="fas fa-download"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">
+                                    Export Configuration
+                                </div>
+                                <div class="text-muted" style="font-size: 0.8rem;">
+                                    Export trading model configurations to PDF or CSV format
+                                </div>
+                                <div class="mt-2">
+                                    <div class="btn-group btn-group-sm">
+                                        <button onclick="exportModelsPDF()" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-file-pdf me-1"></i>PDF
+                                        </button>
+                                        <button onclick="exportModelsCSV()" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-file-csv me-1"></i>CSV
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

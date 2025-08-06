@@ -8,130 +8,149 @@
 <input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
-<script src="{{ url_for('static', filename='js/unsaved-changes.js') }}"></script>
+<script>
+// Unsaved changes detection - MANDATORY for all forms
+let hasUnsavedChanges = false;
+let originalFormData = {};
+let isSubmitting = false;
 
-<style>
-.strategy-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-}
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('backtestForm');
+    const inputs = form.querySelectorAll('input, select, textarea');
 
-.strategy-card:hover {
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
-}
+    // Store original form data
+    inputs.forEach(input => {
+        if (input.type === 'checkbox') {
+            originalFormData[input.name] = input.checked;
+        } else {
+            originalFormData[input.name] = input.value || '';
+        }
+    });
 
-.card-header-custom {
-    background: linear-gradient(135deg, var(--enterprise-primary) 0%, #0056b3 100%);
-    color: white;
-    border-radius: 12px 12px 0 0 !important;
-    padding: 1rem 1.5rem;
-    border: none;
-}
+    // Monitor form changes and show/hide indicator
+    inputs.forEach(input => {
+        input.addEventListener('change', checkForChanges);
+        input.addEventListener('input', checkForChanges);
+    });
 
-.card-header-custom h5 {
-    margin: 0;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+    // Check if form has changes
+    function checkForChanges() {
+        hasUnsavedChanges = false;
+        inputs.forEach(input => {
+            let currentValue = (input.type === 'checkbox') ? input.checked : input.value;
+            let originalValue = (input.type === 'checkbox') ? originalFormData[input.name] : originalFormData[input.name] || '';
+            if (currentValue !== originalValue) {
+                hasUnsavedChanges = true;
+            }
+        });
 
-.form-label-custom {
-    font-weight: 600;
-    color: var(--enterprise-text-primary);
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
+        // Show/hide unsaved changes indicator
+        const indicator = document.getElementById('unsaved-indicator');
+        if (indicator) {
+            indicator.style.display = hasUnsavedChanges ? 'block' : 'none';
+        }
+    }
 
-.image-upload-zone {
-    border: 3px dashed #dee2e6;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-    transition: all 0.3s ease;
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-    position: relative;
-    overflow: hidden;
-}
+    // Handle form submission - mark as submitting to prevent popup
+    form.addEventListener('submit', function() {
+        console.log('Form submission detected, marking as submitting');
+        isSubmitting = true;
+        hasUnsavedChanges = false;
+        
+        // Reset the form state to prevent beforeunload warning
+        resetFormToOriginalState();
+    });
 
-.image-upload-zone:hover {
-    border-color: var(--enterprise-primary);
-    background: linear-gradient(135deg, rgba(0, 123, 255, 0.05) 0%, rgba(0, 123, 255, 0.02) 100%);
-}
+    // Handle beforeunload warning for navigation away from page
+    function beforeUnloadHandler(e) {
+        if (hasUnsavedChanges && !isSubmitting) {
+            const message = 'Backtest configuration data will be lost if you navigate away.';
+            e.preventDefault();
+            e.returnValue = message;
+            return message;
+        }
+    }
+    window.addEventListener('beforeunload', beforeUnloadHandler);
 
-.upload-icon {
-    font-size: 3rem;
-    color: #6c757d;
-    margin-bottom: 1rem;
-    transition: all 0.3s ease;
-}
+    // Handle link clicks and other navigation
+    document.addEventListener('click', function(e) {
+        const target = e.target.closest('a, button[onclick]');
+        if (target && hasUnsavedChanges && !isSubmitting) {
+            // Check if it's a navigation link (not form button)
+            const isNavigation = target.href || 
+                              (target.onclick && target.onclick.toString().includes('location')) ||
+                              target.getAttribute('onclick');
+            
+            if (isNavigation) {
+                e.preventDefault();
+                showCustomConfirmation({
+                    title: 'Unsaved Changes Detected',
+                    message: 'You have unsaved backtest configuration changes.\n\nWhat would you like to do?',
+                    confirmText: 'Save Changes',
+                    cancelText: 'Discard Changes',
+                    thirdButtonText: 'Cancel',
+                    confirmClass: 'btn-success',
+                    cancelClass: 'btn-outline-danger',
+                    thirdButtonClass: 'btn-secondary',
+                    icon: 'exclamation-triangle',
+                    showCancel: true,
+                    showThirdButton: true,
+                    onConfirm: function() {
+                        // Save the form first
+                        saveDraft().then(() => {
+                            resetFormToOriginalState();
+                            if (target.href) {
+                                window.location.href = target.href;
+                            } else if (target.onclick) {
+                                target.onclick();
+                            }
+                        });
+                    },
+                    onCancel: function() {
+                        // Discard changes and navigate
+                        resetFormToOriginalState();
+                        if (target.href) {
+                            window.location.href = target.href;
+                        } else if (target.onclick) {
+                            target.onclick();
+                        }
+                    },
+                    onThirdButton: function() {
+                        // Do nothing, stay on page
+                    }
+                });
+            }
+        }
+    });
 
-.image-upload-zone:hover .upload-icon {
-    color: var(--enterprise-primary);
-    transform: scale(1.1);
-}
+    function resetFormToOriginalState() {
+        console.log('🔄 Resetting form to original state...');
+        
+        // FIRST: Remove local beforeunload handler
+        window.removeEventListener('beforeunload', beforeUnloadHandler);
+        
+        // SECOND: Disable the global enterprise unsaved changes handler
+        if (window.enterpriseUnsavedChanges) {
+            window.enterpriseUnsavedChanges.hasUnsavedChanges = false;
+            window.enterpriseUnsavedChanges.isSubmitting = true;
+            window.enterpriseUnsavedChanges.markAsSubmitting();
+        }
+        
+        // THIRD: Nuclear option for any other handlers
+        window.onbeforeunload = null;
+        
+        // Reset form inputs and state flags
+        hasUnsavedChanges = false;
+        isSubmitting = true;
+        
+        // Hide indicator
+        const indicator = document.getElementById('unsaved-indicator');
+        if (indicator) indicator.style.display = 'none';
+    }
 
-.image-preview-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.image-preview {
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-}
-
-.image-preview:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
-
-.image-preview img {
-    width: 150px;
-    height: 100px;
-    object-fit: cover;
-}
-
-.remove-image {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: rgba(220, 53, 69, 0.9);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 25px;
-    height: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: all 0.2s ease;
-}
-
-.remove-image:hover {
-    background: rgba(220, 53, 69, 1);
-    transform: scale(1.1);
-}
-
-.textarea-3 { min-height: 100px; }
-.textarea-4 { min-height: 120px; }
-.textarea-5 { min-height: 150px; }
-.textarea-6 { min-height: 180px; }
-.textarea-7 { min-height: 200px; }
-</style>
+    console.log('Backtest form unsaved changes detection initialized');
+});
+</script>
 {% endblock %}
 
 {% block content %}
@@ -180,6 +199,13 @@
 
 <!-- Main Content -->
 <div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
+    <!-- Unsaved Changes Indicator -->
+    <div id="unsaved-indicator" class="alert alert-warning alert-dismissible fade show mb-3" role="alert" style="display: none;">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Unsaved Changes:</strong> You have entered backtest configuration data that has not been saved yet.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
     <form method="POST" enctype="multipart/form-data" id="backtestForm" class="needs-validation" novalidate>
         {{ form.hidden_tag() }}
         
@@ -188,13 +214,16 @@
             <!-- Column 1: Basic Configuration -->
             <div class="col-span-1">
                 <!-- Basic Settings -->
-                <div class="strategy-card mb-3">
-                    <div class="card-header-custom">
-                        <h5><i class="fas fa-cog"></i> Basic Configuration</h5>
+                <div class="enterprise-module mb-3">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-cog module-icon"></i>
+                            Basic Configuration
+                        </div>
                     </div>
-                    <div class="card-body p-4">
+                    <div class="module-content">
                         <div class="mb-3">
-                            <label class="form-label-custom">{{ form.name.label }}</label>
+                            <label class="form-label fw-semibold">{{ form.name.label }}</label>
                             {{ form.name(class="form-control", placeholder="e.g., ES 0930 Opening Range - January 2024") }}
                             {% if form.name.errors %}
                                 <div class="text-danger small mt-1">{{ form.name.errors[0] }}</div>
@@ -202,7 +231,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label-custom">{{ form.description.label }}</label>
+                            <label class="form-label fw-semibold">{{ form.description.label }}</label>
                             {{ form.description(class="form-control textarea-4", placeholder="Brief description of this backtest analysis...") }}
                             {% if form.description.errors %}
                                 <div class="text-danger small mt-1">{{ form.description.errors[0] }}</div>
@@ -212,7 +241,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label-custom">{{ form.start_date.label }}</label>
+                                    <label class="form-label fw-semibold">{{ form.start_date.label }}</label>
                                     {{ form.start_date(class="form-control") }}
                                     {% if form.start_date.errors %}
                                         <div class="text-danger small mt-1">{{ form.start_date.errors[0] }}</div>
@@ -221,7 +250,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label-custom">{{ form.end_date.label }}</label>
+                                    <label class="form-label fw-semibold">{{ form.end_date.label }}</label>
                                     {{ form.end_date(class="form-control") }}
                                     {% if form.end_date.errors %}
                                         <div class="text-danger small mt-1">{{ form.end_date.errors[0] }}</div>
@@ -231,7 +260,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label-custom">{{ form.session_context.label }}</label>
+                            <label class="form-label fw-semibold">{{ form.session_context.label }}</label>
                             {{ form.session_context(class="form-select") }}
                             {% if form.session_context.errors %}
                                 <div class="text-danger small mt-1">{{ form.session_context.errors[0] }}</div>
@@ -239,7 +268,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label-custom">{{ form.market_conditions.label }}</label>
+                            <label class="form-label fw-semibold">{{ form.market_conditions.label }}</label>
                             {{ form.market_conditions(class="form-control textarea-3", placeholder="Describe overall market conditions...") }}
                             {% if form.market_conditions.errors %}
                                 <div class="text-danger small mt-1">{{ form.market_conditions.errors[0] }}</div>
@@ -252,13 +281,16 @@
             <!-- Column 2: Trading Rules & Risk Management -->
             <div class="col-span-1">
                 <!-- Trading Rules -->
-                <div class="strategy-card mb-3">
-                    <div class="card-header-custom">
-                        <h5><i class="fas fa-chess"></i> Trading Rules & Strategy</h5>
+                <div class="enterprise-module mb-3">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-chess module-icon"></i>
+                            Trading Rules & Strategy
+                        </div>
                     </div>
-                    <div class="card-body p-4">
+                    <div class="module-content">
                         <div class="mb-3">
-                            <label class="form-label-custom">{{ form.specific_rules_used.label }}</label>
+                            <label class="form-label fw-semibold">{{ form.specific_rules_used.label }}</label>
                             {{ form.specific_rules_used(class="form-control textarea-4", placeholder="List specific rules or modifications applied...") }}
                             {% if form.specific_rules_used.errors %}
                                 <div class="text-danger small mt-1">{{ form.specific_rules_used.errors[0] }}</div>
@@ -266,7 +298,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label-custom">{{ form.entry_rules.label }}</label>
+                            <label class="form-label fw-semibold">{{ form.entry_rules.label }}</label>
                             {{ form.entry_rules(class="form-control textarea-3", placeholder="Define specific entry criteria and conditions...") }}
                             {% if form.entry_rules.errors %}
                                 <div class="text-danger small mt-1">{{ form.entry_rules.errors[0] }}</div>
@@ -274,7 +306,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label-custom">{{ form.exit_rules.label }}</label>
+                            <label class="form-label fw-semibold">{{ form.exit_rules.label }}</label>
                             {{ form.exit_rules(class="form-control textarea-3", placeholder="Define specific exit criteria and conditions...") }}
                             {% if form.exit_rules.errors %}
                                 <div class="text-danger small mt-1">{{ form.exit_rules.errors[0] }}</div>
@@ -282,7 +314,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label-custom">{{ form.trade_management_applied.label }}</label>
+                            <label class="form-label fw-semibold">{{ form.trade_management_applied.label }}</label>
                             {{ form.trade_management_applied(class="form-control textarea-4", placeholder="Describe trade management techniques...") }}
                             {% if form.trade_management_applied.errors %}
                                 <div class="text-danger small mt-1">{{ form.trade_management_applied.errors[0] }}</div>
@@ -290,7 +322,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label-custom">{{ form.risk_settings.label }}</label>
+                            <label class="form-label fw-semibold">{{ form.risk_settings.label }}</label>
                             {{ form.risk_settings(class="form-control textarea-3", placeholder="Detail risk management parameters...") }}
                             {% if form.risk_settings.errors %}
                                 <div class="text-danger small mt-1">{{ form.risk_settings.errors[0] }}</div>
@@ -303,13 +335,16 @@
             <!-- Column 3: Documentation & Screenshots -->
             <div class="col-span-1">
                 <!-- Screenshots -->
-                <div class="strategy-card mb-3">
-                    <div class="card-header-custom">
-                        <h5><i class="fas fa-camera"></i> Screenshots & Evidence</h5>
+                <div class="enterprise-module mb-3">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-camera module-icon"></i>
+                            Screenshots & Evidence
+                        </div>
                     </div>
-                    <div class="card-body p-4">
+                    <div class="module-content">
                         <div class="mb-3">
-                            <label class="form-label-custom">{{ form.tradingview_screenshot_links.label }}</label>
+                            <label class="form-label fw-semibold">{{ form.tradingview_screenshot_links.label }}</label>
                             {{ form.tradingview_screenshot_links(class="form-control textarea-3", placeholder="https://tradingview.com/chart/...\nOne URL per line") }}
                             {% if form.tradingview_screenshot_links.errors %}
                                 <div class="text-danger small mt-1">{{ form.tradingview_screenshot_links.errors[0] }}</div>
@@ -317,7 +352,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label-custom">{{ form.chart_screenshots.label }}</label>
+                            <label class="form-label fw-semibold">{{ form.chart_screenshots.label }}</label>
                             {{ form.chart_screenshots(class="form-control textarea-3", placeholder="https://imgur.com/...\nOne URL per line") }}
                             {% if form.chart_screenshots.errors %}
                                 <div class="text-danger small mt-1">{{ form.chart_screenshots.errors[0] }}</div>
@@ -325,7 +360,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label-custom">{{ form.notes.label }}</label>
+                            <label class="form-label fw-semibold">{{ form.notes.label }}</label>
                             {{ form.notes(class="form-control textarea-4", placeholder="Additional observations, lessons learned, or important notes...") }}
                             {% if form.notes.errors %}
                                 <div class="text-danger small mt-1">{{ form.notes.errors[0] }}</div>
@@ -336,43 +371,35 @@
             </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="enterprise-module mb-3 mt-4">
-            <div class="module-content mb-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="text-muted">
-                        <i class="fas fa-info-circle me-2"></i>
-                        All fields are optional except description. You can add trades after creating the backtest.
-                    </div>
-                    
-                    <div class="btn-group">
-                        <a href="{{ url_for('admin.manage_default_model_backtests') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-times me-2"></i>Cancel
-                        </a>
-                        <button type="button" class="btn btn-outline-primary" onclick="saveDraft()">
-                            <i class="fas fa-save me-2"></i>Save as Draft
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-chart-bar me-2"></i>Create Backtest
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Content spacer for sticky buttons -->
+        <div class="sticky-action-buttons-spacer"></div>
     </form>
 </div>
 
-<script>
+<!-- Sticky Action Buttons -->
+<div class="sticky-action-buttons">
+    <button type="submit" class="btn btn-primary" form="backtestForm">
+        <i class="fas fa-chart-bar me-1"></i>Create Backtest
+    </button>
+    <button type="button" class="btn btn-outline-primary" onclick="saveDraft()">
+        <i class="fas fa-save me-2"></i>Save as Draft
+    </button>
+    <a href="{{ url_for('admin.manage_default_model_backtests') }}" class="btn btn-secondary">
+        <i class="fas fa-times me-2"></i>Cancel
+    </a>
+</div>
 
+{% block scripts_extra %}
+<script>
 // =====================================
 // FORM HANDLING
 // =====================================
 function saveDraft() {
     const form = document.getElementById('backtestForm');
     const formData = new FormData(form);
-    formData.set('status', 'draft');
+    formData.set('status', 'DRAFT');
     
-    fetch(form.action, {
+    return fetch(form.action, {
         method: 'POST',
         body: formData,
         headers: {
@@ -382,6 +409,9 @@ function saveDraft() {
     .then(response => {
         if (response.ok) {
             showSuccess('Backtest saved as draft successfully.', 'Draft Saved');
+            // Mark as submitting to prevent unsaved changes warning
+            isSubmitting = true;
+            hasUnsavedChanges = false;
             setTimeout(() => {
                 window.location.href = '{{ url_for("admin.manage_default_model_backtests") }}';
             }, 1500);
@@ -392,19 +422,30 @@ function saveDraft() {
     .catch(error => {
         console.error('Save error:', error);
         showErrorMessage('Failed to save draft. Please try again.');
+        throw error; // Re-throw for promise chain
     });
 }
 
 // Form validation
-document.getElementById('backtestForm').addEventListener('submit', function(e) {
-    if (!this.checkValidity()) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        showErrorMessage('Please fill in all required fields correctly.');
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('backtestForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!this.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+                showErrorMessage('Please fill in all required fields correctly.');
+                return false;
+            }
+            
+            // Mark as submitting for unsaved changes detection
+            isSubmitting = true;
+            hasUnsavedChanges = false;
+            
+            this.classList.add('was-validated');
+            console.log('Form validation passed, submitting...');
+        });
     }
-    
-    this.classList.add('was-validated');
 });
 
 // =====================================
@@ -459,15 +500,7 @@ function showSuccess(message, title = 'Success') {
         alert(message);
     }
 }
-
-// Initialize unsaved changes detection
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof initializeUnsavedChanges === 'function') {
-        initializeUnsavedChanges('backtestForm');
-    }
-    
-    console.log('Create Backtest Form initialized');
-});
 </script>
+{% endblock %}
 
 {% endblock %}

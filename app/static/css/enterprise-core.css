@@ -937,6 +937,7 @@ div .form-control.textarea-1,
     min-height: 40px !important;
     max-height: none !important;
     resize: vertical !important;
+    overflow-y: auto !important;
 }
 
 /* Two line textarea */
@@ -952,6 +953,7 @@ div .form-control.textarea-2,
     min-height: 60px !important;
     max-height: none !important;
     resize: vertical !important;
+    overflow-y: auto !important;
 }
 
 /* Three line textarea */
@@ -967,6 +969,7 @@ div .form-control.textarea-3,
     min-height: 80px !important;
     max-height: none !important;
     resize: vertical !important;
+    overflow-y: auto !important;
 }
 
 /* Four line textarea */
@@ -982,6 +985,7 @@ div .form-control.textarea-4,
     min-height: 100px !important;
     max-height: none !important;
     resize: vertical !important;
+    overflow-y: auto !important;
 }
 
 /* Five line textarea */
@@ -997,6 +1001,7 @@ div .form-control.textarea-5,
     min-height: 120px !important;
     max-height: none !important;
     resize: vertical !important;
+    overflow-y: auto !important;
 }
 
 /* Six line textarea */
@@ -1012,6 +1017,7 @@ div .form-control.textarea-6,
     min-height: 140px !important;
     max-height: none !important;
     resize: vertical !important;
+    overflow-y: auto !important;
 }
 
 /* Seven line textarea */
@@ -1027,6 +1033,7 @@ div .form-control.textarea-7,
     min-height: 160px !important;
     max-height: none !important;
     resize: vertical !important;
+    overflow-y: auto !important;
 }
 
 /* Eight line textarea */
@@ -1042,6 +1049,7 @@ div .form-control.textarea-8,
     min-height: 180px !important;
     max-height: none !important;
     resize: vertical !important;
+    overflow-y: auto !important;
 }
 
 /* Ten line textarea */
@@ -1057,6 +1065,7 @@ div .form-control.textarea-10,
     min-height: 220px !important;
     max-height: none !important;
     resize: vertical !important;
+    overflow-y: auto !important;
 }
 
 /* Twelve line textarea */
@@ -1072,6 +1081,7 @@ div .form-control.textarea-12,
     min-height: 260px !important;
     max-height: none !important;
     resize: vertical !important;
+    overflow-y: auto !important;
 }
 
 /* Fifteen line textarea */
@@ -1087,6 +1097,7 @@ div .form-control.textarea-15,
     min-height: 320px !important;
     max-height: none !important;
     resize: vertical !important;
+    overflow-y: auto !important;
 }
 
 /* Twenty line textarea */
@@ -1102,6 +1113,7 @@ div .form-control.textarea-20,
     min-height: 420px !important;
     max-height: none !important;
     resize: vertical !important;
+    overflow-y: auto !important;
 }
 
 /*

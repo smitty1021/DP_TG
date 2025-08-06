@@ -105,10 +105,7 @@
 {% block scripts_extra %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize enterprise unsaved changes detection
-    if (typeof window.initEnterpriseUnsavedChanges === 'function') {
-        window.initEnterpriseUnsavedChanges();
-    }
+
 
     // Check for verification notifications
     {% if session.pop('show_verification_required', False) %}

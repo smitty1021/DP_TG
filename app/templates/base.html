@@ -254,6 +254,18 @@
 
         <div class="content-wrapper">
             <main class="main-content">
+                <!-- Global Unsaved Changes Indicator -->
+                <div id="global-unsaved-indicator" class="alert alert-warning alert-dismissible fade show" role="alert" 
+                     style="display: none; position: sticky; top: 0; z-index: 1040; margin: 0 auto; padding: 0.5rem 1rem; border-radius: 0.375rem; width: fit-content; max-width: 90%;">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <div class="flex-grow-1">
+                            <strong>Unsaved Changes:</strong> You have made changes that have not been saved yet.
+                        </div>
+
+                    </div>
+                </div>
+                
                 <div class="enterprise-container-fluid p-4">
                     {% block page_header %}{% endblock %}
                     {% block content %}{% endblock %}
@@ -293,8 +305,9 @@
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="imageModalTitle">Media Asset</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="modal-title">
+                        <h5 class="modal-title" id="imageModalTitle">Media Asset</h5>
+                    </div>
                 </div>
                 <div class="modal-body text-center">
                     <img id="imageModalImg" src="" alt="" class="img-fluid" style="max-height: 80vh; max-width: 100%;">

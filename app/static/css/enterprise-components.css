@@ -3222,7 +3222,7 @@ CONSOLIDATED MODAL SYSTEM
 }
 
 #imageModal .modal-body img {
-    max-height: 80vh !important;
+    max-height: 65vh !important;
     max-width: 100% !important;
     height: auto !important;
     width: auto !important;

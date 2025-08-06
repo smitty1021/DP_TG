@@ -10,33 +10,24 @@
 <input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+<script src="{{ url_for('static', filename='js/unsaved-changes.js') }}"></script>
 {% endblock %}
 
 {% block scripts_extra %}
 <script>
-// Global variables for unsaved changes tracking
-let hasUnsavedChanges = false;
-let originalFormData = {};
-let isSubmitting = false;
-
+// Trading model page-specific initialization
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize comprehensive unsaved changes detection
-    initializeUnsavedChangesDetection();
-
     // Initialize image preview functionality
     initializeImagePreview();
-
+    
     // Initialize auto-resizing textareas
     initializeAutoResizeTextareas();
 
-    // Add form submission debugging
+    // Add form submission validation
     const form = document.getElementById('create-trading-model-form');
     if (form) {
         form.addEventListener('submit', function(e) {
             console.log('Form submission detected');
-            console.log('Form data:', new FormData(form));
-            console.log('Form action:', form.action);
-            console.log('Form method:', form.method);
             
             // Only validate required fields for create mode (not edit mode)
             {% if not model %}
@@ -45,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 { element: form.querySelector('#name'), label: 'Model Name' },
                 { element: form.querySelector('#entry_trigger_description'), label: 'Entry Trigger Specifications' },
                 { element: form.querySelector('#stop_loss_strategy'), label: 'Stop Loss Protocol' },
-                { element: form.querySelector('#take_profit_strategy'), label: 'Profit Target Strategy' }
+                { element: form.querySelector('#take_profit_strategy'), label: 'Profit Target Protocol' }
             ];
             
             requiredFields.forEach(field => {
@@ -72,12 +63,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             {% endif %}
             
-            // Mark as submitting to prevent unsaved changes warnings
-            isSubmitting = true;
-            hasUnsavedChanges = false;
-            hideUnsavedIndicator();
+            // Mark as submitting for the global unsaved changes system
+            if (window.enterpriseUnsavedChanges) {
+                window.enterpriseUnsavedChanges.markAsSubmitting();
+            }
             
-            // Allow form to submit normally
             console.log('Form validation passed, submitting...');
         });
     }
@@ -85,50 +75,110 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Page initialized');
 });
 
+// Image management functions using enterprise modal system
+function showImageModal(imageSrc, title) {
+    document.getElementById('imageModalTitle').textContent = title;
+    document.getElementById('imageModalImg').src = imageSrc;
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    modal.show();
+}
+
+function deleteExistingImage(imageId, filename) {
+    showCustomConfirmation(
+        'Delete Chart Example',
+        `Are you sure you want to delete "${filename}"?<br><br>This action cannot be undone.`,
+        'btn-danger',
+        'trash-alt'
+    ).then(result => {
+        if (result) {
+            // Make AJAX request to delete image
+            const formData = new FormData();
+            formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+            
+            fetch(`/admin/delete-image/${imageId}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the image from display
+                    const imageContainer = document.getElementById(`existing-image-${imageId}`);
+                    if (imageContainer) {
+                        imageContainer.remove();
+                    }
+                    
+                    // Update the count or show default state if no images left
+                    const existingImagesContainer = document.getElementById('existing-images-container');
+                    if (existingImagesContainer) {
+                        const remainingImages = existingImagesContainer.querySelectorAll('[id^="existing-image-"]');
+                        
+                        if (remainingImages.length === 0) {
+                            existingImagesContainer.style.display = 'none';
+                            // Show default state if it exists
+                            const defaultState = document.getElementById('default-chart-state');
+                            if (defaultState) {
+                                defaultState.style.display = 'block';
+                            }
+                        } else {
+                            // Update count in header
+                            const header = existingImagesContainer.querySelector('h6');
+                            if (header) {
+                                header.textContent = `Current Chart Examples (${remainingImages.length})`;
+                            }
+                        }
+                    }
+                    
+                    // Mark as changed for unsaved changes detection
+                    if (window.enterpriseUnsavedChanges) {
+                        window.enterpriseUnsavedChanges.hasUnsavedChanges = true;
+                        window.enterpriseUnsavedChanges.updateVisualIndicators();
+                    }
+                    
+                    showNotification('Image deleted successfully', 'success');
+                } else {
+                    showNotification(data.message || 'Error deleting image', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error deleting image', 'error');
+            });
+        }
+    });
+}
+
+// Image preview functionality for file input
 function initializeImagePreview() {
     const fileInput = document.getElementById('chart_examples');
     const previewContainer = document.getElementById('image-preview-container');
-    const defaultState = document.getElementById('default-chart-state');
+    const previewDiv = document.getElementById('newImagePreview');
 
-    if (fileInput && previewContainer) {
+    if (fileInput && previewDiv) {
         fileInput.addEventListener('change', function(e) {
-            previewContainer.innerHTML = '';
-
             if (this.files && this.files.length > 0) {
-                previewContainer.style.display = 'block';
-                if (defaultState) defaultState.style.display = 'none';
-                
-                // Mark as changed for unsaved changes
-                if (window.enterpriseUnsavedChanges) {
-                    window.enterpriseUnsavedChanges.hasUnsavedChanges = true;
-                    window.enterpriseUnsavedChanges.updateVisualIndicators();
-                }
-
-                Array.from(this.files).forEach((file, index) => {
-                    if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const previewDiv = document.createElement('div');
-                            previewDiv.className = 'text-center mb-3';
-                            previewDiv.innerHTML = `
-                                <div class="mb-3">
-                                    <img src="${e.target.result}"
-                                         alt="Trading Model Chart Example ${index + 1}"
-                                         class="img-fluid rounded"
-                                         style="max-height: 250px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;"
-                                         onmouseover="this.style.border='2px solid #0066cc'; this.style.transform='scale(1.02)'"
-                                         onmouseout="this.style.border='2px solid transparent'; this.style.transform='scale(1)'">
-                                </div>
-                                <div class="text-muted small mb-2" style="font-style: italic;">${file.name}</div>
-                            `;
-                            previewContainer.appendChild(previewDiv);
-                        };
-                        reader.readAsDataURL(file);
+                const file = this.files[0];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const previewImg = document.getElementById('previewImg');
+                        if (previewImg) {
+                            previewImg.src = e.target.result;
+                            previewDiv.style.display = 'block';
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    // Mark as changed for unsaved changes
+                    if (window.enterpriseUnsavedChanges) {
+                        window.enterpriseUnsavedChanges.hasUnsavedChanges = true;
+                        window.enterpriseUnsavedChanges.updateVisualIndicators();
                     }
-                });
+                } else {
+                    showNotification('Please select a valid image file', 'warning');
+                }
             } else {
-                previewContainer.style.display = 'none';
-                if (defaultState) defaultState.style.display = 'block';
+                previewDiv.style.display = 'none';
             }
         });
     }
@@ -306,90 +356,9 @@ function confirmCancel() {
     }
 }
 
-// Delete existing image function
-function deleteExistingImage(imageId, filename) {
-    showCustomConfirmation(
-        'Delete Chart Example',
-        `Are you sure you want to delete "${filename}"?<br><br>This action cannot be undone.`,
-        'btn-danger',
-        'trash-alt'
-    ).then(result => {
-        if (result) {
-            // Make AJAX request to delete image
-            const formData = new FormData();
-            formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
-            
-            fetch(`/admin/delete-image/${imageId}`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Remove the image from display
-                    const imageContainer = document.getElementById(`existing-image-${imageId}`);
-                    if (imageContainer) {
-                        imageContainer.remove();
-                    }
-                    
-                    // Update the count or show default state if no images left
-                    const existingImagesContainer = document.getElementById('existing-images-container');
-                    const remainingImages = existingImagesContainer.querySelectorAll('[id^="existing-image-"]');
-                    
-                    if (remainingImages.length === 0) {
-                        existingImagesContainer.style.display = 'none';
-                        // Show default state if it exists
-                        const defaultState = document.getElementById('default-chart-state');
-                        if (defaultState) {
-                            defaultState.style.display = 'block';
-                        }
-                    } else {
-                        // Update count in header
-                        const header = existingImagesContainer.querySelector('h6');
-                        if (header) {
-                            header.textContent = `Current Chart Examples (${remainingImages.length})`;
-                        }
-                    }
-                    
-                    // Mark as changed for unsaved changes detection
-                    if (window.enterpriseUnsavedChanges) {
-                        window.enterpriseUnsavedChanges.hasUnsavedChanges = true;
-                        window.enterpriseUnsavedChanges.updateVisualIndicators();
-                    }
-                    
-                    if (typeof showNotification === 'function') {
-                        showNotification('Image deleted successfully', 'success');
-                    }
-                } else {
-                    if (typeof showNotification === 'function') {
-                        showNotification(data.message || 'Error deleting image', 'error');
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                if (typeof showNotification === 'function') {
-                    showNotification('Error deleting image', 'error');
-                }
-            });
-        }
-    });
-}
+// Image deletion is now handled by the global image management system
 
-// Show image modal function
-function showImageModal(imageSrc, title) {
-    if (typeof showCustomConfirmation === 'function') {
-        showCustomConfirmation(
-            title || 'Chart Example',
-            `<div class="text-center"><img src="${imageSrc}" class="img-fluid" style="max-width: 100%; max-height: 70vh;"></div>`,
-            'btn-primary',
-            'eye'
-        );
-    } else {
-        // Fallback - open in new window
-        window.open(imageSrc, '_blank');
-    }
-}
+
 </script>
 {% endblock %}
 
@@ -438,12 +407,6 @@ function showImageModal(imageSrc, title) {
 
 <!-- Main Content Wrapper -->
 <div class="enterprise-container-fluid mt-3">
-    <!-- Unsaved Changes Indicator -->
-    <div id="unsaved-indicator" class="alert alert-warning alert-dismissible fade show" role="alert" style="display: none;">
-        <i class="fas fa-exclamation-triangle me-2"></i>
-        <strong>Unsaved Changes:</strong> You have made changes that have not been saved yet.
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
     <div class="grid grid-cols-3 gap-4 align-items-start">
         <!-- Primary Configuration Panel (2/3 width) -->
         <div class="col-span-2">
@@ -453,7 +416,7 @@ function showImageModal(imageSrc, title) {
 
                 <!-- Required Fields Notice -->
                 {% if not model %}
-                <div class="alert alert-info mb-4" role="alert">
+                <div class="alert alert-info mb-3" role="alert">
                     <div class="d-flex align-items-start">
                         <i class="fas fa-info-circle me-2 mt-1"></i>
                         <div>
@@ -463,13 +426,13 @@ function showImageModal(imageSrc, title) {
                                 <li><strong>Model Name</strong> - Unique identifier for your trading framework</li>
                                 <li><strong>Entry Trigger Specifications</strong> - Precise conditions for trade initiation</li>
                                 <li><strong>Stop Loss Protocol</strong> - Risk management strategy</li>
-                                <li><strong>Profit Target Strategy</strong> - Exit strategy for profitable trades</li>
+                                <li><strong>Profit Target Protocol</strong> - Exit strategy for profitable trades</li>
                             </ul>
                         </div>
                     </div>
                 </div>
                 {% else %}
-                <div class="alert alert-warning mb-4" role="alert">
+                <div class="alert alert-warning mb-3" role="alert">
                     <div class="d-flex align-items-start">
                         <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
                         <div>
@@ -481,13 +444,12 @@ function showImageModal(imageSrc, title) {
                 {% endif %}
 
                 <!-- Strategic Framework Overview -->
-                <div class="enterprise-module mb-4">
+                <div class="enterprise-module mb-3">
                     <div class="module-header">
                         <div class="module-title">
                             <i class="fas fa-info-circle module-icon"></i>
                             Strategic Framework Overview
                         </div>
-                        <div class="module-meta">Trading Model Configuration</div>
                     </div>
                     <div class="module-content">
                         <div class="grid grid-cols-8 gap-3 mb-3">
@@ -517,40 +479,71 @@ function showImageModal(imageSrc, title) {
                             </div>
 
                             <div class="col-span-2">
-                                <div class="module-title">Operational Timeframes</div>
-                                <label for="{{ form.primary_chart_tf.id }}" class="text-muted">Analysis Timeframe</label>
+                                <div class="module-title">Timeframes Utilized</div>
+                                <label for="{{ form.primary_chart_tf.id }}" class="text-muted">Analysis</label>
                                 {{ form.primary_chart_tf(class="form-control" + (" is-invalid" if form.primary_chart_tf.errors else "")) }}
                                 {% if form.primary_chart_tf.errors %}
                                     <div class="invalid-feedback">{{ form.primary_chart_tf.errors[0] }}</div>
                                 {% endif %}
 
-                                <label for="{{ form.execution_chart_tf.id }}" class="text-muted">Execution Timeframe</label>
+                                <label for="{{ form.execution_chart_tf.id }}" class="text-muted">Execution</label>
                                 {{ form.execution_chart_tf(class="form-control" + (" is-invalid" if form.execution_chart_tf.errors else "")) }}
                                 {% if form.execution_chart_tf.errors %}
                                     <div class="invalid-feedback">{{ form.execution_chart_tf.errors[0] }}</div>
                                 {% endif %}
 
-                                <label for="{{ form.context_chart_tf.id }}" class="text-muted">Context Analysis</label>
+                                <label for="{{ form.context_chart_tf.id }}" class="text-muted">Higher Timeframe Analysis</label>
                                 {{ form.context_chart_tf(class="form-control" + (" is-invalid" if form.context_chart_tf.errors else "")) }}
                                 {% if form.context_chart_tf.errors %}
                                     <div class="invalid-feedback">{{ form.context_chart_tf.errors[0] }}</div>
                                 {% endif %}
                             </div>
                         </div>
-
-                        <div class="grid grid-cols-6 gap-3">
+                        <div class="grid grid-cols-6 gap-3 mb-3">
                             <div class="col-span-3">
+                                <label for="{{ form.instrument_applicability.id }}" class="form-label fw-semibold">Market and Instrument Focus</label>
+                                {{ form.instrument_applicability(class="form-control textarea-4", form="create-trading-model-form") }}
+                                {% if form.instrument_applicability.errors %}
+                                    <div class="invalid-feedback">{{ form.instrument_applicability.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-span-3">
+                                <label for="{{ form.session_applicability.id }}" class="form-label fw-semibold">Session Parameters</label>
+                                {{ form.session_applicability(class="form-control textarea-4", form="create-trading-model-form") }}
+                                {% if form.session_applicability.errors %}
+                                    <div class="invalid-feedback">{{ form.session_applicability.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-8 gap-3">
+                            <div class="col-span-2">
                                 <label for="{{ form.technical_indicators_used.id }}" class="form-label fw-semibold">Technical Indicators and Settings</label>
                                 {{ form.technical_indicators_used(class="form-control textarea-8") }}
                                 {% if form.technical_indicators_used.errors %}
                                     <div class="invalid-feedback">{{ form.technical_indicators_used.errors[0] }}</div>
                                 {% endif %}
                             </div>
-                            <div class="col-span-3">
+                            <div class="col-span-2">
                                 <label for="{{ form.chart_patterns_used.id }}" class="form-label fw-semibold">Chart Patterns and Formations</label>
                                 {{ form.chart_patterns_used(class="form-control textarea-8") }}
                                 {% if form.chart_patterns_used.errors %}
                                     <div class="invalid-feedback">{{ form.chart_patterns_used.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-span-2">
+                                <label for="{{ form.price_action_signals.id }}" class="form-label fw-semibold">Price Action Signals</label>
+                                {{ form.price_action_signals(class="form-control textarea-8", form="create-trading-model-form") }}
+                                {% if form.price_action_signals.errors %}
+                                    <div class="invalid-feedback">{{ form.price_action_signals.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-span-2">
+                                <label for="{{ form.key_levels_identification.id }}" class="form-label fw-semibold">Key Level Identification</label>
+                                {{ form.key_levels_identification(class="form-control textarea-8", form="create-trading-model-form") }}
+                                {% if form.key_levels_identification.errors %}
+                                    <div class="invalid-feedback">{{ form.key_levels_identification.errors[0] }}</div>
                                 {% endif %}
                             </div>
                             <div class="col-span-4">
@@ -565,75 +558,53 @@ function showImageModal(imageSrc, title) {
                         </div>
                     </div>
                 </div>
-
-
-
-                    <!-- Entry & Risk Management Framework -->
-                    <div class="enterprise-module mb-4">
-                        <div class="module-header">
-                            <div class="module-title">
-                                <i class="fas fa-shield-alt module-icon"></i>
-                                Entry & Execution
-                            </div>
-                            <div class="module-meta">Trade Execution & Protection Protocols</div>
+                <!-- Additional Configuration Parameters -->
+                <div class="enterprise-module mb-3">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-cog module-icon"></i>
+                            Additional Configuration
                         </div>
-                        <div class="module-content">
-                            <div class="mb-3">
-                                <label for="{{ form.entry_trigger_description.id }}" class="form-label fw-semibold">Entry Trigger Specifications <span class="text-danger">*</span></label>
-                                {{ form.entry_trigger_description(class="form-control" + (" is-invalid" if form.entry_trigger_description.errors else ""), rows="4") }}
-                                {% if form.entry_trigger_description.errors %}
-                                    <div class="invalid-feedback">{{ form.entry_trigger_description.errors[0] }}</div>
+                    </div>
+                    <div class="module-content">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="col-span-1">
+                                <label for="{{ form.optimal_market_conditions.id }}" class="form-label fw-semibold">Optimal Market Conditions</label>
+                                {{ form.optimal_market_conditions(class="form-control textarea-8", form="create-trading-model-form") }}
+                                {% if form.optimal_market_conditions.errors %}
+                                    <div class="invalid-feedback">{{ form.optimal_market_conditions.errors[0] }}</div>
                                 {% endif %}
-                                <div class="form-text">Precise conditions required for trade initiation</div>
                             </div>
-                            <div class="grid grid-cols-3 gap-3">
-                                <div class="col-span-1">
-                                    <label for="{{ form.stop_loss_strategy.id }}" class="form-label fw-semibold">Stop Loss Protocol <span class="text-danger">*</span></label>
-                                    {{ form.stop_loss_strategy(class="form-control" + (" is-invalid" if form.stop_loss_strategy.errors else ""), rows="3") }}
-                                    {% if form.stop_loss_strategy.errors %}
-                                        <div class="invalid-feedback">{{ form.stop_loss_strategy.errors[0] }}</div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-span-1">
-                                    <label for="{{ form.take_profit_strategy.id }}" class="form-label fw-semibold">Profit Target Strategy <span class="text-danger">*</span></label>
-                                    {{ form.take_profit_strategy(class="form-control" + (" is-invalid" if form.take_profit_strategy.errors else ""), rows="3") }}
-                                    {% if form.take_profit_strategy.errors %}
-                                        <div class="invalid-feedback">{{ form.take_profit_strategy.errors[0] }}</div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-span-1">
-                                    <label for="{{ form.min_risk_reward_ratio.id }}" class="form-label fw-semibold">Minimum Risk:Reward</label>
-                                    {{ form.min_risk_reward_ratio(class="form-control" + (" is-invalid" if form.min_risk_reward_ratio.errors else "")) }}
-                                    {% if form.min_risk_reward_ratio.errors %}
-                                        <div class="invalid-feedback">{{ form.min_risk_reward_ratio.errors[0] }}</div>
-                                    {% endif %}
-                                    <div class="form-text">Required ratio threshold</div>
-                                </div>
+                            <div class="col-span-1">
+                                <label for="{{ form.sub_optimal_market_conditions.id }}" class="form-label fw-semibold">Market Exclusion Conditions</label>
+                                {{ form.sub_optimal_market_conditions(class="form-control textarea-8", form="create-trading-model-form") }}
+                                {% if form.sub_optimal_market_conditions.errors %}
+                                    <div class="invalid-feedback">{{ form.sub_optimal_market_conditions.errors[0] }}</div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
-
+                </div>
                 <!-- Position Management Operations -->
-                <div class="enterprise-module mb-4">
+                <div class="enterprise-module mb-3">
                     <div class="module-header">
                         <div class="module-title">
                             <i class="fas fa-balance-scale module-icon"></i>
                             Position Management Operations
                         </div>
-                        <div class="module-meta">Sizing & Dynamic Trade Management</div>
                     </div>
                     <div class="module-content">
                         <div class="grid grid-cols-2 gap-3 mb-3">
                             <div class="col-span-1">
                                 <label for="{{ form.position_sizing_rules.id }}" class="form-label fw-semibold">Position Sizing Protocol</label>
-                                {{ form.position_sizing_rules(class="form-control", rows="3") }}
+                                {{ form.position_sizing_rules(class="form-control textarea-5") }}
                                 {% if form.position_sizing_rules.errors %}
                                     <div class="invalid-feedback">{{ form.position_sizing_rules.errors[0] }}</div>
                                 {% endif %}
                             </div>
                             <div class="col-span-1">
                                 <label for="{{ form.scaling_in_out_rules.id }}" class="form-label fw-semibold">Scaling Operations</label>
-                                {{ form.scaling_in_out_rules(class="form-control", rows="3") }}
+                                {{ form.scaling_in_out_rules(class="form-control textarea-5") }}
                                 {% if form.scaling_in_out_rules.errors %}
                                     <div class="invalid-feedback">{{ form.scaling_in_out_rules.errors[0] }}</div>
                                 {% endif %}
@@ -642,21 +613,21 @@ function showImageModal(imageSrc, title) {
                         <div class="grid grid-cols-3 gap-3">
                             <div class="col-span-1">
                                 <label for="{{ form.trade_management_breakeven_rules.id }}" class="form-label fw-semibold">Breakeven Rules</label>
-                                {{ form.trade_management_breakeven_rules(class="form-control", rows="2") }}
+                                {{ form.trade_management_breakeven_rules(class="form-control textarea-5") }}
                                 {% if form.trade_management_breakeven_rules.errors %}
                                     <div class="invalid-feedback">{{ form.trade_management_breakeven_rules.errors[0] }}</div>
                                 {% endif %}
                             </div>
                             <div class="col-span-1">
                                 <label for="{{ form.trade_management_trailing_stop_rules.id }}" class="form-label fw-semibold">Trailing Stop Protocol</label>
-                                {{ form.trade_management_trailing_stop_rules(class="form-control", rows="2") }}
+                                {{ form.trade_management_trailing_stop_rules(class="form-control textarea-5") }}
                                 {% if form.trade_management_trailing_stop_rules.errors %}
                                     <div class="invalid-feedback">{{ form.trade_management_trailing_stop_rules.errors[0] }}</div>
                                 {% endif %}
                             </div>
                             <div class="col-span-1">
                                 <label for="{{ form.trade_management_partial_profit_rules.id }}" class="form-label fw-semibold">Partial Profit Rules</label>
-                                {{ form.trade_management_partial_profit_rules(class="form-control", rows="2") }}
+                                {{ form.trade_management_partial_profit_rules(class="form-control textarea-5") }}
                                 {% if form.trade_management_partial_profit_rules.errors %}
                                     <div class="invalid-feedback">{{ form.trade_management_partial_profit_rules.errors[0] }}</div>
                                 {% endif %}
@@ -664,18 +635,16 @@ function showImageModal(imageSrc, title) {
                         </div>
                     </div>
                 </div>
-
                 <!-- Risk Limits & Circuit Breakers -->
-                <div class="enterprise-module mb-4">
+                <div class="enterprise-module mb-3">
                     <div class="module-header">
                         <div class="module-title">
                             <i class="fas fa-exclamation-triangle module-icon"></i>
                             Risk Limits & Circuit Breakers
                         </div>
-                        <div class="module-meta">Maximum Loss Parameters & Safety Protocols</div>
                     </div>
                     <div class="module-content">
-                        <div class="grid grid-cols-4 gap-3 mb-3">
+                        <div class="grid grid-cols-5 gap-3 mb-3">
                             <div class="col-span-1">
                                 <label for="{{ form.model_max_loss_per_trade.id }}" class="form-label fw-semibold">Max Trade Loss</label>
                                 {{ form.model_max_loss_per_trade(class="form-control" + (" is-invalid" if form.model_max_loss_per_trade.errors else "")) }}
@@ -704,10 +673,17 @@ function showImageModal(imageSrc, title) {
                                     <div class="invalid-feedback">{{ form.model_consecutive_loss_limit.errors[0] }}</div>
                                 {% endif %}
                             </div>
+                            <div class="col-span-1">
+                                <label for="{{ form.min_risk_reward_ratio.id }}" class="form-label fw-semibold">Minimum Risk:Reward</label>
+                                {{ form.min_risk_reward_ratio(class="form-control" + (" is-invalid" if form.min_risk_reward_ratio.errors else "")) }}
+                                {% if form.min_risk_reward_ratio.errors %}
+                                    <div class="invalid-feedback">{{ form.min_risk_reward_ratio.errors[0] }}</div>
+                                {% endif %}
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="{{ form.model_action_on_max_drawdown.id }}" class="form-label fw-semibold">Drawdown Response Protocol</label>
-                            {{ form.model_action_on_max_drawdown(class="form-control", rows="3") }}
+                            {{ form.model_action_on_max_drawdown(class="form-control textarea-5") }}
                             {% if form.model_action_on_max_drawdown.errors %}
                                 <div class="invalid-feedback">{{ form.model_action_on_max_drawdown.errors[0] }}</div>
                             {% endif %}
@@ -720,7 +696,7 @@ function showImageModal(imageSrc, title) {
         <!-- Sidebar Panel (1/3 width) -->
         <div class="col-span-1">
             <!-- Trading Model Illustrations -->
-            <div class="enterprise-module mb-4">
+            <div class="enterprise-module mb-3">
                 <div class="module-header">
                     <div class="module-title">
                         <i class="fas fa-chart-area module-icon"></i>
@@ -731,35 +707,39 @@ function showImageModal(imageSrc, title) {
                     <!-- Existing Images Display -->
                     {% if model and existing_images %}
                         <div id="existing-images-container" class="mb-3">
-                            <h6 class="text-muted mb-2">Current Chart Examples ({{ existing_images|length }})</h6>
+                            <h6 class="text-muted mb-2">Current Chart Examples ({{ existing_images|length }}) </h6>
                             <div class="row g-2">
                                 {% for image in existing_images %}
-                                <div class="col-6" id="existing-image-{{ image.id }}">
-                                    <div class="position-relative">
+                                <div class="text-center mb-3" id="existing-image-{{ image.id }}">
+                                    <div class="position-relative d-inline-block">
                                         <img src="{{ url_for('images.serve_image', image_id=image.id) }}"
                                              alt="Chart Example"
                                              class="img-fluid rounded"
-                                             style="max-height: 120px; width: 100%; object-fit: cover; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;"
+                                             style="max-height: 200px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;"
                                              onclick="showImageModal('{{ url_for('images.serve_image', image_id=image.id) }}', '{{ model.name }} - Chart Example')"
-                                             onmouseover="this.style.border='2px solid #0066cc'; this.style.transform='scale(1.02)'"
+                                             onmouseover="this.style.border='2px solid var(--enterprise-primary)'; this.style.transform='scale(1.02)'"
                                              onmouseout="this.style.border='2px solid transparent'; this.style.transform='scale(1)'">
-                                        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1"
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" 
+                                                class="btn btn-outline-danger btn-sm"
+                                                style="font-size: 0.75rem; padding: 0.25rem 0.5rem;"
                                                 onclick="deleteExistingImage({{ image.id }}, '{{ image.original_filename }}')"
                                                 title="Delete this image">
-                                            <i class="fas fa-times"></i>
+                                            <i class="fas fa-trash-alt me-1"></i>Delete
                                         </button>
                                     </div>
-                                    <p class="text-muted small text-center mt-1 mb-0">{{ image.original_filename }}</p>
                                 </div>
                                 {% endfor %}
                             </div>
                         </div>
+
                     {% endif %}
 
                     <!-- New Images Preview -->
-                    <div id="image-preview-container" style="display: none;">
-                        <h6 class="text-muted mb-2">New Chart Examples</h6>
-                        <!-- Dynamic chart preview will be populated here -->
+                    <div id="newImagePreview" style="display: none;" class="text-center mb-3">
+                        <img id="previewImg" src="" alt="Preview" class="img-fluid rounded" style="max-height: 100px;">
+                        <p class="text-muted small mt-1">New analysis preview</p>
                     </div>
 
                     <!-- Default state when no images -->
@@ -773,79 +753,63 @@ function showImageModal(imageSrc, title) {
                     
                     <div class="mt-3">
                         <label for="{{ form.chart_examples.id }}" class="form-label fw-semibold">{% if model and existing_images %}Add More Chart Examples{% else %}Chart Examples{% endif %}</label>
-                        {{ form.chart_examples(class="form-control" + (" is-invalid" if form.chart_examples.errors else ""), accept="image/*", multiple=true, form="create-trading-model-form") }}
+                        {{ form.chart_examples(class="form-control" + (" is-invalid" if form.chart_examples.errors else ""), accept="image/*", multiple=true, form="create-trading-model-form", id="chart_examples") }}
                         {% if form.chart_examples.errors %}
                             <div class="invalid-feedback">{{ form.chart_examples.errors[0] }}</div>
                         {% endif %}
                     </div>
                 </div>
             </div>
+            <!-- Entry & Risk Management Framework -->
+                    <div class="enterprise-module mb-3">
+                        <div class="module-header">
+                            <div class="module-title">
+                                <i class="fas fa-shield-alt module-icon"></i>
+                                Entry & Execution
+                            </div>
+                        </div>
+                        <div class="module-content">
+                            <div class="mb-3">
+                                <label for="{{ form.entry_trigger_description.id }}" class="form-label fw-semibold">Entry Trigger Specifications <span class="text-danger">*</span></label>
+                                {{ form.entry_trigger_description(class="form-control textarea-15" + (" is-invalid" if form.entry_trigger_description.errors else "")) }}
+                                {% if form.entry_trigger_description.errors %}
+                                    <div class="invalid-feedback">{{ form.entry_trigger_description.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Precise conditions required for trade initiation</div>
+                            </div>
 
-            <!-- Additional Configuration Parameters -->
-            <div class="enterprise-module mb-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.stop_loss_strategy.id }}" class="form-label fw-semibold">Stop Loss Protocol <span class="text-danger">*</span></label>
+                                    {{ form.stop_loss_strategy(class="form-control textarea-5" + (" is-invalid" if form.stop_loss_strategy.errors else "")) }}
+                                    {% if form.stop_loss_strategy.errors %}
+                                        <div class="invalid-feedback">{{ form.stop_loss_strategy.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-3">
+                                    <label for="{{ form.take_profit_strategy.id }}" class="form-label fw-semibold">Profit Target Protocol <span class="text-danger">*</span></label>
+                                    {{ form.take_profit_strategy(class="form-control textarea-5" + (" is-invalid" if form.take_profit_strategy.errors else "")) }}
+                                    {% if form.take_profit_strategy.errors %}
+                                        <div class="invalid-feedback">{{ form.take_profit_strategy.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+
+                        </div>
+                    </div>
+
+            <!-- Pre-Trade Checklist -->
+            <div class="enterprise-module mb-3">
                 <div class="module-header">
                     <div class="module-title">
-                        <i class="fas fa-cog module-icon"></i>
-                        Additional Configuration
+                        <i class="fas fa-check module-icon"></i>
+                        Pre-Trade Routine & Contextual Analysis
                     </div>
-                    <div class="module-meta">Optimization & Quality Controls</div>
                 </div>
                 <div class="module-content">
-                    <div class="mb-3">
-                        <label for="{{ form.sub_optimal_market_conditions.id }}" class="form-label fw-semibold">Exclusion Criteria</label>
-                        {{ form.sub_optimal_market_conditions(class="form-control", rows="3", form="create-trading-model-form") }}
-                        {% if form.sub_optimal_market_conditions.errors %}
-                            <div class="invalid-feedback">{{ form.sub_optimal_market_conditions.errors[0] }}</div>
-                        {% endif %}
-                        <div class="form-text">Market conditions to avoid</div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="{{ form.pre_trade_checklist.id }}" class="form-label fw-semibold">Pre-Trade Verification Protocol</label>
-                        {{ form.pre_trade_checklist(class="form-control", rows="4", form="create-trading-model-form") }}
+                    <div class="col-span-2">
+                        <label for="{{ form.pre_trade_checklist.id }}" class="form-label fw-semibold">Pre-Trade Checklist</label>
+                        {{ form.pre_trade_checklist(class="form-control textarea-20", form="create-trading-model-form") }}
                         {% if form.pre_trade_checklist.errors %}
                             <div class="invalid-feedback">{{ form.pre_trade_checklist.errors[0] }}</div>
-                        {% endif %}
-                        <div class="form-text">Framework-specific validation checks before trade execution</div>
-                    </div>
-
-                    <!-- Price Action & Market Context in Sidebar -->
-                    <div class="mb-3">
-                        <label for="{{ form.price_action_signals.id }}" class="form-label fw-semibold">Price Action Signals</label>
-                        {{ form.price_action_signals(class="form-control", rows="3", form="create-trading-model-form") }}
-                        {% if form.price_action_signals.errors %}
-                            <div class="invalid-feedback">{{ form.price_action_signals.errors[0] }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="{{ form.key_levels_identification.id }}" class="form-label fw-semibold">Key Level Identification</label>
-                        {{ form.key_levels_identification(class="form-control", rows="3", form="create-trading-model-form") }}
-                        {% if form.key_levels_identification.errors %}
-                            <div class="invalid-feedback">{{ form.key_levels_identification.errors[0] }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="{{ form.instrument_applicability.id }}" class="form-label fw-semibold">Instrument Coverage</label>
-                        {{ form.instrument_applicability(class="form-control", rows="2", form="create-trading-model-form") }}
-                        {% if form.instrument_applicability.errors %}
-                            <div class="invalid-feedback">{{ form.instrument_applicability.errors[0] }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="{{ form.session_applicability.id }}" class="form-label fw-semibold">Session Parameters</label>
-                        {{ form.session_applicability(class="form-control", rows="2", form="create-trading-model-form") }}
-                        {% if form.session_applicability.errors %}
-                            <div class="invalid-feedback">{{ form.session_applicability.errors[0] }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="{{ form.optimal_market_conditions.id }}" class="form-label fw-semibold">Optimal Conditions</label>
-                        {{ form.optimal_market_conditions(class="form-control", rows="2", form="create-trading-model-form") }}
-                        {% if form.optimal_market_conditions.errors %}
-                            <div class="invalid-feedback">{{ form.optimal_market_conditions.errors[0] }}</div>
                         {% endif %}
                     </div>
                 </div>
