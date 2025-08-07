@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Default Model Backtests - Admin{% endblock %}
+{% block title %}Default Model Backtesting{% endblock %}
 
 {% block head_extra %}
 <!-- Fortune 500 Enterprise CSS Framework -->
@@ -18,12 +18,12 @@
             <div class="header-content">
                 <h1 class="executive-title">
                     <i class="fas fa-chart-bar executive-icon"></i>
-                    Default Model Backtests
+                    Default Model Backtesting
                 </h1>
                 <div class="executive-subtitle">
-                    Comprehensive Performance Analysis & Testing Results
+                    Strategic Trading Framework Performance Analysis
                     <span class="status-indicator active">
-                        <i class="fas fa-circle"></i> {{ backtests|length }} Total Backtests
+                        <i class="fas fa-circle"></i> {{ backtests|length }} Active Backtests
                     </span>
                 </div>
             </div>
@@ -35,17 +35,18 @@
                     <i class="fas fa-home"></i>
                 </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
-                        onclick="exportBacktestsCSV()" title="Export All to CSV">
-                    <i class="fas fa-file-csv"></i>
-                </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="location.reload()" title="Refresh Data">
                     <i class="fas fa-sync-alt"></i>
                 </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="window.location.href='{{ url_for('admin.manage_default_trading_models') }}'"
-                        title="Back to Trading Models">
-                    <i class="fas fa-cogs"></i>
+                        title="Back to Model Administration">
+                    <i class="fas fa-tachometer-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="history.back();"
+                        title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
                 </button>
             </div>
         </div>
@@ -53,126 +54,267 @@
 </div>
 
 <!-- Main Content -->
-<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
-    <!-- Statistics Overview -->
-    <div class="row mb-3">
-        <div class="col-md-3">
-            <div class="enterprise-module mb-3">
-                <div class="module-content mb-3 text-center">
-                    <div class="display-6 fw-bold text-primary">{{ backtests|length }}</div>
-                    <div class="text-muted small">Total Backtests</div>
+<div class="enterprise-container-fluid mt-3">
+    <!-- KPI Cards Section -->
+    <div class="kpi-section">
+        <div class="grid grid-cols-6 gap-4">
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Total Backtests</span>
+                            <i class="fas fa-chart-bar kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ backtests|length }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator positive">Strategic Frameworks</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="enterprise-module mb-3">
-                <div class="module-content mb-3 text-center">
-                    <div class="display-6 fw-bold text-success">{{ active_backtests|length }}</div>
-                    <div class="text-muted small">Active Tests</div>
+
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Active Tests</span>
+                            <i class="fas fa-play-circle kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ backtests|selectattr('status.name', 'equalto', 'RUNNING')|list|length + backtests|selectattr('status.name', 'equalto', 'DRAFT')|list|length }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator positive">In Progress</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="enterprise-module mb-3">
-                <div class="module-content mb-3 text-center">
-                    <div class="display-6 fw-bold text-info">{{ completed_backtests|length }}</div>
-                    <div class="text-muted small">Completed</div>
+
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Completed</span>
+                            <i class="fas fa-check-circle kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ backtests|selectattr('status.name', 'equalto', 'COMPLETED')|list|length }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator positive">Finalized</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="enterprise-module mb-3">
-                <div class="module-content mb-3 text-center">
-                    <div class="display-6 fw-bold text-warning">{{ models_with_backtests|length }}</div>
-                    <div class="text-muted small">Models Tested</div>
+
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Models Tested</span>
+                            <i class="fas fa-cogs kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ backtests|map(attribute='trading_model.id')|unique|list|length }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator positive">Unique Models</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Avg Win Rate</span>
+                            <i class="fas fa-percentage kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">
+                            {% set win_rates = backtests|selectattr('win_percentage', 'ne', none)|map(attribute='win_percentage')|list %}
+                            {% if win_rates and win_rates|length > 0 %}
+                                {% set avg_win_rate = (win_rates|sum / win_rates|length) %}
+                                {{ (avg_win_rate * 10)|round|int / 10 }}%
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator positive">Performance</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Total P&L</span>
+                            <i class="fas fa-dollar-sign kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">
+                            {% set pnl_values = backtests|selectattr('total_pnl', 'ne', none)|map(attribute='total_pnl')|list %}
+                            {% if pnl_values %}
+                                {% set total_pnl = pnl_values|sum %}
+                                {% if total_pnl >= 0 %}
+                                    ${{ total_pnl|round|int }}
+                                {% else %}
+                                    -${{ (total_pnl|abs)|round|int }}
+                                {% endif %}
+                            {% else %}
+                                $0
+                            {% endif %}
+                        </div>
+                        <div class="kpi-trend">
+                            {% if pnl_values %}
+                                {% set total_pnl = pnl_values|sum %}
+                                <span class="trend-indicator {{ 'positive' if total_pnl > 0 else 'negative' }}">
+                                    {{ 'Profitable' if total_pnl > 0 else 'Net Loss' }}
+                                </span>
+                            {% else %}
+                                <span class="trend-indicator neutral">No Data</span>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Filters and Search -->
-    <div class="enterprise-module mb-3">
-        <div class="module-header">
-            <div class="module-title">
-                <i class="fas fa-filter module-icon"></i>
-                Filter & Search Controls
+    <!-- Search & Filter Module (Hidden by Default) -->
+    <div class="col-12 mt-3" id="search-filter-module" style="display: none;">
+        <div class="enterprise-module">
+            <div class="module-header">
+                <div class="module-title">
+                    <i class="fas fa-filter module-icon"></i>
+                    Search & Filter Operations
+                </div>
             </div>
-        </div>
-        <div class="module-content mb-3">
-            <form method="GET" class="d-flex gap-3 align-items-end">
-                <div class="flex-grow-1">
-                    <label for="search" class="form-label small text-muted">Search Backtests</label>
-                    <input type="text" class="form-control" id="search" name="search"
-                           value="{{ request.args.get('search', '') }}"
-                           placeholder="Search by model name, description, or notes...">
-                </div>
-                <div>
-                    <label for="status_filter" class="form-label small text-muted">Status</label>
-                    <select class="form-select" id="status_filter" name="status">
-                        <option value="">All Statuses</option>
-                        <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
-                        <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completed</option>
-                        <option value="paused" {% if request.args.get('status') == 'paused' %}selected{% endif %}>Paused</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="model_filter" class="form-label small text-muted">Trading Model</label>
-                    <select class="form-select" id="model_filter" name="model_id">
-                        <option value="">All Models</option>
-                        {% for model in all_models %}
-                        <option value="{{ model.id }}" {% if request.args.get('model_id') == model.id|string %}selected{% endif %}>
-                            {{ model.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-search me-1"></i>Filter
-                </button>
-                <a href="{{ url_for('admin.manage_default_model_backtests') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-times me-1"></i>Clear
-                </a>
-            </form>
+            <div class="module-content">
+                <form method="GET" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label fw-semibold">Search Backtests</label>
+                        <input type="text" class="form-control" id="search" name="search"
+                               value="{{ request.args.get('search', '') }}"
+                               placeholder="Search by model name, description...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status_filter" class="form-label fw-semibold">Status Filter</label>
+                        <select class="form-select" id="status_filter" name="status">
+                            <option value="">All Statuses</option>
+                            <option value="DRAFT" {% if request.args.get('status') == 'DRAFT' %}selected{% endif %}>Draft</option>
+                            <option value="RUNNING" {% if request.args.get('status') == 'RUNNING' %}selected{% endif %}>Running</option>
+                            <option value="COMPLETED" {% if request.args.get('status') == 'COMPLETED' %}selected{% endif %}>Completed</option>
+                            <option value="FAILED" {% if request.args.get('status') == 'FAILED' %}selected{% endif %}>Failed</option>
+                            <option value="CANCELLED" {% if request.args.get('status') == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="model_filter" class="form-label fw-semibold">Trading Model</label>
+                        {{ filter_form.trading_model_id(class="form-select", id="model_filter") }}
+                    </div>
+                    <div class="col-md-2">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i>Filter
+                            </button>
+                            <a href="{{ url_for('admin.manage_default_model_backtests') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
-    <!-- Backtests Table -->
-    <div class="enterprise-module mb-3">
-        <div class="module-header">
-            <div class="module-title">
-                <i class="fas fa-table module-icon"></i>
-                Backtest Results
-            </div>
-            <div class="module-meta">Performance Analysis Overview</div>
+    <!-- Active Filters Indicator -->
+    {% if request.args.get('search') or request.args.get('status') or request.args.get('trading_model_id') %}
+    <div class="d-flex align-items-center justify-content-between py-2 px-3 mb-2 mt-3" 
+         style="background-color: rgba(13, 110, 253, 0.08); border: 1px solid rgba(13, 110, 253, 0.2); border-radius: 0.375rem;">
+        <div class="d-flex align-items-center gap-2">
+            <i class="fas fa-filter text-primary"></i>
+            <span class="fw-semibold text-primary">Backtest Database Filtered by:</span>
+            {% if request.args.get('search') %}
+                <span class="badge bg-primary text-white">Search: "{{ request.args.get('search') }}"</span>
+            {% endif %}
+            {% if request.args.get('status') %}
+                <span class="badge bg-primary text-white">Status: {{ request.args.get('status') }}</span>
+            {% endif %}
+            {% if request.args.get('trading_model_id') %}
+                <span class="badge bg-primary text-white">Model Filter Active</span>
+            {% endif %}
         </div>
-        <div class="module-content mb-3">
+        <a href="{{ url_for('admin.manage_default_model_backtests') }}" class="btn btn-outline-primary btn-sm">Clear Filters</a>
+    </div>
+    {% endif %}
+
+    <!-- Backtest Resources Module -->
+    <div class="enterprise-module mt-3">
+        <div class="module-header" style="position: relative; display: flex; align-items: center; padding: 1rem;">
+            <!-- Left: Title with inline summary -->
+            <div style="flex: 1;">
+                <div class="module-title">
+                    <i class="fas fa-database module-icon"></i>
+                    Backtest Resource Database
+                    <span style="font-weight: 400; color: var(--enterprise-text-muted); margin-left: 1rem; font-size: 0.875rem;">
+                        {{ backtests|length }} Records Available
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Center: Pagination Controls (Absolutely Centered) -->
+            <div class="btn-group" style="position: absolute; left: 50%; transform: translateX(-50%);">
+                <!-- Pagination would go here if implemented -->
+            </div>
+            
+            <!-- Right: Records per Page + Action Buttons -->
+            <div class="d-flex align-items-center gap-3" style="flex: 1; justify-content: flex-end;">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 0.875rem;">Records per Page:</span>
+                    <select class="form-select form-select-sm" style="width: auto;">
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                            onclick="toggleSearchFilter()" title="Search & Filter">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                            onclick="exportBacktestsCSV()" title="Export to CSV">
+                        <i class="fas fa-file-csv"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-content">
             {% if backtests %}
-                <div style="max-height: 600px; overflow-y: auto;">
-                    <table class="table table-sm table-striped">
-                        <thead class="sticky-top" style="background: white; z-index: 10;">
+                <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                    <table class="table table-striped table-hover table-sm mb-0">
+                        <thead class="table-dark sticky-top">
                             <tr>
-                                <th class="sortable" data-sort="name">
-                                    <i class="fas fa-sort me-1"></i>Model Name
+                                <th class="sortable text-start" data-sort="name" role="columnheader" tabindex="0" style="width: 18%;">
+                                    <i class="fas fa-sort me-1"></i>Trading Model
                                 </th>
-                                <th class="sortable" data-sort="description">
+                                <th class="sortable text-start" data-sort="description" role="columnheader" tabindex="0" style="width: 35%;">
                                     <i class="fas fa-sort me-1"></i>Description
                                 </th>
-                                <th class="sortable text-center" data-sort="status">
+                                <th class="sortable text-center" data-sort="status" role="columnheader" tabindex="0" style="width: 10%;">
                                     <i class="fas fa-sort me-1"></i>Status
                                 </th>
-                                <th class="sortable text-center" data-sort="total_trades">
+                                <th class="sortable text-center" data-sort="total_trades" role="columnheader" tabindex="0" style="width: 8%;">
                                     <i class="fas fa-sort me-1"></i>Trades
                                 </th>
-                                <th class="sortable text-center" data-sort="win_percentage">
+                                <th class="sortable text-center" data-sort="win_percentage" role="columnheader" tabindex="0" style="width: 8%;">
                                     <i class="fas fa-sort me-1"></i>Win %
                                 </th>
-                                <th class="sortable text-center" data-sort="profit_factor">
+                                <th class="sortable text-center" data-sort="profit_factor" role="columnheader" tabindex="0" style="width: 7%;">
                                     <i class="fas fa-sort me-1"></i>PF
                                 </th>
-                                <th class="sortable text-center" data-sort="total_pnl">
+                                <th class="sortable text-center" data-sort="total_pnl" role="columnheader" tabindex="0" style="width: 9%;">
                                     <i class="fas fa-sort me-1"></i>P&L
                                 </th>
-                                <th class="text-center">Actions</th>
+                                <th class="text-center" style="width: 5%;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -181,36 +323,57 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="me-2">
-                                            {% if backtest.status.value == 'active' %}
-                                                <div class="status-dot bg-success"></div>
-                                            {% elif backtest.status.value == 'completed' %}
-                                                <div class="status-dot bg-primary"></div>
-                                            {% elif backtest.status.value == 'paused' %}
-                                                <div class="status-dot bg-warning"></div>
+                                            {% if backtest.status.name == 'RUNNING' %}
+                                                <span class="status-badge operational">
+                                                    <i class="fas fa-play-circle"></i>
+                                                </span>
+                                            {% elif backtest.status.name == 'COMPLETED' %}
+                                                <span class="status-badge operational">
+                                                    <i class="fas fa-check-circle"></i>
+                                                </span>
+                                            {% elif backtest.status.name == 'DRAFT' %}
+                                                <span class="status-badge operational">
+                                                    <i class="fas fa-edit"></i>
+                                                </span>
                                             {% else %}
-                                                <div class="status-dot bg-secondary"></div>
+                                                <span class="status-badge suspended">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                </span>
                                             {% endif %}
                                         </div>
                                         <div>
                                             <div class="fw-semibold">{{ backtest.trading_model.name }}</div>
-                                            <div class="text-muted small">{{ backtest.date_range_start.strftime('%m/%d/%Y') if backtest.date_range_start }} - {{ backtest.date_range_end.strftime('%m/%d/%Y') if backtest.date_range_end }}</div>
+                                            <div class="text-muted small">
+                                                {% if backtest.start_date and backtest.end_date %}
+                                                    {{ backtest.start_date.strftime('%m/%d/%Y') }} - {{ backtest.end_date.strftime('%m/%d/%Y') }}
+                                                {% else %}
+                                                    Date Range: Not Set
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="text-truncate" style="max-width: 200px;" title="{{ backtest.description or 'No description' }}">
-                                        {{ backtest.description or 'No description' }}
+                                    <div>
+                                        <div class="fw-medium">{{ backtest.name or 'Untitled Backtest' }}</div>
+                                        <div class="text-muted small" style="line-height: 1.3;">
+                                            {{ (backtest.description[:120] + '...') if backtest.description and backtest.description|length > 120 else (backtest.description or 'No description available') }}
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="text-center">
-                                    {% if backtest.status.value == 'active' %}
-                                        <span class="badge bg-success">{{ backtest.status.value.title() }}</span>
-                                    {% elif backtest.status.value == 'completed' %}
-                                        <span class="badge bg-primary">{{ backtest.status.value.title() }}</span>
-                                    {% elif backtest.status.value == 'paused' %}
-                                        <span class="badge bg-warning">{{ backtest.status.value.title() }}</span>
+                                    {% if backtest.status.name == 'RUNNING' %}
+                                        <span class="status-badge operational">Running</span>
+                                    {% elif backtest.status.name == 'COMPLETED' %}
+                                        <span class="status-badge operational">Completed</span>
+                                    {% elif backtest.status.name == 'DRAFT' %}
+                                        <span class="status-badge operational">Draft</span>
+                                    {% elif backtest.status.name == 'FAILED' %}
+                                        <span class="status-badge suspended">Failed</span>
+                                    {% elif backtest.status.name == 'CANCELLED' %}
+                                        <span class="status-badge suspended">Cancelled</span>
                                     {% else %}
-                                        <span class="badge bg-secondary">{{ backtest.status.value.title() }}</span>
+                                        <span class="status-badge suspended">Unknown</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-center">
@@ -219,7 +382,7 @@
                                 <td class="text-center">
                                     {% if backtest.win_percentage is not none %}
                                         <span class="fw-semibold {% if backtest.win_percentage >= 50 %}text-success{% else %}text-danger{% endif %}">
-                                            {{ "%.1f".format(backtest.win_percentage) }}%
+                                            {{ (backtest.win_percentage * 10)|round|int / 10 }}%
                                         </span>
                                     {% else %}
                                         <span class="text-muted">—</span>
@@ -228,7 +391,7 @@
                                 <td class="text-center">
                                     {% if backtest.profit_factor is not none %}
                                         <span class="fw-semibold {% if backtest.profit_factor >= 1.0 %}text-success{% else %}text-danger{% endif %}">
-                                            {{ "%.2f".format(backtest.profit_factor) }}
+                                            {{ (backtest.profit_factor * 100)|round|int / 100 }}
                                         </span>
                                     {% else %}
                                         <span class="text-muted">—</span>
@@ -237,10 +400,14 @@
                                 <td class="text-center">
                                     {% if backtest.total_pnl is not none %}
                                         <span class="fw-semibold {% if backtest.total_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                            ${{ "{:,.2f}".format(backtest.total_pnl) }}
+                                            {% if backtest.total_pnl >= 0 %}
+                                                ${{ backtest.total_pnl|round|int }}
+                                            {% else %}
+                                                -${{ (backtest.total_pnl|abs)|round|int }}
+                                            {% endif %}
                                         </span>
                                     {% else %}
-                                        <span class="text-muted">$0.00</span>
+                                        <span class="text-muted">$0</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-center">
@@ -250,14 +417,14 @@
                                            title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ url_for('admin.edit_backtest', backtest_id=backtest.id) }}"
+                                        <a href="{{ url_for('admin.create_default_model_backtest', backtest_id=backtest.id) }}"
                                            class="btn btn-outline-secondary btn-sm"
                                            title="Edit Backtest">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <button type="button"
                                                 class="btn btn-outline-danger btn-sm"
-                                                onclick="confirmDeleteBacktest({{ backtest.id }}, '{{ backtest.trading_model.name }} - {{ backtest.description[:30] }}...')"
+                                                onclick="confirmDeleteBacktest({{ backtest.id }}, '{{ backtest.name or backtest.trading_model.name }}')"
                                                 title="Delete Backtest">
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
@@ -271,11 +438,15 @@
             {% else %}
                 <div class="text-center py-5">
                     <i class="fas fa-chart-bar fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
-                    <h5 class="text-muted">No Backtests Found</h5>
-                    <p class="text-muted">No backtest results match your current filters.</p>
-                    {% if request.args.get('search') or request.args.get('status') or request.args.get('model_id') %}
-                        <a href="{{ url_for('admin.manage_default_model_backtests') }}" class="btn btn-primary">
+                    <h6 class="text-muted">No Backtests Available</h6>
+                    <p class="text-muted small">No backtest results match your current criteria.</p>
+                    {% if request.args.get('search') or request.args.get('status') or request.args.get('trading_model_id') %}
+                        <a href="{{ url_for('admin.manage_default_model_backtests') }}" class="btn btn-primary btn-sm">
                             <i class="fas fa-times me-1"></i>Clear Filters
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('admin.manage_default_trading_models') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Manage Trading Models
                         </a>
                     {% endif %}
                 </div>
@@ -283,38 +454,30 @@
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="enterprise-module mb-3">
-        <div class="module-header">
-            <div class="module-title">
-                <i class="fas fa-bolt module-icon"></i>
-                Quick Actions
-            </div>
-        </div>
-        <div class="module-content mb-3">
-            <div class="operation-list">
-                {% for model in all_models %}
-                <a href="{{ url_for('admin.create_default_model_backtest', model_id=model.id) }}"
-                   class="operation-item">
-                    <div class="operation-icon">
-                        <i class="fas fa-plus"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="fw-semibold text-primary text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">
-                            Create {{ model.name }} Backtest
-                        </div>
-                        <div class="text-muted" style="font-size: 0.8rem;">
-                            Start new performance analysis for {{ model.name }}
-                        </div>
-                    </div>
-                </a>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
+    <!-- Ensure content doesn't get hidden behind sticky buttons -->
+    <div class="sticky-action-buttons-spacer"></div>
 </div>
 
 <script>
+// =====================================
+// SEARCH & FILTER TOGGLE
+// =====================================
+function toggleSearchFilter() {
+    const module = document.getElementById('search-filter-module');
+    const button = document.querySelector('button[onclick="toggleSearchFilter()"]');
+    const icon = button.querySelector('i');
+    
+    if (module.style.display === 'none' || module.style.display === '') {
+        module.style.display = 'block';
+        icon.className = 'fas fa-times';
+        button.title = 'Hide Search & Filter';
+    } else {
+        module.style.display = 'none';
+        icon.className = 'fas fa-search';
+        button.title = 'Search & Filter';
+    }
+}
+
 // =====================================
 // TABLE SORTING
 // =====================================
@@ -413,7 +576,7 @@ function exportBacktestsCSV() {
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = `Default_Model_Backtests_Export_${new Date().toISOString().split('T')[0].replace(/-/g, '')}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '')}.csv`;
+        a.download = `Default_Model_Backtests_Export_${new Date().toISOString().split('T')[0].replace(/-/g, '')}.csv`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -528,19 +691,6 @@ function showSuccess(message, title = 'Success') {
         alert(message);
     }
 }
-
-// Add status dot styles
-const style = document.createElement('style');
-style.textContent = `
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 0.25rem;
-}
-`;
-document.head.appendChild(style);
 </script>
 
 {% endblock %}

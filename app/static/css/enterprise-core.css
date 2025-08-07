@@ -206,9 +206,7 @@ h4 { font-size: var(--enterprise-font-size-lg); }
 h5 { font-size: var(--enterprise-font-size-base); }
 h6 { font-size: var(--enterprise-font-size-sm); }
 
-p {
-    margin: 0 0 1rem 0;
-}
+
 
 a {
     color: var(--enterprise-primary);

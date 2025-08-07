@@ -110,7 +110,8 @@ def edit_default_trading_model(model_id):
 
     return render_template('admin/create_default_trading_model.html',
                            title=f'Edit Default Model: {model.name}',
-                           form=form, model=model, existing_images=existing_images)
+                           model=model,
+                           backtest=backtest if backtest_id else None)
 
 
 @admin_bp.route('/default-trading-models/create', methods=['GET', 'POST'])
@@ -3164,15 +3165,28 @@ def view_model_backtests(model_id):
                            backtests=backtests)
 
 
-@admin_bp.route('/default-models/<int:model_id>/backtests/create', methods=['GET', 'POST'])
+@admin_bp.route("/default-models/<int:model_id>/backtests/create", methods=["GET", "POST"])
+@admin_bp.route("/backtests/<int:backtest_id>/edit", methods=["GET", "POST"])
 @login_required
 @admin_required
-def create_default_model_backtest(model_id):
-    """Create a new backtest for a default trading model"""
-    model = TradingModel.query.get_or_404(model_id)
-    if not model.is_default:
-        flash('This is not a default model.', 'warning')
-        return redirect(url_for('admin.manage_default_trading_models'))
+def create_default_model_backtest(model_id=None, backtest_id=None):
+    """Create or edit a backtest for a default trading model"""
+    
+    # Determine if this is create or edit mode
+    if backtest_id:
+        # Edit mode - get backtest and its model
+        backtest = Backtest.query.get_or_404(backtest_id)
+        if not backtest.trading_model.is_default:
+            flash('Access denied: This is not a default model backtest.', 'warning')
+            return redirect(url_for('admin.manage_default_model_backtests'))
+        model = backtest.trading_model
+    else:
+        # Create mode - get model, set backtest to None
+        backtest = None
+        model = TradingModel.query.get_or_404(model_id)
+        if not model.is_default:
+            flash('This is not a default model.', 'warning')
+            return redirect(url_for('admin.manage_default_trading_models'))
     
     form = BacktestForm()
     
@@ -3217,7 +3231,8 @@ def create_default_model_backtest(model_id):
     return render_template('admin/create_default_model_backtest.html',
                            title=f'Create Backtest for {model.name}',
                            form=form,
-                           model=model)
+                           model=model,
+                           backtest=backtest if backtest_id else None)
 
 
 @admin_bp.route('/backtests/<int:backtest_id>')
@@ -3245,38 +3260,6 @@ def view_backtest(backtest_id):
                            trades=trades)
 
 
-@admin_bp.route('/backtests/<int:backtest_id>/edit', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def edit_backtest(backtest_id):
-    """Edit a backtest"""
-    backtest = Backtest.query.get_or_404(backtest_id)
-    
-    # Verify it's a default model backtest
-    if not backtest.trading_model.is_default:
-        flash('Access denied: This is not a default model backtest.', 'warning')
-        return redirect(url_for('admin.manage_default_model_backtests'))
-    
-    form = BacktestForm(obj=backtest)
-    
-    # Set trading model choices
-    form.trading_model_id.choices = [(backtest.trading_model.id, backtest.trading_model.name)]
-    
-    if form.validate_on_submit():
-        form.populate_obj(backtest)
-        
-        try:
-            db.session.commit()
-            flash(f'Backtest "{backtest.name}" updated successfully!', 'success')
-            return redirect(url_for('admin.view_backtest', backtest_id=backtest.id))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error updating backtest: {str(e)}', 'danger')
-    
-    return render_template('admin/edit_backtest.html',
-                           title=f'Edit Backtest: {backtest.name}',
-                           form=form,
-                           backtest=backtest)
 
 
 @admin_bp.route('/backtests/<int:backtest_id>/trades/add', methods=['GET', 'POST'])

@@ -24,18 +24,26 @@
                     Backtest Analysis
                 </h1>
                 <div class="executive-subtitle">
-                    {{ backtest.description or 'Performance Analysis' }}
-                    {% if backtest.status.value == 'active' %}
+                    Performance Analysis
+                    {% if backtest.status.name == 'RUNNING' %}
                         <span class="status-indicator active">
-                            <i class="fas fa-play-circle"></i> Active Testing
+                            <i class="fas fa-play-circle"></i> Running
                         </span>
-                    {% elif backtest.status.value == 'completed' %}
+                    {% elif backtest.status.name == 'COMPLETED' %}
                         <span class="status-indicator completed">
                             <i class="fas fa-check-circle"></i> Analysis Complete
                         </span>
-                    {% elif backtest.status.value == 'paused' %}
+                    {% elif backtest.status.name == 'DRAFT' %}
                         <span class="status-indicator paused">
-                            <i class="fas fa-pause-circle"></i> Testing Paused
+                            <i class="fas fa-edit"></i> Draft
+                        </span>
+                    {% elif backtest.status.name == 'FAILED' %}
+                        <span class="status-indicator failed">
+                            <i class="fas fa-exclamation-triangle"></i> Failed
+                        </span>
+                    {% elif backtest.status.name == 'CANCELLED' %}
+                        <span class="status-indicator cancelled">
+                            <i class="fas fa-times-circle"></i> Cancelled
                         </span>
                     {% endif %}
                 </div>
@@ -54,7 +62,7 @@
                         onclick="location.reload()" title="Refresh Data">
                     <i class="fas fa-sync-alt"></i>
                 </button>
-                <a href="{{ url_for('admin.edit_backtest', backtest_id=backtest.id) }}"
+                <a href="{{ url_for('admin.create_default_model_backtest', backtest_id=backtest.id) }}"
                    class="btn btn-outline-secondary btn-sm"
                    title="Edit Backtest">
                     <i class="fas fa-edit"></i>
@@ -73,88 +81,147 @@
 <div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
     
     <!-- Key Performance Metrics -->
-    <div class="row mb-3">
-        <div class="col-md-2">
-            <div class="enterprise-module mb-3">
-                <div class="module-content mb-3 text-center">
-                    <div class="display-6 fw-bold text-primary">{{ backtest.total_trades or 0 }}</div>
-                    <div class="text-muted small">Total Trades</div>
+    <div class="kpi-section">
+        <div class="grid grid-cols-6 gap-4">
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Total Trades</span>
+                            <i class="fas fa-chart-bar kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value">{{ backtest.total_trades or 0 }}</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator positive">Trade Count</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-2">
-            <div class="enterprise-module mb-3">
-                <div class="module-content mb-3 text-center">
-                    {% if backtest.win_percentage is not none %}
-                        <div class="display-6 fw-bold {% if backtest.win_percentage >= 50 %}text-success{% else %}text-danger{% endif %}">
-                            {{ "%.1f".format(backtest.win_percentage) }}%
+
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Win Rate</span>
+                            <i class="fas fa-percentage kpi-icon"></i>
                         </div>
-                    {% else %}
-                        <div class="display-6 fw-bold text-muted">—</div>
-                    {% endif %}
-                    <div class="text-muted small">Win Rate</div>
+                        <div class="kpi-value">
+                            {% if backtest.win_percentage is not none %}
+                                {{ (backtest.win_percentage * 10)|round|int / 10 }}%
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator {{ 'positive' if backtest.win_percentage and backtest.win_percentage >= 50 else 'negative' }}">
+                                {{ 'Strong' if backtest.win_percentage and backtest.win_percentage >= 60 else ('Good' if backtest.win_percentage and backtest.win_percentage >= 50 else 'Needs Work') }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-2">
-            <div class="enterprise-module mb-3">
-                <div class="module-content mb-3 text-center">
-                    {% if backtest.profit_factor is not none %}
-                        <div class="display-6 fw-bold {% if backtest.profit_factor >= 1.0 %}text-success{% else %}text-danger{% endif %}">
-                            {{ "%.2f".format(backtest.profit_factor) }}
+
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Profit Factor</span>
+                            <i class="fas fa-chart-line kpi-icon"></i>
                         </div>
-                    {% else %}
-                        <div class="display-6 fw-bold text-muted">—</div>
-                    {% endif %}
-                    <div class="text-muted small">Profit Factor</div>
+                        <div class="kpi-value">
+                            {% if backtest.profit_factor is not none %}
+                                {{ (backtest.profit_factor * 100)|round|int / 100 }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator {{ 'positive' if backtest.profit_factor and backtest.profit_factor >= 1.0 else 'negative' }}">
+                                {{ 'Profitable' if backtest.profit_factor and backtest.profit_factor >= 1.0 else 'Unprofitable' }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-2">
-            <div class="enterprise-module mb-3">
-                <div class="module-content mb-3 text-center">
-                    {% if backtest.total_pnl is not none %}
-                        <div class="display-6 fw-bold {% if backtest.total_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
-                            ${{ "{:,.0f}".format(backtest.total_pnl) }}
+
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Total P&L</span>
+                            <i class="fas fa-dollar-sign kpi-icon"></i>
                         </div>
-                    {% else %}
-                        <div class="display-6 fw-bold text-muted">$0</div>
-                    {% endif %}
-                    <div class="text-muted small">Total P&L</div>
+                        <div class="kpi-value">
+                            {% if backtest.total_pnl is not none %}
+                                {% if backtest.total_pnl >= 0 %}
+                                    ${{ backtest.total_pnl|round|int }}
+                                {% else %}
+                                    -${{ (backtest.total_pnl|abs)|round|int }}
+                                {% endif %}
+                            {% else %}
+                                $0
+                            {% endif %}
+                        </div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator {{ 'positive' if backtest.total_pnl and backtest.total_pnl > 0 else 'negative' }}">
+                                {{ 'Profitable' if backtest.total_pnl and backtest.total_pnl > 0 else 'Loss' }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-2">
-            <div class="enterprise-module mb-3">
-                <div class="module-content mb-3 text-center">
-                    {% if backtest.max_drawdown is not none %}
-                        <div class="display-6 fw-bold text-warning">
-                            ${{ "{:,.0f}".format(backtest.max_drawdown|abs) }}
+
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Max Drawdown</span>
+                            <i class="fas fa-arrow-down kpi-icon"></i>
                         </div>
-                    {% else %}
-                        <div class="display-6 fw-bold text-muted">$0</div>
-                    {% endif %}
-                    <div class="text-muted small">Max Drawdown</div>
+                        <div class="kpi-value">
+                            {% if backtest.max_drawdown is not none %}
+                                ${{ (backtest.max_drawdown|abs)|round|int }}
+                            {% else %}
+                                $0
+                            {% endif %}
+                        </div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator warning">Risk Metric</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-2">
-            <div class="enterprise-module mb-3">
-                <div class="module-content mb-3 text-center">
-                    {% if backtest.avg_trade_pnl is not none %}
-                        <div class="display-6 fw-bold {% if backtest.avg_trade_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
-                            ${{ "{:,.0f}".format(backtest.avg_trade_pnl) }}
+
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Avg P&L/Trade</span>
+                            <i class="fas fa-calculator kpi-icon"></i>
                         </div>
-                    {% else %}
-                        <div class="display-6 fw-bold text-muted">$0</div>
-                    {% endif %}
-                    <div class="text-muted small">Avg P&L/Trade</div>
+                        <div class="kpi-value">
+                            {% if backtest.avg_trade_pnl is not none %}
+                                {% if backtest.avg_trade_pnl >= 0 %}
+                                    ${{ backtest.avg_trade_pnl|round|int }}
+                                {% else %}
+                                    -${{ (backtest.avg_trade_pnl|abs)|round|int }}
+                                {% endif %}
+                            {% else %}
+                                $0
+                            {% endif %}
+                        </div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator {{ 'positive' if backtest.avg_trade_pnl and backtest.avg_trade_pnl > 0 else 'negative' }}">
+                                {{ 'Positive' if backtest.avg_trade_pnl and backtest.avg_trade_pnl > 0 else 'Negative' }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-4 align-items-start">
+    <div class="grid grid-cols-3 gap-4 align-items-start mt-4">
         <!-- Left Column: Backtest Details & Configuration -->
         <div class="col-span-2">
             <!-- Backtest Overview -->
@@ -173,16 +240,16 @@
                                 <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Trading Model</div>
                                 <div class="text-muted">{{ backtest.trading_model.name }}</div>
                             </div>
-                            {% if backtest.date_range_start and backtest.date_range_end %}
+                            {% if backtest.start_date and backtest.end_date %}
                             <div class="mb-3">
                                 <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Test Period</div>
-                                <div class="text-muted">{{ backtest.date_range_start.strftime('%m/%d/%Y') }} - {{ backtest.date_range_end.strftime('%m/%d/%Y') }}</div>
+                                <div class="text-muted">{{ backtest.start_date.strftime('%m/%d/%Y') }} - {{ backtest.end_date.strftime('%m/%d/%Y') }}</div>
                             </div>
                             {% endif %}
                             {% if backtest.initial_capital %}
                             <div class="mb-3">
                                 <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Initial Capital</div>
-                                <div class="text-muted">${{ "{:,.2f}".format(backtest.initial_capital) }}</div>
+                                <div class="text-muted">${{ (backtest.initial_capital * 100)|round|int / 100 }}</div>
                             </div>
                             {% endif %}
                         </div>
@@ -201,14 +268,18 @@
                             {% endif %}
                             <div class="mb-3">
                                 <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Status</div>
-                                {% if backtest.status.value == 'active' %}
-                                    <span class="badge bg-success">{{ backtest.status.value.title() }}</span>
-                                {% elif backtest.status.value == 'completed' %}
-                                    <span class="badge bg-primary">{{ backtest.status.value.title() }}</span>
-                                {% elif backtest.status.value == 'paused' %}
-                                    <span class="badge bg-warning">{{ backtest.status.value.title() }}</span>
+                                {% if backtest.status.name == 'RUNNING' %}
+                                    <span class="badge bg-success">Running</span>
+                                {% elif backtest.status.name == 'COMPLETED' %}
+                                    <span class="badge bg-primary">Completed</span>
+                                {% elif backtest.status.name == 'DRAFT' %}
+                                    <span class="badge bg-warning">Draft</span>
+                                {% elif backtest.status.name == 'FAILED' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% elif backtest.status.name == 'CANCELLED' %}
+                                    <span class="badge bg-secondary">Cancelled</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">{{ backtest.status.value.title() }}</span>
+                                    <span class="badge bg-secondary">Unknown</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -223,7 +294,7 @@
             </div>
 
             <!-- Trading Rules & Strategy -->
-            {% if backtest.entry_rules or backtest.exit_rules or backtest.trade_management %}
+            {% if backtest.entry_rules or backtest.exit_rules or backtest.trade_management_applied or backtest.trade_management %}
             <div class="enterprise-module mb-3">
                 <div class="module-header">
                     <div class="module-title">
@@ -249,11 +320,11 @@
                             </div>
                         </div>
                         {% endif %}
-                        {% if backtest.trade_management %}
+                        {% if backtest.trade_management_applied or backtest.trade_management %}
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <div class="fw-semibold text-warning mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Trade Management</div>
-                                <div class="text-muted small">{{ backtest.trade_management }}</div>
+                                <div class="text-muted small">{{ backtest.trade_management_applied or backtest.trade_management }}</div>
                             </div>
                         </div>
                         {% endif %}
@@ -272,14 +343,22 @@
                     <div class="module-meta">Statistical Analysis & Visualization</div>
                 </div>
                 <div class="module-content mb-3">
-                    <div class="row">
+                    <div class="row g-4">
                         <div class="col-md-6">
-                            <canvas id="pnlChart" width="400" height="200"></canvas>
-                            <div class="text-center text-muted small mt-2">Cumulative P&L Over Time</div>
+                            <div class="chart-container" style="position: relative; height: 300px; width: 100%;">
+                                <canvas id="pnlChart" style="max-height: 300px;"></canvas>
+                            </div>
+                            <div class="text-center text-muted small mt-2">
+                                <i class="fas fa-chart-line me-1"></i>Cumulative P&L Over Time
+                            </div>
                         </div>
                         <div class="col-md-6">
-                            <canvas id="winLossChart" width="400" height="200"></canvas>
-                            <div class="text-center text-muted small mt-2">Win/Loss Distribution</div>
+                            <div class="chart-container" style="position: relative; height: 300px; width: 100%;">
+                                <canvas id="winLossChart" style="max-height: 300px;"></canvas>
+                            </div>
+                            <div class="text-center text-muted small mt-2">
+                                <i class="fas fa-chart-pie me-1"></i>Win/Loss Distribution
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -296,16 +375,28 @@
                     <div class="module-meta">{{ trades|length }} Trades</div>
                 </div>
                 <div class="module-content mb-3">
-                    <div style="max-height: 400px; overflow-y: auto;">
-                        <table class="table table-sm table-striped">
-                            <thead class="sticky-top" style="background: white; z-index: 10;">
+                    <div class="table-responsive" style="max-height: 450px; overflow-y: auto; border: 1px solid var(--enterprise-border-color); border-radius: 0.375rem;">
+                        <table class="table table-sm table-striped table-hover mb-0">
+                            <thead class="table-dark sticky-top">
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Instrument</th>
-                                    <th>Direction</th>
-                                    <th class="text-end">Entry</th>
-                                    <th class="text-end">Exit</th>
-                                    <th class="text-end">P&L</th>
+                                    <th style="width: 18%;">
+                                        <i class="fas fa-calendar me-1"></i>Date
+                                    </th>
+                                    <th style="width: 15%;">
+                                        <i class="fas fa-chart-bar me-1"></i>Instrument
+                                    </th>
+                                    <th style="width: 15%;">
+                                        <i class="fas fa-arrow-up me-1"></i>Direction
+                                    </th>
+                                    <th class="text-end" style="width: 17%;">
+                                        <i class="fas fa-sign-in-alt me-1"></i>Entry Price
+                                    </th>
+                                    <th class="text-end" style="width: 17%;">
+                                        <i class="fas fa-sign-out-alt me-1"></i>Exit Price
+                                    </th>
+                                    <th class="text-end" style="width: 18%;">
+                                        <i class="fas fa-dollar-sign me-1"></i>P&L
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -327,7 +418,11 @@
                                     <td class="text-end">
                                         {% if trade.total_pnl is not none %}
                                             <span class="fw-semibold {% if trade.total_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                                ${{ "{:,.2f}".format(trade.total_pnl) }}
+                                                {% if trade.total_pnl >= 0 %}
+                                                    ${{ (trade.total_pnl * 100)|round|int / 100 }}
+                                                {% else %}
+                                                    -${{ ((trade.total_pnl|abs) * 100)|round|int / 100 }}
+                                                {% endif %}
                                             </span>
                                         {% else %}
                                             <span class="text-muted">$0.00</span>
@@ -345,6 +440,63 @@
 
         <!-- Right Column: Risk Analysis & Quick Actions -->
         <div class="col-span-1">
+            <!-- Backtest Summary Card -->
+            <div class="enterprise-module mb-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-tachometer-alt module-icon"></i>
+                        Performance Summary
+                    </div>
+                </div>
+                <div class="module-content mb-3">
+                    <div class="d-flex align-items-center justify-content-between py-2 px-3 mb-3" 
+                         style="background-color: {{ 'rgba(40, 167, 69, 0.1)' if backtest.total_pnl and backtest.total_pnl > 0 else 'rgba(220, 53, 69, 0.1)' }}; 
+                                border: 1px solid {{ 'rgba(40, 167, 69, 0.2)' if backtest.total_pnl and backtest.total_pnl > 0 else 'rgba(220, 53, 69, 0.2)' }}; 
+                                border-radius: 0.375rem;">
+                        <div>
+                            <div class="fw-semibold {{ 'text-success' if backtest.total_pnl and backtest.total_pnl > 0 else 'text-danger' }}">
+                                Overall Result
+                            </div>
+                            <div class="text-muted small">
+                                {% if backtest.total_trades and backtest.total_trades > 0 %}
+                                    Based on {{ backtest.total_trades }} trades
+                                {% else %}
+                                    No trades recorded
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <i class="fas fa-{{ 'arrow-up text-success' if backtest.total_pnl and backtest.total_pnl > 0 else 'arrow-down text-danger' }} fa-2x"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-2">
+                        <div class="col-6 text-center">
+                            <div class="fw-semibold text-muted small">Duration</div>
+                            <div class="text-primary">
+                                {% if backtest.start_date and backtest.end_date %}
+                                    {{ ((backtest.end_date - backtest.start_date).days) }} days
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-6 text-center">
+                            <div class="fw-semibold text-muted small">Status</div>
+                            <div>
+                                {% if backtest.status.name == 'COMPLETED' %}
+                                    <span class="badge bg-success">Complete</span>
+                                {% elif backtest.status.name == 'RUNNING' %}
+                                    <span class="badge bg-primary">Running</span>
+                                {% else %}
+                                    <span class="badge bg-warning">{{ backtest.status.name.title() }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Risk Analysis -->
             {% if backtest.risk_settings or backtest.max_drawdown or backtest.avg_mae or backtest.avg_mfe %}
             <div class="enterprise-module mb-3">
@@ -364,25 +516,25 @@
                     {% if backtest.avg_mae %}
                     <div class="mb-3">
                         <div class="fw-semibold text-warning mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Avg MAE</div>
-                        <div class="text-muted">${{ "{:,.2f}".format(backtest.avg_mae|abs) }}</div>
+                        <div class="text-muted">${{ ((backtest.avg_mae|abs) * 100)|round|int / 100 }}</div>
                     </div>
                     {% endif %}
                     {% if backtest.avg_mfe %}
                     <div class="mb-3">
                         <div class="fw-semibold text-success mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Avg MFE</div>
-                        <div class="text-muted">${{ "{:,.2f}".format(backtest.avg_mfe) }}</div>
+                        <div class="text-muted">${{ (backtest.avg_mfe * 100)|round|int / 100 }}</div>
                     </div>
                     {% endif %}
                     {% if backtest.largest_loss %}
                     <div class="mb-3">
                         <div class="fw-semibold text-danger mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Largest Loss</div>
-                        <div class="text-muted">${{ "{:,.2f}".format(backtest.largest_loss|abs) }}</div>
+                        <div class="text-muted">${{ ((backtest.largest_loss|abs) * 100)|round|int / 100 }}</div>
                     </div>
                     {% endif %}
                     {% if backtest.largest_win %}
                     <div class="mb-3">
                         <div class="fw-semibold text-success mb-2 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Largest Win</div>
-                        <div class="text-muted">${{ "{:,.2f}".format(backtest.largest_win) }}</div>
+                        <div class="text-muted">${{ (backtest.largest_win * 100)|round|int / 100 }}</div>
                     </div>
                     {% endif %}
                 </div>
@@ -441,7 +593,7 @@
                             </div>
                         </a>
 
-                        <a href="{{ url_for('admin.edit_backtest', backtest_id=backtest.id) }}"
+                        <a href="{{ url_for('admin.create_default_model_backtest', backtest_id=backtest.id) }}"
                            class="operation-item">
                             <div class="operation-icon">
                                 <i class="fas fa-edit"></i>
@@ -537,19 +689,56 @@ function initializePnLChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
             scales: {
                 y: {
                     beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    },
                     ticks: {
                         callback: function(value) {
                             return '$' + value.toLocaleString();
+                        },
+                        font: {
+                            size: 12
                         }
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        },
+                        maxTicksLimit: 10
                     }
                 }
             },
             plugins: {
                 legend: {
                     display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    callbacks: {
+                        label: function(context) {
+                            return 'P&L: $' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    radius: 3,
+                    hoverRadius: 6
                 }
             }
         }
@@ -601,9 +790,30 @@ function initializeWinLossChart() {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        font: {
+                            size: 12
+                        },
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    callbacks: {
+                        label: function(context) {
+                            const total = wins + losses;
+                            const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                            return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                        }
+                    }
                 }
-            }
+            },
+            cutout: '40%'
         }
     });
 }

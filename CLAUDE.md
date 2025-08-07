@@ -407,6 +407,73 @@ __debugBeforeUnload()
 - All textareas have `resize: vertical` enabled for user flexibility
 - Height utilities work across all enterprise form layouts
 
+### **Standardized KPI Card Structure (MANDATORY)**
+**CRITICAL:** ALL KPI cards across the entire application MUST follow this exact structure and styling pattern as demonstrated in `admin/dashboard.html`, `trades/view_trade_detail.html`, and `trades/view_trades_list.html`.
+
+#### **KPI Card HTML Structure (MANDATORY):**
+```html
+<div class="kpi-section">
+    <div class="grid grid-cols-6 gap-4"> <!-- or grid-cols-4 for 4-column layout -->
+        <div class="col-span-1">
+            <div class="kpi-card">
+                <div class="kpi-content">
+                    <div class="kpi-header">
+                        <span class="kpi-label">[KPI Name]</span>
+                        <i class="fas fa-[icon] kpi-icon"></i>
+                    </div>
+                    <div class="kpi-value">[Value without conditional color classes]</div>
+                    <div class="kpi-trend">
+                        <span class="trend-indicator">
+                            [Optional icon] [Description]
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+#### **KPI Card Requirements (MANDATORY):**
+1. **Structure**: Always use `kpi-card` > `kpi-content` > `kpi-header`, `kpi-value`, `kpi-trend`
+2. **Clean Values**: NEVER add conditional color classes to `kpi-value` (no `text-success`, `text-danger`, etc.)
+3. **Consistent Icons**: Always use `kpi-icon` class for header icons
+4. **Uniform Grid**: Use `gap-4` for consistent spacing between cards
+5. **Professional Trends**: Keep trend indicators simple and descriptive
+6. **Enterprise Styling**: Let the CSS framework handle all colors and styling
+
+#### **KPI Card Examples:**
+```html
+<!-- ✅ CORRECT: Clean structure with no conditional styling -->
+<div class="kpi-card">
+    <div class="kpi-content">
+        <div class="kpi-header">
+            <span class="kpi-label">Total Trades</span>
+            <i class="fas fa-chart-line kpi-icon"></i>
+        </div>
+        <div class="kpi-value">{{ trade_count }}</div>
+        <div class="kpi-trend">
+            <span class="trend-indicator">
+                <i class="fas fa-arrow-up"></i> Active
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- ❌ INCORRECT: Old inconsistent structure -->
+<div class="kpi-card">
+    <div class="d-flex align-items-center">
+        <div class="performance-indicator bg-success">
+            <i class="fas fa-chart-pie"></i>
+        </div>
+        <div class="ms-3">
+            <div class="kpi-label">Metric Name</div>
+            <div class="kpi-value text-success">{{ value }}</div>
+        </div>
+    </div>
+</div>
+```
+
 ### **Color Consistency**
 - **Primary Enterprise Blue**: `#0066cc` (buttons, links, highlights)
 - **Success Green**: `#0070c0` (positive indicators)
@@ -679,7 +746,8 @@ initializePasswordMatchValidator();
 6. **Always use** NAMED functions for beforeUnloadHandler (never anonymous)
 7. **Always implement** password strength and match validators for password fields
 8. **Always use** enterprise grid system for side-by-side card layouts
-9. **Always follow** the enterprise terminology and professional appearance
+9. **MANDATORY: Use standardized KPI card structure** - ALL KPI cards must use `kpi-card` > `kpi-content` > `kpi-header`, `kpi-value`, `kpi-trend` pattern with NO conditional color classes
+10. **Always follow** the enterprise terminology and professional appearance
 10. **Always test** sticky headers, pagination, responsive behavior, and unsaved changes detection
 11. **Reference users.html, edit_user.html, and create_user.html** directly when implementing similar features
 

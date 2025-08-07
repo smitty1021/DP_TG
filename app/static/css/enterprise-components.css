@@ -17,7 +17,7 @@ Version: 2.0
 .executive-header {
     background: linear-gradient(135deg, var(--enterprise-white) 0%, var(--enterprise-gray-50) 100%);
     border-bottom: 1px solid var(--enterprise-border);
-    padding: var(--enterprise-spacing-xl) var(--enterprise-spacing-lg);
+    padding: var(--enterprise-spacing-lg) var(--enterprise-spacing-lg);
     margin-bottom: 0;
 }
 
@@ -220,7 +220,7 @@ Version: 2.0
 
 .kpi-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: left;
     align-items: flex-start;
     margin-bottom: 0.75rem;
 }
@@ -239,7 +239,7 @@ Version: 2.0
 }
 
 .kpi-value {
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--enterprise-text-primary);
     line-height: 1;
@@ -1225,8 +1225,8 @@ To restore borders, simply comment it back out.
 .table td {
     padding: 0.5rem;
     vertical-align: middle;
+    text-align: center;
     border-bottom: 1px solid var(--enterprise-border);
-    padding-left: 1.5rem;
 }
 
 .table thead th {
