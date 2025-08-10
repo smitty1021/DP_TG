@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Trading Operations Center{% endblock %}
+{% block title %}Trading Management Center{% endblock %}
 
 {% block extra_css %}
 <!-- Fortune 500 Enterprise CSS Framework -->
@@ -17,10 +17,10 @@
             <div class="header-content">
                 <h1 class="executive-title">
                     <i class="fas fa-chart-line executive-icon"></i>
-                    Trading Operations Center
+                    Trading Management Center
                 </h1>
                 <p class="executive-subtitle">
-                    Strategic Trading Activity Management & Performance Analysis</p>
+                    Trading Activity Management & Performance Analysis</p>
             </div>
             <div class="btn-group">
                 <button type="button" class="btn btn-outline-secondary btn-sm"
@@ -30,7 +30,7 @@
                 </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="window.location.href='{{ url_for('trades.add_trade') }}'"
-                        title="New Trade Configuration">
+                        title="Log New Trade">
                     <i class="fas fa-plus"></i>
                 </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
@@ -45,25 +45,25 @@
                 <a href="{{ url_for('trades.import_trades') }}" class="btn btn-outline-secondary btn-sm" title="Import Trading Data">
                     <i class="fas fa-upload me-1"></i>
                 </a>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
-                            data-bs-toggle="dropdown" aria-expanded="false" title="Export Trading Data">
-                        <i class="fas fa-download me-1"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url_for('trades.export_trades_csv') }}">
-                            <i class="fas fa-file-csv me-2"></i>Export as CSV</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('trades.export_trades_excel') }}">
-                            <i class="fas fa-file-excel me-2"></i>Export as Excel</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('trades.export_trades_json') }}">
-                            <i class="fas fa-file-code me-2"></i>Export as JSON</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{{ url_for('trades.export_tax_report') }}">
-                            <i class="fas fa-file-invoice me-2"></i>Tax Report Export</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('trades.export_performance_report') }}">
-                            <i class="fas fa-chart-bar me-2"></i>Performance Analysis</a></li>
-                    </ul>
-                </div>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportWithProgress('csv')">
+                        <i class="fas fa-file-csv me-2"></i>Export as CSV</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('trades.export_trades_excel') }}">
+                        <i class="fas fa-file-excel me-2"></i>Export as Excel</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('trades.export_trades_json') }}">
+                        <i class="fas fa-file-code me-2"></i>Export as JSON</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{{ url_for('trades.export_tax_report') }}">
+                        <i class="fas fa-file-invoice me-2"></i>Tax Report Export</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('trades.export_performance_report') }}">
+                        <i class="fas fa-file-csv me-2"></i>Performance Analysis (CSV)</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportWithProgress('pdf')">
+                        <i class="fas fa-file-pdf me-2"></i>Performance Analysis (PDF)</a></li>
+                </ul>
+                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                        data-bs-toggle="dropdown" aria-expanded="false" title="Export Trading Data">
+                    <i class="fas fa-download me-1"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -137,7 +137,7 @@
                                 {% set total_with_pnl = trades|selectattr('pnl', 'number')|list|length %}
                                 {% set strike_rate = (profitable / total_with_pnl * 100) if total_with_pnl > 0 else 0 %}
                             {% endif %}
-                            {{ "%.1f"|format(strike_rate) }}%
+                            {{ "%.2f"|format(strike_rate) }}%
                         </div>
                         <div class="kpi-trend">
                             <span class="trend-indicator">
@@ -179,71 +179,8 @@
                 </div>
             </div>
 
-            <!-- Average Trade Duration -->
-            <div class="col-span-1">
-                <div class="kpi-card">
-                    <div class="kpi-content">
-                        <div class="kpi-header">
-                            <i class="fas fa-clock kpi-icon me-2"></i>
-                            <span class="kpi-label">Avg Duration</span>
-                        </div>
-                        <div class="kpi-value">
-                            {% if kpi_data and kpi_data.avg_duration %}
-                                {{ kpi_data.avg_duration }}
-                            {% else %}
-                                {% set total_minutes = 0 %}
-                                {% set duration_count = 0 %}
-                                {% for trade in trades %}
-                                    {% if trade.time_in_trade and trade.time_in_trade != 'N/A' %}
-                                        {% set duration_count = duration_count + 1 %}
-                                        {% if 'h' in trade.time_in_trade and 'm' in trade.time_in_trade %}
-                                            {% set parts = trade.time_in_trade.replace('h', '').replace('m', '').split() %}
-                                            {% if parts|length >= 2 %}
-                                                {% set hours = parts[0]|int %}
-                                                {% set minutes = parts[1]|int %}
-                                                {% set total_minutes = total_minutes + (hours * 60) + minutes %}
-                                            {% endif %}
-                                        {% elif 'm' in trade.time_in_trade %}
-                                            {% set minutes = trade.time_in_trade.replace('m', '')|int %}
-                                            {% set total_minutes = total_minutes + minutes %}
-                                        {% elif 'h' in trade.time_in_trade %}
-                                            {% set hours = trade.time_in_trade.replace('h', '')|int %}
-                                            {% set total_minutes = total_minutes + (hours * 60) %}
-                                        {% endif %}
-                                    {% elif trade.entries.first() and trade.exits.first() and trade.entries.first().entry_time and trade.exits.first().exit_time %}
-                                        {% set duration_count = duration_count + 1 %}
-                                        {% set entry_total_mins = trade.entries.first().entry_time.hour * 60 + trade.entries.first().entry_time.minute %}
-                                        {% set exit_total_mins = trade.exits.first().exit_time.hour * 60 + trade.exits.first().exit_time.minute %}
-                                        {% set time_diff = exit_total_mins - entry_total_mins %}
-                                        {% if time_diff < 0 %}
-                                            {% set time_diff = time_diff + (24 * 60) %}
-                                        {% endif %}
-                                        {% set total_minutes = total_minutes + time_diff %}
-                                    {% endif %}
-                                {% endfor %}
-                                {% if duration_count > 0 %}
-                                    {% set avg_mins = (total_minutes / duration_count)|round|int %}
-                                    {% if avg_mins >= 60 %}
-                                        {{ "%dh %dm"|format(avg_mins // 60, avg_mins % 60) }}
-                                    {% else %}
-                                        {{ "%dm"|format(avg_mins) }}
-                                    {% endif %}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            {% endif %}
-                        </div>
-                        <div class="kpi-trend">
-                            <span class="trend-indicator">
-                                Time in Market
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Best Performing Model -->
-            <div class="col-span-1">
+            <div class="col-span-2">
                 <div class="kpi-card">
                     <div class="kpi-content">
                         <div class="kpi-header">
@@ -255,34 +192,12 @@
                             {% if kpi_data and kpi_data.best_model %}
                                 {{ kpi_data.best_model }}
                             {% else %}
-                                {% set model_performance = {} %}
-                                {% for trade in trades %}
-                                    {% if trade.trading_model and trade.pnl is not none %}
-                                        {% set model_name = trade.trading_model.name %}
-                                        {% if model_name not in model_performance %}
-                                            {% set _ = model_performance.update({model_name: 0}) %}
-                                        {% endif %}
-                                        {% set _ = model_performance.update({model_name: model_performance[model_name] + trade.pnl}) %}
-                                    {% endif %}
-                                {% endfor %}
-                                {% if model_performance %}
-                                    {% set best_model = model_performance.keys()|list|first %}
-                                    {% set best_pnl = model_performance[best_model] %}
-                                    {% for model, pnl in model_performance.items() %}
-                                        {% if pnl > best_pnl %}
-                                            {% set best_model = model %}
-                                            {% set best_pnl = pnl %}
-                                        {% endif %}
-                                    {% endfor %}
-                                    {{ best_model[:12] + '...' if best_model|length > 15 else best_model }}
-                                {% else %}
-                                    N/A
-                                {% endif %}
+                                N/A
                             {% endif %}
                         </div>
                         <div class="kpi-trend">
                             <span class="trend-indicator">
-                                Best Performer
+                                Best Performer by Strike Rate
                             </span>
                         </div>
                     </div>
@@ -352,21 +267,26 @@
 
     {% if request.args.get('tags') or request.args.getlist('tags') %}
         {% set selected_tag_ids = request.args.getlist('tags') if request.args.getlist('tags') else [request.args.get('tags')] %}
-        {% for tag_id in selected_tag_ids %}
-            {% if tag_id and tag_id.strip() %}
-                {% set ns = namespace(tag_label=tag_id, tag_color='neutral') %}
+        {% for tag_param in selected_tag_ids %}
+            {% if tag_param and tag_param.strip() %}
+                {% set tag_ids_list = tag_param.split(',') if ',' in tag_param else [tag_param] %}
+                {% for tag_id in tag_ids_list %}
+                    {% if tag_id and tag_id.strip() %}
+                        {% set ns = namespace(tag_label=tag_id.strip(), tag_color='neutral') %}
 
-                {% if categorized_tags %}
-                    {% for category_name, tag_options in categorized_tags %}
-                        {% for tag_option_id, tag_option_name, tag_option_color in tag_options %}
-                            {% if tag_option_id == tag_id %}
-                                {% set ns.tag_label = tag_option_name %}
-                                {% set ns.tag_color = tag_option_color or 'neutral' %}
-                            {% endif %}
-                        {% endfor %}
-                    {% endfor %}
-                {% endif %}
-                {% set _ = active_filters.append(('Tag', ns.tag_label, ns.tag_color)) %}
+                        {% if categorized_tags %}
+                            {% for category_name, tag_options in categorized_tags %}
+                                {% for tag_option_id, tag_option_name, tag_option_color in tag_options %}
+                                    {% if tag_option_id|string == tag_id.strip() %}
+                                        {% set ns.tag_label = tag_option_name %}
+                                        {% set ns.tag_color = tag_option_color or 'neutral' %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                        {% endif %}
+                        {% set _ = active_filters.append(('Tag', ns.tag_label, ns.tag_color)) %}
+                    {% endif %}
+                {% endfor %}
             {% endif %}
         {% endfor %}
     {% endif %}
@@ -374,42 +294,36 @@
 
     <!-- Compact Single-Line Filter Notification -->
     {% if active_filters %}
-    <div class="d-flex align-items-center justify-content-between py-2 px-3 mt-2 mb-1" style="background-color: var(--bs-info-bg-subtle); border: 1px solid var(--bs-info-border-subtle); border-radius: 0.375rem; font-size: 0.875rem;">
+    <div class="alert alert-info d-flex align-items-center justify-content-between py-2 px-3 mt-3" role="alert" style="background-color: var(--enterprise-bg-primary); border: 2px solid var(--enterprise-info); border-radius: 0.375rem; font-size: 0.875rem; margin-bottom: 0.5rem;">
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <i class="fas fa-filter text-info"></i>
-            <span class="fw-semibold text-info">Filtered by:</span>
+            <i class="fas fa-info-circle text-info"></i>
+            <span class="fw-semibold text-info">Trade Database Filtered by:</span>
             {% for filter in active_filters %}
                 {% if filter is sequence and filter|length == 3 and filter[0] == 'Tag' %}
-                    <!-- Tag with color coding -->
-                    <span class="badge tag-{{ filter[2] }}" style="
-                        background-color: var(--bs-{{
-                            'success' if filter[2] == 'good' else
-                            'danger' if filter[2] == 'bad' else
-                            'primary'
-                        }}-bg-subtle) !important;
-                        border-color: var(--bs-{{
-                            'success' if filter[2] == 'good' else
-                            'danger' if filter[2] == 'bad' else
-                            'primary'
-                        }}-border-subtle) !important;
-                        color: var(--bs-{{
-                            'success' if filter[2] == 'good' else
-                            'danger' if filter[2] == 'bad' else
-                            'primary'
-                        }}-text-emphasis) !important;
-                        border: 1px solid;
-                        font-size: 0.75rem;
-                    ">
-                        {{ filter[0] }}: {{ filter[1] }}
-                    </span>
+                    <!-- Tag with enterprise styling and remove button -->
+                    <div class="tag-item tag-{{ filter[2] }}" style="position: relative;">
+                        <span class="tag-name">{{ filter[1] }}</span>
+                        <button type="button" class="btn btn-sm" onclick="removeTagByName('{{ filter[1] }}')" 
+                                style="background: none; border: none; color: inherit; padding: 0 0 0 0.5rem; font-size: 0.75rem; opacity: 0.8;"
+                                title="Remove this tag filter">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                 {% else %}
-                    <!-- Regular filter badge -->
-                    <span class="badge bg-light" style="font-size: 0.75rem;">{{ filter }}</span>
+                    <!-- Regular filter badge with remove button -->
+                    <span class="badge bg-primary text-white d-inline-flex align-items-center" style="font-size: 0.75rem;">
+                        {{ filter }}
+                        <button type="button" class="btn btn-sm ms-1" onclick="removeFilter('{{ filter|urlencode }}')" 
+                                style="background: none; border: none; color: inherit; padding: 0; font-size: 0.7rem;"
+                                title="Remove this filter">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </span>
                 {% endif %}
             {% endfor %}
         </div>
         <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-outline-info btn-sm" title="Clear all filters" style="font-size: 0.75rem;">
-            <i class="fas fa-times me-1"></i>Clear
+            <i class="fas fa-times me-1"></i>Clear Filters
         </a>
     </div>
     {% endif %}
@@ -516,10 +430,6 @@
                             data-bs-target="#filterModal" title="Filter Trades">
                         <i class="fas fa-filter"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm"
-                            onclick="exportTradesCSV()" title="Export to CSV">
-                        <i class="fas fa-file-csv"></i>
-                    </button>
                 </div>
             </div>
         </div>
@@ -580,19 +490,19 @@
                     aria-label="Trade {{ trade.trade_date.strftime('%m/%d/%Y') }} {{ trade.instrument }} {{ trade.direction }}">
 
                     <!-- Enhanced Dropdown Arrow -->
-                    <td class="text-center" role="gridcell">
+                    <td class="text-center" role="gridcell" style="padding: 2px">
                         <i class="fas fa-chevron-right chevron-icon" id="chevron-{{ trade.id }}"
-                           aria-hidden="true"></i>
+                           aria-hidden="true" ></i>
                     </td>
 
                     <!-- Date -->
-                    <td role="gridcell">{{ trade.trade_date.strftime('%d %b %y') }}</td>
+                    <td role="gridcell" style="padding: 2px">{{ trade.trade_date.strftime('%d %b %y') }}</td>
 
                     <!-- Instrument -->
-                    <td role="gridcell">{{ trade.instrument or 'N/A' }}</td>
+                    <td role="gridcell" style="padding: 2px">{{ trade.instrument or 'N/A' }}</td>
 
-                    <!-- Enhanced Model with tooltip -->
-                    <td role="gridcell" title="{% if trade.trading_model %}{{ trade.trading_model.name }}{% else %}No model specified{% endif %}">
+                    <!-- Model -->
+                    <td role="gridcell" style="padding: 2px">
                         {% if trade.trading_model %}
                             {{ trade.trading_model.name }}
                         {% else %}
@@ -601,12 +511,12 @@
                     </td>
 
                     <!-- Enhanced Direction -->
-                    <td role="gridcell">
+                    <td role="gridcell" style="padding: 2px">
                         {% if trade.direction == 'Long' %}
-                            <span class="badge-transparent text-success fw-bold"
+                            <span class="badge-transparent text-success"
                                   aria-label="Long position">{{ trade.direction }}</span>
                         {% elif trade.direction == 'Short' %}
-                            <span class="badge-transparent text-danger fw-bold"
+                            <span class="badge-transparent text-danger"
                                   aria-label="Short position">{{ trade.direction }}</span>
                         {% else %}
                             <span class="badge-transparent text-muted" {{ trade.direction or 'N/A' }}</span>
@@ -614,28 +524,26 @@
                     </td>
 
                     <!-- Contracts -->
-                    <td role="gridcell">{{ trade.total_contracts_entered or 0 }}</td>
+                    <td role="gridcell" style="padding: 2px">{{ trade.total_contracts_entered or 0 }}</td>
 
                     <!-- Entry Time -->
-                    <td role="gridcell">
+                    <td role="gridcell" style="padding: 2px">
                         {% if trade.entries.first() and trade.entries.first().entry_time %}
                             {{ trade.entries.first().entry_time.strftime('%H:%M') }}
                         {% else %}
                             N/A
                         {% endif %}
                     </td>
-
                     <!-- Entry Price -->
-                    <td role="gridcell">
+                    <td role="gridcell" style="padding: 2px">
                         {% if trade.average_entry_price %}
                             {{ "{:.2f}".format(trade.average_entry_price) }}
                         {% else %}
                             N/A
                         {% endif %}
                     </td>
-
                     <!-- Exit Price -->
-                    <td role="gridcell">
+                    <td role="gridcell" style="padding: 2px">
                         {% if trade.average_exit_price %}
                             {{ "{:.2f}".format(trade.average_exit_price) }}
                         {% else %}
@@ -647,7 +555,7 @@
                         {% endif %}
                     </td>
                     <!-- Enhanced Time in Trade -->
-                    <td role="gridcell">
+                    <td role="gridcell" style="padding: 2px">
                         {% if trade.entries.first() and trade.exits.first() and trade.entries.first().entry_time and trade.exits.first().exit_time %}
                             {% set time_diff = (trade.exits.first().exit_time.hour * 60 + trade.exits.first().exit_time.minute) - (trade.entries.first().entry_time.hour * 60 + trade.entries.first().entry_time.minute) %}
                             {% if time_diff >= 0 %}
@@ -663,28 +571,26 @@
                             {% endif %}
                         {% endif %}
                     </td>
-
                     <!-- How Closed -->
-                    <td role="gridcell">
+                    <td role="gridcell" style="padding: 2px">
                         {% if trade.how_closed %}
                             <span class="how-closed-text">{{ trade.how_closed }}</span>
                         {% else %}
                             N/A
                         {% endif %}
                     </td>
-
                     <!-- Enhanced Trade Rating with accessibility -->
-                    <td role="gridcell">
+                    <td role="gridcell" style="padding: 2px">
                         {% set ratings = [trade.preparation_rating, trade.rules_rating, trade.management_rating, trade.target_rating, trade.entry_rating] %}
                         {% set valid_ratings = ratings|select('ne', none)|list %}
                         {% if valid_ratings %}
                             {% set avg_rating = (valid_ratings|sum / valid_ratings|length) %}
                             {% if avg_rating >= 4.0 %}
-                                <span class="badge-transparent text-success fw-bold" aria-label="High rating: {{ '%.1f'|format(avg_rating) }} out of 5">{{ "%.1f"|format(avg_rating) }}</span>
+                                <span class="badge-transparent text-success" aria-label="High rating: {{ '%.1f'|format(avg_rating) }} out of 5">{{ "%.1f"|format(avg_rating) }}</span>
                             {% elif avg_rating >= 2.5 %}
-                                <span class="badge-transparent text-warning fw-bold" aria-label="Medium rating: {{ '%.1f'|format(avg_rating) }} out of 5">{{ "%.1f"|format(avg_rating) }}</span>
+                                <span class="badge-transparent text-warning" aria-label="Medium rating: {{ '%.1f'|format(avg_rating) }} out of 5">{{ "%.1f"|format(avg_rating) }}</span>
                             {% else %}
-                                <span class="badge-transparent text-danger fw-bold" aria-label="Low rating: {{ '%.1f'|format(avg_rating) }} out of 5">{{ "%.1f"|format(avg_rating) }}</span>
+                                <span class="badge-transparent text-danger" aria-label="Low rating: {{ '%.1f'|format(avg_rating) }} out of 5">{{ "%.1f"|format(avg_rating) }}</span>
 
                             {% endif %}
                         {% else %}
@@ -692,22 +598,21 @@
                         {% endif %}
                     </td>
                     <!-- Enhanced P&L with no + sign for winners -->
-                    <td role="gridcell">
+                    <td role="gridcell" style="padding: 2px">
                         {% if trade.pnl is not none %}
                             {% if trade.pnl > 0 %}
-                                <span class="badge-transparent text-success fw-bold" aria-label="Profit: ${{ '{:,.2f}'.format(trade.pnl) }}">${{ "{:,.2f}".format(trade.pnl) }}</span>
+                                <span class="badge-transparent text-success" aria-label="Profit: ${{ '{:,.2f}'.format(trade.pnl) }}">${{ "{:,.2f}".format(trade.pnl) }}</span>
                             {% elif trade.pnl < 0 %}
-                                <span class="badge-transparent text-danger fw-bold" aria-label="Loss: ${{ '{:,.2f}'.format(trade.pnl) }}">${{ "{:,.2f}".format(trade.pnl) }}</span>
+                                <span class="badge-transparent text-danger" aria-label="Loss: ${{ '{:,.2f}'.format(trade.pnl) }}">${{ "{:,.2f}".format(trade.pnl) }}</span>
                             {% else %}
-                                <span class="badge-transparent text-muted fw-bold" aria-label="Break even: ${{ '{:,.2f}'.format(trade.pnl) }}">${{ "{:,.2f}".format(trade.pnl) }}</span>
+                                <span class="badge-transparent text-muted" aria-label="Break even: ${{ '{:,.2f}'.format(trade.pnl) }}">${{ "{:,.2f}".format(trade.pnl) }}</span>
                             {% endif %}
                         {% else %}
                             <span aria-label="P&L not available">N/A</span>
                         {% endif %}
                     </td>
-
                     <!-- Enhanced Actions with better accessibility -->
-                    <td class="text-end" onclick="event.stopPropagation();" role="gridcell">
+                    <td class="text-end" onclick="event.stopPropagation();" role="gridcell" style="padding: 2px">
                         <div class="btn-group" role="group" aria-label="Trade actions">
                             <a href="{{ url_for('journal.manage_daily_journal', date_str=trade.trade_date.strftime('%Y-%m-%d')) }}"
                                class="btn btn-outline-secondary btn-sm" title="Daily Journal for {{ trade.trade_date.strftime('%m/%d/%Y') }}"
@@ -727,107 +632,129 @@
                         </div>
                     </td>
                 </tr>
-
-                <!-- Enterprise Trade Details Row - Single Row Layout -->
+                <!-- Enterprise Trade Details Row - Simple colspan approach -->
                 <tr id="details-{{ trade.id }}" class="trade-details-row" style="display: none;" role="row">
-                    <td colspan="12" class="p-0" role="gridcell">
-                        <div class="trade-details-container" style="padding: 1rem;">
-                            <div class="row g-3" style="margin: 0; display: flex; flex-wrap: nowrap;">
+                    <td colspan="14" class="p-0">
+                        <div class="trade-details-container">
+                            <div class="grid grid-cols-9 gap-3">
                                 <!-- Entries & Exits Card -->
-                                <div class="col-3" style="flex: 0 0 20%; max-width: 20%;">
-                                    <div class="enterprise-module" style="height: 250px; margin-right: 12px;">
+                                <div class="col-span-2">
+                                    <div class="enterprise-module">
                                         <div class="module-header">
                                             <div class="module-title">
                                                 <i class="fas fa-exchange-alt module-icon"></i>
-                                                Entries & Exits
+                                                Execution Details
                                             </div>
                                         </div>
-                                        <div class="module-content">
-                                            <!-- Entry Operations Section -->
-                                            <div class="mb-4">
-                                                <div class="fw-semibold text-primary mb-2 text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Entry Operations</div>
-                                                <div class="small text-muted mb-2">({{ trade.total_contracts_entered or 0 }} contracts @ avg {{ "{:.2f}".format(trade.average_entry_price) if trade.average_entry_price else 'N/A' }})</div>
-                                                <div class="d-flex flex-column gap-1">
-                                                    {% for entry in trade.entries %}
-                                                    <div class="d-flex justify-content-between align-items-center small">
-                                                        <span class="text-muted">#{{ loop.index }}:</span>
-                                                        <span class="fw-500">{{ entry.contracts or 0 }} @ {{ "{:.2f}".format(entry.entry_price) if entry.entry_price else 'N/A' }}</span>
-                                                        <span class="text-muted" style="font-size: 0.7rem;">{{ entry.entry_time.strftime('%H:%M') if entry.entry_time else 'N/A' }}</span>
-                                                    </div>
-                                                    {% endfor %}
-                                                </div>
+                                    <div class="module-content">
+                                        {% if trade.entries %}
+                                        <div class="mb-3">
+                                            <h6 class="text-success fw-semibold mb-2">
+                                                Entry Points
+                                                <span class="text-muted fw-normal">
+                                                    ({{ trade.total_contracts_entered or 0 }} total positions @ avg {{ "{:.2f}".format(trade.average_entry_price) if trade.average_entry_price else 'N/A' }})
+                                                </span>
+                                            </h6>
+                                            {% for entry in trade.entries %}
+                                            <div class="mb-1 pt-1 pb-1 px-3" style="background-color: var(--enterprise-bg-primary); border-radius: 6px;">
+                                                <span class="fw-normal">
+                                                    #{{ loop.index }}: {{ entry.contracts or 0 }} positions @ {{ "{:.2f}".format(entry.entry_price) if entry.entry_price else 'N/A' }} ({{ entry.entry_time.strftime('%H:%M') if entry.entry_time else 'N/A' }})
+                                                </span>
                                             </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
 
-                                            <!-- Exit Operations Section -->
-                                            <div>
-                                                <div class="fw-semibold text-danger mb-2 text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Exit Operations</div>
-                                                <div class="small text-muted mb-2">({{ trade.total_contracts_exited or 0 }} contracts @ avg {{ "{:.2f}".format(trade.average_exit_price) if trade.average_exit_price else 'N/A' }})</div>
-                                                <div class="d-flex flex-column gap-1">
-                                                    {% for exit in trade.exits %}
-                                                    <div class="d-flex justify-content-between align-items-center small">
-                                                        <span class="text-muted">#{{ loop.index }}:</span>
-                                                        <span class="fw-500">{{ exit.contracts or 0 }} @ {{ "{:.2f}".format(exit.exit_price) if exit.exit_price else 'N/A' }}</span>
-                                                        <span class="text-muted" style="font-size: 0.7rem;">{{ exit.exit_time.strftime('%H:%M') if exit.exit_time else 'N/A' }}</span>
-                                                    </div>
-                                                    {% endfor %}
+                                        <!-- Exit Points -->
+                                        {% if trade.exits %}
+                                        <div>
+                                            <div class="mb-3">
+                                                <h6 class="text-danger fw-semibold mb-2">
+                                                    Exit Points
+                                                    <span class="text-muted fw-normal mb-2">
+                                                        ({{ trade.total_contracts_exited or 0 }} total positions @ avg {{ "{:.2f}".format(trade.average_exit_price) if trade.average_exit_price else 'N/A' }})
+                                                    </span>
+                                                </h6>
+                                                {% for exit in trade.exits %}
+                                                <div class="mb-1 pt-1 pb-1 px-3" style="background-color: var(--enterprise-bg-primary); border-radius: 6px;">
+                                                    <span class="fw-normal">
+                                                        #{{ loop.index }}: {{ exit.contracts or 0 }} positions @ {{ "{:.2f}".format(exit.exit_price) if exit.exit_price else 'N/A' }} ({{ exit.exit_time.strftime('%H:%M') if exit.exit_time else 'N/A' }})
+                                                    </span>
                                                 </div>
+                                                {% endfor %}
                                             </div>
                                         </div>
+                                        {% endif %}
+                                    </div>
                                     </div>
                                 </div>
-
-                                <!-- Key Details Card -->
-                                <div class="col-3" style="flex: 0 0 20%; max-width: 20%;">
-                                    <div class="enterprise-module" style="height: 250px; margin-right: 12px;">
+                                <!-- Trade Configuration Card -->
+                                <div class="col-span-2">
+                                    <div class="enterprise-module">
                                         <div class="module-header">
                                             <div class="module-title">
                                                 <i class="fas fa-info-circle module-icon"></i>
-                                                Trade Metadata
+                                                Trade Configuration
                                             </div>
                                         </div>
                                         <div class="module-content">
-                                            <div class="d-flex flex-column gap-3">
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div class="fw-500 text-muted small">Date</div>
-                                                    <div class="fw-600 small">{{ trade.trade_date.strftime('%m/%d/%Y') }}</div>
-                                                </div>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div class="fw-500 text-muted small">Instrument</div>
-                                                    <div class="fw-600 small">{{ trade.instrument or 'N/A' }}</div>
-                                                </div>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div class="fw-500 text-muted small">Direction</div>
-                                                    <div class="fw-600 small">
-                                                        <span class="badge {% if trade.direction == 'Long' %}bg-success{% elif trade.direction == 'Short' %}bg-danger{% else %}bg-secondary{% endif %} badge-sm">
-                                                            {{ trade.direction or 'N/A' }}
-                                                        </span>
+                                            <div class="row g-3">
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                                        <div class="fw-semibold text-muted">Instrument</div>
+                                                        {{ trade.instrument }}
                                                     </div>
                                                 </div>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div class="fw-500 text-muted small">Strategy</div>
-                                                    <div class="fw-600 small">{{ trade.trading_model.name if trade.trading_model else 'N/A' }}</div>
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                                        <div class="fw-semibold text-muted">Execution Date</div>
+                                                        {{ trade.trade_date.strftime('%d %b %Y') }}
+                                                    </div>
                                                 </div>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div class="fw-500 text-muted small">Closure</div>
-                                                    <div class="fw-600 small">{{ trade.how_closed or 'N/A' }}</div>
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                                        <div class="fw-semibold text-muted">Direction</div>
+                                                        <div>
+                                                            <span class="badge-transparent text-success {% if trade.direction == 'Long' %}operational{% elif trade.direction == 'Short' %}suspended{% else %}neutral{% endif %}">
+                                                                {{ trade.direction }}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                                        <div class="fw-semibold text-muted">Trading Model</div>
+                                                        {{ trade.trading_model.name if trade.trading_model else 'N/A' }}
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                                        <div class="fw-semibold text-muted">Exit Method</div>
+                                                        {{ trade.how_closed if trade.how_closed else 'N/A' }}
+                                                    </div>
                                                 </div>
                                                 {% if trade.tags %}
-                                                <div class="border-top pt-3">
-                                                    <div class="fw-semibold text-muted mb-2 text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Classification Tags</div>
-                                                    <div class="d-flex flex-wrap gap-1">
-                                                        {% for tag in trade.tags %}
-                                                            <span class="status-badge me-1 mb-1 tag-{{ tag.color_category or 'neutral' }}">
-                                                                {{ tag.name }}
-                                                            </span>
-                                                        {% endfor %}
+                                                <div class="col-12">
+                                                    <div class="border-top pt-2">
+                                                        <div class="fw-semibold text-muted mb-2 text-uppercase">Tags</div>
+                                                        <div class="d-flex flex-wrap gap-1">
+                                                            {% for tag in trade.tags %}
+                                                                <span class="tag-item
+                                                                    {% if tag.color_category == 'good' %} tag-good
+                                                                    {% elif tag.color_category == 'bad' %} tag-bad
+                                                                    {% else %}tag-neutral{% endif %}"
+                                                                    style="font-size: 0.7rem; white-space: nowrap;">
+                                                                    {{ tag.name }}
+                                                                </span>
+                                                            {% endfor %}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 {% endif %}
                                                 {% if trade.screenshot_link %}
-                                                <div class="border-top pt-3">
-                                                    <div class="fw-500 text-muted small mb-2">Documentation</div>
+                                                <div class="mt-2">
                                                     <a href="{{ trade.screenshot_link }}" target="_blank" class="btn btn-outline-primary btn-sm w-100">
-                                                        <i class="fas fa-external-link-alt me-1"></i>View Screenshot
+                                                        <i class="fas fa-camera me-1"></i>View Chart
                                                     </a>
                                                 </div>
                                                 {% endif %}
@@ -835,91 +762,134 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Performance Card -->
-                                <div class="col-3" style="flex: 0 0 20%; max-width: 20%;">
-                                    <div class="enterprise-module" style="height: 250px; margin-right: 12px;">
+                                <!-- Performance Metrics Card -->
+                                <div class="col-span-2">
+                                    <div class="enterprise-module">
                                         <div class="module-header">
                                             <div class="module-title">
-                                                <i class="fas fa-chart-bar module-icon"></i>
+                                                <i class="fas fa-chart-line module-icon"></i>
                                                 Performance Metrics
                                             </div>
                                         </div>
                                         <div class="module-content">
-                                            <div class="d-flex flex-column gap-3">
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div class="fw-500 text-muted small">Gross P&L</div>
-                                                    <div class="fw-600 small {% if trade.pnl %}{% if trade.pnl > 0 %}text-success{% elif trade.pnl < 0 %}text-danger{% endif %}{% endif %}">
-                                                        {% if trade.pnl is not none %}
-                                                            ${{ "{:,.2f}".format(trade.pnl) }}
-                                                        {% else %}
-                                                            N/A
-                                                        {% endif %}
+                                            <div class="row g-3">
+                                                <!-- Gross P&L -->
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                                        <div class="fw-semibold text-muted">Gross P&L</div>
+                                                        <span class="{% if trade.pnl %}{% if trade.pnl > 0 %}text-success{% elif trade.pnl < 0 %}text-danger{% endif %}{% endif %}">
+                                                            {% if trade.pnl is not none %}
+                                                                ${{ "{:,.2f}".format(trade.pnl) }}
+                                                            {% else %}
+                                                                N/A
+                                                            {% endif %}
+                                                        </span>
                                                     </div>
                                                 </div>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div class="fw-500 text-muted small">R-Multiple</div>
-                                                    <div class="fw-600 small {% if trade.pnl_in_r %}{% if trade.pnl_in_r > 0 %}text-success{% elif trade.pnl_in_r < 0 %}text-danger{% endif %}{% endif %}">
-                                                        {% if trade.pnl_in_r is not none %}
-                                                            {{ "{:+.2f}".format(trade.pnl_in_r) }}R
-                                                        {% else %}
-                                                            N/A
-                                                        {% endif %}
+
+                                                <!-- Initial Stop -->
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                                        <div class="fw-semibold text-muted">Initial Stop</div>
+                                                        <div class="text-end">
+                                                            {% if trade.initial_stop_loss and trade.average_entry_price %}
+                                                                {% set stop_diff = (trade.average_entry_price - trade.initial_stop_loss)|abs %}
+                                                                {% set multiplier = trade.instrument_multiplier or 25 %}
+                                                                {% set tick_size = trade.instrument_tick_size or 0.25 %}
+                                                                {% set ticks = (stop_diff / tick_size)|round|int if tick_size > 0 else 0 %}
+                                                                {% set price_pct = ((stop_diff / trade.average_entry_price) * 100) if trade.average_entry_price > 0 else 0 %}
+                                                                <div>{{ "{:.2f}".format(trade.initial_stop_loss) }}</div>
+                                                                <small class="text-muted">({{ "{:.1f}".format(stop_diff) }} pts, {{ ticks }} tks, ${{ "{:,.0f}".format(stop_diff * multiplier) }}, {{ "{:.2f}".format(price_pct) }}%)</small>
+                                                            {% elif trade.initial_stop_loss %}
+                                                                {{ "{:.2f}".format(trade.initial_stop_loss) }}
+                                                            {% else %}
+                                                                N/A
+                                                            {% endif %}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div class="fw-500 text-muted small">Initial SL</div>
-                                                    <div class="fw-600 small">
-                                                        {% if trade.initial_stop_loss is not none %}
-                                                            {{ "{:.1f}".format(trade.initial_stop_loss) }}
-                                                        {% else %}
-                                                            N/A
-                                                        {% endif %}
+                                                <!-- Target -->
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                                        <div class="fw-semibold text-muted">Target</div>
+                                                        <div class="text-end">
+                                                            {% if trade.terminus_target and trade.average_entry_price %}
+                                                                {% set target_diff = (trade.terminus_target - trade.average_entry_price)|abs %}
+                                                                {% set multiplier = trade.instrument_multiplier or 25 %}
+                                                                {% set tick_size = trade.instrument_tick_size or 0.25 %}
+                                                                {% set ticks = (target_diff / tick_size)|round|int if tick_size > 0 else 0 %}
+                                                                {% set price_pct = ((target_diff / trade.average_entry_price) * 100) if trade.average_entry_price > 0 else 0 %}
+                                                                <div>{{ "{:.2f}".format(trade.terminus_target) }}</div>
+                                                                <small class="text-muted">({{ "{:.1f}".format(target_diff) }} pts, {{ ticks }} tks, ${{ "{:,.0f}".format(target_diff * multiplier) }}, {{ "{:.2f}".format(price_pct) }}%)</small>
+                                                            {% elif trade.terminus_target %}
+                                                                {{ "{:.2f}".format(trade.terminus_target) }}
+                                                            {% else %}
+                                                                N/A
+                                                            {% endif %}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div class="fw-500 text-muted small">Target Level</div>
-                                                    <div class="fw-600 small">
-                                                        {% if trade.terminus_target is not none %}
-                                                            {{ "{:.1f}".format(trade.terminus_target) }}
-                                                        {% else %}
-                                                            N/A
-                                                        {% endif %}
+
+                                                <!-- MAE (Maximum Adverse Excursion) -->
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                                        <div class="fw-semibold text-muted">MAE</div>
+                                                        <div class="text-end">
+                                                            {% if trade.mae is not none and trade.average_entry_price %}
+                                                                {% set mae_abs = trade.mae|abs %}
+                                                                {% set multiplier = trade.instrument_multiplier or 25 %}
+                                                                {% set tick_size = trade.instrument_tick_size or 0.25 %}
+                                                                {% set ticks = (mae_abs / tick_size)|round|int if tick_size > 0 else 0 %}
+                                                                {% set price_pct = ((mae_abs / trade.average_entry_price) * 100) if trade.average_entry_price > 0 else 0 %}
+                                                                <div class="text-danger fw-semibold">{{ "{:.1f}".format(mae_abs) }} pts</div>
+                                                                <small class="text-muted">({{ ticks }} tks, ${{ "{:,.0f}".format(mae_abs * multiplier) }}, {{ "{:.2f}".format(price_pct) }}%)</small>
+                                                            {% else %}
+                                                                N/A
+                                                            {% endif %}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div class="fw-500 text-muted small">MAE</div>
-                                                    <div class="fw-600 small text-danger">
-                                                        {% if trade.mae is not none %}
-                                                            {% set mae_dollars = trade.mae * (trade.instrument_multiplier or 25) %}
-                                                            {% set mae_ticks = (trade.mae * 4)|round|int %}
-                                                            <div>${{ "{:,.0f}".format(mae_dollars|abs) }}</div>
-                                                            <div style="font-size: 0.65rem; opacity: 0.8;">{{ mae_ticks }} ticks | {{ "{:.1f}".format(trade.mae) }}pts</div>
-                                                        {% else %}
-                                                            N/A
-                                                        {% endif %}
+
+                                                <!-- MFE (Maximum Favorable Excursion) -->
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                                        <div class="fw-semibold text-muted">MFE</div>
+                                                        <div class="text-end">
+                                                            {% if trade.mfe is not none and trade.average_entry_price %}
+                                                                {% set multiplier = trade.instrument_multiplier or 25 %}
+                                                                {% set tick_size = trade.instrument_tick_size or 0.25 %}
+                                                                {% set ticks = (trade.mfe / tick_size)|round|int if tick_size > 0 else 0 %}
+                                                                {% set price_pct = ((trade.mfe / trade.average_entry_price) * 100) if trade.average_entry_price > 0 else 0 %}
+                                                                <div class="text-success fw-semibold">{{ "{:.1f}".format(trade.mfe) }} pts</div>
+                                                                <small class="text-muted">({{ ticks }} tks, ${{ "{:,.0f}".format(trade.mfe * multiplier) }}, {{ "{:.2f}".format(price_pct) }}%)</small>
+                                                            {% else %}
+                                                                N/A
+                                                            {% endif %}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div class="fw-500 text-muted small">MFE</div>
-                                                    <div class="fw-600 small text-success">
-                                                        {% if trade.mfe is not none %}
-                                                            {% set mfe_dollars = trade.mfe * (trade.instrument_multiplier or 25) %}
-                                                            {% set mfe_ticks = (trade.mfe * 4)|round|int %}
-                                                            <div>${{ "{:,.0f}".format(mfe_dollars) }}</div>
-                                                            <div style="font-size: 0.65rem; opacity: 0.8;">{{ mfe_ticks }} ticks | {{ "{:.1f}".format(trade.mfe) }}pts</div>
-                                                        {% else %}
-                                                            N/A
-                                                        {% endif %}
+
+                                                <!-- Time in Trade -->
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                                        <div class="fw-semibold text-muted">Time in Trade</div>
+                                                        {{ trade.time_in_trade if trade.time_in_trade and trade.time_in_trade != 'N/A' else 'N/A' }}
                                                     </div>
                                                 </div>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div class="fw-500 text-muted small">Duration</div>
-                                                    <div class="fw-600 small">
-                                                        {% if trade.entries.first() and trade.exits.first() and trade.entries.first().entry_time and trade.exits.first().exit_time %}
-                                                            {% set time_diff = (trade.exits.first().exit_time.hour * 60 + trade.exits.first().exit_time.minute) - (trade.entries.first().entry_time.hour * 60 + trade.entries.first().entry_time.minute) %}
-                                                            {% if time_diff >= 0 %}
-                                                                {{ "%02dh %02dm"|format(time_diff // 60, time_diff % 60) }}
+                                                <!-- Risk-Reward Ratio -->
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                                        <div class="fw-semibold text-muted">Risk:Reward</div>
+                                                        {% if trade.initial_stop_loss and trade.terminus_target and trade.average_entry_price %}
+                                                            {% if trade.direction == 'Long' %}
+                                                                {% set risk = trade.average_entry_price - trade.initial_stop_loss %}
+                                                                {% set reward = trade.terminus_target - trade.average_entry_price %}
+                                                            {% else %}
+                                                                {% set risk = trade.initial_stop_loss - trade.average_entry_price %}
+                                                                {% set reward = trade.average_entry_price - trade.terminus_target %}
+                                                            {% endif %}
+                                                            {% if risk > 0 %}
+                                                                1:{{ "{:.2f}".format(reward / risk) }}
                                                             {% else %}
                                                                 N/A
                                                             {% endif %}
@@ -928,50 +898,104 @@
                                                         {% endif %}
                                                     </div>
                                                 </div>
+                                                <!-- Efficiency Ratio -->
+                                                <div class="col-12">
+                                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                                        <div class="fw-semibold text-muted">Efficiency</div>
+                                                        {% if trade.pnl is not none and trade.mfe is not none and trade.mfe != 0 %}
+                                                            {% set efficiency = (trade.pnl / (trade.mfe * (trade.instrument_multiplier or 25))) * 100 %}
+                                                            <span class="{% if efficiency >= 50 %}text-success{% elif efficiency >= 25 %}text-warning{% else %}text-danger{% endif %}">
+                                                                {{ "{:.1f}".format(efficiency) }}%
+                                                            </span>
+                                                        {% else %}
+                                                            N/A
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Trade Ratings Card -->
-                                <div class="col-3" style="flex: 0 0 40%; max-width: 40%;">
-                                    <div class="enterprise-module" style="height: 250px;">
+                                <!-- Quality Assessment Card -->
+                                <div class="col-span-3">
+                                    <div class="enterprise-module">
                                         <div class="module-header">
                                             <div class="module-title">
                                                 <i class="fas fa-star module-icon"></i>
                                                 Execution Quality Assessment
                                             </div>
-                                            <div class="module-meta">Performance Evaluation</div>
                                         </div>
-                                        <div class="module-content">
-                                            <div class="row h-100">
-                                                <div class="col-md-6">
-                                                    <div class="d-flex flex-column gap-2">
-                                                        {% for rating_name, rating_value in [
-                                                            ('Preparation', trade.preparation_rating),
-                                                            ('Rules Adherence', trade.rules_rating),
-                                                            ('Risk Management', trade.management_rating),
-                                                            ('Target Achievement', trade.target_rating),
-                                                            ('Entry Execution', trade.entry_rating)
-                                                        ] %}
-                                                        <div class="d-flex justify-content-between align-items-center" data-rating-category="{{ rating_name.lower().replace(' ', '_') }}" data-rating-value="{{ rating_value or 0 }}">
-                                                            <div class="fw-500 text-muted small">{{ rating_name }}</div>
-                                                            <div class="d-flex align-items-center gap-2">
-                                                                <div class="rating-dots">
-                                                                    {% for i in range(1, 6) %}
-                                                                        <div class="rating-dot {% if rating_value and i <= rating_value %}filled-{{ rating_value }}{% endif %}"></div>
-                                                                    {% endfor %}
-                                                                </div>
-                                                                <span class="fw-600 small" style="min-width: 20px;">{{ rating_value or 0 }}/5</span>
+                                    <div class="module-content">
+                                        <div class="d-flex gap-4">
+                                            <!-- Rating List -->
+                                            <div style="flex: 0 0 50%;">
+                                                <div class="d-flex flex-column gap-1" style="text-align: left">
+                                                    {% set ratings = [
+                                                        ('Preparation', trade.preparation_rating, 'clipboard-check'),
+                                                        ('Rules Adherence', trade.rules_rating, 'gavel'),
+                                                        ('Risk Management', trade.management_rating, 'shield-alt'),
+                                                        ('Target Placement', trade.target_rating, 'bullseye'),
+                                                        ('Entry Execution', trade.entry_rating, 'crosshairs')
+                                                    ] %}
+
+                                                    {% for rating_name, rating_value, icon in ratings %}
+                                                    <div class="d-flex align-items-center gap-1 p-1 rounded hover-highlight"
+                                                         data-rating-category="{{ rating_name.lower().replace(' ', '_') }}"
+                                                         data-rating-value="{{ rating_value or 0 }}">
+                                                        <div class="flex-grow-1">
+                                                            <div class="fw-semibold text-muted" >{{ rating_name }}</div>
+                                                        </div>
+                                                        <div class="d-flex align-items-center gap-1">
+                                                            <div class="d-flex gap-1">
+                                                                {% for i in range(1, 6) %}
+                                                                <div class="rating-dot" style="
+                                                                    width: 10px;
+                                                                    height: 10px;
+                                                                    border-radius: 50%;
+                                                                    border: 1px solid var(--enterprise-gray-300);
+                                                                    {% if rating_value and i <= rating_value %}
+                                                                        {% if rating_value >= 4 %}
+                                                                            background-color: var(--enterprise-success);
+                                                                            border-color: var(--enterprise-success);
+                                                                        {% elif rating_value >= 3 %}
+                                                                            background-color: var(--enterprise-warning);
+                                                                            border-color: var(--enterprise-warning);
+                                                                        {% else %}
+                                                                            background-color: var(--enterprise-danger);
+                                                                            border-color: var(--enterprise-danger);
+                                                                        {% endif %}
+                                                                    {% else %}
+                                                                        background-color: var(--enterprise-gray-100);
+                                                                    {% endif %}
+                                                                "></div>
+                                                                {% endfor %}
                                                             </div>
                                                         </div>
-                                                        {% endfor %}
                                                     </div>
+                                                    {% endfor %}
+
+                                                    <!-- Average Rating -->
+                                                    {% set all_ratings = [trade.preparation_rating, trade.rules_rating, trade.management_rating, trade.target_rating, trade.entry_rating] %}
+                                                    {% set valid_ratings = all_ratings|select('ne', none)|list %}
+                                                    {% if valid_ratings %}
+                                                        {% set avg_rating = (valid_ratings|sum / valid_ratings|length) %}
+                                                        <div class="border-top mt-2 pt-2">
+                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                <span class="fw-semibold text-primary">Overall Score:</span>
+                                                                <span class="badge {% if avg_rating >= 4 %}bg-success{% elif avg_rating >= 2.5 %}bg-warning{% else %}bg-danger{% endif %} fs-6">
+                                                                    {{ "%.1f"|format(avg_rating) }}/5.0
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    {% endif %}
                                                 </div>
-                                                <div class="col-md-6 d-flex align-items-center justify-content-center">
-                                                    <div class="radar-chart-container-large">
-                                                        <canvas id="radarChart-{{ trade.id }}" class="radar-chart-canvas-large" width="180" height="180"></canvas>
-                                                    </div>
+                                            </div>
+
+                                            <!-- Radar Chart -->
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                <div class="position-relative" style="width: 200px; height: 200px;">
+                                                    <canvas id="radarChart-{{ trade.id }}" width="200" height="200"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -989,49 +1013,50 @@
     </div>
     {% else %}
     <!-- No Data State -->
-    <div class="enterprise-module text-center">
+    <div class="enterprise-module text-center mt-3">
         <div class="module-content py-5">
             <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
-            <h4 class="text-muted">No Trading Operations Found</h4>
-            <p class="text-muted mb-4">Begin by creating your first trade configuration to establish operational data.</p>
+            <h4 class="text-muted mb-4">No Trades Found</h4>
             <a href="{{ url_for('trades.add_trade') }}" class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i>Create Trade Configuration
+                <i class="fas fa-plus me-2"></i>Add A Trade
             </a>
         </div>
     </div>
     {% endif %}
 </div>
 
-<!-- Advanced Filter Modal -->
+<!-- Filter Trades Modal -->
 <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="filterModalLabel">Filter Trades</h5>
+                <h5 class="modal-title" id="filterModalLabel">
+                    <i class="fas fa-filter me-2"></i>Filter Trades
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="GET" action="{{ url_for('trades.view_trades_list') }}">
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
+
+                    <!-- Date Range & Core Characteristics -->
+                    <div class="mb-3">
+                        <h6 class="fw-bold border-bottom pb-2 mb-3">Core Filters</h6>
+                        <div class="d-flex align-items-end gap-3">
+                            <!-- Start Date -->
+                            <div class="w-auto">
                                 <label for="start_date" class="form-label">Start Date</label>
-                                <input type="date" class="form-control" id="start_date" name="start_date"
-                                       value="{{ request.args.get('start_date', '') }}">
+                                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.args.get('start_date', '') }}">
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
+                            <!-- End Date -->
+                            <div class="w-auto">
                                 <label for="end_date" class="form-label">End Date</label>
-                                <input type="date" class="form-control" id="end_date" name="end_date"
-                                       value="{{ request.args.get('end_date', '') }}">
+                                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.args.get('end_date', '') }}">
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
+                            <!-- Instrument -->
+                            <div class="w-auto">
                                 <label for="instrument_filter" class="form-label">Instrument</label>
                                 <select class="form-select" id="instrument_filter" name="instrument">
-                                    <option value="">All Instruments</option>
+                                    <option value="">All</option>
                                     {% if filter_form and filter_form.instrument %}
                                         {% for value, label in filter_form.instrument.choices %}
                                             {% if value %}
@@ -1043,26 +1068,21 @@
                                     {% endif %}
                                 </select>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="mb-3">
+                            <!-- Direction -->
+                            <div class="w-auto">
                                 <label for="direction_filter" class="form-label">Direction</label>
                                 <select class="form-select" id="direction_filter" name="direction">
-                                    <option value="">All Directions</option>
+                                    <option value="">All</option>
                                     <option value="Long" {{ 'selected' if request.args.get('direction') == 'Long' else '' }}>Long</option>
                                     <option value="Short" {{ 'selected' if request.args.get('direction') == 'Short' else '' }}>Short</option>
                                 </select>
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
+                             <!-- Trading Model -->
+                            <div class="flex-grow-1">
                                 <label for="trading_model_filter" class="form-label">Trading Model</label>
                                 <select class="form-select" id="trading_model_filter" name="trading_model_id">
                                     <option value="">All Models</option>
-                                    {% if filter_form and filter_form.trading_model_id %}
+                                     {% if filter_form and filter_form.trading_model_id %}
                                         {% for value, label in filter_form.trading_model_id.choices %}
                                             {% if value and value != 0 %}
                                                 <option value="{{ value }}" {{ 'selected' if request.args.get('trading_model_id') == value|string else '' }}>
@@ -1074,20 +1094,66 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <label for="how_closed_filter" class="form-label">How Closed</label>
+                    </div>
+
+                    <!-- Performance & Size -->
+                    <div class="mb-3 mt-5">
+                        <h6 class="fw-bold border-bottom pb-2 mb-3">Performance &amp; Position Size</h6>
+                        <div class="d-flex align-items-end gap-3">
+                            <div class="w-auto">
+                                <label for="pnl_filter" class="form-label">P&L Type</label>
+                                <select class="form-select" id="pnl_filter" name="pnl_filter">
+                                    <option value="">All</option>
+                                    <option value="winners" {{ 'selected' if request.args.get('pnl_filter') == 'winners' else '' }}>Winners</option>
+                                    <option value="losers" {{ 'selected' if request.args.get('pnl_filter') == 'losers' else '' }}>Losers</option>
+                                    <option value="breakeven" {{ 'selected' if request.args.get('pnl_filter') == 'breakeven' else '' }}>Breakeven</option>
+                                </select>
+                            </div>
+                            <div style="width: 120px;">
+                                <label for="min_pnl_filter" class="form-label">Min P&L ($)</label>
+                                <input type="number" class="form-control" id="min_pnl_filter" name="min_pnl" step="0.01" value="{{ request.args.get('min_pnl', '') }}" placeholder="-500">
+                            </div>
+                            <div style="width: 120px;">
+                                <label for="max_pnl_filter" class="form-label">Max P&L ($)</label>
+                                <input type="number" class="form-control" id="max_pnl_filter" name="max_pnl" step="0.01" value="{{ request.args.get('max_pnl', '') }}" placeholder="1000">
+                            </div>
+                            <div style="width: 100px;">
+                                <label for="min_contracts_filter" class="form-label">Min Size</label>
+                                <input type="number" class="form-control" id="min_contracts_filter" name="min_contracts" value="{{ request.args.get('min_contracts', '') }}" placeholder="1">
+                            </div>
+                            <div style="width: 100px;">
+                                <label for="max_contracts_filter" class="form-label">Max Size</label>
+                                <input type="number" class="form-control" id="max_contracts_filter" name="max_contracts" value="{{ request.args.get('max_contracts', '') }}" placeholder="20">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Special Filters -->
+                    <div>
+                        <h6 class="fw-bold border-bottom pb-2 mb-3 mt-5">Special Filters</h6>
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="w-auto">
+                                <label for="how_closed_filter" class="form-label">Exit Method</label>
                                 <select class="form-select" id="how_closed_filter" name="how_closed">
                                     <option value="">All</option>
                                     <option value="Target Hit" {{ 'selected' if request.args.get('how_closed') == 'Target Hit' else '' }}>Target Hit</option>
                                     <option value="Stop Loss" {{ 'selected' if request.args.get('how_closed') == 'Stop Loss' else '' }}>Stop Loss</option>
-                                    <option value="Closed Manually" {{ 'selected' if request.args.get('how_closed') == 'Closed Manually' else '' }}>Closed Manually</option>
+                                    <option value="Closed Manually" {{ 'selected' if request.args.get('how_closed') == 'Closed Manually' else '' }}>Manual Close</option>
                                     <option value="Still Open" {{ 'selected' if request.args.get('how_closed') == 'Still Open' else '' }}>Still Open</option>
                                 </select>
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
+                            <div class="w-auto">
+                                <label for="min_rating_filter" class="form-label">Min Rating</label>
+                                <select class="form-select" id="min_rating_filter" name="min_rating">
+                                    <option value="">Any</option>
+                                    <option value="1" {{ 'selected' if request.args.get('min_rating') == '1' else '' }}>1+</option>
+                                    <option value="2" {{ 'selected' if request.args.get('min_rating') == '2' else '' }}>2+</option>
+                                    <option value="3" {{ 'selected' if request.args.get('min_rating') == '3' else '' }}>3+</option>
+                                    <option value="4" {{ 'selected' if request.args.get('min_rating') == '4' else '' }}>4+</option>
+                                    <option value="5" {{ 'selected' if request.args.get('min_rating') == '5' else '' }}>5</option>
+                                </select>
+                            </div>
+                            <div class="w-auto">
                                 <label for="is_dca_filter" class="form-label">DCA Trades</label>
                                 <select class="form-select" id="is_dca_filter" name="is_dca">
                                     <option value="">All</option>
@@ -1098,132 +1164,221 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <label for="pnl_filter" class="form-label">P&L Filter</label>
-                                <select class="form-select" id="pnl_filter" name="pnl_filter">
-                                    <option value="">All Trades</option>
-                                    <option value="winners" {{ 'selected' if request.args.get('pnl_filter') == 'winners' else '' }}>Winners Only</option>
-                                    <option value="losers" {{ 'selected' if request.args.get('pnl_filter') == 'losers' else '' }}>Losers Only</option>
-                                    <option value="breakeven" {{ 'selected' if request.args.get('pnl_filter') == 'breakeven' else '' }}>Breakeven</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <label for="min_contracts_filter" class="form-label">Min Contracts</label>
-                                <input type="number" class="form-control" id="min_contracts_filter" name="min_contracts"
-                                       value="{{ request.args.get('min_contracts', '') }}" placeholder="e.g., 5">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <label for="max_contracts_filter" class="form-label">Max Contracts</label>
-                                <input type="number" class="form-control" id="max_contracts_filter" name="max_contracts"
-                                       value="{{ request.args.get('max_contracts', '') }}" placeholder="e.g., 20">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <label for="min_rating_filter" class="form-label">Min Rating</label>
-                                <select class="form-select" id="min_rating_filter" name="min_rating">
-                                    <option value="">Any Rating</option>
-                                    <option value="1" {{ 'selected' if request.args.get('min_rating') == '1' else '' }}>1+</option>
-                                    <option value="2" {{ 'selected' if request.args.get('min_rating') == '2' else '' }}>2+</option>
-                                    <option value="3" {{ 'selected' if request.args.get('min_rating') == '3' else '' }}>3+</option>
-                                    <option value="4" {{ 'selected' if request.args.get('min_rating') == '4' else '' }}>4+</option>
-                                    <option value="5" {{ 'selected' if request.args.get('min_rating') == '5' else '' }}>5</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="min_pnl_filter" class="form-label">Min P&L ($)</label>
-                                <input type="number" class="form-control" id="min_pnl_filter" name="min_pnl" step="0.01"
-                                       value="{{ request.args.get('min_pnl', '') }}" placeholder="e.g., -500">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="max_pnl_filter" class="form-label">Max P&L ($)</label>
-                                <input type="number" class="form-control" id="max_pnl_filter" name="max_pnl" step="0.01"
-                                       value="{{ request.args.get('max_pnl', '') }}" placeholder="e.g., 1000">
-                            </div>
-                        </div>
-                    </div>
-
+                    <!-- Tags Section - Full Width -->
                     {% if categorized_tags %}
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="mb-3">
-                                <label for="tags_filter" class="form-label">Tags</label>
-                                <select multiple class="form-select" id="tags-filter-select" name="tags">
+                    <div class="mb-3 mt-5">
+                        <h6 class="fw-bold border-bottom pb-2 mb-2">Tag Selection</h6>
+                        <!-- Tags Dropdown -->
+                        <div>
+                            <div class="dropdown w-100">
+                                <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" id="tagsDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                    <i class="fas fa-tags me-2"></i>Select Tags
+                                </button>
+                                <div class="dropdown-menu w-100 p-3" aria-labelledby="tagsDropdown" style="min-width: 100%; max-height: 400px; overflow-y: auto;">
                                     {% for category_name, tag_options in categorized_tags %}
-                                        <optgroup label="{{ category_name }}">
+                                    <div class="mb-3">
+                                        <h6 class="dropdown-header fw-bold text-muted border-bottom pb-1 mb-2" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            {{ category_name }}
+                                        </h6>
+                                        <div class="d-flex flex-wrap gap-1 px-2">
                                             {% for tag_id, tag_name, tag_color in tag_options %}
-                                                <option value="{{ tag_id }}"
-                                                        data-color="{{ tag_color or 'neutral' }}"
-                                                        class="tag-{{ tag_color or 'neutral' }}"
-                                                        {{ 'selected' if tag_id in request.args.getlist('tags') else '' }}>
-                                                    {{ tag_name }}
-                                                </option>
+                                            <div class="tag-item tag-{{ tag_color or 'neutral' }} tag-selectable"
+                                                 data-tag-id="{{ tag_id }}"
+                                                 data-tag-name="{{ tag_name }}"
+                                                 data-tag-color="{{ tag_color or 'neutral' }}"
+                                                 role="button"
+                                                 tabindex="0"
+                                                 style="cursor: pointer; user-select: none;">
+                                                <span class="tag-name">{{ tag_name }}</span>
+                                            </div>
                                             {% endfor %}
-                                        </optgroup>
+                                        </div>
+                                    </div>
                                     {% endfor %}
-                                </select>
-                                <small class="form-text text-muted">Select multiple tags to filter by</small>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Hidden input to store tag values for form submission -->
+                        <input type="hidden" name="tags" id="tags-hidden-input">
+                        <!-- Selected Tags Display -->
+                        <div class="mb-2">
+                            <label class="form-label mb-1">Selected Tags</label>
+                            <div id="selected-tags-container" style="min-height: 40px; background: var(--enterprise-gray-50); border: 1px solid var(--enterprise-border); border-radius: var(--enterprise-radius); padding: 0.5rem;">
+                                <div id="selected-tags-display" class="d-flex flex-wrap gap-1">
+                                    <span class="text-muted small" id="no-tags-message">No tags selected</span>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                     {% endif %}
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-outline-warning">Clear All</a>
-                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{{ url_for('trades.view_trades_list') }}" class="btn btn-outline-warning me-2">
+                        <i class="fas fa-eraser me-1"></i>Clear All
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-search me-1"></i>Apply Filters
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Bulk Operations Modal -->
-<div class="modal fade" id="bulkOperationsModal" tabindex="-1" aria-labelledby="bulkOperationsModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="bulkOperationsModalLabel">
-                    <i class="fas fa-cogs me-2"></i>Bulk Configuration Operations
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="bulkDeleteForm" method="POST" action="{{ url_for('trades.bulk_delete_trades') }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Bulk Operation Warning:</strong> Selected configurations will be permanently removed from the system.
-                    </div>
-                    <div id="selectedTradesList" class="operation-list">
-                        <!-- Selected trades will be populated here -->
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                    Cancel Operation
-                </button>
-                <button type="button" class="btn btn-danger">
-                    <i class="fas fa-trash-alt me-1"></i>Remove Selected Configurations
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const filterModal = document.getElementById('filterModal');
+    if (!filterModal) return;
+
+    const selectedTagsDisplay = filterModal.querySelector('#selected-tags-display');
+    const noTagsMessage = filterModal.querySelector('#no-tags-message');
+    const hiddenInput = filterModal.querySelector('#tags-hidden-input');
+    const tagItems = filterModal.querySelectorAll('.tag-selectable');
+    const selectedTagIds = new Set();
+
+    // Function to update the hidden input value
+    function updateHiddenInput() {
+        hiddenInput.value = Array.from(selectedTagIds).join(',');
+    }
+
+    // Function to create a selected tag display element
+    function createSelectedTag(id, name, color) {
+        const selectedTag = document.createElement('div');
+        selectedTag.className = `tag-item tag-${color} selected-tag`;
+        selectedTag.dataset.tagId = id;
+        selectedTag.style.cssText = 'cursor: pointer; user-select: none; opacity: 0.8; position: relative;';
+        
+        selectedTag.innerHTML = `
+            <span class="tag-name">${name}</span>
+            <i class="fas fa-times ms-2" style="font-size: 0.75rem; opacity: 0.7;"></i>
+        `;
+
+        selectedTag.addEventListener('click', function() {
+            toggleTagSelection(id, name, color);
+        });
+
+        return selectedTag;
+    }
+
+    // Function to update the selected tags display
+    function updateSelectedTagsDisplay() {
+        selectedTagsDisplay.innerHTML = '';
+        
+        if (selectedTagIds.size === 0) {
+            selectedTagsDisplay.appendChild(noTagsMessage);
+        } else {
+            selectedTagIds.forEach(tagId => {
+                const tagItem = Array.from(tagItems).find(item => item.dataset.tagId === tagId);
+                if (tagItem) {
+                    const selectedTag = createSelectedTag(
+                        tagId, 
+                        tagItem.dataset.tagName, 
+                        tagItem.dataset.tagColor
+                    );
+                    selectedTagsDisplay.appendChild(selectedTag);
+                }
+            });
+        }
+    }
+
+    // Function to update visual state of tag items
+    function updateTagItemsState() {
+        tagItems.forEach(item => {
+            const tagId = item.dataset.tagId;
+            if (selectedTagIds.has(tagId)) {
+                item.style.opacity = '0.5';
+                item.style.transform = 'scale(0.95)';
+                item.classList.add('selected');
+            } else {
+                item.style.opacity = '1';
+                item.style.transform = 'scale(1)';
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    // Function to handle tag selection/deselection
+    function toggleTagSelection(id, name, color) {
+        if (selectedTagIds.has(id)) {
+            selectedTagIds.delete(id);
+        } else {
+            selectedTagIds.add(id);
+        }
+        
+        updateSelectedTagsDisplay();
+        updateTagItemsState();
+        updateHiddenInput();
+    }
+
+    // Add click listeners to tag items
+    tagItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const { tagId, tagName, tagColor } = this.dataset;
+            toggleTagSelection(tagId, tagName, tagColor);
+        });
+
+        // Add keyboard support
+        item.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const { tagId, tagName, tagColor } = this.dataset;
+                toggleTagSelection(tagId, tagName, tagColor);
+            }
+        });
+
+        // Add hover effects
+        item.addEventListener('mouseenter', function() {
+            if (!selectedTagIds.has(this.dataset.tagId)) {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
+            }
+        });
+
+        item.addEventListener('mouseleave', function() {
+            if (!selectedTagIds.has(this.dataset.tagId)) {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '';
+            }
+        });
+    });
+
+    // Initialize state from URL parameters on modal open
+    filterModal.addEventListener('show.bs.modal', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tagsFromUrl = urlParams.getAll('tags');
+
+        // Clear previous state
+        selectedTagIds.clear();
+
+        if (tagsFromUrl.length > 0 && tagsFromUrl[0]) {
+            // Handle both comma-separated and multiple 'tags' params
+            const allTags = tagsFromUrl.flatMap(t => t.split(','));
+            allTags.forEach(tagId => {
+                if (tagId && tagId.trim()) {
+                    const tagItem = Array.from(tagItems).find(item => item.dataset.tagId === tagId.trim());
+                    if (tagItem) {
+                        selectedTagIds.add(tagId.trim());
+                    }
+                }
+            });
+        }
+        
+        updateSelectedTagsDisplay();
+        updateTagItemsState();
+        updateHiddenInput();
+    });
+});
+</script>
+
+
+
+
+
 
 <!-- CSRF Token for JavaScript -->
 <meta name="csrf-token" content="{{ csrf_token }}">
@@ -1231,9 +1386,61 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
 <script src="{{ url_for('static', filename='js/enterprise-trades-list.js') }}"></script>
+
+<!-- Prevent unsaved changes auto-initialization on this page -->
+<script>
+// IMMEDIATE execution to block before any other scripts run
+(function() {
+    // Set blocking flag
+    window.__blockUnsavedChangesInit = true;
+    
+    // Override the auto-initialization part of the unsaved-changes.js
+    // This needs to run before DOMContentLoaded
+    const originalAddEventListener = document.addEventListener;
+    document.addEventListener = function(type, listener, options) {
+        // Block the DOMContentLoaded listener from unsaved-changes.js that would auto-initialize
+        if (type === 'DOMContentLoaded' && listener.toString().includes('enterpriseUnsavedChanges')) {
+            console.log('Blocked unsaved changes DOMContentLoaded listener');
+            return;
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+    };
+    
+    // Add our own DOMContentLoaded to clean up after other scripts load
+    originalAddEventListener.call(document, 'DOMContentLoaded', function() {
+        // Restore original addEventListener
+        document.addEventListener = originalAddEventListener;
+        
+        // Destroy any instance that might have been created despite our blocking
+        if (window.enterpriseUnsavedChanges) {
+            console.log('Force destroying unsaved changes instance');
+            try {
+                window.enterpriseUnsavedChanges.hasUnsavedChanges = false;
+                window.enterpriseUnsavedChanges.isSubmitting = true;
+                window.enterpriseUnsavedChanges.destroy();
+            } catch (e) {
+                console.warn('Error destroying unsaved changes:', e);
+            }
+            window.enterpriseUnsavedChanges = null;
+        }
+        
+        // Override initialization functions
+        if (window.initEnterpriseUnsavedChanges) {
+            window.initEnterpriseUnsavedChanges = function() {
+                console.log('Blocked unsaved changes initialization on trades list page');
+                return null;
+            };
+        }
+        
+        // Clean up any existing beforeunload listeners
+        window.onbeforeunload = null;
+        
+        console.log('✅ Unsaved changes completely disabled for trades list page');
+    }, { once: true });
+})();
+</script>
 <script>
 // =====================================
 // TABLE SORTING
@@ -1284,7 +1491,7 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = currentUrl.toString();
         });
     }
-    
+
     // Pagination arrow clicks functionality
     const paginationArrows = document.querySelectorAll('.pagination-arrow-borderless:not(.disabled)');
     paginationArrows.forEach(arrow => {
@@ -1295,7 +1502,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
-    
+
     console.log('Pagination system initialized');
 });
 
@@ -1305,10 +1512,10 @@ document.addEventListener('DOMContentLoaded', function() {
 function exportTradesCSV() {
     const exportBtn = document.querySelector('button[onclick="exportTradesCSV()"]');
     const originalHtml = exportBtn.innerHTML;
-    
+
     exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     exportBtn.disabled = true;
-    
+
     fetch('/trades/export-csv', {
         method: 'POST',
         headers: {
@@ -1333,7 +1540,7 @@ function exportTradesCSV() {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        
+
         if (typeof showSuccess === 'function') {
             showSuccess('Trading data exported to CSV successfully.', 'CSV Export Complete');
         } else {
@@ -1359,20 +1566,187 @@ function exportTradesCSV() {
 // =====================================
 function getCSRFToken() {
     let csrfToken = null;
-    
+
     const metaTag = document.querySelector('meta[name="csrf-token"]');
     if (metaTag && metaTag.getAttribute('content')) {
         csrfToken = metaTag.getAttribute('content');
     }
-    
+
     if (!csrfToken) {
         const hiddenInput = document.querySelector('input[name="csrf_token"]');
         if (hiddenInput && hiddenInput.value) {
             csrfToken = hiddenInput.value;
         }
     }
-    
+
     return csrfToken;
+}
+
+// =====================================
+// INDIVIDUAL FILTER REMOVAL
+// =====================================
+function removeFilter(encodedFilterType) {
+    const filterType = decodeURIComponent(encodedFilterType);
+    const currentUrl = new URL(window.location);
+    
+    // Map filter display names to URL parameters
+    const filterMappings = {
+        'Start Date': 'start_date',
+        'End Date': 'end_date', 
+        'Instrument': 'instrument',
+        'Direction': 'direction',
+        'Model': 'trading_model_id',
+        'How Closed': 'how_closed',
+        'P&L': 'pnl_filter',
+        'DCA': 'is_dca',
+        'Min Contracts': 'min_contracts',
+        'Max Contracts': 'max_contracts',
+        'Min Rating': 'min_rating',
+        'Min P&L': 'min_pnl',
+        'Max P&L': 'max_pnl'
+    };
+
+    // Extract the filter key from the display text (e.g., "Start Date: 2024-01-01" -> "Start Date")
+    let filterKey = filterType.split(':')[0].trim();
+    
+    // Handle special cases for P&L filter variations
+    if (filterType.includes('P&L: Winners Only') || filterType.includes('P&L: Losers Only') || filterType.includes('P&L: Breakeven')) {
+        filterKey = 'P&L';
+    }
+    
+    // Handle Min Rating format (e.g., "Min Rating: 3+" -> "Min Rating")
+    if (filterType.includes('Min Rating:')) {
+        filterKey = 'Min Rating';
+    }
+    
+    const paramName = filterMappings[filterKey];
+    
+    console.log('Filter Type:', filterType);
+    console.log('Filter Key:', filterKey);
+    console.log('Param Name:', paramName);
+    
+    if (paramName) {
+        currentUrl.searchParams.delete(paramName);
+        currentUrl.searchParams.set('page', '1'); // Reset to first page
+        window.location.href = currentUrl.toString();
+    } else {
+        console.warn('No mapping found for filter:', filterType);
+    }
+}
+
+function removeTagByName(tagName) {
+    const currentUrl = new URL(window.location);
+    const currentTags = currentUrl.searchParams.get('tags');
+    
+    if (currentTags) {
+        // Get the mapping of tag names to IDs from the categorized_tags data
+        let tagNameToIdMap = {};
+        {% if categorized_tags %}
+        {% for category_name, tag_options in categorized_tags %}
+        {% for tag_id, tag_name, tag_color in tag_options %}
+        tagNameToIdMap['{{ tag_name }}'] = '{{ tag_id }}';
+        {% endfor %}
+        {% endfor %}
+        {% endif %}
+        
+        const tagIdToRemove = tagNameToIdMap[tagName];
+        if (tagIdToRemove) {
+            // Split comma-separated tags and remove the specific tag ID
+            const tagArray = currentTags.split(',').filter(t => t.trim() && t.trim() !== tagIdToRemove);
+            
+            if (tagArray.length > 0) {
+                currentUrl.searchParams.set('tags', tagArray.join(','));
+            } else {
+                currentUrl.searchParams.delete('tags');
+            }
+            
+            currentUrl.searchParams.set('page', '1'); // Reset to first page
+            window.location.href = currentUrl.toString();
+        }
+    }
+}
+
+// Export with progress indicator
+function exportWithProgress(type) {
+    let title, message, url;
+    
+    if (type === 'csv') {
+        title = 'Exporting CSV Data';
+        message = 'Preparing your trading data for CSV export...';
+        url = '{{ url_for("trades.export_trades_csv") }}';
+    } else if (type === 'pdf') {
+        title = 'Generating Performance Report';
+        message = 'Creating comprehensive performance analysis with charts and analytics...';
+        url = '{{ url_for("trades.export_performance_report_pdf") }}';
+    } else {
+        return;
+    }
+    
+    // Show progress indicator
+    const progressIndicator = showProgressIndicator(title, message, true);
+    
+    // Simulate progress updates for better UX
+    let progress = 0;
+    const progressSteps = type === 'pdf' ? [
+        { percent: 10, text: 'Querying trade data...' },
+        { percent: 25, text: 'Applying filters...' },
+        { percent: 40, text: 'Generating charts...' },
+        { percent: 60, text: 'Creating visualizations...' },
+        { percent: 80, text: 'Formatting report...' },
+        { percent: 95, text: 'Finalizing document...' }
+    ] : [
+        { percent: 20, text: 'Querying trade data...' },
+        { percent: 50, text: 'Applying filters...' },
+        { percent: 80, text: 'Formatting CSV data...' }
+    ];
+    
+    let stepIndex = 0;
+    const progressInterval = setInterval(() => {
+        if (stepIndex < progressSteps.length) {
+            const step = progressSteps[stepIndex];
+            progressIndicator.updateProgress(step.percent, step.text);
+            stepIndex++;
+        }
+    }, type === 'pdf' ? 800 : 500);
+    
+    // Build URL with current filters
+    const currentUrl = new URL(window.location);
+    const filterParams = new URLSearchParams();
+    
+    // Copy all filter parameters from current URL
+    for (const [key, value] of currentUrl.searchParams) {
+        if (key !== 'page' && key !== 'per_page') {
+            filterParams.set(key, value);
+        }
+    }
+    
+    const exportUrl = filterParams.toString() ? `${url}?${filterParams.toString()}` : url;
+    
+    // Debug: Log the constructed URL
+    console.log('Export URL:', exportUrl);
+    console.log('Filter Params:', filterParams.toString());
+    
+    // Let progress run for realistic timing, then trigger download
+    setTimeout(() => {
+        clearInterval(progressInterval);
+        progressIndicator.updateProgress(100, 'Starting download...');
+        
+        // Create a temporary link to trigger download without navigation
+        const link = document.createElement('a');
+        link.href = exportUrl;
+        link.target = '_blank';  // Open in new tab/window for download
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Hide progress indicator after download triggers
+        setTimeout(() => {
+            progressIndicator.hide();
+        }, 1000);
+        
+    }, type === 'pdf' ? 4000 : 2000);
 }
 </script>
 {% endblock %}
+

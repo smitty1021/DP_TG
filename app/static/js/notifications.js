@@ -290,3 +290,141 @@ function showVerificationRequired(userEmail = '') {
 
 // Make sure this function is available globally
 window.showVerificationRequired = showVerificationRequired;
+
+// Progress indicator for long-running operations
+function showProgressIndicator(title = 'Generating Report', message = 'Please standby while we process your request...', showProgressBar = true) {
+    // Remove any existing progress indicators
+    const existing = document.querySelectorAll('.progress-indicator-modal');
+    existing.forEach(el => el.remove());
+
+    // Create the modal backdrop
+    const backdrop = document.createElement('div');
+    backdrop.className = 'progress-indicator-modal';
+    backdrop.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 10050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    `;
+
+    // Create the modal content
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        min-width: 400px;
+        max-width: 500px;
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
+    `;
+
+    // Build modal content
+    let progressBarHTML = '';
+    if (showProgressBar) {
+        progressBarHTML = `
+            <div style="margin: 1.5rem 0;">
+                <div style="background: #f8f9fa; border-radius: 10px; height: 8px; overflow: hidden; margin-bottom: 0.5rem;">
+                    <div id="progress-bar" style="
+                        width: 0%;
+                        height: 100%;
+                        background: linear-gradient(90deg, #0d6efd, #0056b3);
+                        border-radius: 10px;
+                        transition: width 0.3s ease;
+                        animation: progress-shimmer 2s infinite;
+                    "></div>
+                </div>
+                <div id="progress-text" style="font-size: 0.875rem; color: #6c757d; font-weight: 500;">
+                    Initializing...
+                </div>
+            </div>
+        `;
+    }
+
+    modal.innerHTML = `
+        <div style="margin-bottom: 1rem;">
+            <div style="
+                width: 60px;
+                height: 60px;
+                margin: 0 auto 1rem;
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #0d6efd;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            "></div>
+            <h4 style="margin: 0 0 0.5rem 0; color: #212529; font-weight: 600;">${title}</h4>
+            <p style="margin: 0; color: #6c757d; font-size: 0.95rem;">${message}</p>
+        </div>
+        ${progressBarHTML}
+        <div style="margin-top: 1.5rem;">
+            <button type="button" id="cancel-operation" class="btn btn-outline-secondary btn-sm" style="display: none;">
+                <i class="fas fa-times me-1"></i>Cancel
+            </button>
+        </div>
+    `;
+
+    // Add spinner animation styles
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes progress-shimmer {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+
+    // Animate in
+    requestAnimationFrame(() => {
+        backdrop.style.opacity = '1';
+        modal.style.transform = 'scale(1)';
+    });
+
+    // Return control object for updating progress
+    return {
+        updateProgress: function(percent, text) {
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            if (progressBar) progressBar.style.width = `${percent}%`;
+            if (progressText) progressText.textContent = text;
+        },
+        updateMessage: function(newMessage) {
+            const messageEl = modal.querySelector('p');
+            if (messageEl) messageEl.textContent = newMessage;
+        },
+        hide: function() {
+            backdrop.style.opacity = '0';
+            modal.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                if (backdrop.parentNode) {
+                    backdrop.remove();
+                }
+                // Clean up styles
+                if (style.parentNode) {
+                    style.remove();
+                }
+            }, 300);
+        },
+        element: backdrop
+    };
+}
+
+// Make functions globally available
+window.showProgressIndicator = showProgressIndicator;

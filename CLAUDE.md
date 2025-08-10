@@ -766,3 +766,349 @@ This template represents the PERFECT implementation of enterprise-grade administ
 - All trading models, P12 scenarios, and methodology are built into the core system
 - Comprehensive audit logging tracks all user activities
 - File upload system supports trading-related documents and chart images
+
+## Progress Indicator for Report Generation
+
+### **When to Use Progress Indicators**
+**MANDATORY:** Implement progress indicators for ANY page that has report generation, CSV export, PDF export, or other long-running data processing operations. This includes:
+
+- CSV/Excel exports
+- PDF report generation  
+- Performance analysis reports
+- Tax reports
+- Data imports/exports
+- Large data queries or processing
+
+### **Implementation Pattern (MANDATORY)**
+
+#### **1. Update Export Links to JavaScript Functions**
+Replace direct `href` links with JavaScript onclick handlers:
+
+```html
+<!-- ❌ INCORRECT: Direct href links -->
+<a class="dropdown-item" href="{{ url_for('trades.export_trades_csv') }}">
+    <i class="fas fa-file-csv me-2"></i>Export as CSV</a>
+
+<!-- ✅ CORRECT: JavaScript function calls -->
+<a class="dropdown-item" href="javascript:void(0)" onclick="exportWithProgress('csv')">
+    <i class="fas fa-file-csv me-2"></i>Export as CSV</a>
+<a class="dropdown-item" href="javascript:void(0)" onclick="exportWithProgress('pdf')">
+    <i class="fas fa-file-pdf me-2"></i>Performance Analysis (PDF)</a>
+```
+
+#### **2. Add Progress Handler JavaScript Function**
+Add this function to the page's scripts section (customize for your specific export types):
+
+```javascript
+// Export with progress indicator
+function exportWithProgress(type) {
+    let title, message, url;
+    
+    if (type === 'csv') {
+        title = 'Exporting CSV Data';
+        message = 'Preparing your trading data for CSV export...';
+        url = '{{ url_for("trades.export_trades_csv") }}';
+    } else if (type === 'pdf') {
+        title = 'Generating Performance Report';
+        message = 'Creating comprehensive performance analysis with charts and analytics...';
+        url = '{{ url_for("trades.export_performance_report_pdf") }}';
+    } else if (type === 'excel') {
+        title = 'Generating Excel Report';
+        message = 'Creating Excel spreadsheet with formatted data...';
+        url = '{{ url_for("blueprint.export_excel") }}';
+    } else {
+        return;
+    }
+    
+    // Show progress indicator with realistic steps
+    const progressIndicator = showProgressIndicator(title, message, true);
+    
+    // Define progress steps based on operation complexity
+    const progressSteps = type === 'pdf' ? [
+        { percent: 10, text: 'Querying trade data...' },
+        { percent: 25, text: 'Applying filters...' },
+        { percent: 40, text: 'Generating charts...' },
+        { percent: 60, text: 'Creating visualizations...' },
+        { percent: 80, text: 'Formatting report...' },
+        { percent: 95, text: 'Finalizing document...' }
+    ] : [
+        { percent: 20, text: 'Querying data...' },
+        { percent: 50, text: 'Applying filters...' },
+        { percent: 80, text: 'Formatting export...' }
+    ];
+    
+    // Animate progress steps
+    let stepIndex = 0;
+    const progressInterval = setInterval(() => {
+        if (stepIndex < progressSteps.length) {
+            const step = progressSteps[stepIndex];
+            progressIndicator.updateProgress(step.percent, step.text);
+            stepIndex++;
+        }
+    }, type === 'pdf' ? 800 : 500);
+    
+    // Build URL with current filters (preserve all filter parameters)
+    const currentUrl = new URL(window.location);
+    const filterParams = new URLSearchParams();
+    
+    // Copy all filter parameters from current URL
+    for (const [key, value] of currentUrl.searchParams) {
+        if (key !== 'page' && key !== 'per_page') {
+            filterParams.set(key, value);
+        }
+    }
+    
+    const exportUrl = filterParams.toString() ? `${url}?${filterParams.toString()}` : url;
+    
+    // Debug: Log the constructed URL (remove in production)
+    console.log('Export URL:', exportUrl);
+    
+    // Trigger download after realistic timing
+    setTimeout(() => {
+        clearInterval(progressInterval);
+        progressIndicator.updateProgress(100, 'Starting download...');
+        
+        // Create temporary link for download
+        const link = document.createElement('a');
+        link.href = exportUrl;
+        link.target = '_blank';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Hide progress indicator
+        setTimeout(() => {
+            progressIndicator.hide();
+        }, 1000);
+        
+    }, type === 'pdf' ? 4000 : 2000);
+}
+```
+
+#### **3. Backend Export Function Requirements**
+Ensure your backend export functions properly handle filtering:
+
+```python
+@blueprint.route('/export_csv', methods=['GET'])
+@login_required
+def export_data_csv():
+    """Export data to CSV format - filtered data if filters active, complete dataset if not."""
+    try:
+        # Create and populate filter form properly  
+        filter_form = YourFilterForm(request.args, meta={'csrf': False})
+        filter_form, categorized_data = _populate_filter_form_choices(filter_form)
+        
+        # Create base query
+        query = YourModel.query.filter_by(user_id=current_user.id)
+        
+        # Apply filters (copy logic from main view function)
+        active_filters = {}
+        if filter_form.start_date.data:
+            query = query.filter(YourModel.date_field >= filter_form.start_date.data)
+            active_filters['start_date'] = filter_form.start_date.data
+        # ... add all other filters
+        
+        # Execute query
+        data_to_export = query.order_by(YourModel.date_field.desc()).all()
+        
+        # Create filename based on filter status
+        if active_filters:
+            filename = "data_export_filtered.csv"
+        else:
+            filename = "data_export_complete.csv"
+        
+        # Generate and return CSV
+        # ... CSV generation logic
+        
+        return Response(output.getvalue(), mimetype="text/csv",
+                        headers={"Content-Disposition": f"attachment;filename={filename}"})
+    
+    except Exception as e:
+        current_app.logger.error(f"CSV Export failed: {e}")
+        flash(f'Export failed: {str(e)}', 'danger')
+        return redirect(url_for('blueprint.main_view', **request.args))
+```
+
+### **Progress Indicator Customization**
+
+#### **Progress Steps by Operation Type:**
+- **CSV/Excel Exports**: 3-4 steps, 2-3 second duration
+- **PDF Reports**: 5-6 steps, 4-5 second duration  
+- **Complex Analytics**: 6-8 steps, 5-8 second duration
+- **Data Processing**: 4-6 steps, 3-5 second duration
+
+#### **Custom Progress Messages:**
+```javascript
+// Examples for different operation types:
+const csvSteps = [
+    { percent: 25, text: 'Querying database...' },
+    { percent: 60, text: 'Applying filters...' },
+    { percent: 90, text: 'Formatting CSV data...' }
+];
+
+const pdfSteps = [
+    { percent: 15, text: 'Initializing report generator...' },
+    { percent: 30, text: 'Querying trade data...' },
+    { percent: 45, text: 'Generating performance charts...' },
+    { percent: 65, text: 'Creating data visualizations...' },
+    { percent: 85, text: 'Formatting PDF document...' },
+    { percent: 95, text: 'Finalizing report...' }
+];
+
+const analyticsSteps = [
+    { percent: 20, text: 'Loading historical data...' },
+    { percent: 40, text: 'Running statistical analysis...' },
+    { percent: 60, text: 'Calculating performance metrics...' },
+    { percent: 80, text: 'Generating insights...' }
+];
+```
+
+## Disabling Unsaved Changes Notifications
+
+### **When to Disable Unsaved Changes**
+**MANDATORY:** Disable unsaved changes notifications on pages that are primarily view-only and don't contain data input forms. This includes:
+
+- **Table listing pages** (trades list, users list, analytics pages)
+- **Read-only detail pages** (trade details, user profiles)
+- **Dashboard pages** with KPIs and charts
+- **Report viewing pages**
+- **Pages with only table size selectors, filters, or navigation controls**
+- **Any page where the user specifically requests disabling the popup**
+
+### **Implementation Methods**
+
+#### **Method 1: Disable Global Unsaved Changes (Recommended)**
+Add this JavaScript to the page's `{% block head_extra %}` or scripts section:
+
+```html
+{% block head_extra %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Disable global enterprise unsaved changes system
+    if (window.enterpriseUnsavedChanges) {
+        window.enterpriseUnsavedChanges.disabled = true;
+        console.log('🔒 Unsaved changes detection disabled for view-only page');
+    }
+    
+    // Also disable any potential beforeunload handlers
+    window.onbeforeunload = null;
+});
+</script>
+{% endblock %}
+```
+
+#### **Method 2: Configure Enterprise System to Ignore This Page**
+Add this to the page's scripts section:
+
+```javascript
+// Configure enterprise unsaved changes to ignore this page
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.enterpriseUnsavedChanges) {
+        window.enterpriseUnsavedChanges.configure({
+            enabled: false,
+            reason: 'view-only-page'
+        });
+    }
+});
+```
+
+#### **Method 3: For Pages with Table Size Selectors**
+For pages that have table size selectors or filters that cause page navigation:
+
+```javascript
+// Disable unsaved changes for table operations
+document.addEventListener('DOMContentLoaded', function() {
+    // Disable unsaved changes for table size selector
+    const tableSizeSelector = document.querySelector('select[name="per_page"]');
+    if (tableSizeSelector) {
+        tableSizeSelector.addEventListener('change', function() {
+            // Temporarily disable unsaved changes warning
+            if (window.enterpriseUnsavedChanges) {
+                window.enterpriseUnsavedChanges.temporaryDisable(2000);
+            }
+            window.onbeforeunload = null;
+        });
+    }
+    
+    // Disable for pagination links
+    const paginationLinks = document.querySelectorAll('.pagination a');
+    paginationLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.enterpriseUnsavedChanges) {
+                window.enterpriseUnsavedChanges.temporaryDisable(1000);
+            }
+            window.onbeforeunload = null;
+        });
+    });
+});
+```
+
+### **Complete Page Disable Template**
+For completely view-only pages, add this standard disable block:
+
+```html
+{% block head_extra %}
+<script>
+// Disable unsaved changes notification for view-only page
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔒 Disabling unsaved changes detection for view-only page');
+    
+    // Method 1: Disable global enterprise system
+    if (window.enterpriseUnsavedChanges) {
+        window.enterpriseUnsavedChanges.disabled = true;
+    }
+    
+    // Method 2: Clear any beforeunload handlers
+    window.onbeforeunload = null;
+    
+    // Method 3: Override any form monitoring
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        // Skip forms that are clearly for navigation/filtering only
+        if (form.method.toLowerCase() === 'get') {
+            return; // GET forms are typically for filtering/navigation
+        }
+    });
+});
+</script>
+{% endblock %}
+```
+
+### **Common View-Only Page Types**
+
+#### **Table Listing Pages:**
+```javascript
+// For pages like trades_list.html, users.html, analytics pages
+if (window.enterpriseUnsavedChanges) {
+    window.enterpriseUnsavedChanges.disabled = true;
+}
+```
+
+#### **Dashboard Pages:**
+```javascript
+// For dashboard pages with KPIs and readonly data
+window.onbeforeunload = null;
+if (window.enterpriseUnsavedChanges) {
+    window.enterpriseUnsavedChanges.configure({ enabled: false });
+}
+```
+
+#### **Detail View Pages:**
+```javascript
+// For pages showing details of specific records (read-only)
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.enterpriseUnsavedChanges) {
+        window.enterpriseUnsavedChanges.disabled = true;
+    }
+});
+```
+
+### **Important Notes for Unsaved Changes Disable:**
+
+1. **Only disable on truly view-only pages** - never disable on create/edit forms
+2. **Always add console.log for debugging** to confirm disable is working
+3. **Test thoroughly** - ensure page navigation works smoothly without popups
+4. **Use Method 1 (enterpriseUnsavedChanges.disabled)** as the primary approach
+5. **Add multiple disable methods** for bulletproof coverage on complex pages
+6. **Remember**: Pages with table size selectors and pagination need unsaved changes disabled
