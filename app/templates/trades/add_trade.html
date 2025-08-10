@@ -1,17 +1,87 @@
 {% extends "base.html" %}
-{% import "macros/_form_helpers.html" as forms %}
 
-{% block title %}
-    Create New Trade Configuration - Trading Journal
-{% endblock %}
+{% block title %}Create New Strategic Trade Configuration - Trading Journal{% endblock %}
 
 {% block head_extra %}
-{{ super() }}
 <!-- Fortune 500 Enterprise CSS Framework -->
 <link rel="stylesheet" href="/static/css/enterprise-all.css">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<input type="hidden" id="js-csrf-token" value="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/custom-modals.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+<script>
+// Global validation variables
+let hasUnsavedChanges = false;
+let originalFormData = {};
+let isSubmitting = false;
+let entryExitValidation = {
+    entries: 0,
+    exits: 0
+};
+
+// Initialize form change tracking
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('tradeForm');
+    if (form) {
+        const inputs = form.querySelectorAll('input, select, textarea');
+        
+        // Store original values
+        inputs.forEach(input => {
+            if (input.type === 'checkbox') {
+                originalFormData[input.name] = input.checked;
+            } else {
+                originalFormData[input.name] = input.value || '';
+            }
+        });
+        
+        // Monitor changes
+        inputs.forEach(input => {
+            input.addEventListener('change', checkForChanges);
+            input.addEventListener('input', checkForChanges);
+        });
+    }
+    
+    function checkForChanges() {
+        const inputs = form.querySelectorAll('input, select, textarea');
+        hasUnsavedChanges = false;
+        
+        inputs.forEach(input => {
+            let currentValue = (input.type === 'checkbox') ? input.checked : input.value;
+            let originalValue = (input.type === 'checkbox') ? originalFormData[input.name] : originalFormData[input.name] || '';
+            if (currentValue !== originalValue) {
+                hasUnsavedChanges = true;
+            }
+        });
+        
+        const indicator = document.getElementById('unsaved-indicator');
+        if (indicator) {
+            indicator.style.display = hasUnsavedChanges ? 'block' : 'none';
+        }
+    }
+    
+    // Prevent navigation when there are unsaved changes
+    function beforeUnloadHandler(e) {
+        if (hasUnsavedChanges && !isSubmitting) {
+            const message = 'You have unsaved trade configuration data. Changes will be lost if you navigate away.';
+            e.preventDefault();
+            e.returnValue = message;
+            return message;
+        }
+    }
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+});
+</script>
 {% endblock %}
 
-{% block page_header %}
+{% block content %}
+<div class="enterprise-container-fluid">
+    <!-- Executive Header -->
     <div class="executive-header">
         <div class="d-flex justify-content-between align-items-center">
             <div class="header-content">
@@ -20,23 +90,19 @@
                     Create Strategic Trade Configuration
                 </h1>
                 <div class="executive-subtitle">
-                    Configure new strategic trading execution parameters and analysis framework
+                    Configure new strategic trading execution parameters and comprehensive analysis framework
                 </div>
             </div>
             <div class="btn-group">
-                <button type="button" class="btn btn-outline-secondary btn-sm"
-                        onclick="window.location.href='{{ url_for('main.index') }}'"
-                        title="Go to Main Dashboard">
-                    <i class="fas fa-home"></i>
-                </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="window.location.href='{{ url_for('trades.import_trades') }}'"
                         title="Import Trade Configurations">
                     <i class="fas fa-upload"></i>
                 </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
-                        onclick="location.reload()" title="Refresh Data">
-                    <i class="fas fa-sync-alt"></i>
+                        onclick="window.location.href='{{ url_for('main.index') }}'"
+                        title="Go to Main Dashboard">
+                    <i class="fas fa-home"></i>
                 </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
                         onclick="window.location.href='{{ url_for('trades.view_trades_list') }}'"
@@ -44,50 +110,114 @@
                     <i class="fas fa-list"></i>
                 </button>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
-                        onclick="history.back();"
-                        title="Go Back">
-                    <i class="fas fa-arrow-left"></i>
+                        onclick="location.reload()" title="Refresh Data">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="handleCancelAction();" title="Cancel Configuration">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         </div>
     </div>
-{% endblock %}
 
-{% block content %}
-<div class="enterprise-container-fluid" style="width: 100%; max-width: none; padding-left: 2rem; padding-right: 2rem;">
-    <!-- NEW: Trade Stats Dashboard (Auto-calculated) -->
-    <div id="trade-stats-dashboard" class="enterprise-module mb-4" style="display: none;">
-        <div class="module-header">
-            <div class="module-title">
-                <i class="fas fa-calculator module-icon"></i>
-                Strategic Performance Metrics
+    <!-- Unsaved Changes Indicator -->
+    <div id="unsaved-indicator" class="alert alert-warning alert-dismissible fade show mb-3" role="alert" style="display: none;">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Unsaved Changes:</strong> You have entered trade configuration data that has not been saved yet.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Trade Stats Dashboard (Auto-calculated) -->
+    <div id="trade-stats-dashboard" class="kpi-section mt-3" style="display: none;">
+        <div class="grid grid-cols-6 gap-4">
+            <div class="col-span-1">
+                <div class="kpi-card">
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Risk:Reward</span>
+                            <i class="fas fa-balance-scale kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value" id="risk-reward-display">--:--</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">Planned Ratio</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="module-content">
-            <div class="metrics-bar">
+            
+            <div class="col-span-1">
                 <div class="kpi-card">
-                    <div class="kpi-label">Risk:Reward</div>
-                    <div id="risk-reward-display" class="kpi-value">--:--</div>
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Duration</span>
+                            <i class="fas fa-clock kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value" id="time-in-trade-display">--:--</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">Time Held</span>
+                        </div>
+                    </div>
                 </div>
+            </div>
+            
+            <div class="col-span-1">
                 <div class="kpi-card">
-                    <div class="kpi-label">Duration</div>
-                    <div id="time-in-trade-display" class="kpi-value">--:--</div>
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Points Risk</span>
+                            <i class="fas fa-chart-line kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value" id="points-risked-display">--</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">Risk Points</span>
+                        </div>
+                    </div>
                 </div>
+            </div>
+            
+            <div class="col-span-1">
                 <div class="kpi-card">
-                    <div class="kpi-label">Points Risked</div>
-                    <div id="points-risked-display" class="kpi-value">--</div>
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Dollar Risk</span>
+                            <i class="fas fa-dollar-sign kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value" id="dollar-risk-display">$--</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">Risk Amount</span>
+                        </div>
+                    </div>
                 </div>
+            </div>
+            
+            <div class="col-span-1">
                 <div class="kpi-card">
-                    <div class="kpi-label">$ Risked</div>
-                    <div id="dollar-risk-display" class="kpi-value">$--</div>
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Gross P&L</span>
+                            <i class="fas fa-chart-area kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value" id="gross-pnl-display">$--</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">Total Return</span>
+                        </div>
+                    </div>
                 </div>
+            </div>
+            
+            <div class="col-span-1">
                 <div class="kpi-card">
-                    <div class="kpi-label">Gross P&L</div>
-                    <div id="gross-pnl-display" class="kpi-value">$--</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Overall Rating</div>
-                    <div id="overall-rating-display" class="kpi-value">--/5</div>
+                    <div class="kpi-content">
+                        <div class="kpi-header">
+                            <span class="kpi-label">Quality Score</span>
+                            <i class="fas fa-star kpi-icon"></i>
+                        </div>
+                        <div class="kpi-value" id="overall-rating-display">--/5</div>
+                        <div class="kpi-trend">
+                            <span class="trend-indicator">Execution Rating</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -96,191 +226,470 @@
     <form method="POST" action="{{ url_for('trades.add_trade') }}" id="tradeForm" novalidate enctype="multipart/form-data">
         {{ form.hidden_tag() }}
 
-        <!-- 1. TRADE DETAILS (Combined with Risk/Reward) -->
-        <div class="enterprise-module">
-            <div class="module-header">
-                <div class="module-title">
-                    <i class="fas fa-cog module-icon"></i>
-                    Strategic Configuration Parameters
-                </div>
-            </div>
-            <div class="module-content">
-                <div class="grid-9-col">
-                    {{ forms.render_field(form.trade_date, input_class="form-control", type="date") }}
-                    {{ forms.render_field(form.instrument, input_class="form-select") }}
-                    {{ forms.render_field(form.direction, input_class="form-select") }}
-                    {{ forms.render_field(form.initial_stop_loss, input_class="form-control", type="number", step="any", placeholder="SL Price") }}
-                    {{ forms.render_field(form.terminus_target, input_class="form-control", type="number", step="any", placeholder="Final TP price level") }}
-                    {{ forms.render_field(form.trading_model_id, input_class="form-select") }}
-                    {{ forms.render_field(form.how_closed, input_class="form-select") }}
-                    <!-- UPDATED: Changed placeholders from Points to Ticks -->
-                    {{ forms.render_field(form.mae, input_class="form-control", type="number", step="any", placeholder="Ticks Against You") }}
-                    {{ forms.render_field(form.mfe, input_class="form-control", type="number", step="any", placeholder="Ticks In Your Favor") }}
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-12 gap-4 align-items-start mt-3">
+            <!-- Left Column: Trade Configuration -->
+            <div class="col-span-8">
+                <!-- Basic Trade Configuration -->
+                <div class="enterprise-module mb-3">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-cog module-icon"></i>
+                            Basic Trade Configuration
+                        </div>
+                        <div class="module-meta">
+                            Core strategic trading parameters
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                {{ form.trade_date.label(class="form-label") }}
+                                {{ form.trade_date(class="form-control" + (" is-invalid" if form.trade_date.errors else ""), type="date") }}
+                                {% if form.trade_date.errors %}
+                                    {% for error in form.trade_date.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.instrument.label(class="form-label") }}
+                                {{ form.instrument(class="form-select" + (" is-invalid" if form.instrument.errors else "")) }}
+                                {% if form.instrument.errors %}
+                                    {% for error in form.instrument.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.direction.label(class="form-label") }}
+                                {{ form.direction(class="form-select" + (" is-invalid" if form.direction.errors else "")) }}
+                                {% if form.direction.errors %}
+                                    {% for error in form.direction.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.trading_model_id.label(class="form-label") }}
+                                {{ form.trading_model_id(class="form-select" + (" is-invalid" if form.trading_model_id.errors else "")) }}
+                                {% if form.trading_model_id.errors %}
+                                    {% for error in form.trading_model_id.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.initial_stop_loss.label(class="form-label") }}
+                                {{ form.initial_stop_loss(class="form-control" + (" is-invalid" if form.initial_stop_loss.errors else ""), type="number", step="any", placeholder="Stop Loss Price") }}
+                                {% if form.initial_stop_loss.errors %}
+                                    {% for error in form.initial_stop_loss.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.terminus_target.label(class="form-label") }}
+                                {{ form.terminus_target(class="form-control" + (" is-invalid" if form.terminus_target.errors else ""), type="number", step="any", placeholder="Target Price") }}
+                                {% if form.terminus_target.errors %}
+                                    {% for error in form.terminus_target.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.how_closed.label(class="form-label") }}
+                                {{ form.how_closed(class="form-select" + (" is-invalid" if form.how_closed.errors else "")) }}
+                                {% if form.how_closed.errors %}
+                                    {% for error in form.how_closed.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.mae.label(class="form-label") }}
+                                {{ form.mae(class="form-control" + (" is-invalid" if form.mae.errors else ""), type="number", step="any", placeholder="Maximum Adverse Excursion") }}
+                                {% if form.mae.errors %}
+                                    {% for error in form.mae.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                {{ form.mfe.label(class="form-label") }}
+                                {{ form.mfe(class="form-control" + (" is-invalid" if form.mfe.errors else ""), type="number", step="any", placeholder="Maximum Favorable Excursion") }}
+                                {% if form.mfe.errors %}
+                                    {% for error in form.mfe.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- DCA Toggle -->
+                        <div class="mt-3">
+                            <div class="form-check">
+                                {{ form.is_dca(class="form-check-input" + (" is-invalid" if form.is_dca.errors else "")) }}
+                                {{ form.is_dca.label(class="form-check-label") }}
+                                {% if form.is_dca.errors %}
+                                    {% for error in form.is_dca.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- 3. ENTRY/EXIT POINTS -->
-                <div class="grid grid-cols-2">
-                    <div class="enterprise-module">
-                        <div class="module-header">
-                            <div class="module-title">Execution Entry Points</div>
+                <!-- Entry & Exit Points Management -->
+                <div class="enterprise-module mb-3">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-exchange-alt module-icon"></i>
+                            Execution Entry & Exit Points
                         </div>
-                        <div class="module-content">
-                            <div class="entry-exit-headers">
-                                <div>Entry Time</div>
-                                <div># of Contracts</div>
-                                <div>Price Level</div>
-                            </div>
-                            <div id="entry-points-container">
-                                {% for entry_form_field in form.entries %}
-                                <div class="entry-exit-item">
-                                    <div class="entry-exit-row">
-                                        {{ forms.render_field(entry_form_field.entry_time, input_class="form-control form-control-sm", type="time") }}
-                                        {{ forms.render_field(entry_form_field.contracts, input_class="form-control form-control-sm", type="number") }}
-                                        {{ forms.render_field(entry_form_field.entry_price, input_class="form-control form-control-sm", type="number", step="any") }}
-                                        <div>
-                                        {% if loop.index > form.entries.min_entries %}
-                                            <button type="button" class="btn btn-sm btn-outline-danger remove-entry-btn" title="Remove Entry"><i class="fas fa-trash-alt"></i></button>
-                                        {% endif %}
-                                        </div>
+                        <div class="module-meta">
+                            Configure multiple entry and exit execution levels
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- Entry Points -->
+                            <div class="enterprise-module">
+                                <div class="module-header">
+                                    <div class="module-title">
+                                        <i class="fas fa-arrow-right module-icon text-success"></i>
+                                        Entry Points
+                                        <span id="entry-count" class="badge bg-success ms-2">1</span>
                                     </div>
                                 </div>
-                                {% endfor %}
+                                <div class="module-content">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm mb-2">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 30%;">Time</th>
+                                                    <th style="width: 25%;">Contracts</th>
+                                                    <th style="width: 35%;">Price</th>
+                                                    <th style="width: 10%;">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="entry-points-container">
+                                                {% for entry_form_field in form.entries %}
+                                                <tr class="entry-exit-item">
+                                                    <td>
+                                                        {{ entry_form_field.entry_time(class="form-control form-control-sm", type="time") }}
+                                                    </td>
+                                                    <td>
+                                                        {{ entry_form_field.contracts(class="form-control form-control-sm", type="number", min="1") }}
+                                                    </td>
+                                                    <td>
+                                                        {{ entry_form_field.entry_price(class="form-control form-control-sm", type="number", step="any") }}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        {% if loop.index > 1 %}
+                                                            <button type="button" class="btn btn-sm btn-outline-danger remove-entry-btn" title="Remove Entry">
+                                                                <i class="fas fa-trash-alt"></i>
+                                                            </button>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-success w-100" id="add-entry-button">
+                                        <i class="fas fa-plus me-1"></i>Add Entry Point
+                                    </button>
+                                </div>
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-success mt-2" id="add-entry-button" title="Add Entry"><i class="fas fa-plus"></i> Add Entry</button>
-                        </div>
-                    </div>
 
-                    <div class="enterprise-module">
-                        <div class="module-header">
-                            <div class="module-title">Execution Exit Points</div>
-                        </div>
-                        <div class="module-content">
-                            <div class="entry-exit-headers">
-                                <div>Exit Time</div>
-                                <div># of Contracts</div>
-                                <div>Price Level</div>
-                            </div>
-                            <div id="exit-points-container">
-                                {% for exit_form_field in form.exits %}
-                                <div class="entry-exit-item">
-                                    <div class="entry-exit-row">
-                                        {{ forms.render_field(exit_form_field.exit_time, input_class="form-control form-control-sm", type="time") }}
-                                        {{ forms.render_field(exit_form_field.contracts, input_class="form-control form-control-sm", type="number") }}
-                                        {{ forms.render_field(exit_form_field.exit_price, input_class="form-control form-control-sm", type="number", step="any") }}
-
-                                        <div>
-                                        {% if loop.index > 1 %}
-                                            <button type="button" class="btn btn-sm btn-outline-danger remove-exit-btn" title="Remove Exit"><i class="fas fa-trash-alt"></i></button>
-                                        {% endif %}
-                                        </div>
+                            <!-- Exit Points -->
+                            <div class="enterprise-module">
+                                <div class="module-header">
+                                    <div class="module-title">
+                                        <i class="fas fa-arrow-left module-icon text-danger"></i>
+                                        Exit Points
+                                        <span id="exit-count" class="badge bg-danger ms-2">0</span>
                                     </div>
                                 </div>
-                                {% endfor %}
+                                <div class="module-content">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm mb-2">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 30%;">Time</th>
+                                                    <th style="width: 25%;">Contracts</th>
+                                                    <th style="width: 35%;">Price</th>
+                                                    <th style="width: 10%;">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="exit-points-container">
+                                                {% for exit_form_field in form.exits %}
+                                                <tr class="entry-exit-item">
+                                                    <td>
+                                                        {{ exit_form_field.exit_time(class="form-control form-control-sm", type="time") }}
+                                                    </td>
+                                                    <td>
+                                                        {{ exit_form_field.contracts(class="form-control form-control-sm", type="number", min="1") }}
+                                                    </td>
+                                                    <td>
+                                                        {{ exit_form_field.exit_price(class="form-control form-control-sm", type="number", step="any") }}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button type="button" class="btn btn-sm btn-outline-danger remove-exit-btn" title="Remove Exit">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-success w-100" id="add-exit-button">
+                                        <i class="fas fa-plus me-1"></i>Add Exit Point
+                                    </button>
+                                    <div id="exit-validation-warning" class="alert alert-warning mt-2" style="display: none;">
+                                        <small><i class="fas fa-exclamation-triangle me-1"></i>Cannot add more exits than total entry contracts.</small>
+                                    </div>
+                                </div>
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-success mt-2" id="add-exit-button" title="Add Exit"><i class="fas fa-plus"></i> Add Exit</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-3">
-                    {{ forms.render_checkbox(form.is_dca) }}
-                </div>
-            </div>
-        </div>
-
-        <!-- 2. TRADE ANALYSIS -->
-        <div class="enterprise-module">
-            <div class="module-header">
-                <div class="module-title">
-                    <i class="fas fa-chart-line module-icon"></i>
-                    Strategic Analysis Framework
-                </div>
-            </div>
-            <div class="module-content">
-                <div class="form-group mb-3">
-                    {{ form.trade_notes.label(class="form-label") }}
-                    <div id="trade_notes_editor" class="quill-editor-container"></div>
-                    {{ form.trade_notes(class="d-none") }}
-                    {% if form.trade_notes.errors %}<div class="invalid-feedback d-block">{% for error in form.trade_notes.errors %}<span>{{ error }}</span><br>{% endfor %}</div>{% endif %}
-                    {% if form.trade_notes.description %}<small class="form-text text-muted">{{ form.trade_notes.description }}</small>{% endif %}
-                </div>
-
-                <div class="form-group mb-3">
-                    {{ form.overall_analysis_notes.label(class="form-label") }}
-                    <div id="overall_analysis_notes_editor" class="quill-editor-container"></div>
-                    {{ form.overall_analysis_notes(class="d-none") }}
-                    {% if form.overall_analysis_notes.errors %}<div class="invalid-feedback d-block">{% for error in form.overall_analysis_notes.errors %}<span>{{ error }}</span><br>{% endfor %}</div>{% endif %}
-                    {% if form.overall_analysis_notes.description %}<small class="form-text text-muted">{{ form.overall_analysis_notes.description }}</small>{% endif %}
-                </div>
-
-                <!-- Three-column layout for management, errors, and improvements -->
-                <div class="grid grid-cols-3">
-                    <div>
-                        <h5>Execution Management</h5>
-                        {{ forms.render_field(form.trade_management_notes, input_class="form-control", rows="4", placeholder="Trade management decisions, scaling in/out, adjustments, etc.", label_visible=false) }}
-                    </div>
-                    <div>
-                        <h5>Execution Issues</h5>
-                        {{ forms.render_field(form.errors_notes, input_class="form-control", rows="4", placeholder="Any mistakes made during this trade?", label_visible=false) }}
-                    </div>
-                    <div>
-                        <h5>Enhancement Opportunities</h5>
-                        {{ forms.render_field(form.improvements_notes, input_class="form-control", rows="4", placeholder="What could be improved for the next trade?", label_visible=false) }}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 5. PSYCHOLOGICAL REVIEW -->
-        <div class="enterprise-module">
-            <div class="module-header">
-                <div class="module-title">
-                    <i class="fas fa-user-check module-icon"></i>
-                    Performance Assessment & Review
-                </div>
-            </div>
-            <div class="module-content">
-                <div class="grid grid-cols-2">
-                    <div>
-                        <h6>Rate execution effectiveness across key performance criteria:</h6>
-                        <div class="grid-5-col">
-                            {{ forms.render_field(form.preparation_rating, input_class="form-select rating-selector") }}
-                            {{ forms.render_field(form.rules_rating, input_class="form-select rating-selector") }}
-                            {{ forms.render_field(form.management_rating, input_class="form-select rating-selector") }}
-                            {{ forms.render_field(form.entry_rating, input_class="form-select rating-selector") }}
-                            {{ forms.render_field(form.target_rating, input_class="form-select rating-selector") }}
+                <!-- Trade Analysis & Notes -->
+                <div class="enterprise-module mb-3">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-chart-line module-icon"></i>
+                            Strategic Analysis Framework
                         </div>
-                        {{ forms.render_field(form.psych_scored_highest, input_class="form-control", rows="2", placeholder="What execution strengths were demonstrated?") }}
-                        {{ forms.render_field(form.psych_scored_lowest, input_class="form-control", rows="2", placeholder="Which areas require performance improvement?") }}
+                        <div class="module-meta">
+                            Comprehensive trade analysis and documentation
+                        </div>
                     </div>
-                    <div>
-                        <div style="max-width: 350px; margin: auto;">
-                            <canvas id="psychRadarChart"></canvas>
+                    <div class="module-content">
+                        <!-- Rich Text Editors -->
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">{{ form.trade_notes.label.text }}</label>
+                                <div id="trade_notes_editor" class="quill-editor-container" style="height: 150px;"></div>
+                                {{ form.trade_notes(class="d-none") }}
+                                {% if form.trade_notes.errors %}
+                                    {% for error in form.trade_notes.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">{{ form.overall_analysis_notes.label.text }}</label>
+                                <div id="overall_analysis_notes_editor" class="quill-editor-container" style="height: 150px;"></div>
+                                {{ form.overall_analysis_notes(class="d-none") }}
+                                {% if form.overall_analysis_notes.errors %}
+                                    {% for error in form.overall_analysis_notes.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Three-column layout for detailed notes -->
+                        <div class="grid grid-cols-3 gap-4 mt-3">
+                            <div>
+                                <label class="form-label">Trade Management</label>
+                                {{ form.trade_management_notes(class="form-control textarea-4" + (" is-invalid" if form.trade_management_notes.errors else ""), placeholder="Trade management decisions, scaling in/out, adjustments, etc.") }}
+                                {% if form.trade_management_notes.errors %}
+                                    {% for error in form.trade_management_notes.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label class="form-label">Execution Issues</label>
+                                {{ form.errors_notes(class="form-control textarea-4" + (" is-invalid" if form.errors_notes.errors else ""), placeholder="Any mistakes made during this trade?") }}
+                                {% if form.errors_notes.errors %}
+                                    {% for error in form.errors_notes.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label class="form-label">Enhancement Opportunities</label>
+                                {{ form.improvements_notes(class="form-control textarea-4" + (" is-invalid" if form.improvements_notes.errors else ""), placeholder="What could be improved for the next trade?") }}
+                                {% if form.improvements_notes.errors %}
+                                    {% for error in form.improvements_notes.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- 6. IMAGES, LINKS, & TAGS -->
-        <div class="enterprise-module">
-            <div class="module-header">
-                <div class="module-title">
-                    <i class="fas fa-folder-open module-icon"></i>
-                    Documentation & Classification
+                <!-- Documentation & Media -->
+                <div class="enterprise-module mb-3">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-folder-open module-icon"></i>
+                            Documentation & Media
+                        </div>
+                        <div class="module-meta">
+                            Charts, screenshots, and external links
+                        </div>
+                    </div>
+                    <div class="module-content">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                {{ form.trade_images.label(class="form-label") }}
+                                {{ form.trade_images(class="form-control" + (" is-invalid" if form.trade_images.errors else "")) }}
+                                {% if form.trade_images.errors %}
+                                    {% for error in form.trade_images.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                                <small class="form-text text-muted">Upload strategic documentation or relevant analysis images.</small>
+                            </div>
+                            
+                            <div>
+                                {{ form.screenshot_link.label(class="form-label") }}
+                                {{ form.screenshot_link(class="form-control" + (" is-invalid" if form.screenshot_link.errors else ""), type="url", placeholder="https://www.tradingview.com/chart/...") }}
+                                {% if form.screenshot_link.errors %}
+                                    {% for error in form.screenshot_link.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                                <small class="form-text text-muted">External documentation links from trading platform analysis.</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="module-content">
-                <div class="grid grid-cols-3">
-                    <div>
-                        {{ forms.render_field(form.trade_images, input_class="form-control") }}
-                        <small class="form-text text-muted">Upload strategic documentation or relevant analysis images.</small>
+
+            <!-- Right Column: Assessment & Tags -->
+            <div class="col-span-4">
+                <!-- Performance Assessment -->
+                <div class="enterprise-module mb-3">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-star module-icon"></i>
+                            Performance Assessment
+                        </div>
+                        <div class="module-meta">
+                            5-Point Execution Quality Rating
+                        </div>
                     </div>
-                    <div>
-                        {{ forms.render_field(form.screenshot_link, input_class="form-control", type="url", placeholder="https://www.tradingview.com/chart/...") }}
-                        <small class="form-text text-muted">External documentation links from trading platform analysis.</small>
+                    <div class="module-content">
+                        <h6 class="text-primary mb-3">Rate execution effectiveness across key criteria:</h6>
+                        
+                        <!-- Rating Controls -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                {{ form.preparation_rating.label(class="form-label") }}
+                                {{ form.preparation_rating(class="form-select form-select-sm rating-selector" + (" is-invalid" if form.preparation_rating.errors else "")) }}
+                                {% if form.preparation_rating.errors %}
+                                    {% for error in form.preparation_rating.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-6">
+                                {{ form.rules_rating.label(class="form-label") }}
+                                {{ form.rules_rating(class="form-select form-select-sm rating-selector" + (" is-invalid" if form.rules_rating.errors else "")) }}
+                                {% if form.rules_rating.errors %}
+                                    {% for error in form.rules_rating.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-6">
+                                {{ form.management_rating.label(class="form-label") }}
+                                {{ form.management_rating(class="form-select form-select-sm rating-selector" + (" is-invalid" if form.management_rating.errors else "")) }}
+                                {% if form.management_rating.errors %}
+                                    {% for error in form.management_rating.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-6">
+                                {{ form.entry_rating.label(class="form-label") }}
+                                {{ form.entry_rating(class="form-select form-select-sm rating-selector" + (" is-invalid" if form.entry_rating.errors else "")) }}
+                                {% if form.entry_rating.errors %}
+                                    {% for error in form.entry_rating.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-12">
+                                {{ form.target_rating.label(class="form-label") }}
+                                {{ form.target_rating(class="form-select form-select-sm rating-selector" + (" is-invalid" if form.target_rating.errors else "")) }}
+                                {% if form.target_rating.errors %}
+                                    {% for error in form.target_rating.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Radar Chart -->
+                        <div class="text-center mb-3">
+                            <div style="width: 250px; height: 250px; margin: 0 auto;">
+                                <canvas id="psychRadarChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Psychology Notes -->
+                        <div class="row g-3">
+                            <div class="col-12">
+                                {{ form.psych_scored_highest.label(class="form-label") }}
+                                {{ form.psych_scored_highest(class="form-control textarea-1" + (" is-invalid" if form.psych_scored_highest.errors else ""), placeholder="What execution strengths were demonstrated?") }}
+                                {% if form.psych_scored_highest.errors %}
+                                    {% for error in form.psych_scored_highest.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-12">
+                                {{ form.psych_scored_lowest.label(class="form-label") }}
+                                {{ form.psych_scored_lowest(class="form-control textarea-1" + (" is-invalid" if form.psych_scored_lowest.errors else ""), placeholder="Which areas require performance improvement?") }}
+                                {% if form.psych_scored_lowest.errors %}
+                                    {% for error in form.psych_scored_lowest.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
-                    <div>
+                </div>
+
+                <!-- Tags & Classification -->
+                <div class="enterprise-module mb-3">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-tags module-icon"></i>
+                            Trade Classification
+                        </div>
+                        <div class="module-meta">
+                            Categorized Tag System
+                        </div>
+                    </div>
+                    <div class="module-content">
                         <div class="mb-3">
                             <label for="tags-select" class="form-label">{{ form.tags.label.text }}</label>
                             <select multiple class="form-select" id="tags-select" name="{{ form.tags.name }}">
@@ -304,77 +713,113 @@
                             {% endif %}
                             <small class="form-text text-muted">Select appropriate classification tags for this strategic execution.</small>
                         </div>
+
+                        <!-- Custom Tag Creation -->
+                        <div class="border-top pt-3">
+                            <h6 class="text-primary mb-2">Create Custom Tag</h6>
+                            <div class="row g-2">
+                                <div class="col-8">
+                                    <input type="text" id="custom-tag-name" class="form-control form-control-sm" placeholder="Enter custom tag name" maxlength="50">
+                                </div>
+                                <div class="col-4">
+                                    <select id="custom-tag-color" class="form-select form-select-sm">
+                                        <option value="neutral">Neutral</option>
+                                        <option value="good">Good</option>
+                                        <option value="bad">Bad</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <button type="button" class="btn btn-outline-primary btn-sm w-100" id="add-custom-tag">
+                                        <i class="fas fa-plus me-1"></i>Add Custom Tag
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="form-buttons-container">
-            <button type="submit" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Save Configuration</button>
-            <button type="button" class="btn btn-outline-secondary" onclick="handleCancelAction()"><i class="fas fa-times me-1"></i> Cancel</button>
+        <!-- Form Actions -->
+        <div class="d-flex justify-content-between align-items-center mt-4 p-3" style="background-color: var(--enterprise-bg-primary); border-radius: 8px;">
+            <div>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    All fields with comprehensive data will provide better analysis and insights.
+                </small>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary" onclick="handleCancelAction()">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i>Save Trade Configuration
+                </button>
+            </div>
         </div>
     </form>
 </div>
 
-{# Hidden templates for dynamic entries/exits - use raw HTML #}
+<!-- Hidden Templates for Dynamic Entry/Exit Points -->
 <div id="entry-template" style="display: none;">
-    <div class="entry-exit-item">
-        <div class="entry-exit-row">
-            <div class="form-group">
-                <input class="form-control form-control-sm" id="entries-INDEX-entry_time" name="entries-INDEX-entry_time" type="time" placeholder="HH:MM">
-            </div>
-            <div class="form-group">
-                <input class="form-control form-control-sm" id="entries-INDEX-contracts" name="entries-INDEX-contracts" type="number" placeholder="Contracts">
-            </div>
-            <div class="form-group">
-                <input class="form-control form-control-sm" id="entries-INDEX-entry_price" name="entries-INDEX-entry_price" type="number" step="any" placeholder="Price">
-            </div>
-            <div>
-                <button type="button" class="btn btn-sm btn-outline-danger remove-entry-btn" title="Remove Entry"><i class="fas fa-trash-alt"></i></button>
-            </div>
-        </div>
-    </div>
+    <tr class="entry-exit-item">
+        <td>
+            <input class="form-control form-control-sm" name="entries-INDEX-entry_time" type="time" placeholder="HH:MM">
+        </td>
+        <td>
+            <input class="form-control form-control-sm" name="entries-INDEX-contracts" type="number" min="1" placeholder="Contracts">
+        </td>
+        <td>
+            <input class="form-control form-control-sm" name="entries-INDEX-entry_price" type="number" step="any" placeholder="Price">
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger remove-entry-btn" title="Remove Entry">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </td>
+    </tr>
 </div>
 
 <div id="exit-template" style="display: none;">
-    <div class="entry-exit-item">
-        <div class="entry-exit-row">
-            <div class="form-group">
-                <input class="form-control form-control-sm" id="exits-INDEX-exit_time" name="exits-INDEX-exit_time" type="time" placeholder="HH:MM">
-            </div>
-            <div class="form-group">
-                <input class="form-control form-control-sm" id="exits-INDEX-contracts" name="exits-INDEX-contracts" type="number" placeholder="Contracts">
-            </div>
-            <div class="form-group">
-                <input class="form-control form-control-sm" id="exits-INDEX-exit_price" name="exits-INDEX-exit_price" type="number" step="any" placeholder="Price">
-            </div>
-            <div>
-                <button type="button" class="btn btn-sm btn-outline-danger remove-exit-btn" title="Remove Exit"><i class="fas fa-trash-alt"></i></button>
-            </div>
-        </div>
-    </div>
+    <tr class="entry-exit-item">
+        <td>
+            <input class="form-control form-control-sm" name="exits-INDEX-exit_time" type="time" placeholder="HH:MM">
+        </td>
+        <td>
+            <input class="form-control form-control-sm" name="exits-INDEX-contracts" type="number" min="1" placeholder="Contracts">
+        </td>
+        <td>
+            <input class="form-control form-control-sm" name="exits-INDEX-exit_price" type="number" step="any" placeholder="Price">
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger remove-exit-btn" title="Remove Exit">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </td>
+    </tr>
 </div>
-
 {% endblock %}
 
-{% block scripts_extra %}
+{% block extra_js %}
 <script>
-function handleCancelAction() {
-    showCustomConfirmation(
-        'Confirm Operational Change',
-        'Are you sure you want to cancel this strategic configuration? All entered data will be lost.',
-        'btn-warning',
-        'exclamation-triangle',
-        function() {
-            window.location.href = '{{ url_for("trades.view_trades_list") }}';
-        }
-    );
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Enterprise add trade page JavaScript initializing...');
 
-    // Create tag color mapping from the backend data
+    // Global variables
+    let quillInstances = {};
+    let tagsSelect = null;
+
+    // Set default date
+    const tradeDateInput = document.getElementById('{{ form.trade_date.id }}');
+    if (tradeDateInput && !tradeDateInput.value) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = ('0' + (today.getMonth() + 1)).slice(-2);
+        const day = ('0' + today.getDate()).slice(-2);
+        tradeDateInput.value = `${year}-${month}-${day}`;
+    }
+
+    // Create tag color mapping
     const tagColors = {};
     {% for category_name, tag_options in form.tags.choices %}
         {% for tag_id, tag_name, tag_color in tag_options %}
@@ -382,12 +827,13 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endfor %}
     {% endfor %}
 
-    // --- INITIALIZE TAGS SELECT (ONLY ONCE) ---
-    const tagsSelect = document.getElementById('tags-select');
-    if (tagsSelect) {
-        new TomSelect(tagsSelect, {
+    // Initialize TomSelect for tags
+    const tagsSelectElement = document.getElementById('tags-select');
+    if (tagsSelectElement) {
+        tagsSelect = new TomSelect(tagsSelectElement, {
             plugins: ['remove_button'],
             placeholder: 'Select or search for classification tags...',
+            create: false,
             render: {
                 option: function(data, escape) {
                     const tagId = data.value;
@@ -404,360 +850,195 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('TomSelect initialized for tags with colors');
     }
 
-    // --- TRADE STATS DASHBOARD CALCULATIONS ---
-    const dashboard = document.getElementById('trade-stats-dashboard');
+    // Custom Tag Creation
+    document.getElementById('add-custom-tag').addEventListener('click', function() {
+        const tagName = document.getElementById('custom-tag-name').value.trim();
+        const tagColor = document.getElementById('custom-tag-color').value;
 
-    // Use the dynamic point values passed from backend
-    const instrumentPointValues = {{ instrument_point_values|tojson|safe }};
-    console.log('Available instruments and point values:', instrumentPointValues);
-
-    // COMPREHENSIVE field watching for P&L updates
-    function addCalculationListeners() {
-        console.log('Adding calculation listeners...');
-
-        // Watch all form fields that affect calculations
-        const fieldsToWatch = [
-            '[name="instrument"]',
-            '[name="direction"]',
-            '[name="initial_stop_loss"]',
-            '[name="terminus_target"]',
-            '[name^="entries-"][name$="-entry_time"]',
-            '[name^="entries-"][name$="-contracts"]',
-            '[name^="entries-"][name$="-entry_price"]',
-            '[name^="exits-"][name$="-exit_time"]',
-            '[name^="exits-"][name$="-contracts"]',
-            '[name^="exits-"][name$="-exit_price"]',
-            '[name$="_rating"]'
-        ];
-
-        fieldsToWatch.forEach(selector => {
-            document.querySelectorAll(selector).forEach(field => {
-                // Remove existing listeners to avoid duplicates
-                field.removeEventListener('input', calculateStats);
-                field.removeEventListener('change', calculateStats);
-
-                // Add listeners
-                field.addEventListener('input', calculateStats);
-                field.addEventListener('change', calculateStats);
-            });
-        });
-    }
-
-    // Also watch for dynamically added entry/exit fields
-    document.addEventListener('input', function(e) {
-        if (e.target.name && (e.target.name.includes('entries-') || e.target.name.includes('exits-'))) {
-            calculateStats();
+        if (!tagName) {
+            showErrorMessage('Please enter a tag name.');
+            return;
         }
-    });
 
-    // Also watch for change events on select fields
-    document.addEventListener('change', function(e) {
-        if (e.target.name && (
-            e.target.name === 'instrument' ||
-            e.target.name === 'direction' ||
-            e.target.name.includes('entries-') ||
-            e.target.name.includes('exits-') ||
-            e.target.name.includes('_rating')
-        )) {
-            calculateStats();
-        }
-    });
-
-    function calculateStats() {
-        console.log('=== Calculating Stats ===');
-
-        try {
-            const instrumentSelectElement = document.querySelector('[name="instrument"]');
-            const instrumentId = instrumentSelectElement?.value || '';
-            const direction = document.querySelector('[name="direction"]')?.value || '';
-            const stopLoss = parseFloat(document.querySelector('[name="initial_stop_loss"]')?.value || '0');
-            const target = parseFloat(document.querySelector('[name="terminus_target"]')?.value || '0');
-
-            // FIXED: Get point value by looking up the instrument symbol from the select option text
-            let pointValue = 1.0; // Default fallback
-
-            if (instrumentId && instrumentSelectElement) {
-                // Find the selected option and extract the symbol from its text
-                const selectedOption = instrumentSelectElement.querySelector(`option[value="${instrumentId}"]`);
-                if (selectedOption) {
-                    const optionText = selectedOption.textContent; // e.g., "NQ (E-mini NASDAQ-100)"
-                    // Extract symbol (everything before the first space or parenthesis)
-                    const symbolMatch = optionText.match(/^([A-Z]+)/);
-                    if (symbolMatch) {
-                        const symbol = symbolMatch[1];
-                        console.log(`Found symbol: ${symbol} for instrument ID: ${instrumentId}`);
-
-                        // Now look up the point value by symbol
-                        if (instrumentPointValues[symbol]) {
-                            pointValue = instrumentPointValues[symbol];
-                            console.log(`Point value for ${symbol}: ${pointValue}`);
-                        } else {
-                            console.warn(`No point value found for symbol: ${symbol}`);
-                            // Fallback to common values
-                            const fallbackValues = {
-                                'NQ': 20.0, 'ES': 50.0, 'YM': 5.0,
-                                'MNQ': 2.0, 'MES': 5.0, 'MYM': 0.5
-                            };
-                            pointValue = fallbackValues[symbol] || 1.0;
-                        }
-                    }
-                }
-            }
-
-            console.log(`Using point value: ${pointValue} for calculation`);
-
-            // Get ALL entry data
-            const entryFields = document.querySelectorAll('[name^="entries-"][name$="-entry_price"]');
-            const entryContractFields = document.querySelectorAll('[name^="entries-"][name$="-contracts"]');
-            const entryTimeFields = document.querySelectorAll('[name^="entries-"][name$="-entry_time"]');
-
-            let totalEntryContracts = 0;
-            let weightedEntryPrice = 0;
-            let firstEntryTime = '';
-
-            // Calculate weighted average entry price
-            for (let i = 0; i < entryFields.length; i++) {
-                const price = parseFloat(entryFields[i].value || '0');
-                const contracts = parseInt(entryContractFields[i]?.value || '0');
-                const time = entryTimeFields[i]?.value || '';
-
-                if (price > 0 && contracts > 0) {
-                    weightedEntryPrice += price * contracts;
-                    totalEntryContracts += contracts;
-                    if (!firstEntryTime) firstEntryTime = time;
-                }
-            }
-
-            const avgEntryPrice = totalEntryContracts > 0 ? weightedEntryPrice / totalEntryContracts : 0;
-
-            // Get ALL exit data
-            const exitFields = document.querySelectorAll('[name^="exits-"][name$="-exit_price"]');
-            const exitContractFields = document.querySelectorAll('[name^="exits-"][name$="-contracts"]');
-            const exitTimeFields = document.querySelectorAll('[name^="exits-"][name$="-exit_time"]');
-
-            let totalExitContracts = 0;
-            let weightedExitPrice = 0;
-            let lastExitTime = '';
-
-            // Calculate weighted average exit price
-            for (let i = 0; i < exitFields.length; i++) {
-                const price = parseFloat(exitFields[i].value || '0');
-                const contracts = parseInt(exitContractFields[i]?.value || '0');
-                const time = exitTimeFields[i]?.value || '';
-
-                if (price > 0 && contracts > 0) {
-                    weightedExitPrice += price * contracts;
-                    totalExitContracts += contracts;
-                    lastExitTime = time;
-                }
-            }
-
-            const avgExitPrice = totalExitContracts > 0 ? weightedExitPrice / totalExitContracts : 0;
-
-            // Show dashboard when we have meaningful data
-            if (avgEntryPrice > 0 || avgExitPrice > 0 || stopLoss > 0 || target > 0) {
-                dashboard.style.display = 'block';
+        // Create custom tag via AJAX
+        fetch('{{ url_for("settings.create_tag") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                name: tagName,
+                category: 'SETUP_STRATEGY',  // Default category for custom tags
+                color_category: tagColor
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Add new tag to TomSelect
+                tagsSelect.addOption({
+                    value: data.tag.id.toString(),
+                    text: data.tag.name
+                });
+                tagsSelect.addItem(data.tag.id.toString());
+                
+                // Update color mapping
+                tagColors[data.tag.id.toString()] = data.tag.color_category || 'neutral';
+                
+                // Clear form
+                document.getElementById('custom-tag-name').value = '';
+                document.getElementById('custom-tag-color').value = 'neutral';
+                
+                showSuccess(`Custom tag "${tagName}" created successfully.`);
             } else {
-                dashboard.style.display = 'none';
+                showErrorMessage(data.message || 'Failed to create custom tag.');
             }
+        })
+        .catch(error => {
+            console.error('Error creating custom tag:', error);
+            showErrorMessage('Failed to create custom tag. Please try again.');
+        });
+    });
 
-            // Calculate Risk:Reward
-            let riskRewardText = '--:--';
-            if (avgEntryPrice > 0 && stopLoss > 0 && target > 0) {
-                let risk, reward;
-                if (direction === 'Long') {
-                    risk = Math.abs(avgEntryPrice - stopLoss);
-                    reward = Math.abs(target - avgEntryPrice);
-                } else if (direction === 'Short') {
-                    risk = Math.abs(stopLoss - avgEntryPrice);
-                    reward = Math.abs(avgEntryPrice - target);
-                }
+    // Dynamic Entry/Exit Management
+    let entryCount = {{ form.entries|length }};
+    let exitCount = {{ form.exits|length }};
 
-                if (risk > 0) {
-                    const ratio = reward / risk;
-                    riskRewardText = `1:${ratio.toFixed(2)}`;
-                }
-            }
-
-            // Calculate Time in Trade
-            let timeInTradeText = '--:--';
-            if (firstEntryTime && lastExitTime) {
-                const [entryHour, entryMin] = firstEntryTime.split(':').map(Number);
-                const [exitHour, exitMin] = lastExitTime.split(':').map(Number);
-
-                const entryMinutes = entryHour * 60 + entryMin;
-                const exitMinutes = exitHour * 60 + exitMin;
-
-                let diffMinutes = exitMinutes - entryMinutes;
-                if (diffMinutes < 0) diffMinutes += 24 * 60;
-
-                const hours = Math.floor(diffMinutes / 60);
-                const minutes = diffMinutes % 60;
-                timeInTradeText = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-            }
-
-            // Calculate Points Risked
-            let pointsRiskedText = '--';
-            let dollarRiskText = '$--';
-            if (avgEntryPrice > 0 && stopLoss > 0 && totalEntryContracts > 0) {
-                let pointsRisk;
-                if (direction === 'Long') {
-                    pointsRisk = Math.abs(avgEntryPrice - stopLoss);
-                } else if (direction === 'Short') {
-                    pointsRisk = Math.abs(stopLoss - avgEntryPrice);
-                }
-
-                if (pointsRisk > 0) {
-                    pointsRiskedText = pointsRisk.toFixed(2);
-                    const dollarRisk = pointsRisk * totalEntryContracts * pointValue;
-                    dollarRiskText = `${dollarRisk.toFixed(2)}`;
-                }
-            }
-
-            // Calculate Gross P&L - FIXED WITH CORRECT POINT VALUE
-            let grossPnlText = '$--';
-            let pnlClass = '';
-            if (avgEntryPrice > 0 && avgExitPrice > 0 && totalExitContracts > 0) {
-                let pnlPerContract;
-                if (direction === 'Long') {
-                    pnlPerContract = avgExitPrice - avgEntryPrice;
-                } else if (direction === 'Short') {
-                    pnlPerContract = avgEntryPrice - avgExitPrice;
-                }
-
-                const grossPnl = pnlPerContract * totalExitContracts * pointValue;
-                grossPnlText = `${grossPnl.toFixed(2)}`;
-
-                console.log(`P&L Calculation: ${pnlPerContract} * ${totalExitContracts} * ${pointValue} = ${grossPnl}`);
-
-                if (grossPnl > 0) {
-                    pnlClass = 'text-profit';
-                } else if (grossPnl < 0) {
-                    pnlClass = 'text-loss';
-                } else {
-                    pnlClass = 'text-breakeven';
-                }
-            }
-
-            // Calculate Overall Trade Rating
-            let overallRatingText = '--/5';
-            const ratings = [
-                'preparation_rating', 'rules_rating', 'management_rating',
-                'target_rating', 'entry_rating'
-            ];
-
-            const ratingValues = ratings.map(name => {
-                const value = parseInt(document.querySelector(`[name="${name}"]`)?.value || '0');
-                return value > 0 ? value : null;
-            }).filter(v => v !== null);
-
-            if (ratingValues.length > 0) {
-                const avgRating = ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length;
-                overallRatingText = `${avgRating.toFixed(1)}/5`;
-            }
-
-            // Update display
-            document.getElementById('risk-reward-display').textContent = riskRewardText;
-            document.getElementById('time-in-trade-display').textContent = timeInTradeText;
-            document.getElementById('points-risked-display').textContent = pointsRiskedText;
-            document.getElementById('dollar-risk-display').textContent = dollarRiskText;
-
-            const pnlElement = document.getElementById('gross-pnl-display');
-            pnlElement.textContent = grossPnlText;
-            pnlElement.className = `kpi-value ${pnlClass}`;
-
-            document.getElementById('overall-rating-display').textContent = overallRatingText;
-
-        } catch (error) {
-            console.error('Error calculating trade stats:', error);
-        }
+    function updateCounts() {
+        document.getElementById('entry-count').textContent = entryCount;
+        document.getElementById('exit-count').textContent = exitCount;
+        
+        // Validate exit count vs entry contracts
+        validateExitContracts();
     }
 
-    // --- DEFAULT DATE LOGIC ---
-    const tradeDateInput = document.getElementById('{{ form.trade_date.id }}');
-    if (tradeDateInput && !tradeDateInput.value) {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = ('0' + (today.getMonth() + 1)).slice(-2);
-        const day = ('0' + today.getDate()).slice(-2);
-        tradeDateInput.value = `${year}-${month}-${day}`;
-    }
+    function validateExitContracts() {
+        const entryRows = document.querySelectorAll('#entry-points-container tr');
+        const exitRows = document.querySelectorAll('#exit-points-container tr');
+        
+        let totalEntryContracts = 0;
+        let totalExitContracts = 0;
 
-    // --- DYNAMIC FIELDS LOGIC ---
-    function initializeDynamicFields(containerId, addButtonId, templateId, itemClass, removeButtonClass, fieldListName, minEntries) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
+        entryRows.forEach(row => {
+            const contractsInput = row.querySelector('input[name*="contracts"]');
+            if (contractsInput && contractsInput.value) {
+                totalEntryContracts += parseInt(contractsInput.value) || 0;
+            }
+        });
 
-        const addButton = document.getElementById(addButtonId);
-        const templateElement = document.getElementById(templateId);
-        if (!templateElement) return;
+        exitRows.forEach(row => {
+            const contractsInput = row.querySelector('input[name*="contracts"]');
+            if (contractsInput && contractsInput.value) {
+                totalExitContracts += parseInt(contractsInput.value) || 0;
+            }
+        });
 
-        const templateHtml = templateElement.innerHTML;
-
-        function addRemoveButtonListeners(scope = document) {
-            scope.querySelectorAll('.' + removeButtonClass).forEach(button => {
-                button.removeEventListener('click', handleRemoveItem);
-                button.addEventListener('click', handleRemoveItem);
-            });
+        const warningElement = document.getElementById('exit-validation-warning');
+        const addExitButton = document.getElementById('add-exit-button');
+        
+        if (totalExitContracts > totalEntryContracts) {
+            warningElement.style.display = 'block';
+            addExitButton.disabled = true;
+        } else {
+            warningElement.style.display = 'none';
+            addExitButton.disabled = false;
         }
 
-        function handleRemoveItem(event) {
-            const min = parseInt(minEntries, 10);
-            if (container.querySelectorAll('.' + itemClass).length > min) {
+        calculateStats();
+    }
+
+    // Add Entry Point
+    document.getElementById('add-entry-button').addEventListener('click', function() {
+        const container = document.getElementById('entry-points-container');
+        const template = document.getElementById('entry-template');
+        const newRow = template.innerHTML.replace(/INDEX/g, entryCount);
+        
+        container.insertAdjacentHTML('beforeend', newRow);
+        entryCount++;
+        updateCounts();
+        
+        // Add event listeners to new row
+        const newRowElement = container.lastElementChild;
+        addRowEventListeners(newRowElement);
+    });
+
+    // Add Exit Point
+    document.getElementById('add-exit-button').addEventListener('click', function() {
+        const container = document.getElementById('exit-points-container');
+        const template = document.getElementById('exit-template');
+        const newRow = template.innerHTML.replace(/INDEX/g, exitCount);
+        
+        container.insertAdjacentHTML('beforeend', newRow);
+        exitCount++;
+        updateCounts();
+        
+        // Add event listeners to new row
+        const newRowElement = container.lastElementChild;
+        addRowEventListeners(newRowElement);
+    });
+
+    // Remove Entry/Exit handlers
+    function addRowEventListeners(row) {
+        const removeEntryBtn = row.querySelector('.remove-entry-btn');
+        const removeExitBtn = row.querySelector('.remove-exit-btn');
+        const inputs = row.querySelectorAll('input');
+
+        if (removeEntryBtn) {
+            removeEntryBtn.addEventListener('click', function() {
                 showCustomConfirmation(
-                    'Confirm Configuration Change',
-                    'Are you sure you want to remove this entry/exit point?',
+                    'Remove Entry Point',
+                    'Are you sure you want to remove this entry point?',
                     'btn-warning',
                     'question-circle',
                     function() {
-                        event.target.closest('.' + itemClass).remove();
-                        addCalculationListeners();
-                        calculateStats();
+                        row.remove();
+                        entryCount--;
+                        updateCounts();
                     }
                 );
-            } else {
-                showError(`At least ${min} ${fieldListName.slice(0, -1)}(s) must remain.`);
-            }
-        }
-
-        if (addButton) {
-            addButton.addEventListener('click', function() {
-                const newIndex = container.querySelectorAll('.' + itemClass).length;
-                let newItemHtml = templateHtml.replace(/INDEX/g, newIndex);
-
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = newItemHtml;
-                const newItemElement = tempDiv.firstElementChild;
-
-                if (newItemElement) {
-                    container.appendChild(newItemElement);
-                    addRemoveButtonListeners(newItemElement);
-                    addCalculationListeners();
-                    calculateStats();
-                }
             });
         }
-        addRemoveButtonListeners(container);
+
+        if (removeExitBtn) {
+            removeExitBtn.addEventListener('click', function() {
+                showCustomConfirmation(
+                    'Remove Exit Point',
+                    'Are you sure you want to remove this exit point?',
+                    'btn-warning',
+                    'question-circle',
+                    function() {
+                        row.remove();
+                        exitCount--;
+                        updateCounts();
+                    }
+                );
+            });
+        }
+
+        // Add change listeners to inputs for validation
+        inputs.forEach(input => {
+            input.addEventListener('input', validateExitContracts);
+            input.addEventListener('change', validateExitContracts);
+        });
     }
 
-    // Initialize dynamic fields
-    initializeDynamicFields('entry-points-container', 'add-entry-button', 'entry-template', 'entry-exit-item', 'remove-entry-btn', 'entries', parseInt('{{ form.entries.min_entries|default(1) }}', 10));
-    initializeDynamicFields('exit-points-container', 'add-exit-button', 'exit-template', 'entry-exit-item', 'remove-exit-btn', 'exits', 1);
+    // Add event listeners to existing rows
+    document.querySelectorAll('#entry-points-container tr, #exit-points-container tr').forEach(addRowEventListeners);
 
-    // --- QUILL INITIALIZATION ---
+    // Initialize Quill editors
     const quillToolbarOptions = [
-        [{ 'header': [1, 2, 3, 4, false] }], ['bold', 'italic', 'underline', 'strike'],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }], [{ 'script': 'sub'}, { 'script': 'super' }],
-        [{ 'indent': '-1'}, { 'indent': '+1' }], [{ 'direction': 'rtl' }],
-        [{ 'color': [] }, { 'background': [] }], [{ 'align': [] }],
-        ['link', 'image'], ['clean']
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'color': [] }, { 'background': [] }],
+        ['link', 'clean']
     ];
-
-    let quillInstances = {};
 
     function initializeQuill(editorDivId, hiddenTextareaId, placeholderText) {
         const editorDiv = document.getElementById(editorDivId);
         const hiddenTextarea = document.getElementById(hiddenTextareaId);
+        
         if (editorDiv && hiddenTextarea) {
             quillInstances[hiddenTextareaId] = new Quill(editorDiv, {
                 theme: 'snow',
@@ -776,36 +1057,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initialize Quill editors
     initializeQuill('trade_notes_editor', '{{ form.trade_notes.id }}', 'Enter your pre-execution analysis, strategic setup, reasoning, chart analysis...');
     initializeQuill('overall_analysis_notes_editor', '{{ form.overall_analysis_notes.id }}', 'Enter your post-execution analysis, outcomes, lessons learned...');
 
-    // Form submission handler for Quill
-    const tradeForm = document.getElementById('tradeForm');
-    if (tradeForm) {
-        tradeForm.addEventListener('submit', function() {
-            for (const textareaId in quillInstances) {
-                if (quillInstances.hasOwnProperty(textareaId) && document.getElementById(textareaId)) {
-                     document.getElementById(textareaId).value = quillInstances[textareaId].root.innerHTML;
-                }
-            }
-            showSuccess('Configuration Saved Successfully');
-        });
-    }
-
-    // --- RADAR CHART INITIALIZATION ---
+    // Initialize Radar Chart
     const ratingSelectors = document.querySelectorAll('.rating-selector');
     const psychRadarCtx = document.getElementById('psychRadarChart');
 
     if (psychRadarCtx && ratingSelectors.length === 5) {
-        console.log('Initializing radar chart...');
-
-        const chartLabels = ['Prep', 'Rules', 'Mgmt', 'Entry', 'Targets'];
-        const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
-        const gridColor = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)';
-        const textColor = currentTheme === 'dark' ? '#ced4da' : '#666';
-        const pointLabelColor = currentTheme === 'dark' ? '#e9ecef' : '#333';
-
+        const chartLabels = ['Prep', 'Rules', 'Mgmt', 'Entry', 'Target'];
+        
         const radarChart = new Chart(psychRadarCtx, {
             type: 'radar',
             data: {
@@ -814,23 +1075,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     label: 'Performance Assessment',
                     data: [0, 0, 0, 0, 0],
                     fill: true,
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgb(54, 162, 235)',
-                    pointBackgroundColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(0, 102, 204, 0.2)',
+                    borderColor: 'rgba(0, 102, 204, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(0, 102, 204, 1)',
                     pointBorderColor: '#fff',
                     pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: 'rgb(54, 162, 235)'
+                    pointHoverBorderColor: 'rgba(0, 102, 204, 1)'
                 }]
             },
             options: {
+                responsive: true,
+                maintainAspectRatio: true,
                 scales: {
                     r: {
-                        angleLines: { color: gridColor },
-                        grid: { color: gridColor },
-                        suggestedMin: 0,
-                        suggestedMax: 5,
-                        pointLabels: { color: pointLabelColor, font: { size: 14 } },
-                        ticks: { stepSize: 1, color: textColor, backdropColor: 'rgba(0, 0, 0, 0)' }
+                        beginAtZero: true,
+                        max: 5,
+                        grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                        pointLabels: { font: { size: 11 } },
+                        ticks: { 
+                            stepSize: 1, 
+                            color: '#666', 
+                            backdropColor: 'rgba(0, 0, 0, 0)' 
+                        }
                     }
                 },
                 plugins: { legend: { display: false } }
@@ -844,29 +1111,244 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             radarChart.data.datasets[0].data = newData;
             radarChart.update();
+            calculateStats();
         }
 
         ratingSelectors.forEach(selector => {
-            selector.addEventListener('change', function() {
-                updateRadarChart();
-                calculateStats();
-            });
+            selector.addEventListener('change', updateRadarChart);
         });
 
         updateRadarChart();
-        console.log('Radar chart initialized successfully');
-    } else {
-        console.log('Radar chart not initialized - missing elements:', {
-            psychRadarCtx: !!psychRadarCtx,
-            ratingSelectorsCount: ratingSelectors.length
+    }
+
+    // Stats calculation
+    const instrumentPointValues = {{ instrument_point_values|tojson|safe }};
+    
+    function calculateStats() {
+        const dashboard = document.getElementById('trade-stats-dashboard');
+        const instrumentSelect = document.querySelector('[name="instrument"]');
+        const direction = document.querySelector('[name="direction"]')?.value;
+        const stopLoss = parseFloat(document.querySelector('[name="initial_stop_loss"]')?.value || '0');
+        const target = parseFloat(document.querySelector('[name="terminus_target"]')?.value || '0');
+
+        // Get point value
+        let pointValue = 1.0;
+        if (instrumentSelect?.value) {
+            const selectedOption = instrumentSelect.querySelector(`option[value="${instrumentSelect.value}"]`);
+            if (selectedOption) {
+                const symbolMatch = selectedOption.textContent.match(/^([A-Z]+)/);
+                if (symbolMatch) {
+                    const symbol = symbolMatch[1];
+                    pointValue = instrumentPointValues[symbol] || 1.0;
+                }
+            }
+        }
+
+        // Calculate entry/exit data
+        const entryRows = document.querySelectorAll('#entry-points-container tr');
+        const exitRows = document.querySelectorAll('#exit-points-container tr');
+
+        let totalEntryContracts = 0, weightedEntryPrice = 0, firstEntryTime = '';
+        let totalExitContracts = 0, weightedExitPrice = 0, lastExitTime = '';
+
+        entryRows.forEach(row => {
+            const priceInput = row.querySelector('input[name*="entry_price"]');
+            const contractsInput = row.querySelector('input[name*="contracts"]');
+            const timeInput = row.querySelector('input[name*="entry_time"]');
+            
+            const price = parseFloat(priceInput?.value || '0');
+            const contracts = parseInt(contractsInput?.value || '0');
+            const time = timeInput?.value || '';
+
+            if (price > 0 && contracts > 0) {
+                weightedEntryPrice += price * contracts;
+                totalEntryContracts += contracts;
+                if (!firstEntryTime) firstEntryTime = time;
+            }
+        });
+
+        exitRows.forEach(row => {
+            const priceInput = row.querySelector('input[name*="exit_price"]');
+            const contractsInput = row.querySelector('input[name*="contracts"]');
+            const timeInput = row.querySelector('input[name*="exit_time"]');
+            
+            const price = parseFloat(priceInput?.value || '0');
+            const contracts = parseInt(contractsInput?.value || '0');
+            const time = timeInput?.value || '';
+
+            if (price > 0 && contracts > 0) {
+                weightedExitPrice += price * contracts;
+                totalExitContracts += contracts;
+                lastExitTime = time;
+            }
+        });
+
+        const avgEntryPrice = totalEntryContracts > 0 ? weightedEntryPrice / totalEntryContracts : 0;
+        const avgExitPrice = totalExitContracts > 0 ? weightedExitPrice / totalExitContracts : 0;
+
+        // Show dashboard when we have data
+        if (avgEntryPrice > 0 || avgExitPrice > 0 || stopLoss > 0 || target > 0) {
+            dashboard.style.display = 'block';
+        } else {
+            dashboard.style.display = 'none';
+        }
+
+        // Calculate Risk:Reward
+        let riskRewardText = '--:--';
+        if (avgEntryPrice > 0 && stopLoss > 0 && target > 0) {
+            let risk, reward;
+            if (direction === 'Long') {
+                risk = Math.abs(avgEntryPrice - stopLoss);
+                reward = Math.abs(target - avgEntryPrice);
+            } else if (direction === 'Short') {
+                risk = Math.abs(stopLoss - avgEntryPrice);
+                reward = Math.abs(avgEntryPrice - target);
+            }
+
+            if (risk > 0) {
+                riskRewardText = `1:${(reward / risk).toFixed(2)}`;
+            }
+        }
+
+        // Calculate time in trade
+        let timeInTradeText = '--:--';
+        if (firstEntryTime && lastExitTime) {
+            const [entryHour, entryMin] = firstEntryTime.split(':').map(Number);
+            const [exitHour, exitMin] = lastExitTime.split(':').map(Number);
+            const entryMinutes = entryHour * 60 + entryMin;
+            const exitMinutes = exitHour * 60 + exitMin;
+            let diffMinutes = exitMinutes - entryMinutes;
+            if (diffMinutes < 0) diffMinutes += 24 * 60;
+            const hours = Math.floor(diffMinutes / 60);
+            const minutes = diffMinutes % 60;
+            timeInTradeText = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        }
+
+        // Calculate points risked and dollar risk
+        let pointsRiskedText = '--';
+        let dollarRiskText = '$--';
+        if (avgEntryPrice > 0 && stopLoss > 0 && totalEntryContracts > 0) {
+            let pointsRisk;
+            if (direction === 'Long') {
+                pointsRisk = Math.abs(avgEntryPrice - stopLoss);
+            } else if (direction === 'Short') {
+                pointsRisk = Math.abs(stopLoss - avgEntryPrice);
+            }
+
+            if (pointsRisk > 0) {
+                pointsRiskedText = pointsRisk.toFixed(2);
+                const dollarRisk = pointsRisk * totalEntryContracts * pointValue;
+                dollarRiskText = `$${dollarRisk.toFixed(2)}`;
+            }
+        }
+
+        // Calculate Gross P&L
+        let grossPnlText = '$--';
+        let pnlClass = '';
+        if (avgEntryPrice > 0 && avgExitPrice > 0 && totalExitContracts > 0) {
+            let pnlPerContract;
+            if (direction === 'Long') {
+                pnlPerContract = avgExitPrice - avgEntryPrice;
+            } else if (direction === 'Short') {
+                pnlPerContract = avgEntryPrice - avgExitPrice;
+            }
+
+            const grossPnl = pnlPerContract * totalExitContracts * pointValue;
+            grossPnlText = `$${grossPnl.toFixed(2)}`;
+
+            if (grossPnl > 0) {
+                pnlClass = 'text-success';
+            } else if (grossPnl < 0) {
+                pnlClass = 'text-danger';
+            }
+        }
+
+        // Calculate overall rating
+        let overallRatingText = '--/5';
+        const ratings = ['preparation_rating', 'rules_rating', 'management_rating', 'target_rating', 'entry_rating'];
+        const ratingValues = ratings.map(name => {
+            const value = parseInt(document.querySelector(`[name="${name}"]`)?.value || '0');
+            return value > 0 ? value : null;
+        }).filter(v => v !== null);
+
+        if (ratingValues.length > 0) {
+            const avgRating = ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length;
+            overallRatingText = `${avgRating.toFixed(1)}/5`;
+        }
+
+        // Update display
+        document.getElementById('risk-reward-display').textContent = riskRewardText;
+        document.getElementById('time-in-trade-display').textContent = timeInTradeText;
+        document.getElementById('points-risked-display').textContent = pointsRiskedText;
+        document.getElementById('dollar-risk-display').textContent = dollarRiskText;
+        document.getElementById('overall-rating-display').textContent = overallRatingText;
+
+        const pnlElement = document.getElementById('gross-pnl-display');
+        pnlElement.textContent = grossPnlText;
+        pnlElement.className = `kpi-value ${pnlClass}`;
+    }
+
+    // Add calculation listeners
+    function addCalculationListeners() {
+        const fieldsToWatch = [
+            '[name="instrument"]', '[name="direction"]', '[name="initial_stop_loss"]', '[name="terminus_target"]',
+            '[name^="entries-"]', '[name^="exits-"]', '[name$="_rating"]'
+        ];
+
+        fieldsToWatch.forEach(selector => {
+            document.querySelectorAll(selector).forEach(field => {
+                field.removeEventListener('input', calculateStats);
+                field.removeEventListener('change', calculateStats);
+                field.addEventListener('input', calculateStats);
+                field.addEventListener('change', calculateStats);
+            });
         });
     }
 
-    // --- INITIAL SETUP ---
-    console.log('Running initial setup...');
+    // Form submission
+    const tradeForm = document.getElementById('tradeForm');
+    if (tradeForm) {
+        tradeForm.addEventListener('submit', function(e) {
+            isSubmitting = true;
+            
+            // Update Quill content
+            for (const textareaId in quillInstances) {
+                if (quillInstances.hasOwnProperty(textareaId) && document.getElementById(textareaId)) {
+                    document.getElementById(textareaId).value = quillInstances[textareaId].root.innerHTML;
+                }
+            }
+        });
+    }
+
+    // Initialize everything
     addCalculationListeners();
     calculateStats();
+    updateCounts();
+    
     console.log('Enterprise add trade page JavaScript initialization complete');
 });
+
+// Cancel action handler
+function handleCancelAction() {
+    if (hasUnsavedChanges) {
+        showCustomConfirmation(
+            'Confirm Operational Change',
+            'Are you sure you want to cancel this strategic configuration? All entered data will be lost.',
+            'btn-warning',
+            'exclamation-triangle',
+            function() {
+                window.location.href = '{{ url_for("trades.view_trades_list") }}';
+            }
+        );
+    } else {
+        window.location.href = '{{ url_for("trades.view_trades_list") }}';
+    }
+}
+
+// CSRF token helper
+function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+           document.querySelector('#js-csrf-token')?.value || '';
+}
 </script>
 {% endblock %}

@@ -183,8 +183,7 @@ html {
 body {
     font-family: var(--enterprise-font-family);
     font-size: var(--enterprise-font-size-base);
-    line-height: 1.6;
-    padding-top: 72px;
+    padding-top: 40px;
     color: var(--enterprise-text-primary);
     background-color: var(--enterprise-bg-primary);
     -webkit-font-smoothing: antialiased;

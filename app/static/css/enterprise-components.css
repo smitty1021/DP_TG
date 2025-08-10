@@ -162,7 +162,7 @@ Version: 2.0
 }
 
 .module-content {
-    padding: var(--enterprise-spacing-lg);
+    padding: var(--enterprise-spacing-md);
 }
 
 .module-content.p-0 {

@@ -233,10 +233,10 @@ function renderRadarChart(canvas, ratings) {
     const angleStep = (2 * Math.PI) / categories.length;
     const labels = {
         'preparation': 'Prep',
-        'rules': 'Rules',
-        'management': 'Mgmt',
-        'target': 'Target',
-        'entry': 'Entry'
+        'rules_adherence': 'Rules',
+        'risk_management': 'Risk',
+        'target_achievement': 'Target',
+        'entry_execution': 'Entry'
     };
 
     categories.forEach((category, index) => {

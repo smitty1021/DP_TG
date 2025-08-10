@@ -687,7 +687,7 @@ html[data-bs-theme="dark"] .calendar-nav-btn {
 .trade-details-container {
     background: var(--enterprise-bg-secondary);
     border-top: 1px solid var(--enterprise-border);
-    padding: var(--enterprise-spacing-xl);
+    padding: var(--enterprise-spacing-md);
     margin: 0 -1px;
 }
 

@@ -54,7 +54,16 @@ def eastern_time_filter(utc_datetime):
         return utc_datetime.strftime('%d %b %y %H:%M UTC') if utc_datetime else 'Never'
 
 
+def nl2br(text):
+    """Convert newlines to HTML line breaks"""
+    if not text:
+        return text
+    from markupsafe import Markup
+    return Markup(str(text).replace('\n', '<br>\n'))
+
+
 def register_template_filters(app):
     """Register custom template filters"""
     app.jinja_env.filters['tag_color'] = get_tag_color_class
     app.jinja_env.filters['eastern_time'] = eastern_time_filter
+    app.jinja_env.filters['nl2br'] = nl2br
