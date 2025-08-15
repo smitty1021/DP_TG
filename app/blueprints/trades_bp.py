@@ -1,6 +1,6 @@
 
 from flask import (Blueprint, render_template, request, redirect,
-                   url_for, flash, current_app, Response, abort)
+                   url_for, flash, current_app, Response, abort, jsonify)
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from flask_wtf.csrf import generate_csrf
@@ -130,6 +130,46 @@ def _populate_tags_choices(form):
 
     form.tags.choices = choices
     return form
+
+
+def _get_tags_by_category():
+    """Helper function to get tags organized by category for modals"""
+    from app.models import Tag, TagCategory
+    from flask_login import current_user
+    
+    all_tags = Tag.query.filter(
+        db.or_(
+            Tag.is_default == True,
+            Tag.user_id == current_user.id
+        )
+    ).filter(Tag.is_active == True).order_by(Tag.category, Tag.color_category, Tag.name).all()
+    
+    tags_by_category = {}
+    for category in TagCategory:
+        category_tags = [tag for tag in all_tags if tag.category == category]
+        if category_tags:  # Only include categories with tags
+            # Group tags by impact type within each category for template compatibility
+            impact_groups = {
+                'neutral': [tag for tag in category_tags if tag.color_category == 'neutral'],
+                'good': [tag for tag in category_tags if tag.color_category == 'good'],
+                'bad': [tag for tag in category_tags if tag.color_category == 'bad']
+            }
+            
+            # Create flat list with impact type organization (neutral, positive, negative)
+            organized_tags = []
+            if impact_groups['neutral']:
+                organized_tags.extend(impact_groups['neutral'])
+            if impact_groups['good']:
+                organized_tags.extend(impact_groups['good'])
+            if impact_groups['bad']:
+                organized_tags.extend(impact_groups['bad'])
+            
+            tags_by_category[category.value] = {
+                'tags': organized_tags,
+                'impact_groups': impact_groups
+            }
+    
+    return tags_by_category
 
 
 def _populate_trade_form_choices(form):
@@ -711,7 +751,8 @@ def add_trade():
                                        title='Log New Trade',
                                        form=form,
                                        instrument_point_values=instrument_point_values,
-                                       default_trade_date=py_date.today().strftime('%Y-%m-%d'))
+                                       default_trade_date=py_date.today().strftime('%Y-%m-%d'),
+                                       tags_by_category=_get_tags_by_category())
 
             # Get the instrument object
             instrument_obj = Instrument.query.get(int(instrument_id))
@@ -721,7 +762,8 @@ def add_trade():
                                        title='Log New Trade',
                                        form=form,
                                        instrument_point_values=instrument_point_values,
-                                       default_trade_date=py_date.today().strftime('%Y-%m-%d'))
+                                       default_trade_date=py_date.today().strftime('%Y-%m-%d'),
+                                       tags_by_category=_get_tags_by_category())
 
             # Create new trade
             new_trade = Trade(user_id=current_user.id)
@@ -737,8 +779,8 @@ def add_trade():
             new_trade.initial_stop_loss = _parse_form_float(form.initial_stop_loss.data)
             new_trade.terminus_target = _parse_form_float(form.terminus_target.data)
             new_trade.is_dca = form.is_dca.data
-            new_trade.mae = _parse_form_float(form.mae.data)
-            new_trade.mfe = _parse_form_float(form.mfe.data)
+            new_trade.mae_price = _parse_form_float(form.mae_price.data)
+            new_trade.mfe_price = _parse_form_float(form.mfe_price.data)
             new_trade.how_closed = form.how_closed.data if form.how_closed.data else None
             new_trade.rules_rating = form.rules_rating.data
             new_trade.management_rating = form.management_rating.data
@@ -796,13 +838,22 @@ def add_trade():
                     if file and _is_allowed_image(file.filename):
                         filename = secure_filename(file.filename)
                         unique_filename = f"{uuid.uuid4().hex}_{filename}"
+                        
+                        # Get file stats before saving
+                        file.seek(0, 2)  # Seek to end of file
+                        filesize = file.tell()
+                        file.seek(0)  # Reset to beginning
+                        
                         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
                         file.save(file_path)
-
+                        
                         new_image = TradeImage(
                             trade_id=new_trade.id,
+                            user_id=current_user.id,
                             filename=filename,
-                            filepath=unique_filename
+                            filepath=unique_filename,
+                            filesize=filesize,
+                            mime_type=file.mimetype
                         )
                         db.session.add(new_image)
 
@@ -828,7 +879,8 @@ def add_trade():
                            title='Log New Trade',
                            form=form,
                            instrument_point_values=instrument_point_values,
-                           default_trade_date=py_date.today().strftime('%Y-%m-%d'))
+                           default_trade_date=py_date.today().strftime('%Y-%m-%d'),
+                           tags_by_category=_get_tags_by_category())
 
 # --- VIEW TRADE DETAIL ---
 @trades_bp.route('/<int:trade_id>/view')
@@ -837,7 +889,11 @@ def view_trade_detail(trade_id):
     trade = db.get_or_404(Trade, trade_id)
     if trade.user_id != current_user.id:
         abort(403)
-    return render_template('trades/view_trade_detail.html', title="Trade Details", trade=trade)
+    
+    # Get trade images explicitly due to relationship issue
+    trade_images = TradeImage.query.filter_by(trade_id=trade.id).all()
+    
+    return render_template('trades/view_trade_detail.html', title="Trade Details", trade=trade, trade_images=trade_images)
 
 
 # --- EDIT TRADE ---
@@ -915,8 +971,8 @@ def edit_trade(trade_id):
             trade_to_edit.initial_stop_loss = _parse_form_float(form.initial_stop_loss.data)
             trade_to_edit.terminus_target = _parse_form_float(form.terminus_target.data)
             trade_to_edit.is_dca = form.is_dca.data
-            trade_to_edit.mae = _parse_form_float(form.mae.data)
-            trade_to_edit.mfe = _parse_form_float(form.mfe.data)
+            trade_to_edit.mae_price = _parse_form_float(form.mae_price.data)
+            trade_to_edit.mfe_price = _parse_form_float(form.mfe_price.data)
             trade_to_edit.trading_model_id = form.trading_model_id.data if form.trading_model_id.data and form.trading_model_id.data != 0 else None
             trade_to_edit.news_event = form.news_event_select.data if form.news_event_select.data else None
             trade_to_edit.how_closed = form.how_closed.data if form.how_closed.data else None
@@ -1028,13 +1084,22 @@ def edit_trade(trade_id):
                     if file and _is_allowed_image(file.filename):
                         filename = secure_filename(file.filename)
                         unique_filename = f"{uuid.uuid4().hex}_{filename}"
+                        
+                        # Get file stats before saving
+                        file.seek(0, 2)  # Seek to end of file
+                        filesize = file.tell()
+                        file.seek(0)  # Reset to beginning
+                        
                         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
                         file.save(file_path)
-
+                        
                         new_image = TradeImage(
                             trade_id=trade_to_edit.id,
+                            user_id=current_user.id,
                             filename=filename,
-                            filepath=unique_filename
+                            filepath=unique_filename,
+                            filesize=filesize,
+                            mime_type=file.mimetype
                         )
                         db.session.add(new_image)
 
@@ -1050,10 +1115,18 @@ def edit_trade(trade_id):
     # Get instrument point values for JavaScript calculations
     instrument_point_values = Instrument.get_instrument_point_values()
 
-    return render_template('trades/edit_trade.html',
+    # Get tags by category for the modal (same as add_trade)
+    tags_by_category = _get_tags_by_category()
+    
+    # Get trade images explicitly due to relationship issue
+    trade_images = TradeImage.query.filter_by(trade_id=trade_to_edit.id).all()
+    
+    return render_template('trades/add_trade.html',
                            title="Edit Trade",
                            form=form,
                            trade=trade_to_edit,
+                           trade_images=trade_images,
+                           tags_by_category=tags_by_category,
                            instrument_point_values=instrument_point_values)
 
 
@@ -1084,6 +1157,126 @@ def delete_trade(trade_id):
         current_app.logger.error(f"Error deleting trade {trade_id}: {e}", exc_info=True)
         flash('Error deleting trade. Please try again.', 'danger')
     return redirect(url_for('trades.view_trades_list'))
+
+
+@trades_bp.route('/get_tags_modal_content', methods=['GET'])
+@login_required
+def get_tags_modal_content():
+    """Return updated modal content for tag selection after tag creation"""
+    try:
+        tags_by_category = _get_tags_by_category()
+        
+        # Render just the modal body content
+        modal_content = ""
+        for category_name, category_data in tags_by_category.items():
+            # Calculate total tags in category
+            total_tags = len(category_data['tags'])
+            
+            modal_content += f'''
+            <div class="tag-category-section">
+                <div class="tag-category-header">
+                    <span><i class="fas fa-folder me-2"></i>{category_name}</span>
+                    <span class="badge bg-secondary">{total_tags} tags</span>
+                </div>
+                <div class="tag-category-body">'''
+            
+            impact_groups = category_data['impact_groups']
+            
+            # Render tags in single wrapped row format (neutral, then good, then bad)
+            modal_content += '''
+                    <div class="tag-impact-group">
+                        <div class="tag-impact-body">'''
+            
+            # Add neutral tags
+            for tag in impact_groups['neutral']:
+                color_class = f"tag-{tag.color_category}" if tag.color_category else "tag-neutral"
+                modal_content += f'''
+                        <div class="tag-item {color_class} tag-selectable" data-tag-id="{tag.id}" data-tag-name="{tag.name}" data-tag-color="{tag.color_category or 'neutral'}" role="button" tabindex="0" style="cursor: pointer; user-select: none;">
+                            <span class="tag-name">{tag.name}</span>
+                        </div>'''
+            
+            # Add good tags
+            for tag in impact_groups['good']:
+                color_class = f"tag-{tag.color_category}" if tag.color_category else "tag-neutral"
+                modal_content += f'''
+                        <div class="tag-item {color_class} tag-selectable" data-tag-id="{tag.id}" data-tag-name="{tag.name}" data-tag-color="{tag.color_category or 'neutral'}" role="button" tabindex="0" style="cursor: pointer; user-select: none;">
+                            <span class="tag-name">{tag.name}</span>
+                        </div>'''
+            
+            # Add bad tags
+            for tag in impact_groups['bad']:
+                color_class = f"tag-{tag.color_category}" if tag.color_category else "tag-neutral"
+                modal_content += f'''
+                        <div class="tag-item {color_class} tag-selectable" data-tag-id="{tag.id}" data-tag-name="{tag.name}" data-tag-color="{tag.color_category or 'neutral'}" role="button" tabindex="0" style="cursor: pointer; user-select: none;">
+                            <span class="tag-name">{tag.name}</span>
+                        </div>'''
+            
+            modal_content += '''
+                        </div>
+                    </div>'''
+            
+            if total_tags == 0:
+                modal_content += '<p class="text-muted fst-italic">No tags in this category yet.</p>'
+            
+            modal_content += '''
+                </div>
+            </div>'''
+        
+        # Add the create tag form at the bottom
+        modal_content += '''
+        <div class="enterprise-module mt-4" id="create-tag-form" style="display: none;">
+            <div class="module-header">
+                <div class="module-title">
+                    <i class="fas fa-plus module-icon"></i>
+                    Create Personal Tag
+                </div>
+                <div class="module-meta">
+                    Add Custom Trade Classification
+                </div>
+            </div>
+            <div class="module-content">
+                <div class="d-flex gap-3 align-items-end">
+                    <div style="min-width: 200px; max-width: 250px;">
+                        <label class="form-label">Tag Name</label>
+                        <input type="text" id="new-tag-name" class="form-control" placeholder="Enter tag name" maxlength="50">
+                    </div>
+                    <div style="min-width: 180px; max-width: 220px;">
+                        <label class="form-label">Category</label>
+                        <select id="new-tag-category" class="form-select">'''
+        
+        # Add category options
+        from app.models import TagCategory
+        for category in TagCategory:
+            modal_content += f'<option value="{category.name}">{category.value}</option>'
+        
+        modal_content += '''
+                        </select>
+                    </div>
+                    <div style="min-width: 150px; max-width: 180px;">
+                        <label class="form-label">Performance Impact</label>
+                        <select id="new-tag-color" class="form-select">
+                            <option value="neutral">Neutral (Blue)</option>
+                            <option value="good">Positive (Green)</option>
+                            <option value="bad">Negative (Red)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button type="button" id="submit-new-tag" class="btn btn-success me-2">
+                            <i class="fas fa-save"></i>
+                        </button>
+                        <button type="button" id="cancel-new-tag" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>'''
+        
+        return modal_content
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting tags modal content: {e}", exc_info=True)
+        return '<div class="alert alert-danger">Error loading tags. Please refresh the page.</div>'
 
 
 # --- BULK DELETE TRADES ---
@@ -1213,7 +1406,7 @@ def export_trades_csv():
                 trade.total_contracts_entered, trade.average_entry_price,
                 trade.total_contracts_exited, trade.average_exit_price,
                 trade.pnl, trade.pnl_in_r, trade.dollar_risk,
-                trade.initial_stop_loss, trade.terminus_target, trade.mae, trade.mfe,
+                trade.initial_stop_loss, trade.terminus_target, trade.mae_price, trade.mfe_price,
                 trade.how_closed, trade.trading_model.name if trade.trading_model else '',
                 ', '.join([tag.name for tag in trade.tags]) if trade.tags else '', trade.trade_notes, trade.overall_analysis_notes, trade.trade_management_notes,
                 trade.errors_notes, trade.improvements_notes, trade.screenshot_link
@@ -1362,8 +1555,8 @@ def import_trades():
                     new_trade.how_closed = row.get(header_map['how_closed'])
                     new_trade.initial_stop_loss = _parse_form_float(row.get(header_map['sl']))
                     new_trade.terminus_target = _parse_form_float(row.get(header_map['tp']))
-                    new_trade.mae = _parse_form_float(row.get(header_map['mae']))
-                    new_trade.mfe = _parse_form_float(row.get(header_map['mfe']))
+                    new_trade.mae_price = _parse_form_float(row.get(header_map['mae']))
+                    new_trade.mfe_price = _parse_form_float(row.get(header_map['mfe']))
                     new_trade.trade_notes = row.get(header_map['notes'])
 
                     db.session.add(new_trade)
@@ -1460,8 +1653,8 @@ def export_trades_excel():
                 '1' if trade.pnl and trade.pnl > 0 else '0',
                 trade.initial_stop_loss, 
                 trade.terminus_target, 
-                trade.mae, 
-                trade.mfe,
+                trade.mae_price, 
+                trade.mfe_price,
                 trade.how_closed, 
                 trade.trading_model.name if trade.trading_model else '',
                 ', '.join([tag.name for tag in trade.tags]) if trade.tags else '', 
@@ -1540,8 +1733,8 @@ def export_trades_json():
                     'gross_pnl': float(trade.pnl) if trade.pnl else None,
                     'r_value': float(trade.pnl_in_r) if trade.pnl_in_r else None,
                     'dollar_risk': float(trade.dollar_risk) if trade.dollar_risk else None,
-                    'mae': float(trade.mae) if trade.mae else None,
-                    'mfe': float(trade.mfe) if trade.mfe else None
+                    'mae_price': float(trade.mae_price) if trade.mae_price else None,
+                    'mfe_price': float(trade.mfe_price) if trade.mfe_price else None
                 },
                 'levels': {
                     'initial_stop_loss': float(trade.initial_stop_loss) if trade.initial_stop_loss else None,
@@ -2956,13 +3149,17 @@ class TradingChartsGenerator:
         losing_mfe = []
         
         for trade in self.trades:
-            if trade.pnl is not None and trade.mae is not None and trade.mfe is not None:
+            if trade.pnl is not None and trade.mae_price is not None and trade.mfe_price is not None and trade.average_entry_price is not None:
+                # Calculate MAE and MFE in points from the price values
+                mae_points = abs(trade.mae_price - trade.average_entry_price)
+                mfe_points = abs(trade.mfe_price - trade.average_entry_price)
+                
                 if trade.pnl > 0:
-                    winning_mae.append(abs(trade.mae))  # Make positive for plotting
-                    winning_mfe.append(trade.mfe)
+                    winning_mae.append(mae_points)
+                    winning_mfe.append(mfe_points)
                 elif trade.pnl < 0:
-                    losing_mae.append(abs(trade.mae))
-                    losing_mfe.append(trade.mfe)
+                    losing_mae.append(mae_points)
+                    losing_mfe.append(mfe_points)
         
         if not winning_mae and not losing_mae:
             ax.text(0.5, 0.5, 'No MFE/MAE Data Available\\nEnsure trades have Maximum Favorable/Adverse Excursion data', 
@@ -3330,7 +3527,7 @@ def export_performance_report_pdf():
         else:
             story.append(Paragraph("Performance Analysis (Complete Dataset)", cover_title_style))
         story.append(Spacer(1, 0.5 * inch))
-        story.append(Paragraph("Pack Trade Group Trading Journal", cover_subtitle_style))
+        story.append(Paragraph("The Daily Profiler Trading Journal", cover_subtitle_style))
         story.append(Spacer(1, 1 * inch))
 
         story.append(Paragraph(f"<b>Account:</b> {current_user.username}", cover_info_style))
@@ -3764,3 +3961,111 @@ def export_performance_report_pdf():
         current_app.logger.error(f'Error generating comprehensive PDF report: {e}', exc_info=True)
         flash(f'An error occurred while generating the PDF report: {str(e)}', 'danger')
         return redirect(url_for('trades.view_trades_list'))
+
+
+@trades_bp.route('/image/<int:image_id>/delete', methods=['POST', 'DELETE'])
+@login_required
+def delete_trade_image(image_id):
+    """Delete an individual trade image."""
+    try:
+        # Get the trade image
+        trade_image = TradeImage.query.get_or_404(image_id)
+        
+        # Security check: ensure user owns the trade or is admin
+        if trade_image.user_id != current_user.id and current_user.role.name != 'ADMIN':
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+        # Get the file path for deletion
+        file_path = trade_image.full_disk_path
+        
+        # Delete the database record
+        db.session.delete(trade_image)
+        db.session.commit()
+        
+        # Delete the physical file
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                current_app.logger.info(f'Deleted trade image file: {file_path}')
+            except Exception as file_error:
+                current_app.logger.warning(f'Failed to delete image file {file_path}: {file_error}')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Trade image deleted successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error deleting trade image {image_id}: {str(e)}')
+        return jsonify({
+            'success': False,
+            'error': 'An error occurred while deleting the image'
+        }), 500
+
+
+@trades_bp.route('/chart-screenshot/<int:trade_id>')
+@login_required
+def generate_chart_screenshot(trade_id):
+    """Generate a screenshot of the chart URL for preview purposes."""
+    try:
+        # Get the trade and verify ownership
+        trade = Trade.query.get_or_404(trade_id)
+        if trade.user_id != current_user.id and current_user.role.name != 'ADMIN':
+            abort(403)
+        
+        if not trade.screenshot_link:
+            return jsonify({'success': False, 'error': 'No chart URL available'}), 400
+        
+        # Try different screenshot services
+        screenshot_services = [
+            f"https://api.microlink.io/screenshot?url={trade.screenshot_link}&viewport.width=1200&viewport.height=800&type=png",
+            f"https://image.thum.io/get/width/1200/crop/800/noanimate/{trade.screenshot_link}",
+            f"https://mini.s-shot.ru/1200x800/PNG/1200/Z100/?{trade.screenshot_link}"
+        ]
+        
+        import requests
+        from requests.adapters import HTTPAdapter
+        from urllib3.util.retry import Retry
+        
+        # Configure session with retries
+        session = requests.Session()
+        retry_strategy = Retry(
+            total=2,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        
+        # Try each service
+        for service_url in screenshot_services:
+            try:
+                current_app.logger.info(f"Trying screenshot service: {service_url}")
+                response = session.get(service_url, timeout=15, headers={
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                })
+                
+                if response.status_code == 200 and response.headers.get('content-type', '').startswith('image/'):
+                    current_app.logger.info(f"Screenshot generated successfully")
+                    return Response(
+                        response.content,
+                        mimetype=response.headers.get('content-type', 'image/png'),
+                        headers={
+                            'Cache-Control': 'public, max-age=3600',  # Cache for 1 hour
+                            'Content-Disposition': f'inline; filename="chart-{trade_id}.png"'
+                        }
+                    )
+                    
+            except requests.RequestException as e:
+                current_app.logger.warning(f"Screenshot service failed: {e}")
+                continue
+        
+        # If all services fail, return error
+        current_app.logger.warning("All screenshot services failed")
+        return jsonify({'success': False, 'error': 'Screenshot generation failed'}), 503
+        
+    except Exception as e:
+        current_app.logger.error(f'Error generating chart screenshot: {str(e)}')
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500

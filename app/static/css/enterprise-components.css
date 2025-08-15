@@ -19,6 +19,7 @@ Version: 2.0
     border-bottom: 1px solid var(--enterprise-border);
     padding: var(--enterprise-spacing-lg) var(--enterprise-spacing-lg);
     margin-bottom: 0;
+    margin-top: var(--enterprise-spacing-sm);
 }
 
 .executive-title {
@@ -3155,7 +3156,7 @@ CONSOLIDATED MODAL SYSTEM
     padding: var(--enterprise-spacing-lg);
     border-bottom: 1px solid var(--enterprise-border);
     border-radius: var(--enterprise-radius-md) var(--enterprise-radius-md) 0 0;
-    background-color: var(--enterprise-gray-50);
+    background-color: var(--enterprise-gray-200);
 }
 
 .modal-title {

@@ -1009,13 +1009,12 @@ class EnhancedBootstrapManager:
                 'model_max_weekly_loss': '12%',
                 'model_consecutive_loss_limit': '3 trades',
             },
-        ]
-
-        user_models_data = [
+            
             {
                 'name': 'Fucktard-FOMO-FAFO',
                 'version': '1.0',
                 'is_active': True,
+                'is_default': True,
                 'overview_logic': """The Fucktard-FOMO-FAFO (Fear of Missing Out - Fuck Around and Find Out) model represents 
                 unstructured, emotion-driven trading decisions made without proper analysis or adherence to systematic methodology. 
                 This model captures impulsive entries based on price movement momentum, social media sentiment, or perceived "hot tips" 
@@ -1060,6 +1059,63 @@ class EnhancedBootstrapManager:
                 'model_max_daily_loss': 'Undefined - can lead to significant drawdowns',
                 'model_max_weekly_loss': 'Undefined - lacks systematic risk controls',
                 'model_consecutive_loss_limit': 'No systematic limit - emotional decision making continues',
+            },
+        ]
+
+        user_models_data = [
+            {
+                'name': 'EMA Crossover Momentum',
+                'version': '1.0',
+                'is_active': True,
+                'is_default': False,
+                'overview_logic': """A user-generated trading model based on exponential moving average crossovers to identify trend changes 
+                and momentum shifts. This model uses the crossover of fast and slow EMAs as primary entry signals, combined with volume 
+                confirmation and additional technical filters to improve entry timing and reduce false signals.""",
+
+                'primary_chart_tf': '5-Minute',
+                'execution_chart_tf': '1-Minute',
+                'context_chart_tf': '15-Minute, 1-Hour',
+
+                'technical_indicators_used': """- EMA 9 (Fast Moving Average)
+                - EMA 21 (Slow Moving Average)
+                - EMA 50 (Trend Filter)
+                - Volume Moving Average (20 period)
+                - RSI (14 period) for overbought/oversold conditions
+                - MACD for momentum confirmation
+                - Support/Resistance levels""",
+
+                'instrument_applicability': 'Index Futures (ES, NQ, YM), suitable for trending instruments',
+                'session_applicability': 'Best during trending sessions: 09:30-11:30 EST and 13:30-15:30 EST',
+                'optimal_market_conditions': 'Trending markets with clear directional bias, medium to high volume',
+                'sub_optimal_market_conditions': 'Choppy/ranging markets, low volume periods, major news events causing whipsaws',
+
+                'entry_trigger_description': """Long Entry: 
+                - EMA 9 crosses above EMA 21 
+                - Price above EMA 50 (trend filter)
+                - Volume above 20-period average
+                - RSI below 70 (not overbought)
+                
+                Short Entry:
+                - EMA 9 crosses below EMA 21
+                - Price below EMA 50 (trend filter)  
+                - Volume above 20-period average
+                - RSI above 30 (not oversold)""",
+
+                'stop_loss_strategy': 'Initial stop 1-2 points below/above the crossover candle low/high, or below EMA 21',
+                'take_profit_strategy': """TP1: 1:1.5 Risk/Reward ratio (first 50% of position)
+                TP2: 1:2.5 Risk/Reward ratio (remaining 50%)
+                Trail stop using EMA 21 after TP1 is hit
+                Exit if EMA crossover occurs in opposite direction""",
+                'min_risk_reward_ratio': 1.5,
+
+                'position_sizing_rules': '2-3% risk per trade, increase to 4% for high-confidence setups with multiple confluences',
+                'trade_management_breakeven_rules': 'Move stop to breakeven when trade moves 1R in favor',
+                'trade_management_partial_profit_rules': 'Take 50% at TP1, trail remainder with EMA 21 or let run to TP2',
+
+                'model_max_loss_per_trade': '3%',
+                'model_max_daily_loss': '6%',
+                'model_max_weekly_loss': '12%',
+                'model_consecutive_loss_limit': '4 trades',
             },
         ]
 
@@ -1288,8 +1344,8 @@ class EnhancedBootstrapManager:
                 terminus_target=exit_price if outcome == 'win' else entry_price + (
                     2 * target_distance if direction == 'Long' else -2 * target_distance),
                 is_dca=random.choice([True, False]) if random.random() < 0.15 else False,
-                mae=random.uniform(0, stop_distance * 0.8) if outcome != 'loss' else stop_distance,
-                mfe=target_distance if outcome == 'win' else random.uniform(0, target_distance * 0.6),
+                mae_price=self._generate_mae_price(entry_price, stop_loss, direction, outcome),
+                mfe_price=self._generate_mfe_price(entry_price, exit_price, direction, outcome, target_distance),
                 how_closed=self._get_close_reason(outcome),
                 news_event=self._get_random_news_event() if random.random() < 0.1 else None,
                 rules_rating=random.randint(1, 5),
@@ -1650,6 +1706,49 @@ class EnhancedBootstrapManager:
     
     Step 4 - Engage at Highest Statistical Structure: Executed using {models_str} models."""
 
+    def _generate_mae_price(self, entry_price, stop_loss, direction, outcome):
+        """Generate realistic Maximum Adverse Excursion price level."""
+        if outcome == 'loss':
+            # For losing trades, MAE is typically at or beyond the stop loss
+            if direction == 'Long':
+                mae_price = stop_loss - random.uniform(0, abs(entry_price - stop_loss) * 0.3)
+            else:
+                mae_price = stop_loss + random.uniform(0, abs(entry_price - stop_loss) * 0.3)
+        else:
+            # For winning/breakeven trades, MAE is somewhere between entry and stop
+            mae_distance = abs(entry_price - stop_loss)
+            mae_fraction = random.uniform(0.1, 0.8)  # MAE goes 10-80% toward stop
+            
+            if direction == 'Long':
+                mae_price = entry_price - (mae_distance * mae_fraction)
+            else:
+                mae_price = entry_price + (mae_distance * mae_fraction)
+        
+        return round(mae_price, 2)
+
+    def _generate_mfe_price(self, entry_price, exit_price, direction, outcome, target_distance):
+        """Generate realistic Maximum Favorable Excursion price level."""
+        if outcome == 'win':
+            # For winning trades, MFE is typically at or beyond the exit price
+            if direction == 'Long':
+                mfe_price = exit_price + random.uniform(0, target_distance * 0.2)
+            else:
+                mfe_price = exit_price - random.uniform(0, target_distance * 0.2)
+        elif outcome == 'breakeven':
+            # For breakeven trades, some favorable movement before coming back
+            if direction == 'Long':
+                mfe_price = entry_price + random.uniform(target_distance * 0.1, target_distance * 0.4)
+            else:
+                mfe_price = entry_price - random.uniform(target_distance * 0.1, target_distance * 0.4)
+        else:
+            # For losing trades, minimal or no favorable excursion
+            if direction == 'Long':
+                mfe_price = entry_price + random.uniform(0, target_distance * 0.1)
+            else:
+                mfe_price = entry_price - random.uniform(0, target_distance * 0.1)
+        
+        return round(mfe_price, 2)
+
     def _get_close_reason(self, outcome):
         """Get realistic close reasons."""
         if outcome == 'win':
@@ -1981,12 +2080,9 @@ class EnhancedBootstrapManager:
             
         pnl_dollars = pnl_ticks * 12.50  # ES point value
         
-        # Generate MAE/MFE
-        mae_ticks = random.uniform(1, stop_distance_ticks * 0.8)
-        if outcome == 'win':
-            mfe_ticks = abs(pnl_ticks) + random.uniform(0, 5)
-        else:
-            mfe_ticks = random.uniform(0, stop_distance_ticks * 0.3)
+        # Generate MAE/MFE prices (realistic price levels)
+        mae_price = self._generate_mae_price(entry_price, stop_loss, direction, outcome)
+        mfe_price = self._generate_mfe_price(entry_price, exit_price, direction, outcome, abs(take_profit - entry_price))
         
         # Exit reason
         if outcome == 'win':
@@ -2020,8 +2116,8 @@ class EnhancedBootstrapManager:
             take_profit_price=round(take_profit, 2),
             profit_loss=round(pnl_dollars, 2),
             profit_loss_ticks=round(pnl_ticks, 1),
-            mae_ticks=round(-abs(mae_ticks), 1),  # MAE is negative
-            mfe_ticks=round(mfe_ticks, 1),
+            mae_price=mae_price,
+            mfe_price=mfe_price,
             duration_minutes=duration,
             actual_exit_reason=exit_reason,
             exit_time=exit_time,
@@ -2090,12 +2186,10 @@ class EnhancedBootstrapManager:
         backtest.average_win = round(avg_win, 2)
         backtest.average_loss = round(avg_loss, 2)
         backtest.profit_factor = round(profit_factor, 2)
-        backtest.avg_trade_pnl = round(avg_trade_pnl, 2)
         backtest.max_drawdown = round(-max_drawdown, 2)  # Store as negative
-        backtest.largest_win = round(largest_win, 2)
-        backtest.largest_loss = round(largest_loss, 2)
-        backtest.avg_mae = round(sum(t.mae_ticks for t in trades if t.mae_ticks) / total_trades, 2)
-        backtest.avg_mfe = round(sum(t.mfe_ticks for t in trades if t.mfe_ticks) / total_trades, 2)
+        
+        # Note: avg_trade_pnl, largest_win, largest_loss, avg_mae, avg_mfe are calculated properties
+        # They are automatically computed from the trade data and don't need to be set manually
 
     def print_comprehensive_statistics(self):
         """Print detailed statistics about the generated data."""

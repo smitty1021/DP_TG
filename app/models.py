@@ -901,8 +901,8 @@ class Trade(db.Model):
     is_dca = db.Column(db.Boolean, default=False)
 
     # Performance metrics
-    mae = db.Column(db.Float, nullable=True)  # Maximum Adverse Excursion
-    mfe = db.Column(db.Float, nullable=True)  # Maximum Favorable Excursion
+    mae_price = db.Column(db.Float, nullable=True)  # Maximum Adverse Excursion (worst price reached)
+    mfe_price = db.Column(db.Float, nullable=True)  # Maximum Favorable Excursion (best price reached)
 
     # Trade management and notes
     trade_notes = db.Column(db.Text, nullable=True)
@@ -2162,18 +2162,18 @@ class Backtest(db.Model):
     def avg_mae(self):
         """Calculate average MAE across all trades"""
         trades = self.trades.all()
-        mae_trades = [t for t in trades if t.mae_ticks is not None]
+        mae_trades = [t for t in trades if t.mae_price is not None]
         if mae_trades:
-            return sum(t.mae_ticks for t in mae_trades) / len(mae_trades)
+            return sum(t.mae_price for t in mae_trades) / len(mae_trades)
         return None
     
     @property
     def avg_mfe(self):
         """Calculate average MFE across all trades"""
         trades = self.trades.all()
-        mfe_trades = [t for t in trades if t.mfe_ticks is not None]
+        mfe_trades = [t for t in trades if t.mfe_price is not None]
         if mfe_trades:
-            return sum(t.mfe_ticks for t in mfe_trades) / len(mfe_trades)
+            return sum(t.mfe_price for t in mfe_trades) / len(mfe_trades)
         return None
     
     @property
@@ -2228,8 +2228,8 @@ class BacktestTrade(db.Model):
     # Performance Metrics
     profit_loss = db.Column(db.Float, nullable=True)  # Dollar P&L
     profit_loss_ticks = db.Column(db.Float, nullable=True)  # P&L in ticks
-    mae_ticks = db.Column(db.Float, nullable=True)  # Maximum Adverse Excursion in ticks
-    mfe_ticks = db.Column(db.Float, nullable=True)  # Maximum Favorable Excursion in ticks
+    mae_price = db.Column(db.Float, nullable=True)  # Maximum Adverse Excursion (worst price reached)
+    mfe_price = db.Column(db.Float, nullable=True)  # Maximum Favorable Excursion (best price reached)
     duration_minutes = db.Column(db.Integer, nullable=True)  # Trade duration in minutes
     
     # Exit Information

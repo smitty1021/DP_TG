@@ -25,37 +25,37 @@
                     Trade Analysis: {{ trade.instrument }} {{ trade.direction }}
                 </h1>
                 <div class="executive-subtitle">
-                    Strategic Trading Performance Review: {{ trade.trade_date.strftime('%A, %B %d, %Y') }}
+                    Trading Performance Review: {{ trade.trade_date.strftime('%A, %B %d, %Y') }}
                     {% if trade.trading_model %}
                         | {{ trade.trading_model.name }} Model
                     {% endif %}
                 </div>
             </div>
             <div class="btn-group">
-                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="exportTradeToPDF()" 
+                <button type="button" class="btn btn-outline-secondary" onclick="exportTradeToPDF()"
                         title="Export Trade Analysis to PDF">
                     <i class="fas fa-file-pdf"></i>
                 </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm"
+                <button type="button" class="btn btn-outline-secondary"
                         onclick="window.location.href='{{ url_for('trades.edit_trade', trade_id=trade.id) }}'"
                         title="Edit Trade Configuration">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm"
+                <button type="button" class="btn btn-outline-secondary"
                         onclick="window.location.href='{{ url_for('journal.manage_daily_journal', date_str=trade.trade_date.strftime('%Y-%m-%d')) }}'"
                         title="Daily Journal for {{ trade.trade_date.strftime('%m/%d/%Y') }}">
                     <i class="fas fa-journal-whills"></i>
                 </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm"
+                <button type="button" class="btn btn-outline-secondary"
                         onclick="window.location.href='{{ url_for('trades.view_trades_list') }}'"
                         title="Back to Trading Operations">
                     <i class="fas fa-list"></i>
                 </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm"
+                <button type="button" class="btn btn-outline-secondary"
                         onclick="location.reload()" title="Refresh Analysis">
                     <i class="fas fa-sync-alt"></i>
                 </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm"
+                <button type="button" class="btn btn-outline-secondary"
                         onclick="history.back();" title="Go Back">
                     <i class="fas fa-arrow-left"></i>
                 </button>
@@ -64,148 +64,178 @@
     </div>
 
     <!-- Performance KPI Section -->
-    <div class="kpi-section mt-3" id="trade-kpi-section">
-        <div class="grid grid-cols-6 gap-4">
-            <!-- Trade P&L -->
-            <div class="col-span-1">
-                <div class="kpi-card">
-                    <div class="kpi-content">
-                        <div class="kpi-header">
-                            <span class="kpi-label">Trade P&L</span>
-                            <i class="fas fa-dollar-sign kpi-icon"></i>
+    <div id="trade-stats-dashboard">
+        <div class="kpi-section mt-3" id="trade-kpi-section">
+            <div class="grid grid-cols-7 gap-4">
+                <!-- Risk:Reward -->
+                <div class="col-span-1">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-header">
+                                <i class="fas fa-balance-scale kpi-icon me-2"></i>
+                                <span class="kpi-label">Risk:Reward</span>
+                            </div>
+                            <div class="kpi-value">
+                                {% if trade.risk_reward_ratio %}
+                                    1:{{ "{:.2f}".format(trade.risk_reward_ratio) }}
+                                {% else %}
+                                    --:--
+                                {% endif %}
+                            </div>
+                            <div class="kpi-trend">
+                                <span class="trend-indicator">Planned Ratio</span>
+                            </div>
                         </div>
-                        <div class="kpi-value">
-                            {% if trade.pnl is not none %}
-                                ${{ "{:,.2f}".format(trade.pnl) }}
-                            {% else %}
-                                $0.00
-                            {% endif %}
-                        </div>
-                        <div class="kpi-trend">
-                            <span class="trend-indicator">
-                                {% if trade.pnl is not none %}
-                                    {% if trade.pnl > 0 %}
-                                        <i class="fas fa-arrow-up"></i> Profitable
-                                    {% elif trade.pnl < 0 %}
-                                        <i class="fas fa-arrow-down"></i> Loss
+                    </div>
+                </div>
+                <!-- Duration -->
+                <div class="col-span-1">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-header">
+                                <i class="fas fa-clock kpi-icon me-2"></i>
+                                <span class="kpi-label">Duration</span>
+                            </div>
+                            <div class="kpi-value">
+                                {% if trade.time_in_trade %}
+                                    {% set time_parts = trade.time_in_trade.split(':') %}
+                                    {% if time_parts|length == 2 %}
+                                        {{ time_parts[0] }}h {{ time_parts[1] }}m
                                     {% else %}
-                                        <i class="fas fa-minus"></i> Breakeven
+                                        {{ trade.time_in_trade }}
                                     {% endif %}
                                 {% else %}
-                                    <i class="fas fa-clock"></i> Open Position
+                                    --h --m
                                 {% endif %}
-                            </span>
+                            </div>
+                            <div class="kpi-trend">
+                                <span class="trend-indicator">Time Held</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Risk:Reward Ratio -->
-            <div class="col-span-1">
-                <div class="kpi-card">
-                    <div class="kpi-content">
-                        <div class="kpi-header">
-                            <span class="kpi-label">Risk:Reward</span>
-                            <i class="fas fa-balance-scale kpi-icon"></i>
-                        </div>
-                        <div class="kpi-value">
-                            {% if trade.risk_reward_ratio %}
-                                1:{{ "{:.2f}".format(trade.risk_reward_ratio) }}
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </div>
-                        <div class="kpi-trend">
-                            <span class="trend-indicator">
-                                Planned Ratio
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Time in Trade -->
-            <div class="col-span-1">
-                <div class="kpi-card">
-                    <div class="kpi-content">
-                        <div class="kpi-header">
-                            <span class="kpi-label">Duration</span>
-                            <i class="fas fa-clock kpi-icon"></i>
-                        </div>
-                        <div class="kpi-value">{{ trade.time_in_trade }}</div>
-                        <div class="kpi-trend">
-                            <span class="trend-indicator">
-                                Time Held
-                            </span>
+                <!-- Points Risk -->
+                <div class="col-span-1">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-header">
+                                <i class="fas fa-chart-line kpi-icon me-2"></i>
+                                <span class="kpi-label">Points Risk</span>
+                            </div>
+                            <div class="kpi-value">
+                                {% if trade.initial_stop_loss and trade.average_entry_price %}
+                                    {% if trade.direction == 'Long' %}
+                                        {{ "{:.2f}".format(trade.average_entry_price - trade.initial_stop_loss) }}
+                                    {% else %}
+                                        {{ "{:.2f}".format(trade.initial_stop_loss - trade.average_entry_price) }}
+                                    {% endif %}
+                                {% else %}
+                                    --
+                                {% endif %}
+                            </div>
+                            <div class="kpi-trend">
+                                <span class="trend-indicator">Risk Points</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Position Size -->
-            <div class="col-span-1">
-                <div class="kpi-card">
-                    <div class="kpi-content">
-                        <div class="kpi-header">
-                            <span class="kpi-label">Position Size</span>
-                            <i class="fas fa-layer-group kpi-icon"></i>
-                        </div>
-                        <div class="kpi-value">{{ trade.total_contracts_entered or 0 }}</div>
-                        <div class="kpi-trend">
-                            <span class="trend-indicator">
-                                Contracts
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Overall Rating -->
-            <div class="col-span-1">
-                <div class="kpi-card">
-                    <div class="kpi-content">
-                        <div class="kpi-header">
-                            <span class="kpi-label">Quality Score</span>
-                            <i class="fas fa-star kpi-icon"></i>
-                        </div>
-                        <div class="kpi-value">
-                            {% set ratings = [trade.preparation_rating, trade.rules_rating, trade.management_rating, trade.target_rating, trade.entry_rating] %}
-                            {% set valid_ratings = ratings|select('ne', none)|list %}
-                            {% if valid_ratings %}
-                                {% set avg_rating = (valid_ratings|sum / valid_ratings|length) %}
-                                {{ "%.1f"|format(avg_rating) }}/5.0
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </div>
-                        <div class="kpi-trend">
-                            <span class="trend-indicator">
-                                Execution Quality
-                            </span>
+                <!-- Dollar Risk -->
+                <div class="col-span-1">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-header">
+                                <i class="fas fa-dollar-sign kpi-icon me-2"></i>
+                                <span class="kpi-label">Dollar Risk</span>
+                            </div>
+                            <div class="kpi-value">
+                                {% if trade.dollar_risk %}
+                                    ${{ "{:,.2f}".format(trade.dollar_risk) }}
+                                {% else %}
+                                    $--
+                                {% endif %}
+                            </div>
+                            <div class="kpi-trend">
+                                <span class="trend-indicator">Risk Amount</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- P&L in R -->
-            <div class="col-span-1">
-                <div class="kpi-card">
-                    <div class="kpi-content">
-                        <div class="kpi-header">
-                            <span class="kpi-label">P&L in R</span>
-                            <i class="fas fa-chart-line kpi-icon"></i>
+                <!-- Gross P&L -->
+                <div class="col-span-1">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-header">
+                                <i class="fas fa-chart-area kpi-icon me-2"></i>
+                                <span class="kpi-label">Gross P&L</span>
+                            </div>
+                            <div class="kpi-value {% if trade.pnl is not none %}{% if trade.pnl > 0 %}text-success{% elif trade.pnl < 0 %}text-danger{% endif %}{% endif %}">
+                                {% if trade.pnl is not none %}
+                                    ${{ "{:,.2f}".format(trade.pnl) }}
+                                {% else %}
+                                    $--
+                                {% endif %}
+                            </div>
+                            <div class="kpi-trend">
+                                <span class="trend-indicator">Total Return</span>
+                            </div>
                         </div>
-                        <div class="kpi-value">
-                            {% if trade.pnl_in_r %}
-                                {{ "{:.2f}".format(trade.pnl_in_r) }}R
-                            {% else %}
-                                N/A
-                            {% endif %}
+                    </div>
+                </div>
+                <!-- Quality Score -->
+                <div class="col-span-1">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-header">
+                                <i class="fas fa-star kpi-icon me-2"></i>
+                                <span class="kpi-label">Quality Score</span>
+                            </div>
+                            <div class="kpi-value">
+                                {% set total_ratings = (trade.preparation_rating or 0) + (trade.rules_rating or 0) + (trade.management_rating or 0) + (trade.target_rating or 0) + (trade.entry_rating or 0) %}
+                                {% set avg_rating = (total_ratings / 5) if total_ratings > 0 else 0 %}
+                                {% if avg_rating > 0 %}
+                                    {{ "{:.1f}".format(avg_rating) }}
+                                {% else %}
+                                    --/5
+                                {% endif %}
+                            </div>
+                            <div class="kpi-trend">
+                                <span class="trend-indicator">Execution Rating</span>
+                            </div>
                         </div>
-                        <div class="kpi-trend">
-                            <span class="trend-indicator">
-                                Risk Units
-                            </span>
+                    </div>
+                </div>
+                <!-- Efficiency -->
+                <div class="col-span-1">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-header">
+                                <i class="fas fa-percentage kpi-icon me-2"></i>
+                                <span class="kpi-label">Efficiency</span>
+                            </div>
+                            <div class="kpi-value">
+                                {% if trade.pnl is not none and trade.mfe_price is not none and trade.average_entry_price and trade.average_exit_price %}
+                                    {% if trade.direction == 'Long' %}
+                                        {% set mfe_points = trade.mfe_price - trade.average_entry_price %}
+                                        {% set actual_points = trade.average_exit_price - trade.average_entry_price %}
+                                    {% else %}
+                                        {% set mfe_points = trade.average_entry_price - trade.mfe_price %}
+                                        {% set actual_points = trade.average_entry_price - trade.average_exit_price %}
+                                    {% endif %}
+                                    {% if mfe_points > 0 %}
+                                        {% set efficiency = (actual_points / mfe_points) * 100 %}
+                                        <span class="{% if efficiency >= 70 %}text-success{% elif efficiency >= 40 %}text-warning{% else %}text-danger{% endif %}">
+                                            {{ "{:.1f}".format(efficiency) }}%
+                                        </span>
+                                    {% else %}
+                                        --
+                                    {% endif %}
+                                {% else %}
+                                    --
+                                {% endif %}
+                            </div>
+                            <div class="kpi-trend">
+                                <span class="trend-indicator">Profit Capture</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -217,148 +247,135 @@
     <div class="grid grid-cols-12 gap-4 align-items-start mt-3">
         <!-- Left Column: Trade Details -->
         <div class="col-span-8">
-            <!-- Trade Configuration Module -->
+            <!-- Trade Information Module -->
             <div class="enterprise-module mb-3">
                 <div class="module-header">
                     <div class="module-title">
-                        <i class="fas fa-cog module-icon"></i>
-                        Trade Configuration & Execution
+                        <i class="fas fa-info-circle module-icon"></i>
+                        Trade Information
                     </div>
                     <div class="module-meta">
-                        Strategic Trade Setup Details
+                        Core Trade Configuration Details
                     </div>
                 </div>
                 <div class="module-content">
-                    <div class="grid grid-cols-2 gap-4">
-                        <!-- Basic Trade Information -->
-                        <div class="enterprise-module">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-info-circle module-icon"></i>
-                                    Trade Information
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="col-span-1">
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">Instrument</div>
+                                        <div>
+                                            {{ trade.instrument or 'N/A' }}
+                                            {% if trade.instrument_obj %}
+                                                <small class="text-muted">({{ trade.instrument_obj.name }})</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="module-content">
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
-                                            <div class="fw-semibold text-muted">Instrument</div>
-                                            <div>
-                                                {{ trade.instrument }}
-                                                {% if trade.instrument_obj %}
-                                                    <small class="text-muted">({{ trade.instrument_obj.name }})</small>
-                                                {% endif %}
-                                            </div>
-                                        </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">Trade Date</div>
+                                        {{ trade.trade_date.strftime('%A, %B %d, %Y') if trade.trade_date else 'N/A' }}
                                     </div>
-                                    <div class="col-12">
-                                        <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
-                                            <div class="fw-semibold text-muted">Trade Date</div>
-                                            {{ trade.trade_date.strftime('%A, %B %d, %Y') }}
-                                        </div>
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
-                                            <div class="fw-semibold text-muted">Direction</div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">Direction</div>
+                                        {% if trade.direction %}
                                             <span class="badge-transparent {% if trade.direction == 'Long' %}text-success{% else %}text-danger{% endif %}">
                                                 {{ trade.direction }}
                                             </span>
-                                        </div>
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
                                     </div>
-                                    <div class="col-12">
-                                        <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
-                                            <div class="fw-semibold text-muted">Trading Model</div>
-                                            {{ trade.trading_model.name if trade.trading_model else 'N/A' }}
-                                        </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">Model Used</div>
+                                        {{ trade.trading_model.name if trade.trading_model else 'No data provided' }}
                                     </div>
-                                    <div class="col-12">
-                                        <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
-                                            <div class="fw-semibold text-muted">Exit Method</div>
-                                            {{ trade.how_closed if trade.how_closed else 'N/A' }}
-                                        </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">Dollar Risk</div>
+                                        ${{ "{:.2f}".format(trade.dollar_risk) if trade.dollar_risk else 'N/A' }}
                                     </div>
-                                    <div class="col-12">
-                                        <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
-                                            <div class="fw-semibold text-muted">DCA Trade</div>
-                                            <span class="badge-transparent {% if trade.is_dca %}text-primary{% else %}text-muted{% endif %}">
-                                                {{ 'Yes' if trade.is_dca else 'No' }}
-                                            </span>
-                                        </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">Points Risked</div>
+                                        {% if trade.initial_stop_loss and trade.average_entry_price %}
+                                            {% if trade.direction == 'Long' %}
+                                                {{ "{:.2f}".format(trade.average_entry_price - trade.initial_stop_loss) }}
+                                            {% else %}
+                                                {{ "{:.2f}".format(trade.initial_stop_loss - trade.average_entry_price) }}
+                                            {% endif %}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
                                     </div>
-                                    {% if trade.news_event %}
-                                    <div class="col-12">
-                                        <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
-                                            <div class="fw-semibold text-muted">News Event</div>
-                                            {{ trade.news_event }}
-                                        </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">% Price Movement Risk</div>
+                                        {% if trade.initial_stop_loss and trade.average_entry_price %}
+                                            {% if trade.direction == 'Long' %}
+                                                {% set risk_percent = ((trade.average_entry_price - trade.initial_stop_loss) / trade.average_entry_price) * 100 %}
+                                            {% else %}
+                                                {% set risk_percent = ((trade.initial_stop_loss - trade.average_entry_price) / trade.average_entry_price) * 100 %}
+                                            {% endif %}
+                                            {{ "{:.2f}".format(risk_percent) }}%
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
                                     </div>
-                                    {% endif %}
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Entry & Exit Details -->
-                        <div class="enterprise-module">
-                            <div class="module-header">
-                                <div class="module-title">
-                                    <i class="fas fa-exchange-alt module-icon"></i>
-                                    Execution Details
+                        <div class="col-span-1">
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">Exit Method</div>
+                                        {{ trade.how_closed if trade.how_closed else 'No data provided' }}
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="module-content">
-                                <!-- Entries -->
-                                {% if trade.entries %}
-                                <div class="mb-3">
-                                    <h6 class="text-success fw-semibold mb-2">
-                                        Entry Points
-                                        <span class="text-muted fw-normal">
-                                            ({{ trade.total_contracts_entered or 0 }} total @ avg {{ "{:.2f}".format(trade.average_entry_price) if trade.average_entry_price else 'N/A' }})
-                                        </span>
-                                    </h6>
-                                    {% for entry in trade.entries %}
-                                    <div class="mb-1 pt-1 pb-1 px-3" style="background-color: var(--enterprise-bg-primary); border-radius: 6px;">
-                                        <span class="fw-normal">
-                                            #{{ loop.index }}: {{ entry.contracts or 0 }} @ {{ "{:.2f}".format(entry.entry_price) if entry.entry_price else 'N/A' }}
-                                            ({{ entry.entry_time.strftime('%H:%M') if entry.entry_time else 'N/A' }})
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">DCA Trade</div>
+                                        <span class="badge-transparent {% if trade.is_dca %}text-primary{% else %}text-muted{% endif %}">
+                                            {{ 'Yes' if trade.is_dca else 'No' }}
                                         </span>
                                     </div>
-                                    {% endfor %}
                                 </div>
-                                {% endif %}
-
-                                <!-- Exits -->
-                                {% if trade.exits %}
-                                <div class="mb-3">
-                                    <h6 class="text-danger fw-semibold mb-2">
-                                        Exit Points
-                                        <span class="text-muted fw-normal">
-                                            ({{ trade.total_contracts_exited or 0 }} total @ avg {{ "{:.2f}".format(trade.average_exit_price) if trade.average_exit_price else 'N/A' }})
-                                        </span>
-                                    </h6>
-                                    {% for exit in trade.exits %}
-                                    <div class="mb-1 pt-1 pb-1 px-3" style="background-color: var(--enterprise-bg-primary); border-radius: 6px;">
-                                        <span class="fw-normal">
-                                            #{{ loop.index }}: {{ exit.contracts or 0 }} @ {{ "{:.2f}".format(exit.exit_price) if exit.exit_price else 'N/A' }}
-                                            ({{ exit.exit_time.strftime('%H:%M') if exit.exit_time else 'N/A' }})
-                                        </span>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">News Event</div>
+                                        {{ trade.news_event if trade.news_event else 'No data provided' }}
                                     </div>
-                                    {% endfor %}
                                 </div>
-                                {% endif %}
-
-                                <!-- Risk Management -->
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <div class="text-center p-2" style="background-color: var(--enterprise-bg-danger); border-radius: 6px;">
-                                            <small class="text-muted d-block">Initial Stop</small>
-                                            <strong>{{ "{:.2f}".format(trade.initial_stop_loss) if trade.initial_stop_loss else 'N/A' }}</strong>
-                                        </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">Initial Stop Loss</div>
+                                        {{ "{:.2f}".format(trade.initial_stop_loss) if trade.initial_stop_loss else 'N/A' }}
                                     </div>
-                                    <div class="col-6">
-                                        <div class="text-center p-2" style="background-color: var(--enterprise-bg-success); border-radius: 6px;">
-                                            <small class="text-muted d-block">Target</small>
-                                            <strong>{{ "{:.2f}".format(trade.terminus_target) if trade.terminus_target else 'N/A' }}</strong>
-                                        </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">Terminus Target</div>
+                                        {{ "{:.2f}".format(trade.terminus_target) if trade.terminus_target else 'N/A' }}
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">Screenshot Link</div>
+                                        {% if trade.screenshot_link %}
+                                            <a href="{{ trade.screenshot_link }}" target="_blank" class="text-primary">View Chart</a>
+                                        {% else %}
+                                            <span class="text-muted">No data provided</span>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -367,23 +384,75 @@
                 </div>
             </div>
 
-            <!-- Performance Metrics Module -->
+            <!-- Execution Performance Module -->
             <div class="enterprise-module mb-3">
                 <div class="module-header">
                     <div class="module-title">
-                        <i class="fas fa-chart-line module-icon"></i>
-                        Performance Analytics
+                        <i class="fas fa-exchange-alt module-icon"></i>
+                        Execution Details
                     </div>
                     <div class="module-meta">
-                        Risk-Adjusted Performance Metrics
+                        Entry & Exit Analysis with Risk Management
                     </div>
                 </div>
                 <div class="module-content">
                     <div class="grid grid-cols-2 gap-4">
-                        <!-- Financial Metrics -->
-                        <div>
-                            <h6 class="text-primary fw-semibold mb-3">Financial Performance</h6>
-                            <div class="row g-3">
+                        <!-- Entry & Exit Execution -->
+                        <div class="col-span-1">
+                            <h6 class="text-primary fw-semibold mb-3">Execution Analysis</h6>
+                            {% if trade.entries %}
+                            <div class="mb-3">
+                                <h6 class="text-success fw-semibold mb-2">
+                                    Entry Points
+                                    <span class="text-muted fw-normal">
+                                        ({{ trade.total_contracts_entered or 0 }} total @ avg {{ "{:.2f}".format(trade.average_entry_price) if trade.average_entry_price else 'N/A' }})
+                                    </span>
+                                </h6>
+                                {% for entry in trade.entries %}
+                                <div class="mb-1 pt-1 pb-1 px-3" style="background-color: var(--enterprise-bg-primary); border-radius: 6px;">
+                                    <span class="fw-normal">
+                                        #{{ loop.index }}: {{ entry.contracts or 0 }} @ {{ "{:.2f}".format(entry.entry_price) if entry.entry_price else 'N/A' }}
+                                        ({{ entry.entry_time.strftime('%H:%M') if entry.entry_time else 'N/A' }})
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-3 text-muted">
+                                <i class="fas fa-info-circle mb-2"></i>
+                                <p class="mb-0">No entry points recorded</p>
+                            </div>
+                            {% endif %}
+
+                            {% if trade.exits %}
+                            <div class="mb-3">
+                                <h6 class="text-danger fw-semibold mb-2">
+                                    Exit Points
+                                    <span class="text-muted fw-normal">
+                                        ({{ trade.total_contracts_exited or 0 }} total @ avg {{ "{:.2f}".format(trade.average_exit_price) if trade.average_exit_price else 'N/A' }})
+                                    </span>
+                                </h6>
+                                {% for exit in trade.exits %}
+                                <div class="mb-1 pt-1 pb-1 px-3" style="background-color: var(--enterprise-bg-primary); border-radius: 6px;">
+                                    <span class="fw-normal">
+                                        #{{ loop.index }}: {{ exit.contracts or 0 }} @ {{ "{:.2f}".format(exit.exit_price) if exit.exit_price else 'N/A' }}
+                                        ({{ exit.exit_time.strftime('%H:%M') if exit.exit_time else 'N/A' }})
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-3 text-muted">
+                                <i class="fas fa-info-circle mb-2"></i>
+                                <p class="mb-0">No exit points recorded</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Performance Metrics -->
+                        <div class="col-span-1">
+                            <h6 class="text-primary fw-semibold mb-3">Performance Metrics</h6>
+                            <div class="row g-2">
                                 <div class="col-12">
                                     <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
                                         <div class="fw-semibold text-muted">Gross P&L</div>
@@ -398,41 +467,16 @@
                                 </div>
                                 <div class="col-12">
                                     <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
-                                        <div class="fw-semibold text-muted">Dollar Risk</div>
-                                        {% if trade.dollar_risk %}
-                                            ${{ "{:,.2f}".format(trade.dollar_risk) }}
-                                        {% else %}
-                                            N/A
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
-                                        <div class="fw-semibold text-muted">P&L per Contract</div>
-                                        {% if trade.pnl and trade.total_contracts_exited and trade.total_contracts_exited > 0 %}
-                                            ${{ "{:,.2f}".format(trade.pnl / trade.total_contracts_exited) }}
-                                        {% else %}
-                                            N/A
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Risk Metrics -->
-                        <div>
-                            <h6 class="text-primary fw-semibold mb-3">Risk Analytics</h6>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
                                         <div class="fw-semibold text-muted">MAE (Max Adverse)</div>
                                         <div class="text-end">
-                                            {% if trade.mae is not none %}
-                                                <div class="text-danger fw-semibold">{{ "{:.1f}".format(trade.mae|abs) }} pts</div>
-                                                {% if trade.instrument_obj %}
-                                                    {% set multiplier = trade.instrument_obj.point_value or 25 %}
-                                                    <small class="text-muted">${{ "{:,.0f}".format((trade.mae|abs) * multiplier) }}</small>
-                                                {% endif %}
+                                            {% if trade.mae_price is not none and trade.average_entry_price %}
+                                                {% set mae_points = (trade.mae_price - trade.average_entry_price)|abs %}
+                                                {% set multiplier = trade.instrument_multiplier or 25 %}
+                                                {% set tick_size = trade.instrument_tick_size or 0.25 %}
+                                                {% set ticks = (mae_points / tick_size)|round|int if tick_size > 0 else 0 %}
+                                                {% set price_pct = ((mae_points / trade.average_entry_price) * 100) if trade.average_entry_price > 0 else 0 %}
+                                                <div class="text-danger fw-semibold">{{ "{:.2f}".format(trade.mae_price) }}</div>
+                                                <small class="text-muted">({{ "{:.1f}".format(mae_points) }} pts, {{ ticks }} tks, ${{ "{:,.0f}".format(mae_points * multiplier) }}, {{ "{:.2f}".format(price_pct) }}%)</small>
                                             {% else %}
                                                 N/A
                                             {% endif %}
@@ -443,12 +487,14 @@
                                     <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
                                         <div class="fw-semibold text-muted">MFE (Max Favorable)</div>
                                         <div class="text-end">
-                                            {% if trade.mfe is not none %}
-                                                <div class="text-success fw-semibold">{{ "{:.1f}".format(trade.mfe) }} pts</div>
-                                                {% if trade.instrument_obj %}
-                                                    {% set multiplier = trade.instrument_obj.point_value or 25 %}
-                                                    <small class="text-muted">${{ "{:,.0f}".format(trade.mfe * multiplier) }}</small>
-                                                {% endif %}
+                                            {% if trade.mfe_price is not none and trade.average_entry_price %}
+                                                {% set mfe_points = (trade.mfe_price - trade.average_entry_price)|abs %}
+                                                {% set multiplier = trade.instrument_multiplier or 25 %}
+                                                {% set tick_size = trade.instrument_tick_size or 0.25 %}
+                                                {% set ticks = (mfe_points / tick_size)|round|int if tick_size > 0 else 0 %}
+                                                {% set price_pct = ((mfe_points / trade.average_entry_price) * 100) if trade.average_entry_price > 0 else 0 %}
+                                                <div class="text-success fw-semibold">{{ "{:.2f}".format(trade.mfe_price) }}</div>
+                                                <small class="text-muted">({{ "{:.1f}".format(mfe_points) }} pts, {{ ticks }} tks, ${{ "{:,.0f}".format(mfe_points * multiplier) }}, {{ "{:.2f}".format(price_pct) }}%)</small>
                                             {% else %}
                                                 N/A
                                             {% endif %}
@@ -457,29 +503,191 @@
                                 </div>
                                 <div class="col-12">
                                     <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
-                                        <div class="fw-semibold text-muted">Efficiency Ratio</div>
-                                        {% if trade.pnl is not none and trade.mfe is not none and trade.mfe != 0 %}
-                                            {% set multiplier = trade.instrument_obj.point_value if trade.instrument_obj else 25 %}
-                                            {% set efficiency = (trade.pnl / (trade.mfe * multiplier)) * 100 %}
-                                            <span class="{% if efficiency >= 50 %}text-success{% elif efficiency >= 25 %}text-warning{% else %}text-danger{% endif %}">
-                                                {{ "{:.1f}".format(efficiency) }}%
-                                            </span>
+                                        <div class="fw-semibold text-muted">Risk:Reward</div>
+                                        {{ "1:{:.2f}".format(trade.risk_reward_ratio) if trade.risk_reward_ratio else 'N/A' }}
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">Efficiency</div>
+                                        {% if trade.pnl is not none and trade.mfe_price is not none and trade.average_entry_price and trade.average_exit_price %}
+                                            {% if trade.direction == 'Long' %}
+                                                {% set mfe_points = trade.mfe_price - trade.average_entry_price %}
+                                                {% set actual_points = trade.average_exit_price - trade.average_entry_price %}
+                                            {% else %}
+                                                {% set mfe_points = trade.average_entry_price - trade.mfe_price %}
+                                                {% set actual_points = trade.average_entry_price - trade.average_exit_price %}
+                                            {% endif %}
+                                            {% if mfe_points > 0 %}
+                                                {% set efficiency = (actual_points / mfe_points) * 100 %}
+                                                <span class="{% if efficiency >= 50 %}text-success{% elif efficiency >= 25 %}text-warning{% else %}text-danger{% endif %}">
+                                                    {{ "{:.1f}".format(efficiency) }}%
+                                                </span>
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
                                         {% else %}
                                             N/A
                                         {% endif %}
                                     </div>
                                 </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
+                                        <div class="fw-semibold text-muted">Duration</div>
+                                        {{ trade.time_in_trade if trade.time_in_trade else 'N/A' }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Risk Management Levels -->
+                            <div class="row g-2 mt-3">
+                                <div class="col-6">
+                                    <div class="text-center p-2" style="background-color: var(--enterprise-bg-danger); border-radius: 6px;">
+                                        <small class="text-muted d-block">Initial Stop</small>
+                                        <strong>{{ "{:.2f}".format(trade.initial_stop_loss) if trade.initial_stop_loss else 'N/A' }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center p-2" style="background-color: var(--enterprise-bg-success); border-radius: 6px;">
+                                        <small class="text-muted d-block">Target</small>
+                                        <strong>{{ "{:.2f}".format(trade.terminus_target) if trade.terminus_target else 'N/A' }}</strong>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Performance Chart -->
-                    <div class="mt-4">
-                        <h6 class="text-primary fw-semibold mb-3">Trade Performance Visualization</h6>
+            <!-- Trade Performance Visualization Module -->
+            <div class="enterprise-module mb-3">
+                <div class="module-header">
+                    <div class="module-title">
+                        <i class="fas fa-chart-area module-icon"></i>
+                        Trade Performance Visualization
+                    </div>
+                    <div class="module-meta">
+                        Interactive Price Movement Analysis
+                    </div>
+                </div>
+                <div class="module-content">
+                    <div class="mb-4">
+                        <h6 class="text-primary fw-semibold mb-3">Price Movement Timeline</h6>
                         <div class="position-relative" style="height: 300px;">
                             <canvas id="performanceChart" width="100%" height="300"></canvas>
                         </div>
                     </div>
+
+                    <!-- Chart Screenshot Link -->
+                    <div class="mt-4">
+                        <h6 class="text-primary fw-semibold mb-3">Chart Analysis</h6>
+                        {% if trade.screenshot_link %}
+                            <div class="row g-3">
+                                <!-- Preview Image -->
+                                <div class="col-md-8">
+                                    <div class="position-relative" style="background-color: var(--enterprise-bg-primary); border-radius: 8px; min-height: 250px; max-height: 400px; overflow: hidden;">
+                                        <img id="chart-preview-{{ trade.id }}" 
+                                             class="img-fluid rounded" 
+                                             style="width: 100%; height: auto; max-height: 400px; object-fit: contain; display: none; cursor: pointer;"
+                                             alt="Chart Preview"
+                                             onclick="window.open('{{ trade.screenshot_link }}', '_blank')">
+                                        
+                                        <!-- Loading State -->
+                                        <div id="preview-loading-{{ trade.id }}" class="d-flex flex-column align-items-center justify-content-center p-4" style="min-height: 250px;">
+                                            <div class="spinner-border text-primary mb-3" role="status">
+                                                <span class="visually-hidden">Loading preview...</span>
+                                            </div>
+                                            <h6 class="text-primary mb-2">Loading Chart Preview</h6>
+                                            <p class="text-muted mb-0 text-center">Generating preview for {{ trade.instrument }} chart...</p>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                                
+                                <!-- Chart Info -->
+                                <div class="col-md-4">
+                                    <div class="p-3" style="background-color: var(--enterprise-bg-secondary); border-radius: 8px;">
+                                        <h6 class="text-primary mb-3">
+                                            <i class="fas fa-chart-line me-2"></i>Chart Details
+                                        </h6>
+                                        <div class="mb-3">
+                                            <small class="text-muted d-block">Instrument</small>
+                                            <strong>{{ trade.instrument }}</strong>
+                                        </div>
+                                        <div class="mb-3">
+                                            <small class="text-muted d-block">Trade Date</small>
+                                            <strong>{{ trade.trade_date.strftime('%B %d, %Y') if trade.trade_date else 'N/A' }}</strong>
+                                        </div>
+                                        <div class="mb-3">
+                                            <small class="text-muted d-block">Direction</small>
+                                            <span class="badge {% if trade.direction == 'Long' %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ trade.direction }}
+                                            </span>
+                                        </div>
+                                        <div class="d-grid gap-2">
+                                            <a href="{{ trade.screenshot_link }}" target="_blank" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-external-link-alt me-1"></i>Open Full Chart
+                                            </a>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshChartPreview({{ trade.id }})">
+                                                <i class="fas fa-sync-alt me-1"></i>Refresh Preview
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4" style="background-color: var(--enterprise-bg-primary); border-radius: 8px;">
+                                <div class="text-muted">
+                                    <i class="fas fa-chart-line fa-2x mb-3" style="opacity: 0.5;"></i>
+                                    <h5 class="mb-2">No Chart Available</h5>
+                                    <p class="mb-0">No chart screenshot link provided for this trade</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Trade Images -->
+                    {% if trade_images %}
+                    <div class="mt-4">
+                        <h6 class="text-primary fw-semibold mb-3">Trade Images</h6>
+                        <div class="row g-3">
+                            {% for image in trade_images %}
+                                <div class="col-md-3 col-sm-4 col-6" id="trade-image-{{ image.id }}">
+                                    <div class="card h-100">
+                                        <img src="{{ url_for('images.serve_trade_image', image_id=image.id) }}"
+                                             class="card-img-top mt-3"
+                                             style="height: 120px; object-fit: contain; background: #f8f9fa; cursor: pointer;"
+                                             alt="Trade Image"
+                                             onclick="showTradeImageModal('{{ url_for('images.serve_trade_image', image_id=image.id) }}', '{{ image.filename }}')">
+
+                                        <div class="card-body p-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <small class="text-muted">{{ image.filename }}</small>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        {% if image.filesize %}
+                                                            {{ "%.1f"|format(image.filesize / 1024) }} KB
+                                                        {% else %}
+                                                            Unknown size
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                                <!-- Delete button inline with filename -->
+                                                <button type="button"
+                                                        class="btn btn-outline-danger btn-sm"
+                                                        onclick="deleteTradeImageFromDetail({{ image.id }})"
+                                                        title="Delete Image">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -715,8 +923,8 @@
                     <div class="mt-4">
                         <h6 class="text-primary fw-semibold mb-3">Performance Radar</h6>
                         <div class="d-flex justify-content-center">
-                            <div class="position-relative" style="width: 250px; height: 250px;">
-                                <canvas id="radarChart" width="250" height="250"></canvas>
+                            <div class="position-relative" style="width: 200px; height: 200px;">
+                                <canvas id="radarChart" width="200" height="200"></canvas>
                             </div>
                         </div>
                     </div>
@@ -738,7 +946,7 @@
                     <div class="position-relative" style="height: 200px;">
                         <canvas id="riskChart" width="100%" height="200"></canvas>
                     </div>
-                    
+
                     <!-- Risk Summary -->
                     <div class="mt-3 pt-3 border-top">
                         <div class="row g-2 text-center">
@@ -746,8 +954,9 @@
                                 <div class="p-2" style="background-color: var(--enterprise-bg-danger); border-radius: 6px;">
                                     <small class="text-muted d-block">Max Risk</small>
                                     <strong class="text-danger">
-                                        {% if trade.mae %}
-                                            {{ "{:.1f}".format(trade.mae|abs) }} pts
+                                        {% if trade.mae_price and trade.average_entry_price %}
+                                            {% set mae_points = (trade.mae_price - trade.average_entry_price)|abs %}
+                                            {{ "{:.1f}".format(mae_points) }} pts
                                         {% else %}
                                             N/A
                                         {% endif %}
@@ -758,8 +967,9 @@
                                 <div class="p-2" style="background-color: var(--enterprise-bg-success); border-radius: 6px;">
                                     <small class="text-muted d-block">Max Reward</small>
                                     <strong class="text-success">
-                                        {% if trade.mfe %}
-                                            {{ "{:.1f}".format(trade.mfe) }} pts
+                                        {% if trade.mfe_price and trade.average_entry_price %}
+                                            {% set mfe_points = (trade.mfe_price - trade.average_entry_price)|abs %}
+                                            {{ "{:.1f}".format(mfe_points) }} pts
                                         {% else %}
                                             N/A
                                         {% endif %}
@@ -782,129 +992,502 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeTooltips();
 });
 
-function initializeCharts() {
-    // Radar Chart for Quality Assessment
-    const radarCtx = document.getElementById('radarChart').getContext('2d');
-    new Chart(radarCtx, {
-        type: 'radar',
-        data: {
-            labels: ['Preparation', 'Rules', 'Management', 'Target', 'Entry'],
-            datasets: [{
-                label: 'Quality Scores',
-                data: [
-                    {{ trade.preparation_rating or 0 }},
-                    {{ trade.rules_rating or 0 }},
-                    {{ trade.management_rating or 0 }},
-                    {{ trade.target_rating or 0 }},
-                    {{ trade.entry_rating or 0 }}
-                ],
-                backgroundColor: 'rgba(0, 102, 204, 0.2)',
-                borderColor: 'rgba(0, 102, 204, 1)',
-                borderWidth: 2,
-                pointBackgroundColor: 'rgba(0, 102, 204, 1)',
-                pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: 'rgba(0, 102, 204, 1)'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            scales: {
-                r: {
-                    beginAtZero: true,
-                    max: 5,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.1)'
-                    },
-                    pointLabels: {
-                        font: {
-                            size: 11
-                        }
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
+// Function to show trade images in modal (using base.html imageModal)
+function showTradeImageModal(imageSrc, imageTitle) {
+    console.log('📷 Opening trade image modal:', imageTitle);
+
+    // Use the existing imageModal from base.html
+    const imageModal = document.getElementById('imageModal');
+    const imageModalImg = document.getElementById('imageModalImg');
+    const imageModalTitle = document.getElementById('imageModalTitle');
+
+    if (imageModal && imageModalImg && imageModalTitle) {
+        imageModalImg.src = imageSrc;
+        imageModalTitle.textContent = imageTitle || 'Trade Image';
+
+        // Show the modal using Bootstrap
+        const modal = new bootstrap.Modal(imageModal);
+        modal.show();
+    } else {
+        console.error('Image modal elements not found');
+    }
+}
+
+// Function to delete trade images from detail view
+function deleteTradeImageFromDetail(imageId) {
+    console.log('🗑️ Deleting trade image from detail view:', imageId);
+
+    showCustomConfirmation({
+        title: 'Delete Trade Image',
+        message: 'Are you sure you want to delete this image? This action cannot be undone.',
+        confirmText: 'Delete Image',
+        confirmClass: 'btn-danger',
+        icon: 'trash',
+        onConfirm: function() {
+            // Get CSRF token
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfInput = document.querySelector('#js-csrf-token');
+            const csrfToken = csrfMeta?.getAttribute('content') || csrfInput?.value || '';
+
+            // Show loading state
+            const imageContainer = document.getElementById(`trade-image-${imageId}`);
+            if (imageContainer) {
+                imageContainer.style.opacity = '0.6';
+                imageContainer.style.pointerEvents = 'none';
+
+                // Add loading overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'position-absolute w-100 h-100 d-flex align-items-center justify-content-center';
+                overlay.style.cssText = 'top: 0; left: 0; background: rgba(0, 0, 0, 0.7); color: white; font-weight: bold; z-index: 10; border-radius: 0.375rem;';
+                overlay.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>DELETING...';
+                overlay.id = `overlay-${imageId}`;
+
+                const cardElement = imageContainer.querySelector('.card');
+                if (cardElement) {
+                    cardElement.style.position = 'relative';
+                    cardElement.appendChild(overlay);
                 }
             }
+
+            // Make API call to delete image
+            const deleteUrl = `/trades/image/${imageId}/delete`;
+
+            fetch(deleteUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                    });
+                }
+
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    return response.text().then(text => {
+                        throw new Error('Expected JSON response but got: ' + text);
+                    });
+                }
+            })
+            .then(data => {
+                if (data.success) {
+                    // Remove the image container with animation
+                    if (imageContainer) {
+                        imageContainer.style.transition = 'all 0.3s ease';
+                        imageContainer.style.transform = 'scale(0)';
+                        imageContainer.style.opacity = '0';
+
+                        setTimeout(() => {
+                            imageContainer.remove();
+
+                            // Check if any images are left
+                            const remainingImages = document.querySelectorAll('[id^="trade-image-"]');
+
+                            if (remainingImages.length === 0) {
+                                // Hide the entire Trade Images section
+                                const tradeImagesSection = document.querySelector('h6:contains("Trade Images")');
+                                if (tradeImagesSection) {
+                                    const section = tradeImagesSection.closest('.mt-4');
+                                    if (section) {
+                                        section.style.display = 'none';
+                                    }
+                                }
+                            }
+                        }, 300);
+                    }
+
+                    // Show success notification
+                    if (window.showNotification) {
+                        showNotification('success', 'Image deleted successfully');
+                    }
+                } else {
+                    // Show error and restore image
+                    if (imageContainer) {
+                        imageContainer.style.opacity = '1';
+                        imageContainer.style.pointerEvents = 'auto';
+                        const overlay = document.getElementById(`overlay-${imageId}`);
+                        if (overlay) {
+                            overlay.remove();
+                        }
+                    }
+
+                    if (window.showNotification) {
+                        showNotification('error', data.error || 'Failed to delete image');
+                    }
+                }
+            })
+            .catch(error => {
+                // Restore image on error
+                if (imageContainer) {
+                    imageContainer.style.opacity = '1';
+                    imageContainer.style.pointerEvents = 'auto';
+                    const overlay = document.getElementById(`overlay-${imageId}`);
+                    if (overlay) {
+                        overlay.remove();
+                    }
+                }
+
+                if (window.showNotification) {
+                    showNotification('error', 'Failed to delete image');
+                }
+            });
         }
     });
+}
 
-    // Performance Chart
+// ============================================================================
+// RADAR CHART FUNCTIONALITY (MATCHES VIEW_TRADES_LIST EXACTLY)
+// ============================================================================
+
+function initializeRadarChart() {
+    const canvas = document.getElementById('radarChart');
+    if (!canvas || canvas.hasAttribute('data-chart-initialized')) {
+        return;
+    }
+
+    console.log('📊 Initializing radar chart for trade detail page');
+
+    try {
+        const ratings = extractTradeRatings();
+        if (ratings && Object.keys(ratings).length > 0) {
+            renderRadarChart(canvas, ratings);
+            canvas.setAttribute('data-chart-initialized', 'true');
+        } else {
+            console.log('📊 No ratings found for trade');
+            renderEmptyRadarChart(canvas);
+        }
+    } catch (error) {
+        console.error('❌ Chart initialization error:', error);
+        renderEmptyRadarChart(canvas);
+    }
+}
+
+function extractTradeRatings() {
+    const ratings = {
+        'preparation': {{ trade.preparation_rating or 0 }},
+        'rules_adherence': {{ trade.rules_rating or 0 }},
+        'risk_management': {{ trade.management_rating or 0 }},
+        'target_placement': {{ trade.target_rating or 0 }},
+        'entry_execution': {{ trade.entry_rating or 0 }}
+    };
+
+    return Object.keys(ratings).length > 0 ? ratings : null;
+}
+
+function renderRadarChart(canvas, ratings) {
+    const ctx = canvas.getContext('2d');
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = Math.min(centerX, centerY) - 25;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const categories = Object.keys(ratings);
+    const values = Object.values(ratings);
+    const maxValue = 5;
+
+    if (categories.length === 0) {
+        renderEmptyRadarChart(canvas);
+        return;
+    }
+
+    // Chart colors - matching the dark theme
+    const gridColor = '#444';
+    const axisColor = '#666';
+    const dataColor = '#0d6efd';
+    const fillColor = 'rgba(13, 110, 253, 0.2)';
+
+    // Draw grid circles
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+
+    for (let i = 1; i <= maxValue; i++) {
+        const gridRadius = (radius * i) / maxValue;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, gridRadius, 0, 2 * Math.PI);
+        ctx.stroke();
+    }
+
+    // Draw grid lines and labels
+    const angleStep = (2 * Math.PI) / categories.length;
+    const labels = {
+        'preparation': 'Prep',
+        'rules_adherence': 'Rules',
+        'risk_management': 'Risk',
+        'target_placement': 'Target',
+        'entry_execution': 'Entry'
+    };
+
+    categories.forEach((category, index) => {
+        const angle = index * angleStep - Math.PI / 2;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+
+        // Grid line
+        ctx.strokeStyle = axisColor;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+
+        // Label
+        ctx.fillStyle = '#aaa';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const labelX = centerX + Math.cos(angle) * (radius + 15);
+        const labelY = centerY + Math.sin(angle) * (radius + 15);
+        const labelText = labels[category] || category.substring(0, 5);
+
+        ctx.fillText(labelText, labelX, labelY);
+    });
+
+    // Draw data polygon
+    if (values.length > 0) {
+        const points = values.map((value, index) => {
+            const angle = index * angleStep - Math.PI / 2;
+            const distance = (radius * value) / maxValue;
+            return {
+                x: centerX + Math.cos(angle) * distance,
+                y: centerY + Math.sin(angle) * distance
+            };
+        });
+
+        // Fill area
+        ctx.fillStyle = fillColor;
+        ctx.beginPath();
+        points.forEach((point, i) => {
+            if (i === 0) ctx.moveTo(point.x, point.y);
+            else ctx.lineTo(point.x, point.y);
+        });
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw outline
+        ctx.strokeStyle = dataColor;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw data points
+        ctx.fillStyle = dataColor;
+        points.forEach(point => {
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 3, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+    }
+
+    // Add center point
+    ctx.fillStyle = '#666';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 2, 0, 2 * Math.PI);
+    ctx.fill();
+}
+
+function renderEmptyRadarChart(canvas) {
+    const ctx = canvas.getContext('2d');
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw "No Ratings" message
+    ctx.fillStyle = '#666';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('No Ratings', centerX, centerY);
+}
+
+// ============================================================================
+
+function initializeCharts() {
+    // Initialize custom radar chart to match view_trades_list exactly
+    initializeRadarChart();
+
+    // Enhanced Performance Chart - Trade Journey Visualization
     const perfCtx = document.getElementById('performanceChart').getContext('2d');
     const tradeData = {
         entry: {{ trade.average_entry_price if trade.average_entry_price else 'null' }},
         exit: {{ trade.average_exit_price if trade.average_exit_price else 'null' }},
         stop: {{ trade.initial_stop_loss if trade.initial_stop_loss else 'null' }},
         target: {{ trade.terminus_target if trade.terminus_target else 'null' }},
-        mae: {{ trade.mae if trade.mae else 'null' }},
-        mfe: {{ trade.mfe if trade.mfe else 'null' }}
+        mae_price: {{ trade.mae_price if trade.mae_price else 'null' }},
+        mfe_price: {{ trade.mfe_price if trade.mfe_price else 'null' }},
+        direction: '{{ trade.direction }}',
+        instrument: '{{ trade.instrument }}'
     };
 
-    const perfData = [];
+    // Create trade journey timeline data
+    const timelineData = [];
     const labels = [];
-    const colors = [];
-    
+
     if (tradeData.entry !== null) {
-        labels.push('Entry');
-        perfData.push(tradeData.entry);
-        colors.push('rgba(0, 102, 204, 0.8)');
+        // Entry point
+        timelineData.push({
+            x: '0%',
+            y: tradeData.entry,
+            label: 'Entry',
+            color: 'rgb(0, 102, 204)'
+        });
+
+        // MAE (Maximum Adverse Excursion) - worst point
+        if (tradeData.mae_price !== null) {
+            timelineData.push({
+                x: '25%',
+                y: tradeData.mae_price,
+                label: 'MAE (Worst Point)',
+                color: 'rgb(220, 53, 69)'
+            });
+        }
+
+        // MFE (Maximum Favorable Excursion) - best point
+        if (tradeData.mfe_price !== null) {
+            timelineData.push({
+                x: '75%',
+                y: tradeData.mfe_price,
+                label: 'MFE (Best Point)',
+                color: 'rgb(40, 167, 69)'
+            });
+        }
+
+        // Exit point
+        if (tradeData.exit !== null) {
+            const isProfit = tradeData.direction === 'Long' ?
+                           tradeData.exit > tradeData.entry :
+                           tradeData.exit < tradeData.entry;
+            timelineData.push({
+                x: '100%',
+                y: tradeData.exit,
+                label: 'Exit',
+                color: isProfit ? 'rgb(40, 167, 69)' : 'rgb(220, 53, 69)'
+            });
+        }
     }
-    
-    if (tradeData.exit !== null) {
-        labels.push('Exit');
-        perfData.push(tradeData.exit);
-        colors.push('{{ trade.pnl > 0 if trade.pnl else False }}' === 'True' ? 
-                    'rgba(40, 167, 69, 0.8)' : 'rgba(220, 53, 69, 0.8)');
-    }
-    
+
+    // Prepare datasets for line chart
+    const journeyDataset = {
+        label: 'Trade Journey',
+        data: timelineData.map((point, index) => ({ x: index, y: point.y })),
+        borderColor: 'rgb(0, 102, 204)',
+        backgroundColor: 'rgba(0, 102, 204, 0.1)',
+        borderWidth: 3,
+        fill: false,
+        tension: 0.4,
+        pointBackgroundColor: timelineData.map(point => point.color),
+        pointBorderColor: timelineData.map(point => point.color),
+        pointRadius: 8,
+        pointHoverRadius: 12
+    };
+
+    // Add reference lines for stop and target
+    const annotations = [];
     if (tradeData.stop !== null) {
-        labels.push('Stop Loss');
-        perfData.push(tradeData.stop);
-        colors.push('rgba(220, 53, 69, 0.6)');
+        annotations.push({
+            type: 'line',
+            yMin: tradeData.stop,
+            yMax: tradeData.stop,
+            borderColor: 'rgba(220, 53, 69, 0.8)',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            label: {
+                content: 'Stop Loss',
+                enabled: true,
+                position: 'end'
+            }
+        });
     }
-    
+
     if (tradeData.target !== null) {
-        labels.push('Target');
-        perfData.push(tradeData.target);
-        colors.push('rgba(40, 167, 69, 0.6)');
+        annotations.push({
+            type: 'line',
+            yMin: tradeData.target,
+            yMax: tradeData.target,
+            borderColor: 'rgba(40, 167, 69, 0.8)',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            label: {
+                content: 'Target',
+                enabled: true,
+                position: 'end'
+            }
+        });
     }
 
     new Chart(perfCtx, {
-        type: 'bar',
+        type: 'line',
         data: {
-            labels: labels,
-            datasets: [{
-                label: 'Price Levels',
-                data: perfData,
-                backgroundColor: colors,
-                borderColor: colors.map(color => color.replace('0.8', '1').replace('0.6', '1')),
-                borderWidth: 2
-            }]
+            labels: timelineData.map(point => point.label),
+            datasets: [journeyDataset]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: false
+                    display: true,
+                    position: 'top'
                 },
                 tooltip: {
                     callbacks: {
+                        title: function(context) {
+                            return timelineData[context[0].dataIndex]?.label || '';
+                        },
                         label: function(context) {
-                            return context.label + ': ' + context.parsed.y.toFixed(2);
+                            const point = timelineData[context.dataIndex];
+                            return `Price: ${context.parsed.y.toFixed(2)}`;
                         }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: `${tradeData.direction} ${tradeData.instrument} - Trade Performance Journey`,
+                    font: {
+                        size: 16,
+                        weight: 'bold'
                     }
                 }
             },
             scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Trade Timeline'
+                    },
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                },
                 y: {
                     beginAtZero: false,
                     title: {
                         display: true,
                         text: 'Price Level'
+                    },
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(2);
+                        }
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    hoverBackgroundColor: function(context) {
+                        return timelineData[context.dataIndex]?.color || 'rgb(0, 102, 204)';
                     }
                 }
             }
@@ -919,8 +1502,8 @@ function initializeCharts() {
             labels: ['Max Adverse (MAE)', 'Max Favorable (MFE)'],
             datasets: [{
                 data: [
-                    {{ (trade.mae|abs) if trade.mae else 0 }},
-                    {{ trade.mfe if trade.mfe else 0 }}
+                    {% if trade.mae_price and trade.average_entry_price %}{{ (trade.mae_price - trade.average_entry_price)|abs }}{% else %}0{% endif %},
+                    {% if trade.mfe_price and trade.average_entry_price %}{{ (trade.mfe_price - trade.average_entry_price)|abs }}{% else %}0{% endif %}
                 ],
                 backgroundColor: [
                     'rgba(220, 53, 69, 0.8)',
@@ -968,26 +1551,26 @@ function initializeTooltips() {
 function exportTradeToPDF() {
     const exportBtn = document.querySelector('button[onclick="exportTradeToPDF()"]');
     const originalHtml = exportBtn.innerHTML;
-    
+
     exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     exportBtn.disabled = true;
 
     // Get the main content area for PDF export
     const element = document.getElementById('trade-kpi-section').parentElement;
-    
+
     const opt = {
         margin: 1,
         filename: 'Trade_Analysis_{{ trade.instrument }}_{{ trade.trade_date.strftime("%Y%m%d") }}.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
+        html2canvas: {
             scale: 2,
             useCORS: true,
             allowTaint: true
         },
-        jsPDF: { 
-            unit: 'in', 
-            format: 'letter', 
-            orientation: 'portrait' 
+        jsPDF: {
+            unit: 'in',
+            format: 'letter',
+            orientation: 'portrait'
         }
     };
 
@@ -1014,5 +1597,114 @@ function exportTradeToPDF() {
 function nl2br(str) {
     return str.replace(/\n/g, '<br>');
 }
+
+// ============================================================================
+// CHART PREVIEW FUNCTIONALITY
+// ============================================================================
+
+
+function generateChartPreview(chartUrl, tradeId) {
+    console.log('📸 Generating chart preview using backend service');
+    
+    const previewImg = document.getElementById(`chart-preview-${tradeId}`);
+    const loadingDiv = document.getElementById(`preview-loading-${tradeId}`);
+    
+    // Show loading state
+    previewImg.style.display = 'none';
+    loadingDiv.style.display = 'flex';
+    
+    // Use our backend screenshot service
+    const screenshotUrl = `/trades/chart-screenshot/${tradeId}?t=${Date.now()}`;
+    
+    // Set up image load handler
+    previewImg.onload = function() {
+        console.log('✅ Chart screenshot loaded successfully');
+        
+        // CRITICAL: Force hide loading spinner with multiple methods
+        loadingDiv.style.display = 'none';
+        loadingDiv.style.visibility = 'hidden';
+        loadingDiv.classList.add('d-none');
+        
+        // Show the preview image
+        previewImg.style.display = 'block';
+        previewImg.style.visibility = 'visible';
+        
+        // Add "View Original" button below the preview
+        addViewOriginalButton(chartUrl, tradeId);
+        
+        console.log('🎯 Loading spinner forcefully hidden, preview displayed');
+    };
+    
+    previewImg.onerror = function() {
+        console.warn('⚠️ Backend screenshot service failed');
+        
+        // Force hide loading spinner
+        loadingDiv.style.display = 'none';
+        loadingDiv.style.visibility = 'hidden';
+        loadingDiv.classList.add('d-none');
+        
+        showNoPreviewMessage(chartUrl, tradeId);
+    };
+    
+    // Set the image source to our backend service
+    previewImg.src = screenshotUrl;
+}
+
+function addViewOriginalButton(chartUrl, tradeId) {
+    // Check if button already exists
+    const existingButton = document.getElementById(`view-original-${tradeId}`);
+    if (existingButton) {
+        return;
+    }
+    
+    const previewContainer = document.getElementById(`chart-preview-${tradeId}`).parentElement;
+    
+    // Create button container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'text-center mt-3';
+    buttonContainer.id = `view-original-${tradeId}`;
+    buttonContainer.innerHTML = `
+        <a href="${chartUrl}" target="_blank" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-external-link-alt me-1"></i>View Original Chart
+        </a>
+    `;
+    
+    previewContainer.appendChild(buttonContainer);
+}
+
+function showNoPreviewMessage(chartUrl, tradeId) {
+    const loadingDiv = document.getElementById(`preview-loading-${tradeId}`);
+    
+    loadingDiv.innerHTML = `
+        <div class="d-flex flex-column align-items-center justify-content-center p-4" style="min-height: 250px;">
+            <div class="text-muted mb-3">
+                <i class="fas fa-chart-line fa-3x" style="opacity: 0.3;"></i>
+            </div>
+            <h6 class="text-muted mb-3">Preview not available</h6>
+            <a href="${chartUrl}" target="_blank" class="btn btn-primary">
+                <i class="fas fa-external-link-alt me-2"></i>Open Chart
+            </a>
+        </div>
+    `;
+    
+    // Force show the message container
+    loadingDiv.style.display = 'flex';
+    loadingDiv.style.visibility = 'visible';
+    loadingDiv.classList.remove('d-none');
+}
+
+
+// Auto-load chart preview on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const chartUrl = '{{ trade.screenshot_link }}';
+    const tradeId = {{ trade.id }};
+    
+    if (chartUrl && tradeId) {
+        console.log('🚀 Auto-loading chart preview...');
+        // No delay needed - directly show the enhanced interface
+        generateChartPreview(chartUrl, tradeId);
+    }
+});
 </script>
 {% endblock %}
+

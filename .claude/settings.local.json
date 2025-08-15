@@ -8,8 +8,14 @@
       "Bash(grep:*)",
       "Bash(pip install:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(flask db migrate:*)",
+      "Bash(flask db:*)",
+      "Bash(cp:*)",
+      "WebFetch(domain:127.0.0.1)",
+      "Bash(curl:*)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits"
   }
 }

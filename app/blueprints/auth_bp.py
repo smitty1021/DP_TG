@@ -84,7 +84,7 @@ def login():
                 current_app.logger.error(f"Session creation error for user {user.username}: {e}")
                 # Don't block login for session creation failure
 
-            flash('Authentication successful. Welcome to Pack Trade Group!', 'success')
+            flash('Authentication successful. Welcome to The Daily Profiler!', 'success')
             next_page = request.args.get('next')
             if not next_page or urlparse(next_page).netloc != '':
                 next_page = url_for('main.index')
@@ -213,7 +213,7 @@ def request_password_reset():
         if user:
             token = generate_token(user.id, salt='password-reset-salt')
             reset_url = url_for('auth.reset_password_with_token', token=token, _external=True)
-            send_email(to=user.email, subject="Pack Trade Group - Trading Journal Password Reset Request",
+            send_email(to=user.email, subject="The Daily Profiler - Trading Journal Password Reset Request",
                        template_name="reset_password_email.html", username=user.username, reset_url=reset_url)
             flash('Password reset email sent.', 'info')
         else:
@@ -615,7 +615,7 @@ def user_profile():
                 verification_url = url_for('auth.verify_email', token=token, _external=True)
                 send_email(
                     to=form_email,
-                    subject="Verify Your New Email Address - Pack Trade Group Trading Journal",
+                    subject="Verify Your New Email Address - The Daily Profiler Trading Journal",
                     template_name="verify_email.html",
                     username=current_user.username,
                     verification_url=verification_url

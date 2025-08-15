@@ -305,8 +305,8 @@ class TradeForm(FlaskForm):
     initial_stop_loss = FloatField('Stop Loss Price', validators=[Optional()], render_kw={"placeholder": "Price"})
     terminus_target = FloatField('Terminus Target Price', validators=[Optional()], render_kw={"placeholder": "Price"})
     is_dca = BooleanField('Check here if this trade is a DCA entry strategy')
-    mae = FloatField('MAE (In Points)', validators=[Optional()], render_kw={"placeholder": "Points against"})
-    mfe = FloatField('MFE (In Points)', validators=[Optional()], render_kw={"placeholder": "Points for"})
+    mae_price = FloatField('MAE Price', validators=[Optional()], render_kw={"placeholder": "Actual price level"})
+    mfe_price = FloatField('MFE Price', validators=[Optional()], render_kw={"placeholder": "Actual price level"})
 
     trading_model_id = SelectField('Model Used', coerce=int, validators=[InputRequired(message="Select model")],
                                    choices=[(0, "Select Model")])
@@ -1113,8 +1113,8 @@ class BacktestTradeForm(FlaskForm):
     # Performance metrics
     profit_loss = FloatField('Profit/Loss ($)', validators=[DataRequired()])
     profit_loss_ticks = FloatField('P&L (Ticks)', validators=[Optional()])
-    mae_ticks = FloatField('MAE (Ticks)', validators=[Optional()])
-    mfe_ticks = FloatField('MFE (Ticks)', validators=[Optional()])
+    mae_price = FloatField('MAE Price (Worst Price Reached)', validators=[Optional()])
+    mfe_price = FloatField('MFE Price (Best Price Reached)', validators=[Optional()])
     duration_minutes = IntegerField('Duration (Minutes)', validators=[Optional(), NumberRange(min=0)])
     
     # Context

@@ -428,17 +428,17 @@ document.addEventListener('DOMContentLoaded', function() {
                                 {% endif %}
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">{{ form.mae_ticks.label }}</label>
-                                {{ form.mae_ticks(class="form-control" + (" is-invalid" if form.mae_ticks.errors else ""), placeholder="5") }}
-                                {% if form.mae_ticks.errors %}
-                                    <div class="invalid-feedback">{{ form.mae_ticks.errors[0] }}</div>
+                                <label class="form-label fw-semibold">{{ form.mae_price.label }}</label>
+                                {{ form.mae_price(class="form-control" + (" is-invalid" if form.mae_price.errors else ""), placeholder="23681.75") }}
+                                {% if form.mae_price.errors %}
+                                    <div class="invalid-feedback">{{ form.mae_price.errors[0] }}</div>
                                 {% endif %}
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">{{ form.mfe_ticks.label }}</label>
-                                {{ form.mfe_ticks(class="form-control" + (" is-invalid" if form.mfe_ticks.errors else ""), placeholder="10") }}
-                                {% if form.mfe_ticks.errors %}
-                                    <div class="invalid-feedback">{{ form.mfe_ticks.errors[0] }}</div>
+                                <label class="form-label fw-semibold">{{ form.mfe_price.label }}</label>
+                                {{ form.mfe_price(class="form-control" + (" is-invalid" if form.mfe_price.errors else ""), placeholder="23615.25") }}
+                                {% if form.mfe_price.errors %}
+                                    <div class="invalid-feedback">{{ form.mfe_price.errors[0] }}</div>
                                 {% endif %}
                             </div>
                         </div>

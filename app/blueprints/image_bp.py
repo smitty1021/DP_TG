@@ -15,7 +15,7 @@ from flask import (
 from flask_login import login_required, current_user
 
 from app import db
-from app.models import GlobalImage
+from app.models import GlobalImage, TradeImage
 from app.utils.image_manager import ImageManager
 
 
@@ -228,6 +228,25 @@ def serve_image(image_id, thumbnail=None):
     except:
         pass  # Don't fail serving if view tracking fails
 
+    return send_file(file_path)
+
+
+@image_bp.route('/serve-trade-image/<int:image_id>')
+@login_required
+def serve_trade_image(image_id):
+    """Serve trade image files."""
+    trade_image = TradeImage.query.get_or_404(image_id)
+    
+    # Security check: ensure user owns the trade or is admin
+    if trade_image.user_id != current_user.id and current_user.role.name != 'ADMIN':
+        abort(403)
+    
+    # Get file path
+    file_path = trade_image.full_disk_path
+    
+    if not file_path or not os.path.exists(file_path):
+        abort(404)
+    
     return send_file(file_path)
 
 

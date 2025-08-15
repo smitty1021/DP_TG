@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Modal Test</title>
+</head>
+<body>
+<h1>Testing Modal Functionality</h1>
+<p>Please open the Flask application at <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></p>
+<ol>
+    <li>Login with admin/admin123</li>
+    <li>Go to trades list</li>
+    <li>Click to edit an existing trade</li>
+    <li>Check browser console for debug output</li>
+    <li>Try clicking "Select Trade Classification Tags" button</li>
+    <li>Report if modal opens or not</li>
+</ol>
+
+<h2>Expected Console Output:</h2>
+<pre>
+🏷️ Initializing simplified tags modal...
+🔍 Modal elements found: {openModalBtn: true, modalElement: true, ...}
+🏷️ Pre-populating tags for edit mode
+🏷️ Added tag to set: [tag_id] [tag_name]
+🏷️ Pre-populated tags: [array of tag IDs]
+🏷️ Updated main page display
+🏷️ Updated hidden input
+</pre>
+
+<h2>If Modal Doesn't Open:</h2>
+<pre>
+Expected console errors:
+❌ Open modal button not found!
+❌ Modal element not found!
+</pre>
+</body>
+</html>

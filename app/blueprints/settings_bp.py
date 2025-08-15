@@ -371,3 +371,100 @@ def reset_default_tags():
         flash('Error resetting tags. Please try again.', 'danger')
 
     return redirect(url_for('settings.manage_personal_tags'))
+
+
+@settings_bp.route('/export/user-settings')
+@login_required
+def export_user_settings():
+    """Export user configuration settings as JSON"""
+    try:
+        from flask import Response
+        import json
+        from datetime import datetime
+        
+        # Gather user settings data
+        user_data = {
+            'user_info': {
+                'username': current_user.username,
+                'email': current_user.email,
+                'role': current_user.role.value,
+                'created_at': current_user.created_at.isoformat() if current_user.created_at else None,
+                'is_active': current_user.is_active
+            },
+            'personal_tags': [],
+            'export_date': datetime.utcnow().isoformat()
+        }
+        
+        # Get user's personal tags
+        personal_tags = Tag.query.filter_by(user_id=current_user.id).all()
+        for tag in personal_tags:
+            user_data['personal_tags'].append({
+                'name': tag.name,
+                'category': tag.category.name,
+                'color_category': tag.color_category,
+                'is_active': tag.is_active,
+                'created_at': tag.created_at.isoformat() if hasattr(tag, 'created_at') and tag.created_at else None
+            })
+        
+        # Generate filename
+        filename = f"user_settings_{current_user.username}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        
+        # Create JSON response
+        json_data = json.dumps(user_data, indent=2, sort_keys=True)
+        
+        return Response(
+            json_data,
+            mimetype='application/json',
+            headers={'Content-Disposition': f'attachment; filename={filename}'}
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error exporting user settings: {e}", exc_info=True)
+        flash('Error exporting user settings. Please try again.', 'danger')
+        return redirect(url_for('settings.view_settings'))
+
+
+@settings_bp.route('/export/personal-tags')
+@login_required
+def export_personal_tags():
+    """Export user's personal tags as JSON"""
+    try:
+        from flask import Response
+        import json
+        from datetime import datetime
+        
+        # Get user's personal tags
+        personal_tags = Tag.query.filter_by(user_id=current_user.id).order_by(Tag.category, Tag.name).all()
+        
+        tags_data = {
+            'username': current_user.username,
+            'export_date': datetime.utcnow().isoformat(),
+            'total_tags': len(personal_tags),
+            'tags': []
+        }
+        
+        for tag in personal_tags:
+            tags_data['tags'].append({
+                'name': tag.name,
+                'category': tag.category.name,
+                'color_category': tag.color_category,
+                'is_active': tag.is_active,
+                'created_at': tag.created_at.isoformat() if hasattr(tag, 'created_at') and tag.created_at else None
+            })
+        
+        # Generate filename
+        filename = f"personal_tags_{current_user.username}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        
+        # Create JSON response
+        json_data = json.dumps(tags_data, indent=2, sort_keys=True)
+        
+        return Response(
+            json_data,
+            mimetype='application/json',
+            headers={'Content-Disposition': f'attachment; filename={filename}'}
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error exporting personal tags: {e}", exc_info=True)
+        flash('Error exporting personal tags. Please try again.', 'danger')
+        return redirect(url_for('settings.view_settings'))

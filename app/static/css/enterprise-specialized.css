@@ -838,7 +838,7 @@ html[data-bs-theme="dark"] .calendar-nav-btn {
     background: var(--enterprise-gray-50);
     color: var(--enterprise-text-primary);
     border-bottom: 1px solid var(--enterprise-border);
-    padding: var(--enterprise-spacing-lg);
+    padding: var(--enterprise-spacing-sm);
     font-weight: 600;
     display: flex;
     justify-content: space-between;
@@ -846,7 +846,7 @@ html[data-bs-theme="dark"] .calendar-nav-btn {
 }
 
 .tag-category-body {
-    padding: var(--enterprise-spacing-lg);
+    padding: var(--enterprise-spacing-md);
 }
 
 .tag-item {
@@ -897,6 +897,41 @@ html[data-bs-theme="dark"] .calendar-nav-btn {
     gap: 0.25rem;
 }
 
+/* Selected Tag Visual Enhancement */
+.tag-item.tag-selected {
+    border: 3px solid #0066cc !important;
+    background-color: rgba(0, 102, 204, 0.15) !important;
+    box-shadow: 0 0 0 3px rgb(197, 174, 36) !important;
+    transform: scale(1.05);
+    transition: all 0.2s ease;
+    position: relative;
+    z-index: 10;
+}
+
+/* Tag remove button in main page display */
+.tag-remove-btn {
+    background: none;
+    border: none;
+    color: var(--enterprise-danger);
+    padding: 0;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    line-height: 1;
+    border-radius: 50%;
+    width: 1.2rem;
+    height: 1.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.tag-remove-btn:hover {
+    color: var(--enterprise-danger);
+    transform: scale(1.2);
+}
+
 .tag-item:hover .tag-actions {
     display: flex;
 }
@@ -916,6 +951,51 @@ html[data-bs-theme="dark"] .calendar-nav-btn {
     opacity: 1;
     transform: translateY(-1px);
     background: var(--enterprise-gray-50);
+}
+
+.tag-selectable {
+    transition: all 0.2s ease;
+}
+
+.tag-selectable:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--enterprise-shadow-sm);
+}
+
+.tag-selectable:focus {
+    outline: 2px solid var(--enterprise-primary);
+    outline-offset: 2px;
+}
+
+/* Tag Impact Group Styling */
+.tag-impact-group {
+    margin-bottom: var(--enterprise-spacing-md);
+}
+
+.tag-impact-header {
+    display: flex;
+    align-items: center;
+    padding: 0.375rem 0.5rem;
+    background: var(--enterprise-gray-50);
+    border: 1px solid var(--enterprise-border);
+    border-radius: var(--enterprise-radius-sm);
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--enterprise-text-muted);
+}
+
+.tag-impact-body {
+    display: flex;
+    flex-wrap: wrap;
+    padding-left: 1rem;
+}
+
+/* Dark theme support for impact groups */
+html[data-bs-theme="dark"] .tag-impact-header {
+    background: var(--enterprise-gray-200);
+    border-color: var(--enterprise-border);
+    color: var(--enterprise-text-muted);
 }
 
 /* Bias Indicators */

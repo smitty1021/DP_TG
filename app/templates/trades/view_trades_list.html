@@ -23,26 +23,26 @@
                     Trading Activity Management & Performance Analysis</p>
             </div>
             <div class="btn-group">
-                <button type="button" class="btn btn-outline-secondary btn-sm"
+                <button type="button" class="btn btn-outline-secondary"
                         onclick="window.location.href='{{ url_for('main.index') }}'"
                         title="Go to Main Dashboard">
                     <i class="fas fa-home"></i>
                 </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm"
+                <button type="button" class="btn btn-outline-secondary"
                         onclick="window.location.href='{{ url_for('trades.add_trade') }}'"
                         title="Log New Trade">
                     <i class="fas fa-plus"></i>
                 </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm"
+                <button type="button" class="btn btn-outline-secondary"
                         onclick="location.reload()" title="Refresh Data">
                     <i class="fas fa-sync-alt"></i>
                 </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm"
+                <button type="button" class="btn btn-outline-secondary"
                         onclick="history.back();"
                         title="Go Back">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <a href="{{ url_for('trades.import_trades') }}" class="btn btn-outline-secondary btn-sm" title="Import Trading Data">
+                <a href="{{ url_for('trades.import_trades') }}" class="btn btn-outline-secondary" title="Import Trading Data">
                     <i class="fas fa-upload me-1"></i>
                 </a>
                 <ul class="dropdown-menu">
@@ -60,7 +60,7 @@
                     <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportWithProgress('pdf')">
                         <i class="fas fa-file-pdf me-2"></i>Performance Analysis (PDF)</a></li>
                 </ul>
-                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle"
                         data-bs-toggle="dropdown" aria-expanded="false" title="Export Trading Data">
                     <i class="fas fa-download me-1"></i>
                 </button>
@@ -835,14 +835,14 @@
                                                     <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
                                                         <div class="fw-semibold text-muted">MAE</div>
                                                         <div class="text-end">
-                                                            {% if trade.mae is not none and trade.average_entry_price %}
-                                                                {% set mae_abs = trade.mae|abs %}
+                                                            {% if trade.mae_price is not none and trade.average_entry_price %}
+                                                                {% set mae_points = (trade.mae_price - trade.average_entry_price)|abs %}
                                                                 {% set multiplier = trade.instrument_multiplier or 25 %}
                                                                 {% set tick_size = trade.instrument_tick_size or 0.25 %}
-                                                                {% set ticks = (mae_abs / tick_size)|round|int if tick_size > 0 else 0 %}
-                                                                {% set price_pct = ((mae_abs / trade.average_entry_price) * 100) if trade.average_entry_price > 0 else 0 %}
-                                                                <div class="text-danger fw-semibold">{{ "{:.1f}".format(mae_abs) }} pts</div>
-                                                                <small class="text-muted">({{ ticks }} tks, ${{ "{:,.0f}".format(mae_abs * multiplier) }}, {{ "{:.2f}".format(price_pct) }}%)</small>
+                                                                {% set ticks = (mae_points / tick_size)|round|int if tick_size > 0 else 0 %}
+                                                                {% set price_pct = ((mae_points / trade.average_entry_price) * 100) if trade.average_entry_price > 0 else 0 %}
+                                                                <div class="text-danger fw-semibold">{{ "{:.2f}".format(trade.mae_price) }}</div>
+                                                                <small class="text-muted">({{ "{:.1f}".format(mae_points) }} pts, {{ ticks }} tks, ${{ "{:,.0f}".format(mae_points * multiplier) }}, {{ "{:.2f}".format(price_pct) }}%)</small>
                                                             {% else %}
                                                                 N/A
                                                             {% endif %}
@@ -855,13 +855,14 @@
                                                     <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
                                                         <div class="fw-semibold text-muted">MFE</div>
                                                         <div class="text-end">
-                                                            {% if trade.mfe is not none and trade.average_entry_price %}
+                                                            {% if trade.mfe_price is not none and trade.average_entry_price %}
+                                                                {% set mfe_points = (trade.mfe_price - trade.average_entry_price)|abs %}
                                                                 {% set multiplier = trade.instrument_multiplier or 25 %}
                                                                 {% set tick_size = trade.instrument_tick_size or 0.25 %}
-                                                                {% set ticks = (trade.mfe / tick_size)|round|int if tick_size > 0 else 0 %}
-                                                                {% set price_pct = ((trade.mfe / trade.average_entry_price) * 100) if trade.average_entry_price > 0 else 0 %}
-                                                                <div class="text-success fw-semibold">{{ "{:.1f}".format(trade.mfe) }} pts</div>
-                                                                <small class="text-muted">({{ ticks }} tks, ${{ "{:,.0f}".format(trade.mfe * multiplier) }}, {{ "{:.2f}".format(price_pct) }}%)</small>
+                                                                {% set ticks = (mfe_points / tick_size)|round|int if tick_size > 0 else 0 %}
+                                                                {% set price_pct = ((mfe_points / trade.average_entry_price) * 100) if trade.average_entry_price > 0 else 0 %}
+                                                                <div class="text-success fw-semibold">{{ "{:.2f}".format(trade.mfe_price) }}</div>
+                                                                <small class="text-muted">({{ "{:.1f}".format(mfe_points) }} pts, {{ ticks }} tks, ${{ "{:,.0f}".format(mfe_points * multiplier) }}, {{ "{:.2f}".format(price_pct) }}%)</small>
                                                             {% else %}
                                                                 N/A
                                                             {% endif %}
@@ -902,8 +903,9 @@
                                                 <div class="col-12">
                                                     <div class="d-flex justify-content-between align-items-center border-bottom pt-1 pb-1">
                                                         <div class="fw-semibold text-muted">Efficiency</div>
-                                                        {% if trade.pnl is not none and trade.mfe is not none and trade.mfe != 0 %}
-                                                            {% set efficiency = (trade.pnl / (trade.mfe * (trade.instrument_multiplier or 25))) * 100 %}
+                                                        {% if trade.pnl is not none and trade.mfe_price is not none and trade.average_entry_price %}
+                                                            {% set mfe_points = (trade.mfe_price - trade.average_entry_price)|abs %}
+                                                            {% set efficiency = (trade.pnl / (mfe_points * (trade.instrument_multiplier or 25))) * 100 if mfe_points != 0 else 0 %}
                                                             <span class="{% if efficiency >= 50 %}text-success{% elif efficiency >= 25 %}text-warning{% else %}text-danger{% endif %}">
                                                                 {{ "{:.1f}".format(efficiency) }}%
                                                             </span>

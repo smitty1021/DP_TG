@@ -1115,6 +1115,81 @@ div .form-control.textarea-20,
 
 /*
 ===============================================================================
+QUILL UTILITIES
+===============================================================================
+*/
+
+/* Remove spinner arrows from number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* For Firefox */
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Quill Editor Enterprise Styling */
+.ql-editor {
+    color: var(--enterprise-text-primary) !important;
+    background-color: var(--enterprise-bg-secondary) !important;
+    border: 1px solid var(--enterprise-text-primary) !important;
+    border-radius: var(--enterprise-radius, 0.375rem) !important;
+}
+
+.ql-editor p {
+    color: var(--enterprise-text-primary) !important;
+}
+
+.ql-editor.ql-blank::before {
+    color: var(--enterprise-text-muted) !important;
+    opacity: 0.7;
+}
+
+/* Quill toolbar styling */
+.ql-toolbar {
+    background-color: var(--enterprise-bg-primary) !important;
+    border: 1px solid var(--enterprise-text-primary) !important;
+    border-bottom: none !important;
+    border-radius: var(--enterprise-radius, 0.375rem) var(--enterprise-radius, 0.375rem) 0 0 !important;
+}
+
+.ql-toolbar .ql-stroke {
+    stroke: var(--enterprise-text-primary) !important;
+}
+
+.ql-toolbar .ql-fill {
+    fill: var(--enterprise-text-primary) !important;
+}
+
+.ql-toolbar button:hover {
+    background-color: var(--enterprise-bg-hover) !important;
+}
+
+.ql-toolbar button.ql-active {
+    background-color: var(--enterprise-primary) !important;
+}
+
+/* Quill container styling */
+.ql-container {
+    border-radius: 0 0 var(--enterprise-radius, 0.375rem) var(--enterprise-radius, 0.375rem) !important;
+}
+
+.ql-snow .ql-picker-label {
+    cursor: pointer;
+    color: var(--enterprise-text-primary);
+    display: inline-block;
+    height: 100%;
+    padding-left: 8px;
+    padding-right: 2px;
+    position: relative;
+    width: 100%;
+}
+
+/*
+===============================================================================
 END OF ENTERPRISE CORE STYLES
 ===============================================================================
 Framework Summary:

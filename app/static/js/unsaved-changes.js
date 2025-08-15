@@ -219,6 +219,9 @@ class EnterpriseUnsavedChangesHandler {
             console.log(`🔍 Unsaved changes check: ${this.hasUnsavedChanges} (${changedFields.length} changed fields)`);
         }
         
+        // Store changed fields for use by getDetailedChangedFieldsMessage
+        this.changedFields = changedFields;
+        
         this.updateVisualIndicators(changedFields);
     }
 
@@ -228,44 +231,24 @@ class EnterpriseUnsavedChangesHandler {
     }
 
     getChangedFields() {
-        const changedFields = [];
+        // Return field names (not display names) for programmatic use
+        if (!this.changedFields) return [];
         
-        if (!this.form) return changedFields;
+        return this.changedFields.map(field => field.name);
+    }
+
+    getChangedFieldDisplayNames() {
+        // Return display names for UI use
+        if (!this.changedFields) return [];
         
-        const inputs = this.form.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
-            if (!this.isExcludedInput(input)) {
-                const key = input.name || input.id;
-                if (key && this.originalFormData.has(key)) {
-                    let currentValue;
-                    let originalValue = this.originalFormData.get(key);
-
-                    if (input.type === 'checkbox' || input.type === 'radio') {
-                        currentValue = input.checked;
-                    } else if (input.type === 'file') {
-                        // File inputs - only consider changed if file selection state changed
-                        const originalHadFiles = this.originalFormData.get(key) && this.originalFormData.get(key).length > 0;
-                        const currentHasFiles = input.files && input.files.length > 0;
-                        
-                        if (originalHadFiles !== currentHasFiles) {
-                            const fieldName = this.getFieldDisplayName(input);
-                            changedFields.push(fieldName);
-                        }
-                        return; // Skip the rest for file inputs
-                    } else {
-                        currentValue = input.value;
-                    }
-
-                    if (this.normalizeValue(currentValue) !== this.normalizeValue(originalValue)) {
-                        // Get a human-readable field name
-                        const fieldName = this.getFieldDisplayName(input);
-                        changedFields.push(fieldName);
-                    }
-                }
+        return this.changedFields.map(field => {
+            // Find the input element to get display name
+            const input = document.querySelector(`[name="${field.name}"], #${field.name}`);
+            if (input) {
+                return this.getFieldDisplayName(input);
             }
+            return this.beautifyFieldName(field.name);
         });
-        
-        return changedFields;
     }
 
     getFieldDisplayName(input) {
@@ -546,16 +529,16 @@ class EnterpriseUnsavedChangesHandler {
                                 <strong>Cancel:</strong> Stay on this page to continue editing
                             </div>
                         </div>
-                        <div class="modal-footer justify-content-between">
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                                <i class="fas fa-times me-1"></i>Cancel
-                            </button>
+                        <div class="modal-footer justify-content-center">                            
                             <div class="btn-group">
                                 <button type="button" class="btn btn-outline-success" id="${saveButtonId}">
                                     <i class="fas fa-save me-1"></i>Save Changes
                                 </button>
                                 <button type="button" class="btn btn-outline-warning" id="${discardButtonId}">
                                     <i class="fas fa-trash-alt me-1"></i>Discard Changes
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times me-1"></i>Cancel
                                 </button>
                             </div>
                         </div>
@@ -1027,13 +1010,7 @@ class EnterpriseUnsavedChangesHandler {
             return 'You have made changes that have not been saved yet.';
         }
         
-        // Create a mapping of technical field names to user-friendly labels
-        const fieldLabelMap = this.createFieldLabelMapping();
-        
-        const fieldLabels = this.changedFields.map(field => {
-            const friendlyName = fieldLabelMap[field.name] || this.beautifyFieldName(field.name);
-            return friendlyName;
-        });
+        const fieldLabels = this.getChangedFieldDisplayNames();
         
         let message = 'You have made changes to the following fields that have not been saved yet:\n\n';
         
