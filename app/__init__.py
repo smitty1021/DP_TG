@@ -10,7 +10,6 @@ from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 from itsdangerous import URLSafeTimedSerializer
 from flask_session import Session
-from app.services.discord_service import discord_service
 
 
 # Import blueprints
