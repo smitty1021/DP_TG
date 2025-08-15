@@ -36,7 +36,7 @@ class DiscordService:
             self._app = current_app._get_current_object()
 
         if not self.bot_token or not self.guild_id:
-            self.logger.error("Discord configuration missing. Check DISCORD_BOT_TOKEN and DISCORD_GUILD_ID")
+            self.logger.info("Discord configuration not provided. Discord features will be disabled. Set DISCORD_BOT_TOKEN and DISCORD_GUILD_ID to enable Discord integration.")
             return False
 
         try:
@@ -75,7 +75,7 @@ class DiscordService:
             return True
 
         except Exception as e:
-            self.logger.error(f"Failed to initialize Discord service: {e}")
+            self.logger.warning(f"Discord service initialization failed: {e}. Discord features will be disabled.")
             return False
 
     def is_ready(self) -> bool:
